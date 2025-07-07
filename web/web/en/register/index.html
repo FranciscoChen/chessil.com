@@ -1,1 +1,107 @@
-<!doctype html><html lang="en"><head><title>ChessiL - Register</title><meta charset="utf-8"><meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height"><meta name="description" content="Play chess online at ChessiL.com!"><meta name="keywords" content="chess, online, play, register"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="/light.css"><script src="/connections.js"></script><script src="/header.js"></script><script src="/zxcvbn.js"></script><script src="/chessil.js"></script><link rel="preload" href="/lichess.chess.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/lichess.woff2" as="font" type="font/woff2" crossorigin></head><body><header><div class="z"><input type="checkbox" id="x" class="n" autocomplete="off"><label for="x" class="q"></label><label for="x" class="r"><span class="u"></span></label><div class="t"><a href="/en">Chess<span>iL</span></a></div><nav id="n"><div class="m"><a href="/en/">Home</a></div></nav></div><div class="site-buttons"><div id="clinput"><a class="link"><span data-icon=""></span></a><input spellcheck="false" autocomplete="off" placeholder="Search" enterkeyhint="search"><div class="complete-list none"></div></div><div class="dasher"><button class="toggle link anon"><span data-icon="" "=""></span></button><div id="dasher_app" class="dropdown"><div class="sub langs"><button class="head text" data-icon="" type="button">Language</button><form method="post" action="/language"><button class="current accepted" type="submit" name="lang" value="en" title="en">English</button><button  type="submit" name="lang" value="es" title="es">Español</button><button  type="submit" name="lang" value="zh" title="zh">中文</button></form></div><div class="sub background"><button class="head text" data-icon="" type="button">Theme</button><div class="selector"><button id="lightmode" type="button">Light</button><button id="darkmode" type="button">Dark</button></div></div><div><div class="subs"><button class="sub" data-icon=""  type="button">Language</button><button class="sub" data-icon=""  type="button">Theme</button></div></div></div></div><div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count" data-count="0" data-icon="" "=""></span></button><div id="challenge-app" class="links dropdown rendered"><div class="empty text">No challenges.</div></div></div>$loginoruserbutton</div></header><div id="main-wrap" class="isauthwrap"><main class="auth auth-signup box box-pad"><h1 class="box__top">Register</h1><form method="post" id="signup-form" class="form3" action="/register"><div class="form-group"><label class="form-label" for="form3-username">Username</label><input id="form3-username" type="text" pattern="^[a-zA-Z][a-zA-Z0-9_\-]*[a-zA-Z0-9]$" name="username" class="form-control" minlength="3" maxlength="20" autofocus="autofocus" required="required" autocomplete="username"></input><p class="error username-exists none">This username is already in use</p><small class="form-help">Accounts with inappropriate usernames will be deleted</small></div><div class="form-group"><label class="form-label" for="form3-password">Password</label><input id="form3-password" name="password" type="password" class="form-control" minlength="4" maxlength="255" required="required" autocomplete="new-password"></input><small class="form-help">Write down your password. There is no password recovery or reset. You will be required to login from time to time.</small></div><div class="password-complexity"><label class="password-complexity-label">Password Strength</label><div class="password-complexity-meter"><span></span><span></span><span></span><span></span></div></div><div class="agreement"><div class="form-check form-group"><div><span class="form-check-input"><input id="form3-agreement_assistance" name="nocheating" value="true" type="checkbox" class="form-control cmn-toggle"></input><label for="form3-agreement_assistance"></label></span><label class="form-label" for="form3-agreement_assistance">I agree that I will not cheat</label></div></div><div class="form-check form-group"><div><span class="form-check-input"><input id="form3-agreement_nice" name="treatotherswell" value="true" type="checkbox" class="form-control cmn-toggle"></input><label for="form3-agreement_nice"></label></span><label class="form-label" for="form3-agreement_nice">I agree that I will not attack the site or its services</label></div></div><div class="form-check form-group"><div><span class="form-check-input"><input id="form3-agreement_account" name="nomultiaccount" value="true" type="checkbox" class="form-control cmn-toggle"></input><label for="form3-agreement_account"></label></span><label class="form-label" for="form3-agreement_account">I agree that my account will be deleted for being inactive for over 1 year</label></div></div><div class="form-check form-group"><div><span class="form-check-input"><input id="form3-agreement_policy" name="noattacks" value="true" type="checkbox" class="form-control cmn-toggle"></input><label for="form3-agreement_policy"></label></span><label class="form-label" for="form3-agreement_policy">I agree to the <a href="/privacy">Privacy policy</a> and the <a/ href="/terms">Terms of service</a></label></div></div></div><button class="submit button text big disabled" disabled>Register</button></form></main></div></body></html>
+<!doctype html>
+<html lang="en">
+
+<head>
+  <title>ChessiL - Register</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
+  <meta name="description" content="Play chess online at ChessiL.com!">
+  <meta name="keywords" content="chess, online, play, register">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/light.css">
+  <script src="/connections.js"></script>
+  <script src="/header.js"></script>
+  <script src="/zxcvbn.js"></script>
+  <script src="/chessil.js"></script>
+  <link rel="preload" href="/lichess.chess.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/lichess.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+
+<body>
+  <header>
+    <div class="z"><input type="checkbox" id="x" class="n" autocomplete="off"><label for="x" class="q"></label><label
+        for="x" class="r"><span class="u"></span></label>
+      <div class="t"><a href="/en">Chess<span>iL</span></a></div>
+      <nav id="n">
+        <div class="m"><a href="/en/">Home</a></div>
+      </nav>
+    </div>
+    <div class="site-buttons">
+      <div id="clinput"><a class="link"><span data-icon=""></span></a><input spellcheck="false" autocomplete="off"
+          placeholder="Search" enterkeyhint="search">
+        <div class="complete-list none"></div>
+      </div>
+      <div class="dasher"><button class="toggle link anon"><span data-icon="" "=""></span></button><div id="
+            dasher_app" class="dropdown">
+            <div class="sub langs"><button class="head text" data-icon="" type="button">Language</button>
+              <form method="post" action="/language"><button class="current accepted" type="submit" name="lang"
+                  value="en" title="en">English</button><button type="submit" name="lang" value="es"
+                  title="es">Español</button><button type="submit" name="lang" value="zh" title="zh">中文</button></form>
+            </div>
+            <div class="sub background"><button class="head text" data-icon="" type="button">Theme</button>
+              <div class="selector"><button id="lightmode" type="button">Light</button><button id="darkmode"
+                  type="button">Dark</button></div>
+            </div>
+            <div>
+              <div class="subs"><button class="sub" data-icon="" type="button">Language</button><button class="sub"
+                  data-icon="" type="button">Theme</button></div>
+            </div>
+      </div>
+    </div>
+    <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count" data-count="0"
+          data-icon="" "=""></span></button><div id=" challenge-app" class="links dropdown rendered">
+          <div class="empty text">No challenges.</div>
+    </div>
+    </div>$loginoruserbutton</div>
+  </header>
+  <div id="main-wrap" class="isauthwrap">
+    <main class="auth auth-signup box box-pad">
+      <h1 class="box__top">Register</h1>
+      <form method="post" id="signup-form" class="form3" action="/register">
+        <div class="form-group"><label class="form-label" for="form3-username">Username</label><input
+            id="form3-username" type="text" pattern="^[a-zA-Z][a-zA-Z0-9_\-]*[a-zA-Z0-9]$" name="username"
+            class="form-control" minlength="3" maxlength="20" autofocus="autofocus" required="required"
+            autocomplete="username"></input>
+          <p class="error username-exists none">This username is already in use</p><small class="form-help">Accounts
+            with inappropriate usernames will be deleted</small>
+        </div>
+        <div class="form-group"><label class="form-label" for="form3-password">Password</label><input
+            id="form3-password" name="password" type="password" class="form-control" minlength="4" maxlength="255"
+            required="required" autocomplete="new-password"></input><small class="form-help">Write down your password.
+            There is no password recovery or reset. You will be required to login from time to time.</small></div>
+        <div class="password-complexity"><label class="password-complexity-label">Password Strength</label>
+          <div class="password-complexity-meter"><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="agreement">
+          <div class="form-check form-group">
+            <div><span class="form-check-input"><input id="form3-agreement_assistance" name="nocheating" value="true"
+                  type="checkbox" class="form-control cmn-toggle"></input><label
+                  for="form3-agreement_assistance"></label></span><label class="form-label"
+                for="form3-agreement_assistance">I agree that I will not cheat</label></div>
+          </div>
+          <div class="form-check form-group">
+            <div><span class="form-check-input"><input id="form3-agreement_nice" name="treatotherswell" value="true"
+                  type="checkbox" class="form-control cmn-toggle"></input><label
+                  for="form3-agreement_nice"></label></span><label class="form-label" for="form3-agreement_nice">I agree
+                that I will not attack the site or its services</label></div>
+          </div>
+          <div class="form-check form-group">
+            <div><span class="form-check-input"><input id="form3-agreement_account" name="nomultiaccount" value="true"
+                  type="checkbox" class="form-control cmn-toggle"></input><label
+                  for="form3-agreement_account"></label></span><label class="form-label" for="form3-agreement_account">I
+                agree that my account will be deleted for being inactive for over 1 year</label></div>
+          </div>
+          <div class="form-check form-group">
+            <div><span class="form-check-input"><input id="form3-agreement_policy" name="noattacks" value="true"
+                  type="checkbox" class="form-control cmn-toggle"></input><label
+                  for="form3-agreement_policy"></label></span><label class="form-label" for="form3-agreement_policy">I
+                agree to the <a href="/privacy">Privacy policy</a> and the <a / href="/terms">Terms of
+                  service</a></label></div>
+          </div>
+        </div><button class="submit button text big disabled" disabled>Register</button>
+      </form>
+    </main>
+  </div>
+</body>
+
+</html>

@@ -1,1 +1,109 @@
-<!doctype html><html lang="en"><head><title>ChessiL - User profile</title><meta charset="utf-8"><meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height"><meta name="description" content="User profile page with ratings and game history"><meta name="keywords" content="chess, profile, user, ratings, game, history"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="/light.css"><script src="/connections.js"></script><script src="/header.js"></script><script src="/u.js"></script><script src="/chessil.js"></script><link rel="preload" href="/lichess.chess.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/lichess.woff2" as="font" type="font/woff2" crossorigin></head><body><header><div class="z"><input type="checkbox" id="x" class="n" autocomplete="off"><label for="x" class="q"></label><label for="x" class="r"><span class="u"></span></label><div class="t"><a href="/en">Chess<span>iL</span></a></div><nav id="n"><div class="m"><a href="/en/">Home</a></div></nav></div><div class="site-buttons"><div id="clinput"><a class="link"><span data-icon=""></span></a><input spellcheck="false" autocomplete="off" placeholder="Search" enterkeyhint="search"><div class="complete-list none"></div></div><div class="dasher"><button class="toggle link anon"><span data-icon="" "=""></span></button><div id="dasher_app" class="dropdown"><div class="sub langs"><button class="head text" data-icon="" type="button">Language</button><form method="post" action="/language"><button class="current accepted" type="submit" name="lang" value="en" title="en">English</button><button  type="submit" name="lang" value="es" title="es">Español</button><button  type="submit" name="lang" value="zh" title="zh">中文</button></form></div><div class="sub background"><button class="head text" data-icon="" type="button">Theme</button><div class="selector"><button id="lightmode" type="button">Light</button><button id="darkmode" type="button">Dark</button></div></div><div><div class="subs"><button class="sub" data-icon=""  type="button">Language</button><button class="sub" data-icon=""  type="button">Theme</button></div></div></div></div><div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count" data-count="0" data-icon="" "=""></span></button><div id="challenge-app" class="links dropdown rendered"><div class="empty text">No challenges.</div></div></div>$loginoruserbutton</div></header><div id="main-wrap"><main class="page-menu" data-username="$username"><aside class="page-menu__menu"><div class="side sub-ratings"><a data-icon=""><span><h3>Ultrabullet</h3><rating><strong>0</strong> <span><n>0</n> games</span></rating></span></a><a data-icon=""><span><h3>Bullet</h3><rating><strong>0</strong> <span><n>0</n> games</span></rating></span></a><a data-icon=""><span><h3>Blitz</h3><rating><strong>0</strong> <span><n>0</n> games</span></rating></span></a><a data-icon=""><span><h3>Rapid</h3><rating><strong>0</strong> <span><n>0</n> games</span></rating></span></a><a data-icon=""><span><h3>Classical</h3><rating><strong>0</strong> <span><n>0</n> games</span></rating></span></a></div></aside><div class="page-menu__content box user-show"><div class="box__top user-show__header"><h1><span class="online user-link" data-href="/@/$username"><i class="line"></i>$username</span></h1><div class="btn-rack__btn" data-icon=""></div></div><div class="angle-content"><div class="number-menu number-menu--tabs menu-box-pop" id="games"><a class="nm-item to-all active"><strong>0</strong><br>Games</a><a class="nm-item to-rated"><strong>0</strong><br>Rated</a><a class="nm-item to-win"><strong>0</strong><br>Wins</a><a class="nm-item to-loss"><strong>0</strong><br>Losses</a><a class="nm-item to-draw"><strong>0</strong><br>Draws</a><a class="nm-item to-playing"><strong>0</strong><br>Playing</a></div><div class="search__result"><div class="games infinite-scroll"></div></div></div></div></main></div></body></html>
+<!doctype html>
+<html lang="en">
+
+<head>
+  <title>ChessiL - User profile</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
+  <meta name="description" content="User profile page with ratings and game history">
+  <meta name="keywords" content="chess, profile, user, ratings, game, history">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/light.css">
+  <script src="/connections.js"></script>
+  <script src="/header.js"></script>
+  <script src="/u.js"></script>
+  <script src="/chessil.js"></script>
+  <link rel="preload" href="/lichess.chess.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/lichess.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+
+<body>
+  <header>
+    <div class="z"><input type="checkbox" id="x" class="n" autocomplete="off"><label for="x" class="q"></label><label
+        for="x" class="r"><span class="u"></span></label>
+      <div class="t"><a href="/en">Chess<span>iL</span></a></div>
+      <nav id="n">
+        <div class="m"><a href="/en/">Home</a></div>
+      </nav>
+    </div>
+    <div class="site-buttons">
+      <div id="clinput"><a class="link"><span data-icon=""></span></a><input spellcheck="false" autocomplete="off"
+          placeholder="Search" enterkeyhint="search">
+        <div class="complete-list none"></div>
+      </div>
+      <div class="dasher"><button class="toggle link anon"><span data-icon="" "=""></span></button><div id="
+            dasher_app" class="dropdown">
+            <div class="sub langs"><button class="head text" data-icon="" type="button">Language</button>
+              <form method="post" action="/language"><button class="current accepted" type="submit" name="lang"
+                  value="en" title="en">English</button><button type="submit" name="lang" value="es"
+                  title="es">Español</button><button type="submit" name="lang" value="zh" title="zh">中文</button></form>
+            </div>
+            <div class="sub background"><button class="head text" data-icon="" type="button">Theme</button>
+              <div class="selector"><button id="lightmode" type="button">Light</button><button id="darkmode"
+                  type="button">Dark</button></div>
+            </div>
+            <div>
+              <div class="subs"><button class="sub" data-icon="" type="button">Language</button><button class="sub"
+                  data-icon="" type="button">Theme</button></div>
+            </div>
+      </div>
+    </div>
+    <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count" data-count="0"
+          data-icon="" "=""></span></button><div id=" challenge-app" class="links dropdown rendered">
+          <div class="empty text">No challenges.</div>
+    </div>
+    </div>$loginoruserbutton</div>
+  </header>
+  <div id="main-wrap">
+    <main class="page-menu" data-username="$username">
+      <aside class="page-menu__menu">
+        <div class="side sub-ratings"><a data-icon=""><span>
+              <h3>Ultrabullet</h3>
+              <rating><strong>0</strong> <span>
+                  <n>0</n> games
+                </span></rating>
+            </span></a><a data-icon=""><span>
+              <h3>Bullet</h3>
+              <rating><strong>0</strong> <span>
+                  <n>0</n> games
+                </span></rating>
+            </span></a><a data-icon=""><span>
+              <h3>Blitz</h3>
+              <rating><strong>0</strong> <span>
+                  <n>0</n> games
+                </span></rating>
+            </span></a><a data-icon=""><span>
+              <h3>Rapid</h3>
+              <rating><strong>0</strong> <span>
+                  <n>0</n> games
+                </span></rating>
+            </span></a><a data-icon=""><span>
+              <h3>Classical</h3>
+              <rating><strong>0</strong> <span>
+                  <n>0</n> games
+                </span></rating>
+            </span></a></div>
+      </aside>
+      <div class="page-menu__content box user-show">
+        <div class="box__top user-show__header">
+          <h1><span class="online user-link" data-href="/@/$username"><i class="line"></i>$username</span></h1>
+          <div class="btn-rack__btn" data-icon=""></div>
+        </div>
+        <div class="angle-content">
+          <div class="number-menu number-menu--tabs menu-box-pop" id="games"><a
+              class="nm-item to-all active"><strong>0</strong><br>Games</a><a
+              class="nm-item to-rated"><strong>0</strong><br>Rated</a><a
+              class="nm-item to-win"><strong>0</strong><br>Wins</a><a
+              class="nm-item to-loss"><strong>0</strong><br>Losses</a><a
+              class="nm-item to-draw"><strong>0</strong><br>Draws</a><a
+              class="nm-item to-playing"><strong>0</strong><br>Playing</a></div>
+          <div class="search__result">
+            <div class="games infinite-scroll"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+
+</html>
