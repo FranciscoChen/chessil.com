@@ -1,1 +1,27 @@
-function blogs(){var xhr=new XMLHttpRequest;xhr.open("POST","/newblogs",true);xhr.send();xhr.onreadystatechange=function(){if(this.readyState!=4)return;if(this.status==200){const bl=JSON.parse(this.responseText);const ln=bl.length;const blogcards=document.getElementsByClassName("lobby__blog")[0];for(var i=0;i<ln;++i){const info=bl[i];const se=document.createElement("a");se.setAttribute("class","ublog-post-card ublog-post-card--link");se.setAttribute("href","/blog/"+info.d.slice(0,10));var ih="";ih+='<img src="'+info.i+'" class="ublog-post-card__image" width="400" height="250">';ih+='<span class="ublog-post-card__content"><h2 class="ublog-post-card__title">'+info.t+"</h2>";ih+='<time datetime="'+info.d+'" class="ublog-post-card__over-image">'+new Date(Date.parse(info.d)).toLocaleString({en:"en-GB",es:"es-ES",zh:"zh-CN"}[lang],{timeZone:"UTC"})+"</time></span>";se.innerHTML=ih;blogcards.appendChild(se)}}}}
+function blogs() {
+  var xhr = new XMLHttpRequest;
+  xhr.open("POST", "/newblogs", true);
+  xhr.send();
+  xhr.onreadystatechange = function() {
+    if (this.readyState != 4) return;
+    if (this.status == 200) {
+      const bl = JSON.parse(this.responseText)
+      const ln = bl.length
+      const blogcards = document.getElementsByClassName('lobby__blog')[0]
+      for (var i = 0; i < ln; ++i){
+        const info = bl[i]
+        const se= document.createElement('a')
+        se.setAttribute('class','ublog-post-card ublog-post-card--link')
+        se.setAttribute('href','/blog/'+info.d.slice(0,10))
+        var ih = ''
+        ih += '<img src="'+info.i+'" class="ublog-post-card__image" width="400" height="250">'
+        ih += '<span class="ublog-post-card__content"><h2 class="ublog-post-card__title">'+info.t+'</h2>'
+        ih += '<time datetime="'+info.d+'" class="ublog-post-card__over-image">'+(new Date(Date.parse(info.d))).toLocaleString({en:'en-GB',es:'es-ES',zh:'zh-CN'}[lang], { timeZone: 'UTC' })+'</time></span>'
+        se.innerHTML = ih
+	console.log(info)
+        blogcards.appendChild(se)
+	console.log(blogcards)
+      }
+    }
+  }
+}
