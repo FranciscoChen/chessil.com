@@ -1,26 +1,26 @@
 window.onload = () => {
-  if (typeof headerfunctions === 'function'){
+  if (typeof headerfunctions === 'function') {
     headerfunctions()
   }
-  if (typeof pwcomplexity === 'function'){
+  if (typeof pwcomplexity === 'function') {
     pwcomplexity()
   }
-  if (typeof inputusername === 'function'){
+  if (typeof inputusername === 'function') {
     inputusername()
   }
-  if (typeof seekfunctions === 'function'){
+  if (typeof seekfunctions === 'function') {
     seekfunctions()
   }
-  if (typeof wsconnect === 'function'){
+  if (typeof wsconnect === 'function') {
     wsconnect('ws0')
   }
-  if (typeof roundstart === 'function'){
+  if (typeof roundstart === 'function') {
     roundstart()
   }
-  if (typeof userpageload === 'function'){
+  if (typeof userpageload === 'function') {
     userpageload()
   }
-  if (typeof blogs === 'function'){
+  if (typeof blogs === 'function') {
     blogs()
   }
 }
