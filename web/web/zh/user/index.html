@@ -22,43 +22,46 @@
 <body>
   <header>
     <div class="z">
-        <input type="checkbox" id="x" class="n" autocomplete="off">
-        <label for="x" class="q"></label>
-        <label for="x" class="r">
-            <span class="u"></span>
-        </label>
+      <input type="checkbox" id="x" class="n" autocomplete="off">
+      <label for="x" class="q"></label>
+      <label for="x" class="r">
+        <span class="u"></span>
+      </label>
       <div class="t"><a href="/zh">棋<span>赛</span></a></div>
       <nav id="n">
         <div class="m"><a href="/zh/">主页</a></div>
       </nav>
     </div>
     <div class="site-buttons">
-      <div id="clinput"><a class="link"><span></span></a><input spellcheck="false" autocomplete="off"
-          placeholder="搜索" enterkeyhint="search">
+      <div id="clinput"><a class="link"><span></span></a><input spellcheck="false" autocomplete="off" placeholder="搜索"
+          enterkeyhint="search">
         <div class="complete-list none"></div>
       </div>
-    <div class="dasher"><button class="toggle link anon"><span></span></button><div id="dasher_app" class="dropdown">
-            <div class="sub langs"><button class="head text" type="button">语言</button>
-              <form method="post" action="/language"><button type="submit" name="lang" value="en"
-                  title="en">English</button><button type="submit" name="lang" value="es"
-                  title="es">Español</button><button class="current accepted" type="submit" name="lang" value="zh"
-                  title="zh">中文</button></form>
+      <div class="dasher"><button class="toggle link anon"><span></span></button>
+        <div id="dasher_app" class="dropdown">
+          <div class="sub langs"><button class="head text" type="button">语言</button>
+            <form method="post" action="/language"><button type="submit" name="lang" value="en"
+                title="en">English</button><button type="submit" name="lang" value="es"
+                title="es">Español</button><button class="current accepted" type="submit" name="lang" value="zh"
+                title="zh">中文</button></form>
+          </div>
+          <div class="sub background"><button class="head text" type="button">背景</button>
+            <div class="selector"><button id="lightmode" type="button">浅色</button><button id="darkmode"
+                type="button">深色</button></div>
+          </div>
+          <div>
+            <div class="subs"><button class="sub" type="button">语言</button><button class="sub" type="button">背景</button>
             </div>
-            <div class="sub background"><button class="head text" type="button">背景</button>
-              <div class="selector"><button id="lightmode" type="button">浅色</button><button id="darkmode"
-                  type="button">深色</button></div>
-            </div>
-            <div>
-              <div class="subs"><button class="sub" type="button">语言</button><button class="sub"
-                  type="button">背景</button></div>
-            </div>
+          </div>
+        </div>
       </div>
-    </div>
-<div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count" data-count="0"></span></button><div id="challenge-app" class="links dropdown rendered">
+      <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count"
+            data-count="0"></span></button>
+        <div id="challenge-app" class="links dropdown rendered">
           <div class="empty text">No challenges.</div>
-    </div>
-  </div>
-  <div id="user"></div>
+        </div>
+      </div>
+      <div id="user"></div>
   </header>
   <div id="main-wrap">
     <main class="page-menu" data-username="$username">
