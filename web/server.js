@@ -42,24 +42,9 @@ const websocketpassword = websocket.credentials
 const domainname = 'https://chessil.com'
 
 const languages = {
-  en: { dir: '/en', en: 'English' },
-  es: { dir: '/es', es: 'Español' },
-  zh: { dir: '/zh', zh: '中文' }
-}
-const loginword = {
-  en: 'Login',
-  es: 'Iniciar Sesión',
-  zh: '登录'
-}
-const signoutword = {
-  en: 'Sign out',
-  es: 'Cerrar Sesión',
-  zh: '登出'
-}
-const profileword = {
-  en: 'Profile',
-  es: 'Perfil',
-  zh: '资料'
+  en: true,
+  es: true,
+  zh: true,
 }
 
 // This is the root directory of the website, everything inside here could be requested
@@ -439,20 +424,6 @@ function userpage(filename, mime, ext, res, req, resHeaders, sessiondata) {
           resHeaders["Content-Type"] = mime.data[ext];
           fs.readFile(filename, function (err, data) {
             if (!err) {
-              // customise html data with user variables
-              var loginoruserhtml
-              if (sessiondata[5] === 'u') {
-                loginoruserhtml = '<a href="/login" class="signin button button-empty">' + loginword[sessiondata[3]] + '</a>'
-              } else {
-                loginoruserhtml = '<div id="user_button"><a id="user_tag" class="toggle link">' + sessiondata[5] + '</a><div id="dasher_user_app" class="dropdown"><div><div class="links"><a class="user-link online text is-green" href="/@/' + sessiondata[5] + '" >' + profileword[sessiondata[3]] + '</a><form class="logout" method="post" action="/logout"><button class="text" type="submit" >' + signoutword[sessiondata[3]] + '</button></form></div></div></div></div>'
-              }
-              data = Buffer.from(
-                data.toString('utf8')
-                  .replaceAll('$loginoruserbutton', loginoruserhtml)
-                  .replaceAll('light.css', { l: 'light.css', d: 'dark.css', n: 'default.css' }[sessiondata[2]])
-
-                  .replaceAll('$username', response.rows[0].username)
-                , 'utf8')
               // gzip compression only to text
               if (typeof req.headers['accept-encoding'] !== 'undefined' && req.headers['accept-encoding'].indexOf('gzip') !== -1 && typeof mime.gzip[ext] !== 'undefined') {
                 resHeaders["Content-Encoding"] = "gzip";
@@ -514,48 +485,6 @@ function gamepage(filename, mime, ext, res, req, resHeaders, sessiondata) {
           resHeaders["Content-Type"] = mime.data[ext];
           fs.readFile(filename, function (err, data) {
             if (!err) {
-              // customise html data with user variables
-              var loginoruserhtml
-              if (sessiondata[5] === 'u') {
-                loginoruserhtml = '<a href="/login" class="signin button button-empty">' + loginword[sessiondata[3]] + '</a>'
-              } else {
-                loginoruserhtml = '<div id="user_button"><a id="user_tag" class="toggle link">' + sessiondata[5] + '</a><div id="dasher_user_app" class="dropdown"><div><div class="links"><a class="user-link online text is-green" href="/@/' + sessiondata[5] + '" >' + profileword[sessiondata[3]] + '</a><form class="logout" method="post" action="/logout"><button class="text" type="submit" >' + signoutword[sessiondata[3]] + '</button></form></div></div></div></div>'
-              }
-              var side = 's'
-              if (sessiondata[1] == 0) {
-                // Anon
-                if (req.headers['cookie'].slice(2) === response.rows[0].session1) side = 'w'
-                if (req.headers['cookie'].slice(2) === response.rows[0].session2) side = 'b'
-              } else {
-                // Registered user
-                if (sessiondata[1] === response.rows[0].userid1) side = 'w'
-                if (sessiondata[1] === response.rows[0].userid2) side = 'b'
-              }
-              data = Buffer.from(
-                data.toString('utf8')
-                  .replaceAll('$loginoruserbutton', loginoruserhtml)
-                  .replaceAll('light.css', { l: 'light.css', d: 'dark.css', n: 'default.css' }[sessiondata[2]])
-
-                  .replaceAll('$username1', response.rows[0].username1 || 'NN')
-                  .replaceAll('$username2', response.rows[0].username2 || 'NN')
-                  .replaceAll('$gameserver', response.rows[0].gameserver)
-                  //          .replaceAll('$moves',response.rows[0].moves)
-                  //          .replaceAll('$clock',response.rows[0].clock)
-                  //              .replaceAll('$events',response.rows[0].events)
-                  //            .replaceAll('$eclock',response.rows[0].eventsclock)
-                  .replaceAll('$rated', response.rows[0].rated)
-                  .replaceAll('$state', response.rows[0].state)
-                  //         .replaceAll('$result',response.rows[0].result)
-                  .replaceAll('$initialtime', response.rows[0].initialtime)
-                  .replaceAll('$increment', response.rows[0].increment)
-                  .replaceAll('$rating1', response.rows[0].rating1 || '')
-                  .replaceAll('$rating2', response.rows[0].rating2 || '')
-                  //                .replaceAll('$ratingdiff1',response.rows[0].ratingdiff1)
-                  //                .replaceAll('$ratingdiff2',response.rows[0].ratingdiff2)
-                  .replaceAll('$created', response.rows[0].created)
-                  .replaceAll('$side', side)
-
-                , 'utf8')
               // gzip compression only to text
               if (typeof req.headers['accept-encoding'] !== 'undefined' && req.headers['accept-encoding'].indexOf('gzip') !== -1 && typeof mime.gzip[ext] !== 'undefined') {
                 resHeaders["Content-Encoding"] = "gzip";
@@ -607,20 +536,6 @@ function serve(filename, mime, ext, res, req, resHeaders, sessiondata) {
       resHeaders["Content-Type"] = mime.data[ext];
       fs.readFile(filename, function (err, data) {
         if (!err) {
-          if (ext === '.html') {
-            // customise html data with user variables
-            var loginoruserhtml
-            if (sessiondata[5] === 'u') {
-              loginoruserhtml = '<a href="/login" class="signin button button-empty">' + loginword[sessiondata[3]] + '</a>'
-            } else {
-              loginoruserhtml = '<div id="user_button"><a id="user_tag" class="toggle link">' + sessiondata[5] + '</a><div id="dasher_user_app" class="dropdown"><div><div class="links"><a class="user-link online text is-green" href="/@/' + sessiondata[5] + '" >' + profileword[sessiondata[3]] + '</a><form class="logout" method="post" action="/logout"><button class="text" type="submit" >' + signoutword[sessiondata[3]] + '</button></form></div></div></div></div>'
-            }
-            data = Buffer.from(
-              data.toString('utf8')
-                .replaceAll('$loginoruserbutton', loginoruserhtml)
-                .replaceAll('light.css', { l: 'light.css', d: 'dark.css', n: 'default.css' }[sessiondata[2]])
-              , 'utf8')
-          }
           // gzip compression only to text
           if (typeof req.headers['accept-encoding'] !== 'undefined' && req.headers['accept-encoding'].indexOf('gzip') !== -1 && typeof mime.gzip[ext] !== 'undefined') {
             resHeaders["Content-Encoding"] = "gzip";
