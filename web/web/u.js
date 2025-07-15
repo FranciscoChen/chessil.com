@@ -367,7 +367,7 @@ function dbgames(page, query, userid) {
           if (game.w != null) ih += 'href="/@/' + game.w + '"'
           ih += '>'
           ih += game.w || 'NN'
-          ih += '</a><br>' + whitescore + '</div><div class="swords" data-icon=""></div><div class="player black"><a class="user-link ulpt" '
+          ih += '</a><br>' + whitescore + '</div><div class="swords"></div><div class="player black"><a class="user-link ulpt" '
           if (game.b != null) ih += 'href="/@/' + game.b + '"'
           ih += '>'
           ih += game.b || 'NN'
