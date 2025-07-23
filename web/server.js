@@ -38,7 +38,6 @@ const websocketserver = { '51.68.190.27': true }
 const websocket = require('./websocket.js')
 const websocketpassword = websocket.credentials
 
-
 const domainname = 'https://chessil.com'
 
 const languages = {
@@ -46,6 +45,11 @@ const languages = {
   es: true,
   zh: true,
 }
+
+// Maintenance mode switch
+const maintenance = true;
+// The IPs that are allowed when server is down for maintenance
+const maintenanceips = { '2.38.65.207': true }
 
 // This is the root directory of the website, everything inside here could be requested
 // The name of the folder, which must be in the same directory as this file (server.js)
@@ -61,6 +65,20 @@ const mime = require('./mime.js')
 process.chdir(dir);
 
 var server = http.createServer(function (req, res) {
+
+  if (maintenance === true) {
+    if (typeof req.headers['x-real-ip'] === 'undefined') {
+      res.writeHead(503, { "Content-Type": "text/html" });
+      res.end();
+      return;
+    } else {
+      if (typeof maintenanceips[req.headers['x-real-ip']] === 'undefined') {
+        res.writeHead(503, { "Content-Type": "text/html" });
+        res.end();
+        return;
+      }
+    }
+  }
 
   var filename;
   var url = req.url;
