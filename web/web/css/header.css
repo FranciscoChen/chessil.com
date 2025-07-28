@@ -43,6 +43,54 @@ body.clinput #clinput input {
   width: 0;
 }
 
+.complete-list {
+  box-shadow: 0 14px 28px var(--shadow), 0 10px 10px var(--shadow);
+  border-radius: 3px;
+}
+
+.complete-list {
+  position: absolute;
+  top: 100%;
+  z-index: 112;
+  width: 14em;
+  min-height: 2em;
+  background-color: var(--bg);
+}
+
+.complete-parent {
+  position: relative
+}
+
+.complete-list__empty {
+  color: var(--text);
+  text-align: center;
+  font-style: italic;
+  padding: 1em
+}
+
+.complete-result {
+  color: var(--text);
+  padding: .4em 0 .4em .4em;
+  display: block;
+  cursor: pointer;
+  text-align: left
+}
+
+.complete-result:hover,
+.complete-result:focus,
+.complete-result.complete-selected {
+  background: var(--link)
+}
+
+.complete-result:hover,
+.complete-result:hover i,
+.complete-result:focus,
+.complete-result:focus i,
+.complete-result.complete-selected,
+.complete-result.complete-selected i {
+  color: var(--bg) !important
+}
+
 #user_tag {
   padding-right: 1rem;
   white-space: nowrap
