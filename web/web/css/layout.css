@@ -2,6 +2,14 @@
     --max-width: 1800px;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+  margin: 0;
+  padding: 0;
+}
+
 html {
   min-height: 100%;
   box-sizing: border-box;
