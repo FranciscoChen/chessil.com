@@ -88,11 +88,11 @@ body.clinput #clinput input {
 .complete-result:focus i,
 .complete-result.complete-selected,
 .complete-result.complete-selected i {
-  color: var(--bg) !important
+  color: var(--bg)
 }
 
 .none {
-  display: none !important;
+  display: none;
 }
 
 #user_tag {
