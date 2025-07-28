@@ -11,6 +11,31 @@ header {
   max-width: 1800px;
 }
 
+#clinput {
+  display: flex;
+  height: 60px;
+}
+#clinput input:focus {
+  outline: none;
+}
+
+body.clinput #clinput input {
+  width: 20ch;
+}
+
+#clinput input,
+.subnav a {
+  color: #999;
+}
+
+#clinput input {
+  line-height: 60px;
+  background: none;
+  padding: 0;
+  border: 0;
+  width: 0;
+}
+
 #user_tag {
   padding-right: 1rem;
   white-space: nowrap
