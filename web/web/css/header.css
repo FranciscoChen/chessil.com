@@ -1,4 +1,7 @@
-/* Nav start */
+:root {
+  --header-height: 60px;
+}
+
 header {
   display: flex;
   justify-content: space-between;
@@ -20,7 +23,7 @@ header {
 
 #clinput {
   display: flex;
-  height: 60px;
+  height: var(--header-height);
 }
 
 #clinput input:focus {
@@ -31,13 +34,9 @@ body.clinput #clinput input {
   width: 20ch;
 }
 
-#clinput input,
-.subnav a {
-  color: #999;
-}
-
 #clinput input {
-  line-height: 60px;
+  color: var(--text2);
+  line-height: var(--header-height);
   background: none;
   padding: 0;
   border: 0;
