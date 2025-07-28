@@ -12,6 +12,10 @@ header {
 
 .icon-search {
   background-image: url("/img/icons/search.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: var(--icons);
+  width: var(--header-height);
 }
 
 #clinput {
