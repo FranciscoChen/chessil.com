@@ -91,6 +91,10 @@ body.clinput #clinput input {
   color: var(--bg) !important
 }
 
+.none {
+  display: none !important;
+}
+
 #user_tag {
   padding-right: 1rem;
   white-space: nowrap
