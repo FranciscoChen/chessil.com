@@ -421,10 +421,10 @@ if (this.status == 201) {
         }
       }
       if (elementOrAncestorHasClass(e.target, 'head text')) {
-        elementOrAncestorHasClass(e.target, 'sub langs') {
+        if (elementOrAncestorHasClass(e.target, 'sub langs')) {
           dasher.removeChild(dasherlangs)
         }
-        elementOrAncestorHasClass(e.target, 'sub background') {
+        if (elementOrAncestorHasClass(e.target, 'sub background')) {
           dasher.removeChild(dasherbackground)
         }
         dasher.appendChild(dashermain)
