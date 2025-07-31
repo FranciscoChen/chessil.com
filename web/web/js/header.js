@@ -421,8 +421,12 @@ if (this.status == 201) {
         }
       }
       if (elementOrAncestorHasClass(e.target, 'head text')) {
-        dasher.removeChild(dasherlangs)
-        dasher.removeChild(dasherbackground)
+        elementOrAncestorHasClass(e.target, 'sub langs') {
+          dasher.removeChild(dasherlangs)
+        }
+        elementOrAncestorHasClass(e.target, 'sub background') {
+          dasher.removeChild(dasherbackground)
+        }
         dasher.appendChild(dashermain)
       }
     } else {
