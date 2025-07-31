@@ -109,7 +109,7 @@ body.clinput #clinput input {
 }
 
 header button {
-  background-color: none;
+  background: none;
   border: none;
 }
 
