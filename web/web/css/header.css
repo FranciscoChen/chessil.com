@@ -167,7 +167,8 @@ header button {
   text-align: start;
 }
 
-#dasher_app .langs button {
+#dasher_app .langs button,
+#dasher_app .background button {
   display: block;
   padding: .7rem .7rem .7rem 1rem;
   border: none;
@@ -177,11 +178,13 @@ header button {
   text-align: left;
 }
 
-#dasher_app .langs .accepted {
+#dasher_app .langs .accepted,
+#dasher_app .background .accepted {
   border-left: 4px solid var(--art);
 }
 
-#dasher_app .langs .current {
+#dasher_app .langs .current,
+#dasher_app .background .current {
   background: var(--link2);
   color: var(--white);
   border-left: none;
@@ -198,7 +201,8 @@ header button {
 }
 
 
-#dasher_app .langs button:hover {
+#dasher_app .langs button:hover,
+#dasher_app .background button:hover {
   background: var(--link);
   color: var(--bg);
 }
