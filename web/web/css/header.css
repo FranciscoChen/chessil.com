@@ -96,9 +96,6 @@ body.clinput #clinput input {
 }
 
 .dropdown {
-}
-
-.dropdown {
   display: none;
   position: absolute;
   right: 0;
@@ -110,6 +107,7 @@ body.clinput #clinput input {
 
 .dasher{
   display:flex;
+  height: var(--header-height);
 }
 
 .icon-settings{
