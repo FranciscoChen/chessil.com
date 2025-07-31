@@ -95,6 +95,119 @@ body.clinput #clinput input {
   display: none;
 }
 
+.dropdown {
+}
+
+.dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: var(--header-height);
+  background: var(--bg);
+  z-index: 108;
+  box-shadow: -1px 5px 6px var(--shadow);
+}
+
+.dasher{
+  display:flex;
+}
+
+.icon-settings{
+  background-image: url("/img/icons/settings.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: var(--icons);
+  width: var(--header-height);
+}
+
+#dasher_app {
+  border-radius: 3px 0 0 3px;
+  width: 225px;
+}
+
+#dasher_app .subs .sub:hover {
+  background: var(--link);
+  color: var(--bg);
+  opacity: 1;
+}
+
+#dasher_app .sub:hover::before {
+  color: #fff;
+  opacity: .9;
+}
+
+#dasher_app .sub::before {
+  float: right;
+  font-size: 80%;
+  margin-top: .25rem;
+  color: #1a73e8;
+}
+
+#dasher_app .subs {
+  padding: 5px 0;
+}
+
+#dasher_app .subs .sub {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  align-items: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  display: block;
+  padding: .5rem 1rem;
+  width: 100%;
+  text-align: start;
+}
+
+#dasher_app .langs button {
+  display: block;
+  padding: .7rem .7rem .7rem 1rem;
+  border: none;
+  background: none;
+  width: 100%;
+  color: var(-- text);
+  text-align: left;
+}
+
+#dasher_app .langs .accepted {
+  border-left: 4px solid var(--art);
+}
+
+#dasher_app .langs .current {
+  background: var(--link2);
+  color: var(--white);
+  border-left: none;
+}
+
+#dasher_app .langs form {
+  max-height: 400px;
+  overflow: auto;
+}
+
+#dasher_app .head::before {
+  color: var(--link);
+  opacity: .8;
+}
+
+
+#dasher_app .langs button:hover {
+  background: var(--link);
+  color: var(--bg);
+}
+
+#dasher_app .head {
+  display: block;
+  padding: 1rem;
+  width: 100%;
+  text-align: start;
+}
+
+#dasher_app .head:hover::before {
+  opacity: 1;
+}
+
 #user_tag {
   padding-right: 1rem;
   white-space: nowrap
