@@ -108,8 +108,8 @@ body.clinput #clinput input {
   display: block;
 }
 
-button {
-  background-color:var(--bg);
+header button {
+  background-color:none;
 }
 
 .dasher {
