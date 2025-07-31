@@ -57,8 +57,8 @@ function headerfunctions() {
   }
   dasher.removeChild(dasherlangs)
   dasher.removeChild(dasherbackground)
-  dashermain = dasher.firstChild
   subs = document.getElementsByClassName("subs")[0];
+  dashermain = subs.parentElement;
   si = document.getElementById('clinput').getElementsByTagName('input')[0]
   sr = document.getElementById('clinput').getElementsByClassName('complete-list')[0]
   if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -87,9 +87,7 @@ function headerfunctions() {
   const ultrabullet = { en: 'Ultrabullet', es: 'Ultrabala', zh: '超弹' }[lang]
   const minsperside = { en: 'Minutes per side: ', es: 'Minutos por jugador: ', zh: '各方限时（分钟）：' }[lang]
   const incrinseconds = { en: 'Increment in seconds: ', es: 'Incremento en segundos: ', zh: '每步加时（秒）：' }[lang]
-  function addCss(fileName) {
 
-  }
   function getseeks() {
     if (document.visibilityState !== "visible") return
     var nchallenges = 0

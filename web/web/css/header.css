@@ -168,7 +168,7 @@ body.clinput #clinput input {
   border: none;
   background: none;
   width: 100%;
-  color: var(-- text);
+  color: var(--text);
   text-align: left;
 }
 
