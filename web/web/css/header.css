@@ -44,17 +44,14 @@ body.clinput #clinput input {
 }
 
 .complete-list {
-  box-shadow: 0 14px 28px var(--shadow), 0 10px 10px var(--shadow);
-  border-radius: 3px;
-}
-
-.complete-list {
   position: absolute;
   top: 100%;
   z-index: 112;
   width: 14em;
   min-height: 2em;
   background-color: var(--bg);
+  box-shadow: 0 14px 28px var(--shadow), 0 10px 10px var(--shadow);
+  border-radius: 3px;
 }
 
 .complete-parent {
@@ -105,15 +102,15 @@ body.clinput #clinput input {
   box-shadow: -1px 5px 6px var(--shadow);
 }
 
-.dasher {
-  display: flex;
-  height: var(--header-height);
-}
-
-.shown {
+.shown .dropdown {
   background: none;
   color: var(--text);
   display: block;
+}
+
+.dasher {
+  display: flex;
+  height: var(--header-height);
 }
 
 .icon-settings {
