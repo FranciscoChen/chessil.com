@@ -218,6 +218,15 @@ header button {
   opacity: 1;
 }
 
+.icon-games {
+  background-image: url("/img/icons/chessboard.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: var(--icons);
+  width: var(--header-height);
+}
+
+
 #user_tag {
   padding-right: 1rem;
   white-space: nowrap
