@@ -223,12 +223,13 @@ header button {
 }
 
 .icon-games {
-  background-image: url("/img/icons/chessboard.svg");
+  background-image: url("/img/icons/quarterboard.svg");
   background-repeat: no-repeat;
   background-position: center;
   filter: var(--icons);
   width: var(--header-height);
   height: var(--header-height);
+  transform: scale(0.6);
 }
 
 
