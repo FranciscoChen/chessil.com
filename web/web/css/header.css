@@ -228,6 +228,7 @@ header button {
   background-position: center;
   filter: var(--icons);
   width: var(--header-height);
+  height: var(--header-height);
 }
 
 
