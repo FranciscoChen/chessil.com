@@ -218,6 +218,10 @@ header button {
   opacity: 1;
 }
 
+.seek {
+  height: var(--header-height);
+}
+
 .icon-games {
   background-image: url("/img/icons/chessboard.svg");
   background-repeat: no-repeat;
