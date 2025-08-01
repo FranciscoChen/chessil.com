@@ -1,34 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   viewBox="0 0 1000 1250"
+   viewBox="0 0 1000 1000"
    x="0px"
    y="0px"
-   version="1.1"
-   id="svg2"
-   sodipodi:docname="noun-queen-4923350 - Copy.svg"
-   inkscape:version="1.3 (0e150ed6c4, 2023-07-21)"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview2"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="0.6888"
-     inkscape:cx="499.41928"
-     inkscape:cy="392.71196"
-     inkscape:window-width="1920"
-     inkscape:window-height="1057"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="svg2" />
   <defs
      id="defs1">
     <style
@@ -48,22 +24,5 @@
      d="M875,359.44c0,38.87-28.4,71.11-65.57,77.11l-104.4,253.4,35.34,.1-39.4,9.73v.04l-75.97,18.99h66.25c49.71,0,90,40.3,90,90v66.25H218.75v-66.25c0-49.7,40.29-90,90-90h-1.89c-38.76-94.08-77.53-188.17-116.29-282.26-37.17-6-65.57-38.24-65.57-77.11,0-43.15,34.98-78.13,78.12-78.13s78.13,34.98,78.13,78.13c0,10.6-2.11,20.71-5.94,29.93,10.84,12.57,21.67,25.15,32.51,37.73l.1-39.55,13.75,55.63s.05,.05,.07,.08l22.01,88.05V265.69c-18.97-14.25-31.25-36.94-31.25-62.5,0-43.15,34.98-78.13,78.12-78.13s78.13,34.98,78.13,78.13c0,23.66-10.52,44.86-27.14,59.19,19.46,58.39,38.93,116.79,58.39,175.18,19.46-58.39,38.93-116.79,58.39-175.18-16.62-14.33-27.14-35.53-27.14-59.19,0-43.15,34.98-78.13,78.13-78.13s78.12,34.98,78.12,78.13c0,25.56-12.28,48.25-31.25,62.5v203.12l72-72c-6.05-11.1-9.5-23.84-9.5-37.37,0-43.15,34.98-78.13,78.13-78.13s78.12,34.98,78.12,78.13Z"
      id="path1"
      style="fill:#ffffff;stroke:#000000;stroke-opacity:1;stroke-width:18;stroke-dasharray:none;paint-order:stroke markers fill;stroke-linejoin:round;stroke-linecap:butt" />
-  <text
-     x="0"
-     y="1015"
-     fill="#000000"
-     font-size="5px"
-     font-weight="bold"
-     font-family="'Helvetica Neue', Helvetica, Arial-Unicode, Arial, Sans-serif"
-     style="opacity:0"
-     id="text1">Created by Benjamin Kinard</text>
-  <text
-     x="0"
-     y="1020"
-     fill="#000000"
-     font-size="5px"
-     font-weight="bold"
-     font-family="'Helvetica Neue', Helvetica, Arial-Unicode, Arial, Sans-serif"
-     style="opacity:0"
-     id="text2">from the Noun Project</text>
 </svg>
+<!-- Queen created by Benjamin Kinard from the Noun Project (CC BY 3.0) https://thenounproject.com/icon/queen-4923350/ -->

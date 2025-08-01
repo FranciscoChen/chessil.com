@@ -3,32 +3,8 @@
    viewBox="0 0 1000 1250"
    x="0px"
    y="0px"
-   version="1.1"
-   id="svg2"
-   sodipodi:docname="noun-rook-4923352 - Copy.svg"
-   inkscape:version="1.3 (0e150ed6c4, 2023-07-21)"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview2"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="0.6888"
-     inkscape:cx="499.41928"
-     inkscape:cy="625"
-     inkscape:window-width="1920"
-     inkscape:window-height="1057"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="svg2" />
   <defs
      id="defs1">
     <style
@@ -48,22 +24,5 @@
      d="M781.25,808.81v66.25H218.75v-66.25c0-49.7,40.29-90,90-90h3.75V431.21l-37.22-.12,44.62-11,55.1-13.78h-65c-33.14,0-60-26.86-60-60V188.74c.32-.2,.45-.56,.35-.83-.08-.22-.29-.32-.35-.35,35.16-8.95,77.18-17.63,125-23.57v117.32h62.5v-123.1c20.07-1.23,40.92-1.91,62.5-1.9s42.44,.72,62.5,1.97v123.03h62.5v-117.17c47.32,5.93,88.93,14.54,123.82,23.42,.07,0,.49,.01,.83,.35,.22,.21,.35,.51,.35,.83v157.57c0,33.14-26.86,60-60,60h-2.5v286.98l39.6,.11-39.6,9.79-62.5,15.62h66.25c49.71,0,90,40.3,90,90Z"
      id="path1"
      style="fill:#ffffff;stroke:#000000;stroke-opacity:1;stroke-width:18;stroke-dasharray:none;stroke-linejoin:round;paint-order:stroke fill markers" />
-  <text
-     x="0"
-     y="1015"
-     fill="#000000"
-     font-size="5px"
-     font-weight="bold"
-     font-family="'Helvetica Neue', Helvetica, Arial-Unicode, Arial, Sans-serif"
-     style="opacity:0"
-     id="text1">Created by Benjamin Kinard</text>
-  <text
-     x="0"
-     y="1020"
-     fill="#000000"
-     font-size="5px"
-     font-weight="bold"
-     font-family="'Helvetica Neue', Helvetica, Arial-Unicode, Arial, Sans-serif"
-     style="opacity:0"
-     id="text2">from the Noun Project</text>
 </svg>
+<!-- Rook created by Benjamin Kinard from the Noun Project (CC BY 3.0) https://thenounproject.com/icon/rook-4923352/ -->
