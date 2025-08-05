@@ -248,6 +248,39 @@ header button {
   text-align: center
 }
 
+#dasher_user_app {
+  border-radius: 3px 0 0 3px;
+  width: 225px;
+}
+
+#dasher_user_app .links a:hover,
+#dasher_user_app .links a:hover::before,
+#dasher_user_app .links button:hover {
+  background: var(--link);
+  color: var(--bg);
+  opacity: 1;
+}
+
+#dasher_user_app .links {
+  padding: 5px 0;
+}
+
+#dasher_user_app .links a,
+#dasher_user_app .links button {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  align-items: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  display: block;
+  padding: .5rem 1rem;
+  width: 100%;
+  text-align: start;
+}
+
+
 .z {
   display: flex;
   justify-content: flex-start;
