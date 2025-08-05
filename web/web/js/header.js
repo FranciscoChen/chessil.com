@@ -456,7 +456,7 @@ if (this.status == 201) {
           userbutton.classList.toggle('shown')
         }
       } else {
-        userbutton.classList = ''
+        userbutton.classList = 'icon-user'
       }
     }
   }
