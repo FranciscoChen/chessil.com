@@ -1,4 +1,5 @@
 var settings, userbutton, dasher, subs, dashermain, dasherlangs, dasherbackground, clinput, lang, tto, si, sr, noresults, nochallenges, cr
+var loggedin = 0
 const accepticon = ''
 const seekicon = ''
 const declineicon = ''
@@ -464,4 +465,29 @@ if (this.status == 201) {
   getseeks()
 }
 
+function isloggedin() {
+  var xhr = new XMLHttpRequest;
+  xhr.open("POST", "/loggedin", true);
+  xhr.send();
+  xhr.onreadystatechange = function () {
+    if (this.readyState != 4)
+      return;
+    if (this.status == 200) {
+      loggedin = 1*this.responseText
+      updateuserbutton();
+    }
+  }
+}
 
+function updateuserbutton() {
+  if (loggedin === 1) {
+    document.getElementById('login').classList.add('none')
+    document.getElementById('logout').classList.remove('none')
+    document.getElementById('profile').classList.remove('none')
+  }
+  if (loggedin === 0) {
+    document.getElementById('login').classList.remove('none')
+    document.getElementById('logout').classList.add('none')
+    document.getElementById('profile').classList.add('none')
+  }
+}

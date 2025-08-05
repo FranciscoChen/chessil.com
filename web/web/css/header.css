@@ -88,10 +88,6 @@ body.clinput #clinput input {
   color: var(--bg)
 }
 
-.none {
-  display: none;
-}
-
 .dropdown {
   display: none;
   position: absolute;

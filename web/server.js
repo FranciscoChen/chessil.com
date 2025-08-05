@@ -326,6 +326,10 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
     res.end();
     return
   }
+  if (req.url === '/loggedin' && req.method === 'POST') {
+    loggedin(filename, mime, ext, res, req, resHeaders, sessiondata)
+    return
+  }
   // If the request is a POST for account creation (config nginx to rate limit this one for all languages)
   if (req.url === '/register' && req.method === 'POST') {
     registration(filename, mime, ext, res, req, resHeaders, sessiondata)
@@ -1020,6 +1024,17 @@ function logout(filename, mime, ext, res, req, resHeaders, sessiondata) {
     }
   });
 }
+
+function loggedin(filename,mime,ext,res,req,resHeaders,sessiondata){
+  if (sessiondata.userid !== '0') {
+    res.writeHead(200, {"Content-Type": "text/html"});
+    res.end('1');
+  } else {
+    res.writeHead(200, {"Content-Type": "text/html"});
+    res.end('0');
+  }
+}
+
 function setlanguage(filename, mime, ext, res, req, resHeaders, sessiondata) {
   req.on('data', setlang)
   function setlang(chunk) {

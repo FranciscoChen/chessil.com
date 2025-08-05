@@ -44,3 +44,7 @@ body {
 main {
   grid-area: main
 }
+
+.none {
+  display: none !important;
+}
