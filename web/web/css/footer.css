@@ -9,8 +9,6 @@ footer{
   z-index:6;
   background:var(--bg);
   margin: 0 auto;
-}
-footer{
   height: var(--footer-height);
   display: grid;
   grid-template-areas:
