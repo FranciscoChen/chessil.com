@@ -452,11 +452,11 @@ if (this.status == 201) {
     }
     if (userbutton !== null) {
       if (elementOrAncestorHasId(e.target, 'user_button')) {
-        if (e.target.className === 'toggle link') {
+        if (e.target.classList.contains('toggle')) {
           userbutton.classList.toggle('shown')
         }
       } else {
-        userbutton.classList = 'icon-user'
+        userbutton.classList = 'icon-user toggle'
       }
     }
   }
