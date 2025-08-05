@@ -248,6 +248,11 @@ header button {
   text-align: center
 }
 
+#challenge-app .empty {
+  background: #fff;
+  padding: 2rem 0
+}
+
 #dasher_user_app {
   border-radius: 3px 0 0 3px;
   width: 225px;
