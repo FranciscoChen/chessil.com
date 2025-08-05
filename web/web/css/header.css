@@ -241,9 +241,11 @@ header button {
   height: var(--header-height);
 }
 
-#user_tag {
-  padding-right: 1rem;
-  white-space: nowrap
+#challenge-app {
+  overflow: hidden;
+  right: 0;
+  width: 200px;
+  text-align: center
 }
 
 .z {
