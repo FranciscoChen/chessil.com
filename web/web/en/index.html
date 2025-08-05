@@ -58,7 +58,19 @@
         <div class="empty text">No challenges.</div>
       </div>
     </div>
-    <div id="user"></div>
+    <div id="user">
+      <div id="user_button" class="icon-user">
+        <a id="user_tag" class="toggle link"></a>
+        <div id="dasher_user_app" class="dropdown">
+          <div>
+            <div class="links">
+              <a class="user-link online text is-green" href="/profile" >My profile</a>
+              <form class="logout" method="post" action="/logout"><button class="text" type="submit" >Sign out</button></form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 </header>
 <div class="lobby">
   <div class="lobby__app lobby__app-pools">
