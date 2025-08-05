@@ -232,6 +232,14 @@ header button {
   transform: scale(0.5);
 }
 
+.icon-user {
+  background-image: url("/img/icons/account.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: var(--icons);
+  width: var(--header-height);
+  height: var(--header-height);
+}
 
 #user_tag {
   padding-right: 1rem;
