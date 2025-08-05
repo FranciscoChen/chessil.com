@@ -229,7 +229,7 @@ header button {
   filter: var(--icons);
   width: var(--header-height);
   height: var(--header-height);
-  transform: scale(0.6);
+  transform: scale(0.5);
 }
 
 
