@@ -33,9 +33,15 @@
 .showcase-action {
   grid-column: 2 / 4;
   grid-row: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .showcase-alternative {
   grid-column: 6 / 8;
   grid-row: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
