@@ -12,22 +12,29 @@
   grid-auto-rows: repeat(8, 1fr);
 }
 
+
 .showcase-headings {
   grid-column: 2 / 8;
   grid-row: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .showcase-paragraph {
   grid-column: 2 / 8;
   grid-row: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .showcase-action {
-  grid-column: 3 / 4;
+  grid-column: 2 / 4;
   grid-row: 5;
 }
 
 .showcase-alternative {
-  grid-column: 5 / 6;
+  grid-column: 6 / 8;
   grid-row: 5;
 }
