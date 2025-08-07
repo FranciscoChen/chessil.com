@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/css/colors.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/footer.css">
+  <link rel="stylesheet" href="/css/showcase.css">
   <script src="/js/connections.js"></script>
   <script src="/js/seek.js"></script>
   <script src="/js/header.js"></script>
@@ -37,18 +38,16 @@
     </div>
     <div class="dasher"><button class="toggle link anon icon-settings"><span></span></button>
       <div id="dasher_app" class="dropdown">
-        <div class="sub langs"><button class="head text" type="button">Language</button>
+        <div class="sub langs"><button class="head text">Language</button>
           <form method="post" action="/language"><button class="current accepted" type="submit" name="lang" value="en"
               title="en">English</button><button type="submit" name="lang" value="es" title="es">Español</button><button
               type="submit" name="lang" value="zh" title="zh">中文</button></form>
         </div>
-        <div class="sub background"><button class="head text" type="button">Theme</button>
-          <div class="selector"><button id="lightmode" type="button">Light</button><button id="darkmode"
-              type="button">Dark</button></div>
+        <div class="sub background"><button class="head text">Theme</button>
+          <div class="selector"><button id="lightmode">Light</button><button id="darkmode">Dark</button></div>
         </div>
         <div>
-          <div class="subs"><button class="sub" type="button">Language</button><button class="sub"
-              type="button">Theme</button></div>
+          <div class="subs"><button class="sub">Language</button><button class="sub">Theme</button></div>
         </div>
       </div>
     </div>
@@ -76,11 +75,20 @@
 </header>
 <div class="main-wrap">
   <div class="main">
-    <div class="play">
+    <div class="showcase">
+      <h1 class="showcase-headings">Play</h1>
+      <p class="showcase-paragraph">Play a casual chess game or perhaps, find a more suitable one</p>
+      <button class="action">Easy Game</button><button class="alternative" type="button">Enter Lobby</button>
     </div>
-    <div class="exercise">
+    <div class="showcase">
+      <h1 class="showcase-headings">Exercise</h1>
+      <p class="showcase-paragraph">Drill your openings and practise your endings</p>
+      <button class="action">Random Opening</button><button class="alternative" type="button">Endgame exercise</button>
     </div>
-    <div class="research">
+    <div class="showcase">
+      <h1 class="showcase-headings">Research</h1>
+      <p class="showcase-paragraph">Explore strategies and discover new ways to play the game</p>
+      <button class="action">Top strategies</button><button class="alternative" type="button">Browse Database</button>
     </div>
   </div>
 </div>

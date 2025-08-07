@@ -1,0 +1,46 @@
+:root{
+    --main-max-width: 1400px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+head {
+  display: none;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.main-wrap {
+  display: grid;
+  grid-template-areas: ". . main . .";
+  grid-template-columns: 1vw 1fr minmax(auto,var(--main-max-width)) 1fr 1vw;
+  margin-top: 0;
+  min-height: calc(100vh - (var(--footer-height) + var(--header-height)));
+}
+
+@media (max-width: 799.3px) and (orientation:portrait) {
+  .main-wrap {
+    grid-template-columns:0 1fr minmax(auto,calc(100vh - 60px - 100px - 3.5em)) 1fr 0
+  }
+}
+
+.main {
+  grid-area: main
+}
+
+.none {
+  display: none !important;
+}
