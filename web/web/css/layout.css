@@ -23,7 +23,7 @@ body {
   overflow-x: hidden;
 }
 
-#main-wrap {
+.main-wrap {
   display: grid;
   grid-template-areas: ". . main . .";
   --main-max-width: 1300px;
@@ -32,16 +32,16 @@ body {
 }
 
 @media (max-width: 799.3px) and (orientation:portrait) {
-  #main-wrap {
+  .main-wrap {
     grid-template-columns:0 1fr minmax(auto,calc(100vh - 60px - 100px - 3.5em)) 1fr 0
   }
 }
 
-#main-wrap {
+.main-wrap {
   min-height: calc(100vh - (var(--footer-height) + var(--header-height)));
 }
 
-main {
+.main {
   grid-area: main
 }
 
