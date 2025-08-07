@@ -9,7 +9,8 @@
 .showcase-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  grid-auto-rows: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  min-height: 100%;
 }
 
 
