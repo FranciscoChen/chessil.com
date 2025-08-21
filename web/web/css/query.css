@@ -1,0 +1,21 @@
+.main {
+  display: grid;
+}
+
+.query {
+  min-height: 20vh;
+}
+
+.results {
+  min-height: 80vh;
+}
+
+.query-flex {
+  display: flex;
+  min-height: 100%;
+}
+
+.results-flex {
+  display: flex;
+  min-height: 100%;
+}
