@@ -49,7 +49,7 @@ const languages = {
 // Maintenance mode switch
 const maintenance = true;
 // The IPs that are allowed when server is down for maintenance
-const maintenanceips = { '2.38.65.207': true }
+const maintenanceips = { '2.38.67.180': true }
 
 // This is the root directory of the website, everything inside here could be requested
 // The name of the folder, which must be in the same directory as this file (server.js)
