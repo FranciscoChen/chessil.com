@@ -110,3 +110,28 @@ window.addEventListener("DOMContentLoaded", function () {
   // Initial load with defaults
   loadLobby();
 });
+
+document.getElementById('create-game').addEventListener('click', function () {
+  var filters = collectFilters(); // reuse your existing function
+
+  const payload = {
+    rated: filters.rated,
+    timecontrol: filters.time,
+    color: (!filters.rated && filters.color ? filters.color : null)
+  };
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/lobby/create', true);
+  xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      var res = JSON.parse(xhr.responseText);
+      if (res.success) {
+        loadLobby(); // reload games list
+      } else {
+        console.error(res.error || "Game creation failed");
+      }
+    }
+  };
+  xhr.send(JSON.stringify(payload));
+});

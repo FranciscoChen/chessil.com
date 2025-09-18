@@ -371,6 +371,16 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
     insertacceptedseek(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
   }
+  if (req.url === '/lobby/create' && req.method === 'POST') {
+    return handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondata);
+  }
+  if (req.url === '/lobby/list' && req.method === 'POST') {
+    return handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata);
+  }
+  if (req.url === '/lobby/action' && req.method === 'POST') {
+    return handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondata);
+  }
+
   if (req.url === '/startchallenge' && req.method === 'POST') {
     pairtargetedseek(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
@@ -1025,12 +1035,12 @@ function logout(filename, mime, ext, res, req, resHeaders, sessiondata) {
   });
 }
 
-function loggedin(filename,mime,ext,res,req,resHeaders,sessiondata){
+function loggedin(filename, mime, ext, res, req, resHeaders, sessiondata) {
   if (sessiondata.userid !== '0') {
-    res.writeHead(200, {"Content-Type": "text/html"});
+    res.writeHead(200, { "Content-Type": "text/html" });
     res.end('1');
   } else {
-    res.writeHead(200, {"Content-Type": "text/html"});
+    res.writeHead(200, { "Content-Type": "text/html" });
     res.end('0');
   }
 }
@@ -1271,38 +1281,6 @@ function userlivegamecount(filename, mime, ext, res, req, resHeaders, sessiondat
     }
   }
 }
-/*
-function usergamecount(filename,mime,ext,res,req,resHeaders,sessiondata){
-  req.on('data', getusergamecount)
-  function getusergamecount(chunk) {
-    req.removeListener('data',getusergamecount);
-    const postcontent = chunk.toString();
-    if (usernameregex.test(postcontent) !== false) {
-      // User input validated
-      var client = new pg.Client(conString);
-      client.connect();
-      client.query('SELECT ultrabullet_win as a, ultrabullet_draw as b, ultrabullet_loss as c, bullet_win as d, bullet_draw as e, bullet_loss as f, blitz_win as g, blitz_draw as h, blitz_loss as i, rapid_win as j, rapid_draw as k, rapid_loss as l, classical_win as m, classical_draw as n, classical_loss as o, unrated_win as p, unrated_draw as q, unrated_loss as r FROM users WHERE canonical = $1', [postcontent.toLowerCase()], (err, response)=>{
-        if (err) {
-          res.writeHead(500, {"Content-Type": "text/html"});
-          res.end();
-          client.end();
-          console.log(err);
-          return
-        }
-        if (response.rows.length === 1) {
-          const re = response.rows[0]
-          res.writeHead(200, {"Content-Type": "text/javascript"});
-          res.end(JSON.stringify({a:re.a,b:re.b,c:re.c,d:re.d,e:re.e,f:re.f,g:re.g,h:re.h,i:re.i,j:re.j,k:re.k,l:re.l,m:re.m,n:re.n,o:re.o,p:re.p,q:re.q,r:re.r}))
-        }
-        client.end()
-      })
-    } else {
-      res.writeHead(400, {"Content-Type": "text/html"});
-      res.end();
-      return;
-    }
-  }
-}*/
 function userratings(filename, mime, ext, res, req, resHeaders, sessiondata) {
   req.on('data', ff)
   function ff(chunk) {
@@ -1365,202 +1343,7 @@ function gamedata(filename, mime, ext, res, req, resHeaders, sessiondata) {
     }
   }
 }
-function insertseek(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  req.on('data', timecontrol)
-  function timecontrol(chunk) {
-    req.removeListener('data', timecontrol);
-    const postcontent = chunk.toString();
-    if (typeof tcs[postcontent] !== 'undefined') {
-      // User input validated
-      const colour = postcontent.slice(-1)
-      const rated = postcontent.slice(-2, -1)
-      const tc = postcontent.slice(0, -2).split('+')
-      if (tc[0] == 0 && tc[1] == 0) {
-        res.writeHead(400, { "Content-Type": "text/html" });
-        res.end();
-        return
-      }
-      crypto.randomBytes(16, (err, buf) => {
-        if (err) {
-          res.writeHead(500, { "Content-Type": "text/html" });
-          res.end();
-          console.log(err);
-        } else {
-          var seekid = buf.toString('hex')
-          var client = new pg.Client(conString);
-          client.connect();
-          client.query('INSERT INTO seeks (id,seekid,sessionid,userid,initialtime,increment,rated,side,created) VALUES (DEFAULT,$1,$2,$3,$4,$5,$6,$7,NOW())', [seekid, req.headers['cookie'].slice(2), sessiondata[1], tc[0], tc[1], { 'r': true, 'u': false }[rated], { 'r': null, 'w': true, 'b': false }[colour]], (err, response) => {
-            if (err) {
-              res.writeHead(500, { "Content-Type": "text/html" });
-              res.end();
-              client.end();
-              console.log(err);
-              return
-            } else {
-              // Seek creation successful return 200 code
-              res.writeHead(200, { "Content-Type": "text/html" });
-              res.end(seekid);
-              client.end()
-            }
-          })
-        }
-      })
-    } else {
-      res.writeHead(400, { "Content-Type": "text/html" });
-      res.end();
-      return;
-    }
-  }
-}
-function inserttargetedseek(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  req.on('data', timecontrol)
-  function timecontrol(chunk) {
-    req.removeListener('data', timecontrol);
-    const pcnt = chunk.toString().split(':');
-    const postcontent = pcnt[0]
-    const target = pcnt[1]
-    if (typeof tcs[postcontent] !== 'undefined' && usernameregex.test(target) === true) {
-      // User input validated
-      const colour = postcontent.slice(-1)
-      const rated = postcontent.slice(-2, -1)
-      const tc = postcontent.slice(0, -2).split('+')
-      if (tc[0] == 0 && tc[1] == 0) {
-        res.writeHead(400, { "Content-Type": "text/html" });
-        res.end();
-        return
-      }
-      crypto.randomBytes(16, (err, buf) => {
-        if (err) {
-          res.writeHead(500, { "Content-Type": "text/html" });
-          res.end();
-          console.log(err);
-        } else {
-          var seekid = buf.toString('hex')
-          var client = new pg.Client(conString);
-          client.connect();
-          client.query('INSERT INTO seeks (id,seekid,sessionid,userid,initialtime,increment,rated,side,target,created) VALUES (DEFAULT,$1,$2,$3,$4,$5,$6,$7,$8,NOW())', [seekid, req.headers['cookie'].slice(2), sessiondata[1], tc[0], tc[1], { 'r': true, 'u': false }[rated], { 'r': null, 'w': true, 'b': false }[colour], target], (err, response) => {
-            if (err) {
-              res.writeHead(500, { "Content-Type": "text/html" });
-              res.end();
-              client.end();
-              console.log(err);
-              return
-            } else {
-              // Seek creation successful return 200 code
-              res.writeHead(200, { "Content-Type": "text/html" });
-              res.end(seekid);
-              client.end()
-            }
-          })
-        }
-      })
-    } else {
-      res.writeHead(400, { "Content-Type": "text/html" });
-      res.end();
-      return;
-    }
-  }
-}
-function insertacceptedseek(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  req.on('data', timecontrol)
-  function timecontrol(chunk) {
-    req.removeListener('data', timecontrol);
-    const pcnt = chunk.toString().split(':');
-    const postcontent = pcnt[0]
-    const target = pcnt[1] // target is now the original seek
-    if (typeof tcs[postcontent] !== 'undefined' && randidregex.test(target) === true) {
-      // User input validated
-      const colour = postcontent.slice(-1)
-      const rated = postcontent.slice(-2, -1)
-      const tc = postcontent.slice(0, -2).split('+')
-      if (tc[0] == 0 && tc[1] == 0) {
-        res.writeHead(400, { "Content-Type": "text/html" });
-        res.end();
-        return
-      }
-      crypto.randomBytes(16, (err, buf) => {
-        if (err) {
-          res.writeHead(500, { "Content-Type": "text/html" });
-          res.end();
-          console.log(err);
-        } else {
-          var seekid = buf.toString('hex')
-          var client = new pg.Client(conString);
-          client.connect();
-          client.query('INSERT INTO seeks (id,seekid,sessionid,userid,initialtime,increment,rated,side,acceptedseek,created) VALUES (DEFAULT,$1,$2,$3,$4,$5,$6,$7,$8,NOW())', [seekid, req.headers['cookie'].slice(2), sessiondata[1], tc[0], tc[1], { 'r': true, 'u': false }[rated], { 'r': null, 'w': true, 'b': false }[colour], target], (err, response) => {
-            if (err) {
-              res.writeHead(500, { "Content-Type": "text/html" });
-              res.end();
-              client.end();
-              console.log(err);
-              return
-            } else {
-              // Seek creation successful return 200 code
-              res.writeHead(200, { "Content-Type": "text/html" });
-              res.end(seekid);
-              client.end()
-            }
-          })
-        }
-      })
-    } else {
-      res.writeHead(400, { "Content-Type": "text/html" });
-      res.end();
-      return;
-    }
-  }
-}
-function getuserseeks(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  var client = new pg.Client(conString);
-  client.connect();
-  client.query('SELECT s.seekid,s.initialtime,s.increment,s.rated,s.side,s.gameid,s.created, u.username, t.username as target FROM seeks s LEFT JOIN users u ON u.id = s.userid LEFT JOIN users t ON t.username = s.target WHERE s.gameid is null AND (u.username is null OR u.username != t.username) AND (s.sessionid = $1 OR( u.username is not null AND s.userid = $2) OR t.id = $2)', [req.headers['cookie'].slice(2), sessiondata[1]], (err, response) => {
-    // client.query('SELECT s.seekid,s.initialtime,s.increment,s.rated,s.side,s.gameid,s.created, u.username, t.username as target FROM seeks s LEFT JOIN users u ON u.id = s.userid LEFT JOIN users t ON t.username = s.target WHERE s.gameid is null AND (s.sessionid = $1 OR s.userid = $2 OR t.id = $2)', [req.headers['cookie'].slice(2),sessiondata[1]], (err, response)=>{
-    if (err) {
-      res.writeHead(500, { "Content-Type": "text/html" });
-      res.end();
-      client.end();
-      console.log(err);
-      return
-    } else {
-      // Seek creation successful return 200 code
-      const resp = []
-      const rr = response.rows
-      for (var i = rr.length; i--;) {
-        resp.unshift(rr[i])
-      }
-      res.writeHead(200, { "Content-Type": "text/javascript" });
-      res.end(JSON.stringify(resp));
-      client.end();
-      return;
-    }
-  })
-}
-function cancelseek(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  req.on('data', seekid)
-  function seekid(chunk) {
-    req.removeListener('data', seekid);
-    const postcontent = chunk.toString();
-    if (randidregex.test(postcontent) === true) {
-      // User input validated
-      var client = new pg.Client(conString);
-      client.connect();
-      client.query('DELETE FROM seeks WHERE seekid = $1', [postcontent], (err, response) => {
-        if (err) {
-          res.writeHead(500, { "Content-Type": "text/html" });
-          res.end();
-          client.end();
-          console.log(err);
-          return
-        }
-        // Sucessfuly deleted seek
-        res.writeHead(200, { "Content-Type": "text/html" });
-        res.end();
-        client.end()
-        return
-      })
-    }
-  }
-}
+
 function lightmode(filename, mime, ext, res, req, resHeaders, sessiondata) {
   sessiondata[2] = 'l'
   redis.set(req.headers['cookie'].slice(2), sessiondata[0] + ' ' + sessiondata[1] + ' ' + sessiondata[2] + ' ' + sessiondata[3] + ' ' + sessiondata[4] + ' ' + sessiondata[5] + ' ' + sessiondata.slice(6).join(), 'EX', '604800', (err, result) => {
@@ -1609,1184 +1392,287 @@ function darkmode(filename, mime, ext, res, req, resHeaders, sessiondata) {
     }
   });
 }
-function pairseeks(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  req.on('data', seekid)
-  function seekid(chunk) {
-    req.removeListener('data', seekid);
-    const postcontent = chunk.toString();
-    if (randidregex.test(postcontent) === true) {
-      // User input validated
-      var client = new pg.Client(conString);
-      client.connect();
-      client.query('SELECT s.seekid, s.initialtime, s.increment, s.rated, s.side, s.userid, s.gameid, s.created, s.sessionid, c.ws0, c.ws1, u.ultrabullet_rating, u.bullet_rating, u.blitz_rating, u.rapid_rating, u.classical_rating, u.ultrabullet_deviation, u.bullet_deviation, u.blitz_deviation, u.rapid_deviation, u.classical_deviation, u.ultrabullet_volatility, u.bullet_volatility, u.blitz_volatility, u.rapid_volatility, u.classical_volatility FROM seeks s LEFT JOIN connections c ON c.sessionid = s.sessionid LEFT JOIN users u ON u.id = s.userid WHERE s.seekid = $1 AND s.target is null AND s.acceptedseek is null', [postcontent], (err, response) => {
-        if (err) {
-          res.writeHead(500, { "Content-Type": "text/html" });
-          res.end();
-          client.end();
-          console.log(err);
-          return
-        }
-        if (response.rows.length === 1) {
-          // Select was good, seek is found
-          const re = response.rows[0]
-          if (re.gameid !== null) {
-            // The seek is paired already, do a SELECT of games to confirm it has been created
-            client.query('SELECT gameid, gameserver FROM games WHERE gameid = $1', [re.gameid], (err, resp) => {
-              if (err) {
-                res.writeHead(500, { "Content-Type": "text/html" });
-                res.end();
-                client.end();
-                console.log(err);
-                return
-              }
-              if (resp.rows.length === 1) {
-                // Check on the gameserver... if game ready, forward to it
-                const myURL = new URL('https://ws' + resp.rows[0].gameserver + '.chessil.com/game')
-                const options = {
-                  hostname: myURL.hostname,
-                  port: 443,
-                  path: myURL.pathname,
-                  method: 'POST',
-                  headers: {
-                    'authorization': 'fds3DRvdnoqwerr3565tfdaERTYRev4gFRTR5P8Zbnerw123fd63',
-                    'gn': re.gameid,
-                  }
-                };
 
-                const newreq = https.request(options, (newres) => {
-                  if (newres.statusCode === 200) {
-                    // Sucessfuly created new game
-                    res.writeHead(201, { "Content-Type": "text/html" });
-                    res.end(domainname + '/game/' + resp.rows[0].gameid);
-                    client.end()
-                    return
-                  } else {
-                    // Game not yet created in the gameserver. Retry
-                    res.writeHead(202, { "Content-Type": "text/html" });
-                    res.end();
-                    client.end()
-                    return
-                  }
-                });
-                newreq.on('error', (e) => {
-                  // Error,
-                  res.writeHead(500, { "Content-Type": "text/html" });
-                  res.end();
-                  client.end()
-                  return
-                });
-                newreq.end();
-              } else {
-                // Game not found in table games, means it is just paired up but not yet created. Retry
-                res.writeHead(202, { "Content-Type": "text/html" });
-                res.end();
-                client.end()
-                return
-              }
-
-            })
-          } else {
-            // No gameid yet, time to find a pairing to make a game, and insert it into games
-            var Arated = re.rated
-            var Auserid = re.userid
-            var Aws0 = re.ws0
-            var Aws1 = re.ws1
-            var Acreated = re.created
-            var Ainitialtime = parseInt(re.initialtime)
-            var Aincrement = parseInt(re.increment)
-            var Aside = re.side
-            var Aseekid = re.seekid
-            // Determine the rating mode ultrabullet, bullet or blitz etc.
-            var totaltime = Ainitialtime * 60 + Aincrement * 40
-            var ratingmode = 'classical'
-            if (totaltime <= 1500) ratingmode = 'rapid'
-            if (totaltime <= 480) ratingmode = 'blitz'
-            if (totaltime <= 180) ratingmode = 'bullet'
-            if (totaltime <= 15) ratingmode = 'ultrabullet'
-            var dbratingcol = ratingmode + '_rating'
-            var Arating = 1 * (re[ratingmode + '_rating'])
-            var Adeviation = 1 * (re[ratingmode + '_deviation'])
-            var Avolatility = 1 * (re[ratingmode + '_volatility'])
-            var ratingrange = 2 * Adeviation
-            var targetside = { true: false, false: true, null: null }[Aside]
-
-            if (Arated === true) {
-              //rated game
-              client.query('SELECT s.seekid, c.ws0, c.ws1, s.userid, u.' + dbratingcol + ', u.' + ratingmode + '_deviation, u.' + ratingmode + '_volatility FROM seeks s LEFT JOIN connections c ON c.sessionid = s.sessionid LEFT JOIN users u ON u.id = s.userid WHERE s.rated is true AND s.side is ' + targetside + ' AND s.initialtime = $1 AND s.increment = $2 AND s.sessionid != $3 AND s.userid != $4 AND s.userid != 0 AND s.gameid is null AND u.' + dbratingcol + ' <= $5 AND u.' + dbratingcol + ' >= $6 AND (u.' + dbratingcol + ' + u.' + ratingmode + '_deviation * 2) >= $7 AND (u.' + dbratingcol + ' - u.' + ratingmode + '_deviation * 2) <= $7 AND s.target is null AND s.acceptedseek is null ORDER BY s.created ASC LIMIT 9', [Ainitialtime, Aincrement, req.headers['cookie'].slice(2), Auserid, Arating + ratingrange, Arating - ratingrange, Arating], (err, Bdata) => {
-                if (err) {
-                  res.writeHead(500, { "Content-Type": "text/html" });
-                  res.end();
-                  client.end();
-                  console.log(err);
-                  return
-                }
-                if (Bdata.rows.length === 0) {
-                  // Found nobody. keep trying
-                  res.writeHead(202, { "Content-Type": "text/html" });
-                  res.end();
-                  client.end()
-                  return
-                } else {
-                  // Found candidates (Bs)
-                  const nB = Bdata.rows.length
-                  var minallowedlatency = { 'classical': 700, 'rapid': 500, 'blitz': 400, "bullet": 350, 'ultrabullet': 300 }[ratingmode]
-                  var Bd = null
-                  var gameserver = null
-                  for (var i = 0; i < nB; ++i) {
-                    const rttArray = []
-                    const rttMap = {}
-                    Bd = Bdata.rows[i]
-                    if (Aws0 !== null && Bd.ws0 !== null) {
-                      const rtt0 = 1 * Aws0 + 1 * Bd.ws0
-                      rttArray.push(rtt0)
-                      rttMap[rtt0] = 0
-                    }
-                    if (Aws1 !== null && Bd.ws1 !== null) {
-                      const rtt1 = 1 * Aws1 + 1 * Bd.ws1
-                      rttArray.push(rtt1)
-                      rttMap[rtt1] = 1
-                    }
-                    // Determining game server with lowest latency for both parties
-                    const minrtt = Math.min.apply(Math, rttArray)
-                    if (minrtt < minallowedlatency) {
-                      gameserver = rttMap[minrtt]
-                      break; // First decent found for the timecontrol is a deal, because this B had been waiting for the longest time
-                    }
-                  }
-                  // If none found, keep waiting
-                  if (gameserver === null) {
-                    res.writeHead(202, { "Content-Type": "text/html" });
-                    res.end();
-                    client.end();
-                    return
-                  }
-                  // Random game name
-                  var gamename = randomString(9, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
-                  client.query('UPDATE seeks SET gameid = $1 WHERE seekid = $2 OR seekid = $3 AND gameid is null', [gamename, Bd.seekid, Aseekid], (err, respons) => {
-                    if (err) {
-                      res.writeHead(500, { "Content-Type": "text/html" });
-                      res.end();
-                      client.end();
-                      console.log(err);
-                      return
-                    }
-                    if (respons.rowCount === 2) {
-                      // Both seeks got their game normally 
-                      // Determining random side, 
-                      crypto.randomBytes(1, (err, buf) => {
-                        if (err) {
-                          res.writeHead(500, { "Content-Type": "text/html" });
-                          res.end();
-                          client.end();
-                          console.log(err);
-                          return
-                        }
-                        var singlehex = buf.toString('hex')
-                        var whiteplayer = Auserid
-                        var blackplayer = Bd.userid
-                        var whiterating = Arating
-                        var blackrating = Bd[dbratingcol]
-                        var whitedeviation = Adeviation
-                        var blackdeviation = Bd[ratingmode + '_deviation']
-                        var whitevolatility = Avolatility
-                        var blackvolatility = Bd[ratingmode + '_volatility']
-
-                        if (Aside === false || (Aside === null && buf.toString('hex') < 8)) {
-                          // Give B White, A Black if A chose black, or got black by chance
-                          whiteplayer = Bd.userid
-                          blackplayer = Auserid
-                          whiterating = Bd[dbratingcol]
-                          blackrating = Arating
-                          whitedeviation = Bd[ratingmode + '_deviation']
-                          blackdeviation = Adeviation
-                          whitevolatility = Bd[ratingmode + '_volatility']
-                          blackvolatility = Avolatility
-                        }
-                        client.query('INSERT INTO games (id, gameid, userid1, userid2, gameserver, rated, state, initialtime, increment, rating1, rating2, created) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())', [gamename, whiteplayer, blackplayer, gameserver, true, 0, Ainitialtime, Aincrement, whiterating, blackrating], (err, nginsertion) => {
-                          if (err) {
-                            client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                              if (err) {
-                                // A cron deletes all seeks older than 1 hour
-                                res.writeHead(500, { "Content-Type": "text/html" });
-                                res.end();
-                                client.end();
-                                console.log(err);
-                                return
-                              }
-                              res.writeHead(202, { "Content-Type": "text/html" });
-                              res.end();
-                              client.end();
-                              console.log(err);
-                              return
-                            })
-                          }
-                          if (nginsertion.rowCount === 1) {
-                            const myURL = new URL('https://ws' + gameserver + '.chessil.com/ng')
-                            const options = {
-                              hostname: myURL.hostname,
-                              port: 443,
-                              path: myURL.pathname,
-                              method: 'POST',
-                              headers: {
-                                'authorization': '6y5gFD345resdfgdfh45yppcmaqzj92Eesac3534565yfdSR23',
-                                'gn': gamename,
-                                'w': whiteplayer,
-                                'b': blackplayer,
-                                'wt': Ainitialtime,
-                                'bt': Ainitialtime,
-                                'wi': Aincrement,
-                                'bi': Aincrement,
-                                'wr': whiterating,
-                                'br': blackrating,
-                                'wd': whitedeviation,
-                                'bd': blackdeviation,
-                                'wv': whitevolatility,
-                                'bv': blackvolatility,
-                              }
-                            };
-
-                            const newreq = https.request(options, (newres) => {
-                              if (newres.statusCode !== 200) {
-                                // Error, also delete from games table
-                                client.query('DELETE FROM games WHERE gameid = $1', [gamename], (err, respon) => {
-                                  if (err) {
-                                    res.writeHead(500, { "Content-Type": "text/html" });
-                                    res.end();
-                                    client.end();
-                                    console.log(err);
-                                    return
-                                  }
-                                  client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                                    if (err) {
-                                      res.writeHead(500, { "Content-Type": "text/html" });
-                                      res.end();
-                                      client.end();
-                                      console.log(err);
-                                      return
-                                    }
-                                    res.writeHead(202, { "Content-Type": "text/html" });
-                                    res.end();
-                                    client.end();
-                                    console.log(err);
-                                    return
-                                  })
-                                })
-                              } else {
-                                // Sucessfuly created new game
-                                res.writeHead(201, { "Content-Type": "text/html" });
-                                res.end(domainname + '/game/' + gamename);
-                                client.end()
-                                return
-                              }
-                            });
-                            newreq.on('error', (e) => {
-                              // Error, delete also inserted game in games table
-                              client.query('DELETE FROM games WHERE gameid = $1', [gamename], (err, respon) => {
-                                if (err) {
-                                  res.writeHead(500, { "Content-Type": "text/html" });
-                                  res.end();
-                                  client.end();
-                                  console.log(err);
-                                  return
-                                }
-                                client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                                  if (err) {
-                                    res.writeHead(500, { "Content-Type": "text/html" });
-                                    res.end();
-                                    client.end();
-                                    console.log(err);
-                                    return
-                                  }
-                                  res.writeHead(202, { "Content-Type": "text/html" });
-                                  res.end();
-                                  client.end();
-                                  console.log(err);
-                                  return
-                                })
-                              })
-                              return
-                            });
-                            newreq.end();
-                          } else {
-                            // Very rare failure of duplicated gameid UPDATE A and B with NULL where gameid is gameID. Respond with code 202. DELETE unstarted games from time to time by cron
-                            client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                              if (err) {
-                                res.writeHead(500, { "Content-Type": "text/html" });
-                                res.end();
-                                client.end();
-                                console.log(err);
-                                return
-                              }
-                              res.writeHead(202, { "Content-Type": "text/html" });
-                              res.end();
-                              client.end();
-                              console.log(err);
-                              return
-                            })
-                          }
-                        })
-                      })
-                    } else {
-                      // At least 1 seek got assigned first. Another person won the race so we roll back
-                      client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                        if (err) {
-                          res.writeHead(500, { "Content-Type": "text/html" });
-                          res.end();
-                          client.end();
-                          console.log(err);
-                          return
-                        }
-                        res.writeHead(202, { "Content-Type": "text/html" });
-                        res.end();
-                        client.end();
-                        console.log(err);
-                        return
-                      })
-                    }
-                  })
-                }
-              })
-            } else {
-              //unrated game TODO
-              client.query('SELECT s.seekid, c.ws0, c.ws1, s.userid, s.sessionid FROM seeks s LEFT JOIN connections c ON c.sessionid = s.sessionid WHERE s.rated is false AND s.side is ' + targetside + ' AND s.initialtime = $1 AND s.increment = $2 AND s.sessionid != $3 AND (s.userid != $4 OR s.userid = 0) AND s.gameid is null AND s.target is null AND s.acceptedseek is null ORDER BY s.created ASC LIMIT 9', [Ainitialtime, Aincrement, req.headers['cookie'].slice(2), Auserid], (err, Bdata) => {
-                if (err) {
-                  res.writeHead(500, { "Content-Type": "text/html" });
-                  res.end();
-                  client.end();
-                  console.log(err);
-                  return
-                }
-                if (Bdata.rows.length === 0) {
-                  // Found nobody. keep trying
-                  res.writeHead(202, { "Content-Type": "text/html" });
-                  res.end();
-                  client.end()
-                  return
-                } else {
-                  // Found candidates (Bs)
-                  const nB = Bdata.rows.length
-                  var minallowedlatency = { 'classical': 700, 'rapid': 500, 'blitz': 400, "bullet": 350, 'ultrabullet': 300 }[ratingmode]
-                  var Bd = null
-                  var gameserver = null
-                  for (var i = 0; i < nB; ++i) {
-                    const rttArray = []
-                    const rttMap = {}
-                    Bd = Bdata.rows[i]
-                    if (Aws0 !== null && Bd.ws0 !== null) {
-                      const rtt0 = 1 * Aws0 + 1 * Bd.ws0
-                      rttArray.push(rtt0)
-                      rttMap[rtt0] = 0
-                    }
-                    if (Aws1 !== null && Bd.ws1 !== null) {
-                      const rtt1 = 1 * Aws1 + 1 * Bd.ws1
-                      rttArray.push(rtt1)
-                      rttMap[rtt1] = 1
-                    }
-                    // Determining game server with lowest latency for both parties
-                    const minrtt = Math.min.apply(Math, rttArray)
-                    if (minrtt < minallowedlatency) {
-                      gameserver = rttMap[minrtt]
-                      break; // First decent found for the timecontrol is a deal, because this B had been waiting for the longest time
-                    }
-                  }
-                  // If none found, keep waiting
-                  if (gameserver === null) {
-                    res.writeHead(202, { "Content-Type": "text/html" });
-                    res.end();
-                    client.end();
-                    return
-                  }
-                  // Random game name
-                  var gamename = randomString(9, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
-                  client.query('UPDATE seeks SET gameid = $1 WHERE seekid = $2 OR seekid = $3 AND gameid is null', [gamename, Bd.seekid, Aseekid], (err, respons) => {
-                    if (err) {
-                      res.writeHead(500, { "Content-Type": "text/html" });
-                      res.end();
-                      client.end();
-                      console.log(err);
-                      return
-                    }
-                    if (respons.rowCount === 2) {
-                      // Both seeks got their game normally 
-                      // Determining random side, 
-                      crypto.randomBytes(1, (err, buf) => {
-                        if (err) {
-                          res.writeHead(500, { "Content-Type": "text/html" });
-                          res.end();
-                          client.end();
-                          console.log(err);
-                          return
-                        }
-                        var singlehex = buf.toString('hex')
-                        var whiteplayer = Auserid
-                        var blackplayer = Bd.userid
-                        var whitesessid = re.sessionid
-                        var blacksessid = Bd.sessionid
-
-                        if (Aside === false || (Aside === null && buf.toString('hex') < 8)) {
-                          // Give B White, A Black if A chose black, or got black by chance
-                          whiteplayer = Bd.userid
-                          blackplayer = Auserid
-                          whitesessid = Bd.sessionid
-                          blacksessid = re.sessionid
-                        }
-                        if (whiteplayer != 0) whitesessid = null
-                        if (blackplayer != 0) blacksessid = null
-                        client.query('INSERT INTO games (id, gameid, userid1, userid2, gameserver, rated, state, initialtime, increment, created, session1, session2) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, $10)', [gamename, whiteplayer, blackplayer, gameserver, false, 0, Ainitialtime, Aincrement, whitesessid, blacksessid], (err, nginsertion) => {
-                          if (err) {
-                            client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                              if (err) {
-                                // A cron deletes all seeks older than 1 hour
-                                res.writeHead(500, { "Content-Type": "text/html" });
-                                res.end();
-                                client.end();
-                                console.log(err);
-                                return
-                              }
-                              res.writeHead(202, { "Content-Type": "text/html" });
-                              res.end();
-                              client.end();
-                              console.log(err);
-                              return
-                            })
-                          }
-                          if (nginsertion.rowCount === 1) {
-                            if (whiteplayer == 0) whiteplayer = whitesessid
-                            if (blackplayer == 0) blackplayer = blacksessid
-                            const myURL = new URL('https://ws' + gameserver + '.chessil.com/ng')
-                            const options = {
-                              hostname: myURL.hostname,
-                              port: 443,
-                              path: myURL.pathname,
-                              method: 'POST',
-                              headers: {
-                                'authorization': '6y5gFD345resdfgdfh45yppcmaqzj92Eesac3534565yfdSR23',
-                                'gn': gamename,
-                                'w': whiteplayer,
-                                'b': blackplayer,
-                                'wt': Ainitialtime,
-                                'bt': Ainitialtime,
-                                'wi': Aincrement,
-                                'bi': Aincrement,
-                                'wr': '-1',
-                                'br': '-1',
-                                'wd': '-1',
-                                'bd': '-1',
-                                'wv': '-1',
-                                'bv': '-1',
-                              }
-                            };
-
-                            const newreq = https.request(options, (newres) => {
-                              if (newres.statusCode !== 200) {
-                                // Error, also delete from games table
-                                client.query('DELETE FROM games WHERE gameid = $1', [gamename], (err, respon) => {
-                                  if (err) {
-                                    res.writeHead(500, { "Content-Type": "text/html" });
-                                    res.end();
-                                    client.end();
-                                    console.log(err);
-                                    return
-                                  }
-                                  client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                                    if (err) {
-                                      res.writeHead(500, { "Content-Type": "text/html" });
-                                      res.end();
-                                      client.end();
-                                      console.log(err);
-                                      return
-                                    }
-                                    res.writeHead(202, { "Content-Type": "text/html" });
-                                    res.end();
-                                    client.end();
-                                    console.log(err);
-                                    return
-                                  })
-                                })
-                              } else {
-                                // Sucessfuly created new game
-                                res.writeHead(201, { "Content-Type": "text/html" });
-                                res.end(domainname + '/game/' + gamename);
-                                client.end()
-                                return
-                              }
-                            });
-                            newreq.on('error', (e) => {
-                              // Error, delete also inserted game in games table
-                              client.query('DELETE FROM games WHERE gameid = $1', [gamename], (err, respon) => {
-                                if (err) {
-                                  res.writeHead(500, { "Content-Type": "text/html" });
-                                  res.end();
-                                  client.end();
-                                  console.log(err);
-                                  return
-                                }
-                                client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                                  if (err) {
-                                    res.writeHead(500, { "Content-Type": "text/html" });
-                                    res.end();
-                                    client.end();
-                                    console.log(err);
-                                    return
-                                  }
-                                  res.writeHead(202, { "Content-Type": "text/html" });
-                                  res.end();
-                                  client.end();
-                                  console.log(err);
-                                  return
-                                })
-                              })
-                              return
-                            });
-                            newreq.end();
-                          } else {
-                            // Very rare failure of duplicated gameid UPDATE A and B with NULL where gameid is gameID. Respond with code 202. DELETE unstarted games from time to time by cron
-                            client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                              if (err) {
-                                res.writeHead(500, { "Content-Type": "text/html" });
-                                res.end();
-                                client.end();
-                                console.log(err);
-                                return
-                              }
-                              res.writeHead(202, { "Content-Type": "text/html" });
-                              res.end();
-                              client.end();
-                              console.log(err);
-                              return
-                            })
-                          }
-                        })
-                      })
-                    } else {
-                      // At least 1 seek got assigned first. Another person won the race so we roll back
-                      client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                        if (err) {
-                          res.writeHead(500, { "Content-Type": "text/html" });
-                          res.end();
-                          client.end();
-                          console.log(err);
-                          return
-                        }
-                        res.writeHead(202, { "Content-Type": "text/html" });
-                        res.end();
-                        client.end();
-                        console.log(err);
-                        return
-                      })
-                    }
-                  })
-                }
-              })
-            }
-          }
-        } else {
-          // Seek not found 
-          res.writeHead(404, { "Content-Type": "text/html" });
-          res.end();
-          client.end()
-          return
-        }
-      })
-    } else {
-      res.writeHead(400, { "Content-Type": "text/html" });
-      res.end();
-      return;
-    }
-  }
-}
-
-// Accepting a targeted seek must insert a new seek first, with the same time control as the first one, but with a reference field 'acceptedseekid' to the seekid it answers to
-// Then use this function to do the pairing and start the game
-function pairtargetedseek(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  req.on('data', seekid)
-  function seekid(chunk) {
-    req.removeListener('data', seekid);
-    const postcontent = chunk.toString();
-    if (randidregex.test(postcontent) === true) {
-      // User input validated
-      var client = new pg.Client(conString);
-      client.connect();
-      client.query('SELECT s.seekid, s.initialtime, s.increment, s.rated, s.side, s.userid, s.gameid, s.created, s.sessionid, s.acceptedseek, c.ws0, c.ws1, u.ultrabullet_rating, u.bullet_rating, u.blitz_rating, u.rapid_rating, u.classical_rating, u.ultrabullet_deviation, u.bullet_deviation, u.blitz_deviation, u.rapid_deviation, u.classical_deviation, u.ultrabullet_volatility, u.bullet_volatility, u.blitz_volatility, u.rapid_volatility, u.classical_volatility FROM seeks s LEFT JOIN connections c ON c.sessionid = s.sessionid LEFT JOIN users u ON u.id = s.userid WHERE s.seekid = $1 AND (s.target is not null OR s.acceptedseek is not null)', [postcontent], (err, response) => {
-        if (err) {
-          res.writeHead(500, { "Content-Type": "text/html" });
-          res.end();
-          client.end();
-          console.log(err);
-          return
-        }
-        if (response.rows.length === 1) {
-          // Select was good, seek is found
-          const re = response.rows[0]
-          if (re.gameid !== null) {
-            // The seek is paired already, do a SELECT of games to confirm it has been created
-            client.query('SELECT gameid, gameserver FROM games WHERE gameid = $1', [re.gameid], (err, resp) => {
-              if (err) {
-                res.writeHead(500, { "Content-Type": "text/html" });
-                res.end();
-                client.end();
-                console.log(err);
-                return
-              }
-              if (resp.rows.length === 1) {
-                // Check on the gameserver... if game ready, forward to it
-                const myURL = new URL('https://ws' + resp.rows[0].gameserver + '.chessil.com/game')
-                const options = {
-                  hostname: myURL.hostname,
-                  port: 443,
-                  path: myURL.pathname,
-                  method: 'POST',
-                  headers: {
-                    'authorization': 'fds3DRvdnoqwerr3565tfdaERTYRev4gFRTR5P8Zbnerw123fd63',
-                    'gn': re.gameid,
-                  }
-                };
-
-                const newreq = https.request(options, (newres) => {
-                  if (newres.statusCode === 200) {
-                    // Sucessfuly created new game
-                    res.writeHead(201, { "Content-Type": "text/html" });
-                    res.end(domainname + '/game/' + resp.rows[0].gameid);
-                    client.end()
-                    return
-                  } else {
-                    // Game not yet created in the gameserver. Retry
-                    res.writeHead(202, { "Content-Type": "text/html" });
-                    res.end();
-                    client.end()
-                    return
-                  }
-                });
-                newreq.on('error', (e) => {
-                  // Error,
-                  res.writeHead(500, { "Content-Type": "text/html" });
-                  res.end();
-                  client.end()
-                  return
-                });
-                newreq.end();
-              } else {
-                // Game not found in table games, means it is just paired up but not yet created. Retry
-                res.writeHead(202, { "Content-Type": "text/html" });
-                res.end();
-                client.end()
-                return
-              }
-
-            })
-          } else {
-            // No gameid yet, time to find a pairing to make a game, and insert it into games
-            var Arated = re.rated
-            var Auserid = re.userid
-            var Aws0 = re.ws0
-            var Aws1 = re.ws1
-            var Acreated = re.created
-            var Ainitialtime = parseInt(re.initialtime)
-            var Aincrement = parseInt(re.increment)
-            var Aside = re.side
-            var Aseekid = re.seekid
-            var Aacceptedseek = re.acceptedseek
-            // Determine the rating mode ultrabullet, bullet or blitz etc.
-            var totaltime = Ainitialtime * 60 + Aincrement * 40
-            var ratingmode = 'classical'
-            if (totaltime <= 1500) ratingmode = 'rapid'
-            if (totaltime <= 480) ratingmode = 'blitz'
-            if (totaltime <= 180) ratingmode = 'bullet'
-            if (totaltime <= 15) ratingmode = 'ultrabullet'
-            var dbratingcol = ratingmode + '_rating'
-            var Arating = 1 * (re[ratingmode + '_rating'])
-            var Adeviation = 1 * (re[ratingmode + '_deviation'])
-            var Avolatility = 1 * (re[ratingmode + '_volatility'])
-            var ratingrange = 2 * Adeviation
-            var targetside = { true: false, false: true, null: null }[Aside]
-
-            if (Arated === true) {
-              //rated game
-              client.query('SELECT s.seekid, c.ws0, c.ws1, s.userid, u.' + dbratingcol + ', u.' + ratingmode + '_deviation, u.' + ratingmode + '_volatility FROM seeks s LEFT JOIN connections c ON c.sessionid = s.sessionid LEFT JOIN users u ON u.id = s.userid WHERE s.rated is true AND s.side is ' + targetside + ' AND s.initialtime = $1 AND s.increment = $2 AND s.sessionid != $3 AND s.userid != $4 AND s.userid != 0 AND s.gameid is null AND (s.acceptedseek = $5 OR s.seekid = $6) ORDER BY s.created ASC LIMIT 9', [Ainitialtime, Aincrement, req.headers['cookie'].slice(2), Auserid, Aseekid, Aacceptedseek], (err, Bdata) => {
-                if (err) {
-                  res.writeHead(500, { "Content-Type": "text/html" });
-                  res.end();
-                  client.end();
-                  console.log(err);
-                  return
-                }
-                if (Bdata.rows.length === 0) {
-                  // Found nobody. keep trying
-                  res.writeHead(202, { "Content-Type": "text/html" });
-                  res.end();
-                  client.end()
-                  return
-                } else {
-                  // Found candidates (Bs)
-                  const nB = Bdata.rows.length
-                  var minallowedlatency = { 'classical': 700, 'rapid': 500, 'blitz': 400, "bullet": 350, 'ultrabullet': 300 }[ratingmode]
-                  var Bd = null
-                  var gameserver = null
-                  for (var i = 0; i < nB; ++i) {
-                    const rttArray = []
-                    const rttMap = {}
-                    Bd = Bdata.rows[i]
-                    if (Aws0 !== null && Bd.ws0 !== null) {
-                      const rtt0 = 1 * Aws0 + 1 * Bd.ws0
-                      rttArray.push(rtt0)
-                      rttMap[rtt0] = 0
-                    }
-                    if (Aws1 !== null && Bd.ws1 !== null) {
-                      const rtt1 = 1 * Aws1 + 1 * Bd.ws1
-                      rttArray.push(rtt1)
-                      rttMap[rtt1] = 1
-                    }
-                    // Determining game server with lowest latency for both parties
-                    const minrtt = Math.min.apply(Math, rttArray)
-                    if (minrtt < minallowedlatency) {
-                      gameserver = rttMap[minrtt]
-                      break; // First decent found for the timecontrol is a deal, because this B had been waiting for the longest time
-                    }
-                  }
-                  // If none found, keep waiting
-                  if (gameserver === null) {
-                    res.writeHead(202, { "Content-Type": "text/html" });
-                    res.end();
-                    client.end();
-                    return
-                  }
-                  // Random game name
-                  var gamename = randomString(9, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
-                  client.query('UPDATE seeks SET gameid = $1 WHERE seekid = $2 OR seekid = $3 AND gameid is null', [gamename, Bd.seekid, Aseekid], (err, respons) => {
-                    if (err) {
-                      res.writeHead(500, { "Content-Type": "text/html" });
-                      res.end();
-                      client.end();
-                      console.log(err);
-                      return
-                    }
-                    if (respons.rowCount === 2) {
-                      // Both seeks got their game normally 
-                      // Determining random side, 
-                      crypto.randomBytes(1, (err, buf) => {
-                        if (err) {
-                          res.writeHead(500, { "Content-Type": "text/html" });
-                          res.end();
-                          client.end();
-                          console.log(err);
-                          return
-                        }
-                        var singlehex = buf.toString('hex')
-                        var whiteplayer = Auserid
-                        var blackplayer = Bd.userid
-                        var whiterating = Arating
-                        var blackrating = Bd[dbratingcol]
-                        var whitedeviation = Adeviation
-                        var blackdeviation = Bd[ratingmode + '_deviation']
-                        var whitevolatility = Avolatility
-                        var blackvolatility = Bd[ratingmode + '_volatility']
-
-                        if (Aside === false || (Aside === null && buf.toString('hex') < 8)) {
-                          // Give B White, A Black if A chose black, or got black by chance
-                          whiteplayer = Bd.userid
-                          blackplayer = Auserid
-                          whiterating = Bd[dbratingcol]
-                          blackrating = Arating
-                          whitedeviation = Bd[ratingmode + '_deviation']
-                          blackdeviation = Adeviation
-                          whitevolatility = Bd[ratingmode + '_volatility']
-                          blackvolatility = Avolatility
-                        }
-                        client.query('INSERT INTO games (id, gameid, userid1, userid2, gameserver, rated, state, initialtime, increment, rating1, rating2, created) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())', [gamename, whiteplayer, blackplayer, gameserver, true, 0, Ainitialtime, Aincrement, whiterating, blackrating], (err, nginsertion) => {
-                          if (err) {
-                            client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                              if (err) {
-                                // A cron deletes all seeks older than 1 hour
-                                res.writeHead(500, { "Content-Type": "text/html" });
-                                res.end();
-                                client.end();
-                                console.log(err);
-                                return
-                              }
-                              res.writeHead(202, { "Content-Type": "text/html" });
-                              res.end();
-                              client.end();
-                              console.log(err);
-                              return
-                            })
-                          }
-                          if (nginsertion.rowCount === 1) {
-                            const myURL = new URL('https://ws' + gameserver + '.chessil.com/ng')
-                            const options = {
-                              hostname: myURL.hostname,
-                              port: 443,
-                              path: myURL.pathname,
-                              method: 'POST',
-                              headers: {
-                                'authorization': '6y5gFD345resdfgdfh45yppcmaqzj92Eesac3534565yfdSR23',
-                                'gn': gamename,
-                                'w': whiteplayer,
-                                'b': blackplayer,
-                                'wt': Ainitialtime,
-                                'bt': Ainitialtime,
-                                'wi': Aincrement,
-                                'bi': Aincrement,
-                                'wr': whiterating,
-                                'br': blackrating,
-                                'wd': whitedeviation,
-                                'bd': blackdeviation,
-                                'wv': whitevolatility,
-                                'bv': blackvolatility,
-                              }
-                            };
-
-                            const newreq = https.request(options, (newres) => {
-                              if (newres.statusCode !== 200) {
-                                // Error, also delete from games table
-                                client.query('DELETE FROM games WHERE gameid = $1', [gamename], (err, respon) => {
-                                  if (err) {
-                                    res.writeHead(500, { "Content-Type": "text/html" });
-                                    res.end();
-                                    client.end();
-                                    console.log(err);
-                                    return
-                                  }
-                                  client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                                    if (err) {
-                                      res.writeHead(500, { "Content-Type": "text/html" });
-                                      res.end();
-                                      client.end();
-                                      console.log(err);
-                                      return
-                                    }
-                                    res.writeHead(202, { "Content-Type": "text/html" });
-                                    res.end();
-                                    client.end();
-                                    console.log(err);
-                                    return
-                                  })
-                                })
-                              } else {
-                                // Sucessfuly created new game
-                                res.writeHead(201, { "Content-Type": "text/html" });
-                                res.end(domainname + '/game/' + gamename);
-                                client.end()
-                                return
-                              }
-                            });
-                            newreq.on('error', (e) => {
-                              // Error, delete also inserted game in games table
-                              client.query('DELETE FROM games WHERE gameid = $1', [gamename], (err, respon) => {
-                                if (err) {
-                                  res.writeHead(500, { "Content-Type": "text/html" });
-                                  res.end();
-                                  client.end();
-                                  console.log(err);
-                                  return
-                                }
-                                client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                                  if (err) {
-                                    res.writeHead(500, { "Content-Type": "text/html" });
-                                    res.end();
-                                    client.end();
-                                    console.log(err);
-                                    return
-                                  }
-                                  res.writeHead(202, { "Content-Type": "text/html" });
-                                  res.end();
-                                  client.end();
-                                  console.log(err);
-                                  return
-                                })
-                              })
-                              return
-                            });
-                            newreq.end();
-                          } else {
-                            // Very rare failure of duplicated gameid UPDATE A and B with NULL where gameid is gameID. Respond with code 202. DELETE unstarted games from time to time by cron
-                            client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                              if (err) {
-                                res.writeHead(500, { "Content-Type": "text/html" });
-                                res.end();
-                                client.end();
-                                console.log(err);
-                                return
-                              }
-                              res.writeHead(202, { "Content-Type": "text/html" });
-                              res.end();
-                              client.end();
-                              console.log(err);
-                              return
-                            })
-                          }
-                        })
-                      })
-                    } else {
-                      // At least 1 seek got assigned first. Another person won the race so we roll back
-                      client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                        if (err) {
-                          res.writeHead(500, { "Content-Type": "text/html" });
-                          res.end();
-                          client.end();
-                          console.log(err);
-                          return
-                        }
-                        res.writeHead(202, { "Content-Type": "text/html" });
-                        res.end();
-                        client.end();
-                        console.log(err);
-                        return
-                      })
-                    }
-                  })
-                }
-              })
-            } else {
-              //unrated game TODO
-              client.query('SELECT s.seekid, c.ws0, c.ws1, s.userid, s.sessionid, s.target, s.acceptedseek FROM seeks s LEFT JOIN connections c ON c.sessionid = s.sessionid WHERE s.rated is false AND s.side is ' + targetside + ' AND s.initialtime = $1 AND s.increment = $2 AND s.sessionid != $3 AND (s.userid != $4 OR s.userid = 0) AND s.gameid is null AND (s.acceptedseek = $5 OR s.seekid = $6) ORDER BY s.created ASC LIMIT 9', [Ainitialtime, Aincrement, req.headers['cookie'].slice(2), Auserid, Aseekid, Aacceptedseek], (err, Bdata) => {
-                if (err) {
-                  res.writeHead(500, { "Content-Type": "text/html" });
-                  res.end();
-                  client.end();
-                  console.log(err);
-                  return
-                }
-                if (Bdata.rows.length === 0) {
-                  // Found nobody. keep trying
-                  res.writeHead(202, { "Content-Type": "text/html" });
-                  res.end();
-                  client.end()
-                  return
-                } else {
-                  // Found candidates (Bs)
-                  const nB = Bdata.rows.length
-                  var minallowedlatency = { 'classical': 700, 'rapid': 500, 'blitz': 400, "bullet": 350, 'ultrabullet': 300 }[ratingmode]
-                  var Bd = null
-                  var gameserver = null
-                  for (var i = 0; i < nB; ++i) {
-                    const rttArray = []
-                    const rttMap = {}
-                    Bd = Bdata.rows[i]
-                    if (Aws0 !== null && Bd.ws0 !== null) {
-                      const rtt0 = 1 * Aws0 + 1 * Bd.ws0
-                      rttArray.push(rtt0)
-                      rttMap[rtt0] = 0
-                    }
-                    if (Aws1 !== null && Bd.ws1 !== null) {
-                      const rtt1 = 1 * Aws1 + 1 * Bd.ws1
-                      rttArray.push(rtt1)
-                      rttMap[rtt1] = 1
-                    }
-                    // Determining game server with lowest latency for both parties
-                    const minrtt = Math.min.apply(Math, rttArray)
-                    if (minrtt < minallowedlatency) {
-                      gameserver = rttMap[minrtt]
-                      break; // First decent found for the timecontrol is a deal, because this B had been waiting for the longest time
-                    }
-                  }
-                  // If none found, keep waiting
-                  if (gameserver === null) {
-                    res.writeHead(202, { "Content-Type": "text/html" });
-                    res.end();
-                    client.end();
-                    return
-                  }
-                  // Random game name
-                  var gamename = randomString(9, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
-                  client.query('UPDATE seeks SET gameid = $1 WHERE seekid = $2 OR seekid = $3 AND gameid is null', [gamename, Bd.seekid, Aseekid], (err, respons) => {
-                    if (err) {
-                      res.writeHead(500, { "Content-Type": "text/html" });
-                      res.end();
-                      client.end();
-                      console.log(err);
-                      return
-                    }
-                    if (respons.rowCount === 2) {
-                      // Both seeks got their game normally 
-                      // Determining random side, 
-                      crypto.randomBytes(1, (err, buf) => {
-                        if (err) {
-                          res.writeHead(500, { "Content-Type": "text/html" });
-                          res.end();
-                          client.end();
-                          console.log(err);
-                          return
-                        }
-                        var singlehex = buf.toString('hex')
-                        var whiteplayer = Auserid
-                        var blackplayer = Bd.userid
-                        var whitesessid = re.sessionid
-                        var blacksessid = Bd.sessionid
-
-                        if (Aside === false || (Aside === null && buf.toString('hex') < 8)) {
-                          // Give B White, A Black if A chose black, or got black by chance
-                          whiteplayer = Bd.userid
-                          blackplayer = Auserid
-                          whitesessid = Bd.sessionid
-                          blacksessid = re.sessionid
-                        }
-                        if (whiteplayer != 0) whitesessid = null
-                        if (blackplayer != 0) blacksessid = null
-                        client.query('INSERT INTO games (id, gameid, userid1, userid2, gameserver, rated, state, initialtime, increment, created, session1, session2) VALUES (DEFAULT, $1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, $10)', [gamename, whiteplayer, blackplayer, gameserver, false, 0, Ainitialtime, Aincrement, whitesessid, blacksessid], (err, nginsertion) => {
-                          if (err) {
-                            client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                              if (err) {
-                                // A cron deletes all seeks older than 1 hour
-                                res.writeHead(500, { "Content-Type": "text/html" });
-                                res.end();
-                                client.end();
-                                console.log(err);
-                                return
-                              }
-                              res.writeHead(202, { "Content-Type": "text/html" });
-                              res.end();
-                              client.end();
-                              console.log(err);
-                              return
-                            })
-                          }
-                          if (nginsertion.rowCount === 1) {
-                            if (whiteplayer == 0) whiteplayer = whitesessid
-                            if (blackplayer == 0) blackplayer = blacksessid
-                            const myURL = new URL('https://ws' + gameserver + '.chessil.com/ng')
-                            const options = {
-                              hostname: myURL.hostname,
-                              port: 443,
-                              path: myURL.pathname,
-                              method: 'POST',
-                              headers: {
-                                'authorization': '6y5gFD345resdfgdfh45yppcmaqzj92Eesac3534565yfdSR23',
-                                'gn': gamename,
-                                'w': whiteplayer,
-                                'b': blackplayer,
-                                'wt': Ainitialtime,
-                                'bt': Ainitialtime,
-                                'wi': Aincrement,
-                                'bi': Aincrement,
-                                'wr': '-1',
-                                'br': '-1',
-                                'wd': '-1',
-                                'bd': '-1',
-                                'wv': '-1',
-                                'bv': '-1',
-                              }
-                            };
-
-                            const newreq = https.request(options, (newres) => {
-                              if (newres.statusCode !== 200) {
-                                // Error, also delete from games table
-                                client.query('DELETE FROM games WHERE gameid = $1', [gamename], (err, respon) => {
-                                  if (err) {
-                                    res.writeHead(500, { "Content-Type": "text/html" });
-                                    res.end();
-                                    client.end();
-                                    console.log(err);
-                                    return
-                                  }
-                                  client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                                    if (err) {
-                                      res.writeHead(500, { "Content-Type": "text/html" });
-                                      res.end();
-                                      client.end();
-                                      console.log(err);
-                                      return
-                                    }
-                                    res.writeHead(202, { "Content-Type": "text/html" });
-                                    res.end();
-                                    client.end();
-                                    console.log(err);
-                                    return
-                                  })
-                                })
-                              } else {
-                                // Sucessfuly created new game
-                                res.writeHead(201, { "Content-Type": "text/html" });
-                                res.end(domainname + '/game/' + gamename);
-                                client.end()
-                                return
-                              }
-                            });
-                            newreq.on('error', (e) => {
-                              // Error, delete also inserted game in games table
-                              client.query('DELETE FROM games WHERE gameid = $1', [gamename], (err, respon) => {
-                                if (err) {
-                                  res.writeHead(500, { "Content-Type": "text/html" });
-                                  res.end();
-                                  client.end();
-                                  console.log(err);
-                                  return
-                                }
-                                client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                                  if (err) {
-                                    res.writeHead(500, { "Content-Type": "text/html" });
-                                    res.end();
-                                    client.end();
-                                    console.log(err);
-                                    return
-                                  }
-                                  res.writeHead(202, { "Content-Type": "text/html" });
-                                  res.end();
-                                  client.end();
-                                  console.log(err);
-                                  return
-                                })
-                              })
-                              return
-                            });
-                            newreq.end();
-                          } else {
-                            // Very rare failure of duplicated gameid UPDATE A and B with NULL where gameid is gameID. Respond with code 202. DELETE unstarted games from time to time by cron
-                            client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                              if (err) {
-                                res.writeHead(500, { "Content-Type": "text/html" });
-                                res.end();
-                                client.end();
-                                console.log(err);
-                                return
-                              }
-                              res.writeHead(202, { "Content-Type": "text/html" });
-                              res.end();
-                              client.end();
-                              console.log(err);
-                              return
-                            })
-                          }
-                        })
-                      })
-                    } else {
-                      // At least 1 seek got assigned first. Another person won the race so we roll back
-                      client.query('UPDATE seeks SET gameid = null WHERE gameid = $1', [gamename], (err, respon) => {
-                        if (err) {
-                          res.writeHead(500, { "Content-Type": "text/html" });
-                          res.end();
-                          client.end();
-                          console.log(err);
-                          return
-                        }
-                        res.writeHead(202, { "Content-Type": "text/html" });
-                        res.end();
-                        client.end();
-                        console.log(err);
-                        return
-                      })
-                    }
-                  })
-                }
-              })
-            }
-          }
-        } else {
-          // Seek not found 
-          res.writeHead(404, { "Content-Type": "text/html" });
-          res.end();
-          client.end()
-          return
-        }
-      })
-    } else {
-      res.writeHead(400, { "Content-Type": "text/html" });
-      res.end();
-      return;
-    }
-  }
-}
 function randomString(length, chars) {
   var result = '';
   for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
   return result;
+}
+
+function validateFilters(filters) {
+  const safe = {};
+
+  // rated: must be boolean or null
+  if (filters.rated === '1' || filters.rated === true) safe.rated = true;
+  else if (filters.rated === '0' || filters.rated === false) safe.rated = false;
+  else safe.rated = null;
+
+  // eloMin/eloMax: must be numbers within reasonable range
+  safe.eloMin = (Number.isFinite(Number(filters.eloMin)) && filters.eloMin >= 0 && filters.eloMin <= 4000)
+    ? Number(filters.eloMin) : null;
+  safe.eloMax = (Number.isFinite(Number(filters.eloMax)) && filters.eloMax >= 0 && filters.eloMax <= 4000)
+    ? Number(filters.eloMax) : null;
+
+  // username: only allow safe characters (letters, numbers, underscores)
+  if (typeof filters.username === 'string' && /^[a-zA-Z0-9_]{1,30}$/.test(filters.username)) {
+    safe.username = filters.username;
+  } else {
+    safe.username = null;
+  }
+
+  // color: must be one of the expected values
+  if (['white', 'black', 'random'].includes(filters.color)) {
+    safe.color = filters.color;
+  } else {
+    safe.color = null;
+  }
+
+  // time: allow only whitelisted formats
+  const allowedTimes = ['1+0', '3+0', '3+2', '5+0', '10+0', '15+10']; // you decide
+  safe.time = allowedTimes.includes(filters.time) ? filters.time : null;
+
+  // mode: play / watch / finished
+  if (['play', 'watch', 'finished'].includes(filters.mode)) {
+    safe.mode = filters.mode;
+  } else {
+    safe.mode = null;
+  }
+
+  // timestamps: must be valid ISO dates
+  function parseDate(d) {
+    if (!d) return null;
+    const t = new Date(d);
+    return isNaN(t.getTime()) ? null : t.toISOString();
+  }
+  safe.createdFrom = parseDate(filters.createdFrom);
+  safe.createdTo = parseDate(filters.createdTo);
+  safe.startedFrom = parseDate(filters.startedFrom);
+  safe.startedTo = parseDate(filters.startedTo);
+  safe.finishedFrom = parseDate(filters.finishedFrom);
+  safe.finishedTo = parseDate(filters.finishedTo);
+
+  return safe;
+}
+
+function handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  let body = '';
+  req.on('data', chunk => { body += chunk; });
+  req.on('end', () => {
+    let rawFilters;
+    try {
+      rawFilters = JSON.parse(body);
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Invalid JSON' }));
+    }
+
+    const filters = validateFilters(rawFilters);
+
+    const values = [
+      filters.rated === undefined || filters.rated === '' ? null
+        : filters.rated === '1' ? true : filters.rated === '0' ? false : null,
+      filters.eloMin ? Number(filters.eloMin) : null,
+      filters.eloMax ? Number(filters.eloMax) : null,
+      filters.username || null,
+      filters.color || null,
+      filters.time || null,
+      filters.mode || null,
+      filters.createdFrom || null,
+      filters.createdTo || null,
+      filters.startedFrom || null,
+      filters.startedTo || null,
+      filters.finishedFrom || null,
+      filters.finishedTo || null,
+      100
+    ];
+
+    const sql = `
+      SELECT g.id, g.gameid, g.rated, g.timecontrol1, g.randomcolor,
+             g.color1, g.color2, g.created, g.started, g.finished,
+             u1.id AS userid1, u1.username AS username1, u1.rating AS rating1,
+             u2.id AS userid2, u2.username AS username2, u2.rating AS rating2
+      FROM games g
+      JOIN users u1 ON g.userid1 = u1.id
+      LEFT JOIN users u2 ON g.userid2 = u2.id
+      WHERE 1=1
+        AND ($1::boolean IS NULL OR g.rated = $1)
+        AND ($2::numeric IS NULL OR u1.rating >= $2)
+        AND ($3::numeric IS NULL OR u1.rating <= $3)
+        AND ($4::text IS NULL OR u1.username ILIKE '%' || $4 || '%' OR u2.username ILIKE '%' || $4 || '%')
+        AND (
+          $5::text IS NULL
+          OR ($5 = 'random' AND g.randomcolor = TRUE)
+          OR ($5 IN ('white','black') AND g.randomcolor = FALSE AND g.color1 = $5)
+        )
+        AND ($6::text IS NULL OR g.timecontrol1 = $6)
+        AND (
+          $7::text IS NULL
+          OR ($7 = 'play'     AND g.started IS NULL AND g.finished IS NULL)
+          OR ($7 = 'watch'    AND g.started IS NOT NULL AND g.finished IS NULL)
+          OR ($7 = 'finished' AND g.finished IS NOT NULL)
+        )
+        AND ($8::timestamptz IS NULL OR g.created  >= $8)
+        AND ($9::timestamptz IS NULL OR g.created  <= $9)
+        AND ($10::timestamptz IS NULL OR g.started >= $10)
+        AND ($11::timestamptz IS NULL OR g.started <= $11)
+        AND ($12::timestamptz IS NULL OR g.finished >= $12)
+        AND ($13::timestamptz IS NULL OR g.finished <= $13)
+      ORDER BY g.created DESC
+      LIMIT $14;
+    `;
+    var client = new pg.Client(conString);
+    client.connect();
+    client.query(sql, values, (err, result) => {
+      if (err) {
+        console.error('lobby/list error', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        client.end()
+        return res.end(JSON.stringify({ error: 'Internal error' }));
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result.rows));
+      client.end()
+    });
+  });
+}
+
+function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  let body = '';
+  req.on('data', chunk => { body += chunk; });
+  req.on('end', () => {
+    let data;
+    try {
+      data = JSON.parse(body);
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Invalid JSON' }));
+    }
+
+    const { id, action } = data;
+    if (!id || !action) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Missing parameters' }));
+    }
+
+    var client = new pg.Client(conString);
+    client.connect();
+    client.query('SELECT id, gameid, userid1, userid2, started, finished FROM games WHERE id = $1', [id], (err, result) => {
+      if (err) {
+        console.error('lobby/action select error', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        client.end()
+        return res.end(JSON.stringify({ error: 'Internal error' }));
+      }
+
+      if (result.rows.length === 0) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        client.end()
+        return res.end(JSON.stringify({ error: 'Game not found' }));
+      }
+
+      const game = result.rows[0];
+      if (action === 'join') {
+        if (game.finished || game.started) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          client.end()
+          return res.end(JSON.stringify({ error: 'Game already started or finished' }));
+        }
+        if (game.userid2) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          client.end()
+          return res.end(JSON.stringify({ error: 'Game already full' }));
+        }
+
+        client.query('UPDATE games SET userid2 = $1, sessionid2 = $2, started = NOW() WHERE id = $3',
+          [sessiondata[1], req.headers['cookie'].slice(2), id],
+          (err2) => {
+            if (err2) {
+              console.error('lobby/action update error', err2);
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              client.end()
+              return res.end(JSON.stringify({ error: 'Internal error' }));
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, mode: 'join', gameid: game.gameid }));
+            client.end()
+          });
+      } else if (action === 'watch') {
+        if (game.started && !game.finished) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, mode: 'watch', gameid: game.gameid }));
+        } else {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Game not available to watch' }));
+        }
+        client.end()
+      } else {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unknown action' }));
+        client.end()
+      }
+    });
+  });
+}
+// === END LOBBY HANDLERS ===
+function handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  let body = '';
+  req.on('data', chunk => { body += chunk; });
+  req.on('end', () => {
+    let data;
+    try {
+      data = JSON.parse(body);
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Invalid JSON' }));
+    }
+
+    const rated = data.rated === true || data.rated === '1';
+
+    if (rated && sessiondata[1] === 0) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Anonymous users cannot create rated games' }));
+    }
+
+    const timecontrol = typeof data.timecontrol === 'string' ? data.timecontrol : '5+0';
+    let color = null, randomcolor = true;
+
+    if (!rated && (data.color === 'white' || data.color === 'black')) {
+      color = data.color;
+      randomcolor = false;
+    }
+
+    // Pick a random lowercase letter (a–z)
+    const prefix = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+    const gameid = prefix + Date.now().toString(36);
+
+    const sql = `
+      INSERT INTO games (gameid, userid1, sessionid1, rated, timecontrol1, randomcolor, color1, created)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      RETURNING id, gameid
+    `;
+
+    const values = [
+      gameid,
+      sessiondata[1],
+      req.headers['cookie'].slice(2),
+      rated,
+      timecontrol,
+      randomcolor,
+      color
+    ];
+
+    var client = new pg.Client(conString);
+    client.connect();
+    client.query(sql, values, (err, result) => {
+      if (err) {
+        console.error('lobby/create error', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        client.end()
+        return res.end(JSON.stringify({ error: 'Internal error' }));
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, id: result.rows[0].id, gameid: result.rows[0].gameid }));
+      client.end()
+    });
+  });
 }
