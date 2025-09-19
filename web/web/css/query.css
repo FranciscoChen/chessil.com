@@ -1,133 +1,28 @@
 .main {
   display: grid;
-  gap: 1rem;
-  padding: 1rem;
-  box-sizing: border-box;
 }
 
 .query {
   min-height: 20vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.query-flex {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 900px;
-  justify-content: center;
-}
-
-.query-flex select,
-.query-flex input,
-.query-flex button {
-  padding: 0.4rem 0.6rem;
-  font-size: 0.9rem;
-  border: 1px solid #ccc;
-  border-radius: 0.3rem;
-  background: #fff;
+  padding: 0.5rem;
 }
 
 .results {
   min-height: 80vh;
 }
 
+.query-flex {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .results-flex {
   display: flex;
-  justify-content: center;
-  width: 100%;
+  min-height: 100%;
 }
 
-.results-flex table {
-  width: 100%;
-  max-width: 1000px;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
-.results-flex th,
-.results-flex td {
-  padding: 0.6rem 0.8rem;
-  border-bottom: 1px solid #eee;
-  text-align: left;
-}
-
-.results-flex th {
-  background: #f8f8f8;
-  font-weight: bold;
-}
-
-.results-flex tr:nth-child(even) {
-  background: #fafafa;
-}
-
-.results-flex tr:hover {
-  background: #f1f1f1;
-}
-
-button.icon-play {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  line-height: 1;
-  padding: 0.3rem;
-  border-radius: 0.3rem;
-  transition: background 0.2s;
-}
-
-button.icon-play::before {
-  content: "▶"; /* Unicode play symbol */
-}
-
-button.icon-play:hover {
-  background: #eee;
-}
-
-/* Responsive tweaks */
-@media (max-width: 600px) {
-  .query-flex {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .results-flex table,
-  .results-flex thead,
-  .results-flex tbody,
-  .results-flex th,
-  .results-flex td,
-  .results-flex tr {
-    display: block;
-    width: 100%;
-  }
-  .results-flex tr {
-    margin-bottom: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 0.3rem;
-    padding: 0.5rem;
-    background: #fff;
-  }
-  .results-flex th {
-    display: none; /* hide headers */
-  }
-  .results-flex td {
-    border: none;
-    padding: 0.3rem 0;
-  }
-  .results-flex td::before {
-    font-weight: bold;
-    display: block;
-    margin-bottom: 0.2rem;
-    color: #555;
-    /* Column labels for mobile can be added via data-label in JS */
-    content: attr(data-label);
-  }
-}
-
+/* Primary filters */
 .filters-primary {
   display: flex;
   gap: 0.5rem;
@@ -135,6 +30,7 @@ button.icon-play:hover {
   align-items: center;
 }
 
+/* Secondary filters */
 .filters-secondary {
   display: flex;
   gap: 0.5rem;
@@ -156,23 +52,31 @@ button.icon-play:hover {
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  transition: background 0.2s ease-in-out;
+  transition: background 0.2s ease-in-out, transform 0.1s;
 }
 
 .btn-create:hover {
   background-color: #1a6edc;
+  transform: scale(1.03);
 }
 
-/* Toggle button (mobile only) */
+.btn-create:active {
+  background-color: #155ab2;
+  transform: scale(0.97);
+}
+
+/* Toggle button */
 .btn-toggle {
-  margin-left: auto;
+  align-self: flex-end;
   background: none;
   border: none;
   font-size: 0.9rem;
   color: #666;
   cursor: pointer;
+  text-decoration: underline;
 }
 
+/* Responsive behavior */
 @media (min-width: 768px) {
   .btn-toggle {
     display: none; /* hide toggle on desktop */

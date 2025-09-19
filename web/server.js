@@ -355,22 +355,6 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
     searchuser(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
   }
-  if (req.url === '/seek' && req.method === 'POST') {
-    insertseek(filename, mime, ext, res, req, resHeaders, sessiondata)
-    return
-  }
-  if (req.url === '/pairing' && req.method === 'POST') {
-    pairseeks(filename, mime, ext, res, req, resHeaders, sessiondata)
-    return
-  }
-  if (req.url === '/challenge' && req.method === 'POST') {
-    inserttargetedseek(filename, mime, ext, res, req, resHeaders, sessiondata)
-    return
-  }
-  if (req.url === '/accept' && req.method === 'POST') {
-    insertacceptedseek(filename, mime, ext, res, req, resHeaders, sessiondata)
-    return
-  }
   if (req.url === '/lobby/create' && req.method === 'POST') {
     return handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondata);
   }
@@ -379,19 +363,6 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
   }
   if (req.url === '/lobby/action' && req.method === 'POST') {
     return handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondata);
-  }
-
-  if (req.url === '/startchallenge' && req.method === 'POST') {
-    pairtargetedseek(filename, mime, ext, res, req, resHeaders, sessiondata)
-    return
-  }
-  if (req.url === '/getseeks' && req.method === 'POST') {
-    getuserseeks(filename, mime, ext, res, req, resHeaders, sessiondata)
-    return
-  }
-  if (req.url === '/cancel' && req.method === 'POST') {
-    cancelseek(filename, mime, ext, res, req, resHeaders, sessiondata)
-    return
   }
   if (req.url === '/light' && req.method === 'POST') {
     lightmode(filename, mime, ext, res, req, resHeaders, sessiondata)

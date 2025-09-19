@@ -1,123 +1,99 @@
-function getFilters() {
+function collectFilters() {
   return {
-    rated: document.getElementById("filter-rated").value || "1",
-    eloMin: document.getElementById("filter-elo-min").value,
-    eloMax: document.getElementById("filter-elo-max").value,
-    username: document.getElementById("filter-username").value,
-    color: document.getElementById("filter-color").value || "random",
-    time: document.getElementById("filter-time").value || "5+0",
-    mode: document.getElementById("filter-mode").value || "play"
+    rated: document.getElementById('rated').value,
+    color: document.getElementById('color').value,
+    time: document.getElementById('time').value,
+    eloMin: document.getElementById('eloMin').value,
+    eloMax: document.getElementById('eloMax').value,
+    username: document.getElementById('username').value,
+    mode: document.getElementById('mode').value
   };
 }
 
 function loadLobby() {
-  var filters = getFilters();
-
+  var filters = collectFilters();
   var xhr = new XMLHttpRequest();
-  xhr.open("POST", "/lobby/list", true);
-  xhr.setRequestHeader("Content-Type", "application/json");
-
-  xhr.onload = function () {
-    if (xhr.status === 200) {
-      var data = JSON.parse(xhr.responseText);
-      renderTable(data);
-    } else {
-      console.error("Failed to load lobby");
+  xhr.open('POST', '/lobby/list', true);
+  xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      var games = JSON.parse(xhr.responseText);
+      renderLobby(games);
     }
   };
-
   xhr.send(JSON.stringify(filters));
 }
 
-function renderTable(data) {
-  var container = document.querySelector(".results-flex");
-  container.innerHTML = "";
+function renderLobby(games) {
+  var container = document.querySelector('.results-flex');
+  container.innerHTML = '';
+  var table = document.createElement('table');
+  var thead = document.createElement('thead');
+  var headerRow = document.createElement('tr');
 
-  if (!data || data.length === 0) {
-    container.textContent = "No results";
-    return;
-  }
-
-  var table = document.createElement("table");
-  var thead = document.createElement("thead");
-  var headerRow = document.createElement("tr");
-
-  var columns = [
-    { key: "username", label: "User" },
-    { key: "elo", label: "Elo" },
-    { key: "time", label: "Time" },
-    { key: "rated", label: "Rated" },
-    { key: "action", label: "" }
-  ];
-
-  columns.forEach(function (col) {
-    var th = document.createElement("th");
-    th.textContent = col.label;
+  ['Game ID', 'Players', 'Rated', 'Time', 'Action'].forEach(function (h) {
+    var th = document.createElement('th');
+    th.textContent = h;
     headerRow.appendChild(th);
   });
-
   thead.appendChild(headerRow);
   table.appendChild(thead);
 
-  var tbody = document.createElement("tbody");
+  var tbody = document.createElement('tbody');
+  games.forEach(function (row) {
+    var tr = document.createElement('tr');
+    tr.appendChild(createCell(row.gameid));
+    tr.appendChild(createCell(
+      (row.username1 || 'Anon') + ' (' + (row.rating1 || '-') + ')' +
+      ' vs ' +
+      (row.username2 || 'Anon') + ' (' + (row.rating2 || '-') + ')'
+    ));
+    tr.appendChild(createCell(row.rated ? 'Yes' : 'No'));
+    tr.appendChild(createCell(row.timecontrol1 || ''));
 
-  data.forEach(function (row) {
-    var tr = document.createElement("tr");
-
-    columns.forEach(function (col) {
-      var td = document.createElement("td");
-
-      if (col.key === "action") {
-        var btn = document.createElement("button");
-        btn.className = "icon-play";
-        btn.onclick = (function (gameId) {
-          return function () {
-            sendAction(gameId, "join");
-          };
-        })(row.id);
-        td.appendChild(btn);
-      } else {
-        td.textContent = row[col.key];
-      }
-
-      td.setAttribute("data-label", col.label);
-      tr.appendChild(td);
-    });
+    var actionTd = document.createElement('td');
+    var btn = document.createElement('button');
+    btn.textContent = 'Join'; // text is in HTML, safe for translations
+    btn.onclick = function () { sendAction(row.id, "join"); };
+    actionTd.appendChild(btn);
+    tr.appendChild(actionTd);
 
     tbody.appendChild(tr);
   });
-
   table.appendChild(tbody);
   container.appendChild(table);
 }
 
-function sendAction(gameId, action) {
-  var xhr = new XMLHttpRequest();
-  xhr.open("POST", "/lobby/action", true);
-  xhr.setRequestHeader("Content-Type", "application/json");
-  xhr.send(JSON.stringify({ id: gameId, action: action }));
+function createCell(text) {
+  var td = document.createElement('td');
+  td.textContent = text;
+  return td;
 }
 
-window.addEventListener("DOMContentLoaded", function () {
-  var inputs = document.querySelectorAll(".query-flex select, .query-flex input");
-  inputs.forEach(function (el) {
-    el.addEventListener("change", loadLobby);
-    el.addEventListener("keyup", function (e) {
-      if (e.key === "Enter") loadLobby();
-    });
-  });
+function sendAction(id, action) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/lobby/action', true);
+  xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      console.log('Action response', xhr.responseText);
+    }
+  };
+  xhr.send(JSON.stringify({ id: id, action: action }));
+}
 
-  // Initial load with defaults
-  loadLobby();
+// Toggle secondary filters
+document.getElementById('toggle-secondary').addEventListener('click', function () {
+  document.querySelector('.filters-secondary').classList.toggle('hidden');
 });
 
+// Create game
 document.getElementById('create-game').addEventListener('click', function () {
-  var filters = collectFilters(); // reuse your existing function
-
+  var filters = collectFilters();
   const payload = {
     rated: filters.rated,
     timecontrol: filters.time,
-    color: (!filters.rated && filters.color ? filters.color : null)
+    color: (filters.rated === '0' ? filters.color : null) // unrated only
   };
 
   var xhr = new XMLHttpRequest();
@@ -127,7 +103,7 @@ document.getElementById('create-game').addEventListener('click', function () {
     if (xhr.readyState === 4 && xhr.status === 200) {
       var res = JSON.parse(xhr.responseText);
       if (res.success) {
-        loadLobby(); // reload games list
+        loadLobby();
       } else {
         console.error(res.error || "Game creation failed");
       }
@@ -136,6 +112,5 @@ document.getElementById('create-game').addEventListener('click', function () {
   xhr.send(JSON.stringify(payload));
 });
 
-document.getElementById('toggle-secondary').addEventListener('click', function () {
-  document.querySelector('.filters-secondary').classList.toggle('hidden');
-});
+// Load default lobby
+loadLobby();
