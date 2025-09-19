@@ -27,42 +27,80 @@ function loadLobby() {
 function renderLobby(games) {
   var container = document.querySelector('.results-flex');
   container.innerHTML = '';
-  var table = document.createElement('table');
-  var thead = document.createElement('thead');
-  var headerRow = document.createElement('tr');
 
-  ['Game ID', 'Players', 'Rated', 'Time', 'Action'].forEach(function (h) {
-    var th = document.createElement('th');
-    th.textContent = h;
-    headerRow.appendChild(th);
-  });
-  thead.appendChild(headerRow);
-  table.appendChild(thead);
+  // Detect if mobile
+  var isMobile = window.innerWidth < 768;
 
-  var tbody = document.createElement('tbody');
-  games.forEach(function (row) {
-    var tr = document.createElement('tr');
-    tr.appendChild(createCell(row.gameid));
-    tr.appendChild(createCell(
-      (row.username1 || 'Anon') + ' (' + (row.rating1 || '-') + ')' +
-      ' vs ' +
-      (row.username2 || 'Anon') + ' (' + (row.rating2 || '-') + ')'
-    ));
-    tr.appendChild(createCell(row.rated ? 'Yes' : 'No'));
-    tr.appendChild(createCell(row.timecontrol1 || ''));
+  if (!isMobile) {
+    // === DESKTOP TABLE ===
+    var table = document.createElement('table');
+    var thead = document.createElement('thead');
+    var headerRow = document.createElement('tr');
 
-    var actionTd = document.createElement('td');
-    var btn = document.createElement('button');
-    btn.textContent = 'Join'; // text is in HTML, safe for translations
-    btn.onclick = function () { sendAction(row.id, "join"); };
-    actionTd.appendChild(btn);
-    tr.appendChild(actionTd);
+    ['Game ID', 'Players', 'Rated', 'Time', 'Action'].forEach(function (h) {
+      var th = document.createElement('th');
+      th.textContent = h;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
 
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-  container.appendChild(table);
+    var tbody = document.createElement('tbody');
+    games.forEach(function (row) {
+      var tr = document.createElement('tr');
+      tr.appendChild(createCell(row.gameid));
+      tr.appendChild(createCell(
+        (row.username1 || 'Anon') + ' (' + (row.rating1 || '-') + ')' +
+        ' vs ' +
+        (row.username2 || 'Anon') + ' (' + (row.rating2 || '-') + ')'
+      ));
+      tr.appendChild(createCell(row.rated ? 'Yes' : 'No'));
+      tr.appendChild(createCell(row.timecontrol1 || ''));
+
+      var actionTd = document.createElement('td');
+      var btn = document.createElement('button');
+      btn.textContent = 'Join';
+      btn.onclick = function () { sendAction(row.id, "join"); };
+      actionTd.appendChild(btn);
+      tr.appendChild(actionTd);
+
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    container.appendChild(table);
+
+  } else {
+    // === MOBILE CARDS ===
+    games.forEach(function (row) {
+      var card = document.createElement('div');
+      card.className = 'game-card';
+
+      var players = document.createElement('div');
+      players.className = 'gc-players';
+      players.textContent =
+        (row.username1 || 'Anon') + ' (' + (row.rating1 || '-') + ')' +
+        ' vs ' +
+        (row.username2 || 'Anon') + ' (' + (row.rating2 || '-') + ')';
+      card.appendChild(players);
+
+      var info = document.createElement('div');
+      info.className = 'gc-info';
+      info.textContent = (row.rated ? 'Rated' : 'Unrated') + ' • ' + (row.timecontrol1 || '');
+      card.appendChild(info);
+
+      var actions = document.createElement('div');
+      actions.className = 'gc-actions';
+      var btn = document.createElement('button');
+      btn.textContent = 'Join';
+      btn.onclick = function () { sendAction(row.id, "join"); };
+      actions.appendChild(btn);
+      card.appendChild(actions);
+
+      container.appendChild(card);
+    });
+  }
 }
+
 
 function createCell(text) {
   var td = document.createElement('td');
