@@ -1554,6 +1554,65 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
           return res.end(JSON.stringify({ error: 'Game already full' }));
         }
 
+
+        // If rated, enforce rating difference restriction
+        if (game.rated) {
+          // First fetch ratings of both users
+          client.query(
+            'SELECT rating FROM users WHERE id = $1',
+            [game.userid1],
+            (err3, result1) => {
+              if (err3 || result1.rows.length === 0) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ error: 'Error fetching ratings' }));
+              }
+              const rating1 = result1.rows[0].rating || 1200;
+
+              // Current player (the one joining)
+              if (!isLoggedIn || userid === 0) {
+                res.writeHead(403, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ error: 'Anonymous users cannot join rated games' }));
+              }
+
+              client.query(
+                'SELECT rating FROM users WHERE id = $1',
+                [userid],
+                (err4, result2) => {
+                  if (err4 || result2.rows.length === 0) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ error: 'Error fetching rating' }));
+                  }
+                  const rating2 = result2.rows[0].rating || 1200;
+
+                  const diff = Math.abs(rating1 - rating2);
+                  const maxDiff = 500; // configurable
+
+                  if (diff > maxDiff) {
+                    res.writeHead(403, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ error: 'Rating difference too large' }));
+                  }
+
+                  // Allowed → update game
+                  client.query(
+                    'UPDATE games SET userid2 = $1, started = NOW() WHERE id = $2',
+                    [userid, id],
+                    (err5) => {
+                      if (err5) {
+                        console.error('lobby/action update error', err5);
+                        res.writeHead(500, { 'Content-Type': 'application/json' });
+                        return res.end(JSON.stringify({ error: 'Internal error' }));
+                      }
+                      res.writeHead(200, { 'Content-Type': 'application/json' });
+                      res.end(JSON.stringify({ success: true, mode: 'join', gameid: game.gameid }));
+                    }
+                  );
+                }
+              );
+            }
+          );
+          return; // stop here, don't run default join code
+        }
+
         client.query('UPDATE games SET userid2 = $1, sessionid2 = $2, started = NOW() WHERE id = $3',
           [sessiondata[1], req.headers['cookie'].slice(2), id],
           (err2) => {
