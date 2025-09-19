@@ -22,118 +22,124 @@
 </head>
 
 <body>
-<header>
-  <div class="z">
-    <input type="checkbox" id="x" class="n" autocomplete="off">
-    <label for="x" class="q"></label>
-    <label for="x" class="r">
-      <span class="u"></span>
-    </label>
-    <div class="t"><a href="/en">Chess<span>iL</span></a></div>
-    <nav id="n">
-      <div class="m"><a href="/en/">Home</a></div>
-    </nav>
-  </div>
-  <div class="site-buttons">
-    <div id="clinput"><a class="link icon-search"><span></span></a><input spellcheck="false" autocomplete="off"
-        placeholder="Search" enterkeyhint="search">
-      <div class="complete-list none"></div>
+  <header>
+    <div class="z">
+      <input type="checkbox" id="x" class="n" autocomplete="off">
+      <label for="x" class="q"></label>
+      <label for="x" class="r">
+        <span class="u"></span>
+      </label>
+      <div class="t"><a href="/en">Chess<span>iL</span></a></div>
+      <nav id="n">
+        <div class="m"><a href="/en/">Home</a></div>
+      </nav>
     </div>
-    <div class="dasher"><button class="toggle link anon icon-settings"><span></span></button>
-      <div id="dasher_app" class="dropdown">
-        <div class="sub langs"><button class="head text">Language</button>
-          <form method="post" action="/language">
-            <button class="current accepted" type="submit" name="lang" value="en" title="en">English</button>
-            <button type="submit" name="lang" value="es" title="es">Español</button>
-            <button type="submit" name="lang" value="zh" title="zh">中文</button>
-          </form>
-        </div>
-        <div class="sub background"><button class="head text">Theme</button>
-          <div class="selector"><button id="lightmode">Light</button><button id="darkmode">Dark</button></div>
-        </div>
-        <div>
-          <div class="subs"><button class="sub">Language</button><button class="sub">Theme</button></div>
-        </div>
+    <div class="site-buttons">
+      <div id="clinput"><a class="link icon-search"><span></span></a><input spellcheck="false" autocomplete="off"
+          placeholder="Search" enterkeyhint="search">
+        <div class="complete-list none"></div>
       </div>
-    </div>
-    <div class="seek"><button id="challenge-toggle" class="toggle link icon-games"><span class="data-count"
-          data-count="0"></span></button>
-      <div id="challenge-app" class="links dropdown rendered">
-        <div class="empty text">No challenges.</div>
-      </div>
-    </div>
-    <div id="user">
-      <div id="user_button" class="icon-user toggle">
-        <div id="dasher_user_app" class="dropdown">
+      <div class="dasher"><button class="toggle link anon icon-settings"><span></span></button>
+        <div id="dasher_app" class="dropdown">
+          <div class="sub langs"><button class="head text">Language</button>
+            <form method="post" action="/language">
+              <button class="current accepted" type="submit" name="lang" value="en" title="en">English</button>
+              <button type="submit" name="lang" value="es" title="es">Español</button>
+              <button type="submit" name="lang" value="zh" title="zh">中文</button>
+            </form>
+          </div>
+          <div class="sub background"><button class="head text">Theme</button>
+            <div class="selector"><button id="lightmode">Light</button><button id="darkmode">Dark</button></div>
+          </div>
           <div>
-            <div class="links">
-              <a id="profile" class="user-link online text is-green none" href="/profile">My profile</a>
-              <form id="logout" class="none" method="post" action="/logout"><button class="text" type="submit">Sign
-                  out</button></form>
-              <form id="login" method="post" action="/login"><button class="text" type="submit">Log in</button></form>
+            <div class="subs"><button class="sub">Language</button><button class="sub">Theme</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="seek"><button id="challenge-toggle" class="toggle link icon-games"><span class="data-count"
+            data-count="0"></span></button>
+        <div id="challenge-app" class="links dropdown rendered">
+          <div class="empty text">No challenges.</div>
+        </div>
+      </div>
+      <div id="user">
+        <div id="user_button" class="icon-user toggle">
+          <div id="dasher_user_app" class="dropdown">
+            <div>
+              <div class="links">
+                <a id="profile" class="user-link online text is-green none" href="/profile">My profile</a>
+                <form id="logout" class="none" method="post" action="/logout"><button class="text" type="submit">Sign
+                    out</button></form>
+                <form id="login" method="post" action="/login"><button class="text" type="submit">Log in</button></form>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</header>
+  </header>
 
-<div class="main-wrap">
-  <div class="main">
-    <div class="query">
-      <div class="query-flex">
-        <!-- Filters -->
-        <select id="filter-rated">
-          <option value="">Any</option>
-          <option value="1" selected>Rated</option>
-          <option value="0">Unrated</option>
-        </select>
+  <div class="main-wrap">
+    <div class="main">
+      <div class="query">
+        <div class="query-flex">
 
-        <input type="number" id="filter-elo-min" placeholder="Min Elo">
-        <input type="number" id="filter-elo-max" placeholder="Max Elo">
-        <input type="text" id="filter-username" placeholder="Username">
+          <!-- Always visible filters -->
+          <div class="filters-primary">
+            <select id="rated">
+              <option value="">Any</option>
+              <option value="1">Rated</option>
+              <option value="0">Unrated</option>
+            </select>
 
-        <select id="filter-color">
-          <option value="">Any</option>
-          <option value="white">White</option>
-          <option value="black">Black</option>
-          <option value="random" selected>Random</option>
-        </select>
+            <select id="color">
+              <option value="random">Random</option>
+              <option value="white">White</option>
+              <option value="black">Black</option>
+            </select>
 
-        <select id="filter-time">
-          <option value="">Any Time</option>
-          <option value="1+0">1+0</option>
-          <option value="2+1">2+1</option>
-          <option value="3+0">3+0</option>
-          <option value="3+2">3+2</option>
-          <option value="5+0" selected>5+0</option>
-          <option value="10+0">10+0</option>
-          <option value="15+10">15+10</option>
-          <option value="30+0">30+0</option>
-        </select>
+            <select id="time">
+              <option value="1+0">1+0</option>
+              <option value="3+0">3+0</option>
+              <option value="3+2">3+2</option>
+              <option value="5+0" selected>5+0</option>
+              <option value="10+0">10+0</option>
+              <option value="15+10">15+10</option>
+            </select>
 
-        <select id="filter-mode">
-          <option value="">Any</option>
-          <option value="play" selected>Play</option>
-          <option value="watch">Watch</option>
-        </select>
+            <button id="create-game" class="btn-create">Create Game</button>
+          </div>
 
-        <button id="create-game" class="btn-create">Create Game</button>
+          <!-- Toggle button (mobile only) -->
+          <button id="toggle-secondary" class="btn-toggle">More Filters</button>
 
+          <!-- Secondary filters -->
+          <div class="filters-secondary hidden">
+            <input id="eloMin" type="number" placeholder="Min Elo">
+            <input id="eloMax" type="number" placeholder="Max Elo">
+            <input id="username" type="text" placeholder="Username">
+            <select id="mode">
+              <option value="">Any</option>
+              <option value="play">Play</option>
+              <option value="watch">Watch</option>
+              <option value="finished">Finished</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="results">
+        <div class="results-flex">
+          <!-- Table loads here -->
+        </div>
       </div>
     </div>
-
-    <div class="results">
-      <div class="results-flex">
-        <!-- Table loads here -->
-      </div>
-    </div>
   </div>
-</div>
 
-<footer>
-  <div><a href="/terms">Terms of service</a><a href="/privacy">Privacy policy</a></div>
-</footer>
+  <footer>
+    <div><a href="/terms">Terms of service</a><a href="/privacy">Privacy policy</a></div>
+  </footer>
 </body>
+
 </html>

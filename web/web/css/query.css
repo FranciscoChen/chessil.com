@@ -127,3 +127,57 @@ button.icon-play:hover {
     content: attr(data-label);
   }
 }
+
+.filters-primary {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filters-secondary {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Create Game button styling */
+.btn-create {
+  background-color: #2d8cff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+
+.btn-create:hover {
+  background-color: #1a6edc;
+}
+
+/* Toggle button (mobile only) */
+.btn-toggle {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  color: #666;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .btn-toggle {
+    display: none; /* hide toggle on desktop */
+  }
+  .filters-secondary {
+    display: flex !important; /* always visible on desktop */
+  }
+}

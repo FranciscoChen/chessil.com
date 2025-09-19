@@ -135,3 +135,7 @@ document.getElementById('create-game').addEventListener('click', function () {
   };
   xhr.send(JSON.stringify(payload));
 });
+
+document.getElementById('toggle-secondary').addEventListener('click', function () {
+  document.querySelector('.filters-secondary').classList.toggle('hidden');
+});
