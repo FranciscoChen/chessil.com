@@ -1,11 +1,8 @@
 var settings, userbutton, dasher, subs, dashermain, dasherlangs, dasherbackground, clinput, lang, tto, si, sr, noresults, nochallenges, cr
 var loggedin = 0
-const accepticon = ''
-const seekicon = ''
-const declineicon = ''
+
 const typingthreshold = 512
-var seeklist = []
-var newseeklist = []
+
 function elementOrAncestorHasClass(element, className) {
   if (!element || element.length === 0) {
     return false;
@@ -173,14 +170,7 @@ function headerfunctions() {
     } else {
       settings.classList = ('dasher')
     }
-    if (elementOrAncestorHasClass(e.target, 'seek')) {
-      if (e.target.className.indexOf('toggle') > -1 || e.target.parentElement.className.indexOf('toggle') > -1) {
-        seeks.classList.toggle('shown')
-        if (seeks.className.indexOf('shown') > -1) getseeks()
-      }
-    } else {
-      seeks.classList = ('seek')
-    }
+
     if (elementOrAncestorHasId(e.target, 'clinput')) {
       if (document.body.className.indexOf('clinput') === -1) {
         document.body.classList.toggle('clinput')
