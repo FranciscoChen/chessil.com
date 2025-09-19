@@ -81,36 +81,39 @@ function sendAction(id, action) {
   };
   xhr.send(JSON.stringify({ id: id, action: action }));
 }
+document.addEventListener('DOMContentLoaded', function () {
 
-// Toggle secondary filters
-document.getElementById('toggle-secondary').addEventListener('click', function () {
-  document.querySelector('.filters-secondary').classList.toggle('hidden');
-});
+  // Toggle secondary filters
+  document.getElementById('toggle-secondary').addEventListener('click', function () {
+    document.querySelector('.filters-secondary').classList.toggle('hidden');
+  });
 
-// Create game
-document.getElementById('create-game').addEventListener('click', function () {
-  var filters = collectFilters();
-  const payload = {
-    rated: filters.rated,
-    timecontrol: filters.time,
-    color: (filters.rated === '0' ? filters.color : null) // unrated only
-  };
+  // Create game
+  document.getElementById('create-game').addEventListener('click', function () {
+    var filters = collectFilters();
+    const payload = {
+      rated: filters.rated,
+      timecontrol: filters.time,
+      color: (filters.rated === '0' ? filters.color : null) // unrated only
+    };
 
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', '/lobby/create', true);
-  xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4 && xhr.status === 200) {
-      var res = JSON.parse(xhr.responseText);
-      if (res.success) {
-        loadLobby();
-      } else {
-        console.error(res.error || "Game creation failed");
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/lobby/create', true);
+    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        var res = JSON.parse(xhr.responseText);
+        if (res.success) {
+          loadLobby();
+        } else {
+          console.error(res.error || "Game creation failed");
+        }
       }
-    }
-  };
-  xhr.send(JSON.stringify(payload));
+    };
+    xhr.send(JSON.stringify(payload));
+  });
+  
+  // Load default lobby
+  loadLobby();
+  
 });
-
-// Load default lobby
-loadLobby();
