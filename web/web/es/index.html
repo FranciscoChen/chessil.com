@@ -2,121 +2,123 @@
 <html lang="es">
 
 <head>
-  <title>ChessiL - Juegue al ajedrez en línea</title>
+  <title>ChessiL - Juega ajedrez en línea</title>
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
   <meta name="description" content="Ajedrez rápido en ChessiL.com">
-  <meta name="keywords"
-    content="ajedrez, jugar, línea, vivo, ultrabala, bala, relámpago, rápido, online, bullet, blitz">
+  <meta name="keywords" content="ajedrez, jugar, en línea, rápido, en vivo, ultrabala, bala, relámpago, rápida">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/colors.css">
+  <link rel="stylesheet" href="/css/buttons.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/footer.css">
+  <link rel="stylesheet" href="/css/showcase.css">
   <script src="/js/connections.js"></script>
-  <script src="/js/seek.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
 </head>
-<header>
-  <div class="z">
-    <input type="checkbox" id="x" class="n" autocomplete="off">
-    <label for="x" class="q"></label>
-    <label for="x" class="r">
-      <span class="u"></span>
-    </label>
-    <div class="t"><a href="/es">Chess<span>iL</span></a></div>
-    <nav id="n">
-      <div class="m"><a href="/es/">Inicio</a></div>
-    </nav>
-  </div>
-  <div class="site-buttons">
-    <div id="clinput"><a class="link"><span></span></a><input spellcheck="false" autocomplete="off" placeholder="Buscar"
-        enterkeyhint="search">
-      <div class="complete-list none"></div>
+
+<body>
+  <header>
+    <div class="z">
+      <input type="checkbox" id="x" class="n" autocomplete="off">
+      <label for="x" class="q"></label>
+      <label for="x" class="r">
+        <span class="u"></span>
+      </label>
+      <div class="t"><a href="/es">Chess<span>iL</span></a></div>
+      <nav id="n">
+        <div class="m"><a href="/es/">Inicio</a></div>
+      </nav>
     </div>
-    <div class="dasher"><button class="toggle link anon"><span></span></button>
-      <div id="dasher_app" class="dropdown">
-        <div class="sub langs"><button class="head text" type="button">Idioma</button>
-          <form method="post" action="/language"><button type="submit" name="lang" value="en"
-              title="en">English</button><button class="current accepted" type="submit" name="lang" value="es"
-              title="es">Español</button><button type="submit" name="lang" value="zh" title="zh">中文</button></form>
+    <div class="site-buttons">
+      <div id="clinput"><a class="link icon-search"><span></span></a><input spellcheck="false" autocomplete="off"
+          placeholder="Buscar" enterkeyhint="search">
+        <div class="complete-list none"></div>
+      </div>
+      <div class="dasher"><button class="toggle link anon icon-settings"><span></span></button>
+        <div id="dasher_app" class="dropdown">
+          <div class="sub langs"><button class="head text">Idioma</button>
+            <form method="post" action="/language"><button type="submit" name="lang" value="en"
+                title="en">English</button><button class="current accepted" type="submit" name="lang" value="es"
+                title="es">Español</button><button type="submit" name="lang" value="zh" title="zh">中文</button></form>
+          </div>
+          <div class="sub background"><button class="head text">Tema</button>
+            <div class="selector"><button id="lightmode">Claro</button><button id="darkmode">Oscuro</button></div>
+          </div>
+          <div>
+            <div class="subs"><button class="sub">Idioma</button><button class="sub">Tema</button></div>
+          </div>
         </div>
-        <div class="sub background"><button class="head text" type="button">Fondo</button>
-          <div class="selector"><button id="lightmode" type="button">Claro</button><button id="darkmode"
-              type="button">Oscuro</button></div>
+      </div>
+      <div class="seek"><button id="challenge-toggle" class="toggle link icon-games"><span class="data-count"
+            data-count="0"></span></button>
+        <div id="challenge-app" class="links dropdown rendered">
+          <div class="empty text">Sin desafíos.</div>
         </div>
-        <div>
-          <div class="subs"><button class="sub" type="button">Idioma</button><button class="sub"
-              type="button">Fondo</button></div>
+      </div>
+      <div id="user">
+        <div id="user_button" class="icon-user toggle">
+          <div id="dasher_user_app" class="dropdown">
+            <div>
+              <div class="links">
+                <a id="profile" class="user-link online text is-green none" href="/profile">Mi perfil</a>
+                <form id="logout" class="none" method="post" action="/logout"><button class="text" type="submit">Cerrar
+                    sesión</button></form>
+                <form id="login" method="post" action="/login"><button class="text" type="submit">Iniciar
+                    sesión</button></form>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count"
-          data-count="0"></span></button>
-      <div id="challenge-app" class="links dropdown rendered">
-        <div class="empty text">No challenges.</div>
+  </header>
+  <div class="main-wrap">
+    <div class="main">
+      <div class="showcase">
+        <div class="showcase-grid">
+          <h1 class="showcase-headings">Juega</h1>
+          <p class="showcase-paragraph">Juega una partida casual o encuentra una más adecuada</p>
+          <div class="showcase-action">
+            <button class="action">Partida fácil</button>
+          </div>
+          <div class="showcase-alternative">
+            <a href="/es/lobby"><button class="action alternative" type="submit">Entrar al lobby</button></a>
+          </div>
+        </div>
       </div>
-    </div>
-    <div id="user"></div>
-</header>
-<div class="lobby">
-  <div class="lobby__app lobby__app-pools">
-    <div class="lobby__app__content lpools pool">
-      <div data-id="0.25+0">
-        <div class="c">0.25+0</div>
-        <div class="p">Ultrabala</div>
+      <div class="showcase">
+        <div class="showcase-grid">
+          <h1 class="showcase-headings">Ejercita</h1>
+          <p class="showcase-paragraph">Practica tus aperturas y ejercita tus finales</p>
+          <div class="showcase-action">
+            <button class="action">Apertura aleatoria</button>
+          </div>
+          <div class="showcase-alternative">
+            <button class="action alternative" type="button">Ejercicio de finales</button>
+          </div>
+        </div>
       </div>
-      <div data-id="1+0">
-        <div class="c">1+0</div>
-        <div class="p">Bala</div>
-      </div>
-      <div data-id="2+1">
-        <div class="c">2+1</div>
-        <div class="p">Bala</div>
-      </div>
-      <div data-id="3+0">
-        <div class="c">3+0</div>
-        <div class="p">Relámpago</div>
-      </div>
-      <div data-id="3+2">
-        <div class="c">3+2</div>
-        <div class="p">Relámpago</div>
-      </div>
-      <div data-id="5+0">
-        <div class="c">5+0</div>
-        <div class="p">Relámpago</div>
-      </div>
-      <div data-id="5+3">
-        <div class="c">5+3</div>
-        <div class="p">Relámpago</div>
-      </div>
-      <div data-id="10+0">
-        <div class="c">10+0</div>
-        <div class="p">Rápida</div>
-      </div>
-      <div data-id="10+5">
-        <div class="c">10+5</div>
-        <div class="p">Rápida</div>
-      </div>
-      <div data-id="15+10">
-        <div class="c">15+10</div>
-        <div class="p">Rápida</div>
-      </div>
-      <div data-id="30+0">
-        <div class="c">30+0</div>
-        <div class="p">Clásica</div>
-      </div>
-      <div data-id="30+20">
-        <div class="c">30+20</div>
-        <div class="p">Clásica</div>
+      <div class="showcase">
+        <div class="showcase-grid">
+          <h1 class="showcase-headings">Investiga</h1>
+          <p class="showcase-paragraph">Explora estrategias y descubre nuevas formas de jugar</p>
+          <div class="showcase-action">
+            <button class="action">Mejores estrategias</button>
+          </div>
+          <div class="showcase-alternative">
+            <button class="action alternative" type="button">Explorar base de datos</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  <div class="lobby__blog ublog-post-cards"></div>
-  <div class="lobby__about"><a href="/terms">Términos del servicio</a><a href="/privacy">Política de privacidad</a>
-  </div>
-</div>
+  <footer>
+    <div><a href="/es/terms">Términos del servicio</a><a href="/es/privacy">Política de privacidad</a></div>
+  </footer>
+</body>
 
 </html>

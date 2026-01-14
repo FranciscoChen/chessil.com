@@ -2,11 +2,11 @@
 <html lang="zh">
 
 <head>
-  <title>棋赛 - 用户个人资料</title>
+  <title>ChessiL - 用户资料</title>
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
-  <meta name="description" content="用户个人资料积分和棋局历史">
-  <meta name="keywords" content="国际象棋, 用户, 个人资料, 积分, 棋赛, 棋局">
+  <meta name="description" content="用户资料页，包含评分与对局历史">
+  <meta name="keywords" content="国际象棋, 用户, 资料, 评分, 对局, 历史">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/layout.css">
@@ -27,7 +27,7 @@
       <label for="x" class="r">
         <span class="u"></span>
       </label>
-      <div class="t"><a href="/zh">棋<span>赛</span></a></div>
+      <div class="t"><a href="/zh">Chess<span>iL</span></a></div>
       <nav id="n">
         <div class="m"><a href="/zh/">主页</a></div>
       </nav>
@@ -45,23 +45,24 @@
                 title="es">Español</button><button class="current accepted" type="submit" name="lang" value="zh"
                 title="zh">中文</button></form>
           </div>
-          <div class="sub background"><button class="head text" type="button">背景</button>
+          <div class="sub background"><button class="head text" type="button">主题</button>
             <div class="selector"><button id="lightmode" type="button">浅色</button><button id="darkmode"
                 type="button">深色</button></div>
           </div>
           <div>
-            <div class="subs"><button class="sub" type="button">语言</button><button class="sub" type="button">背景</button>
-            </div>
+            <div class="subs"><button class="sub" type="button">语言</button><button class="sub"
+                type="button">主题</button></div>
           </div>
         </div>
       </div>
       <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count"
             data-count="0"></span></button>
         <div id="challenge-app" class="links dropdown rendered">
-          <div class="empty text">No challenges.</div>
+          <div class="empty text">没有挑战。</div>
         </div>
       </div>
       <div id="user"></div>
+    </div>
   </header>
   <div id="main-wrap">
     <main class="page-menu" data-username="$username">
@@ -104,7 +105,7 @@
               class="nm-item to-rated"><strong>0</strong><br>排位赛</a><a
               class="nm-item to-win"><strong>0</strong><br>胜</a><a class="nm-item to-loss"><strong>0</strong><br>负</a><a
               class="nm-item to-draw"><strong>0</strong><br>和</a><a
-              class="nm-item to-playing"><strong>0</strong><br>正在进行</a></div>
+              class="nm-item to-playing"><strong>0</strong><br>进行中</a></div>
           <div class="search__result">
             <div class="games infinite-scroll"></div>
           </div>

@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
   <meta name="description" content="¡Juega ajedrez en línea en ChessiL.com!">
-  <meta name="keywords" content="ajedrez, online, línea, juega, registrarse">
+  <meta name="keywords" content="ajedrez, online, en línea, jugar, registrarse">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/layout.css">
@@ -44,23 +44,24 @@
                 title="en">English</button><button class="current accepted" type="submit" name="lang" value="es"
                 title="es">Español</button><button type="submit" name="lang" value="zh" title="zh">中文</button></form>
           </div>
-          <div class="sub background"><button class="head text" type="button">Fondo</button>
+          <div class="sub background"><button class="head text" type="button">Tema</button>
             <div class="selector"><button id="lightmode" type="button">Claro</button><button id="darkmode"
                 type="button">Oscuro</button></div>
           </div>
           <div>
             <div class="subs"><button class="sub" type="button">Idioma</button><button class="sub"
-                type="button">Fondo</button></div>
+                type="button">Tema</button></div>
           </div>
         </div>
       </div>
       <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count"
             data-count="0"></span></button>
         <div id="challenge-app" class="links dropdown rendered">
-          <div class="empty text">No challenges.</div>
+          <div class="empty text">Sin desafíos.</div>
         </div>
       </div>
       <div id="user"></div>
+    </div>
   </header>
   <div id="main-wrap" class="isauthwrap">
     <main class="auth auth-signup box box-pad">
@@ -70,13 +71,13 @@
             id="form3-username" type="text" pattern="^[a-zA-Z][a-zA-Z0-9_\-]*[a-zA-Z0-9]$" name="username"
             class="form-control" minlength="3" maxlength="20" autofocus="autofocus" required="required"
             autocomplete="username"></input>
-          <p class="error username-exists none">Nombre de usuario en uso</p><small class="form-help">Se eliminarán las
-            cuentas con nombres de usuario inapropiados</small>
+          <p class="error username-exists none">Este nombre de usuario ya está en uso</p><small class="form-help">Las
+            cuentas con nombres de usuario inapropiados serán eliminadas</small>
         </div>
         <div class="form-group"><label class="form-label" for="form3-password">Contraseña</label><input
             id="form3-password" name="password" type="password" class="form-control" minlength="4" maxlength="255"
-            required="required" autocomplete="new-password"></input><small class="form-help">Anote su contraseña. No se
-            podrá recuperar ni restablecer. Se le pedirá que inicie sesión de vez en cuando.</small></div>
+            required="required" autocomplete="new-password"></input><small class="form-help">Anota tu contraseña. No
+            hay recuperación ni restablecimiento. Se te pedirá iniciar sesión de vez en cuando.</small></div>
         <div class="password-complexity"><label class="password-complexity-label">Seguridad de la contraseña</label>
           <div class="password-complexity-meter"><span></span><span></span><span></span><span></span></div>
         </div>
@@ -104,8 +105,8 @@
             <div><span class="form-check-input"><input id="form3-agreement_policy" name="noattacks" value="true"
                   type="checkbox" class="form-control cmn-toggle"></input><label
                   for="form3-agreement_policy"></label></span><label class="form-label"
-                for="form3-agreement_policy">Acepto la <a href="/privacy">Política de privacidad</a> y los <a /
-                  href="/terms">Términos del servicio</a></label></div>
+                for="form3-agreement_policy">Acepto la <a href="/es/privacy">Política de privacidad</a> y los <a
+                  href="/es/terms">Términos del servicio</a></label></div>
           </div>
         </div><button class="submit button text big disabled" disabled>Registrarse</button>
       </form>

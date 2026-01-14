@@ -2,17 +2,18 @@
 <html lang="zh">
 
 <head>
-  <title>棋赛 - 国际象棋对局</title>
+  <title>ChessiL - 对局</title>
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
-  <meta name="description" content="用户或匿名者之间进行的实时在线国际象棋游戏">
-  <meta name="keywords" content="国际象棋, 玩, 下棋, 在线, 现场, 游戏, 实时, 棋局">
+  <meta name="description" content="用户或匿名之间的在线国际象棋对局">
+  <meta name="keywords" content="国际象棋, 在线, 实时, 对局, 比赛">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/colors.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/footer.css">
+  <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/game.js"></script>
   <script src="/js/load.js"></script>
@@ -26,7 +27,7 @@
       <label for="x" class="r">
         <span class="u"></span>
       </label>
-      <div class="t"><a href="/zh">棋<span>赛</span></a></div>
+      <div class="t"><a href="/zh">Chess<span>iL</span></a></div>
       <nav id="n">
         <div class="m"><a href="/zh/">主页</a></div>
       </nav>
@@ -44,23 +45,24 @@
                 title="es">Español</button><button class="current accepted" type="submit" name="lang" value="zh"
                 title="zh">中文</button></form>
           </div>
-          <div class="sub background"><button class="head text" type="button">背景</button>
+          <div class="sub background"><button class="head text" type="button">主题</button>
             <div class="selector"><button id="lightmode" type="button">浅色</button><button id="darkmode"
                 type="button">深色</button></div>
           </div>
           <div>
-            <div class="subs"><button class="sub" type="button">语言</button><button class="sub" type="button">背景</button>
-            </div>
+            <div class="subs"><button class="sub" type="button">语言</button><button class="sub"
+                type="button">主题</button></div>
           </div>
         </div>
       </div>
       <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count"
             data-count="0"></span></button>
         <div id="challenge-app" class="links dropdown rendered">
-          <div class="empty text">No challenges.</div>
+          <div class="empty text">没有挑战。</div>
         </div>
       </div>
       <div id="user"></div>
+    </div>
   </header>
   <div id="main-wrap">
     <div class="round">
@@ -139,6 +141,9 @@
       <div class="setup">$initialtime+$increment • $rated • $gameserver • $side</div>
     </div>
   </div>
+  <footer>
+    <div><a href="/zh/terms">服务条款</a><a href="/zh/privacy">隐私政策</a></div>
+  </footer>
 </body>
 
 </html>

@@ -2,11 +2,11 @@
 <html lang="zh">
 
 <head>
-  <title>棋赛 - 登录</title>
+  <title>ChessiL - 登录</title>
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
-  <meta name="description" content="登录棋赛玩排位赛">
-  <meta name="keywords" content="国际象棋, 登录, 下棋, 在线, 棋赛, 排位赛">
+  <meta name="description" content="登录 ChessiL 进行排位对局">
+  <meta name="keywords" content="国际象棋, 登录, 对弈, 在线, 排位赛">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/layout.css">
@@ -26,7 +26,7 @@
       <label for="x" class="r">
         <span class="u"></span>
       </label>
-      <div class="t"><a href="/zh">棋<span>赛</span></a></div>
+      <div class="t"><a href="/zh">Chess<span>iL</span></a></div>
       <nav id="n">
         <div class="m"><a href="/zh/">主页</a></div>
       </nav>
@@ -44,23 +44,24 @@
                 title="es">Español</button><button class="current accepted" type="submit" name="lang" value="zh"
                 title="zh">中文</button></form>
           </div>
-          <div class="sub background"><button class="head text" type="button">背景</button>
+          <div class="sub background"><button class="head text" type="button">主题</button>
             <div class="selector"><button id="lightmode" type="button">浅色</button><button id="darkmode"
                 type="button">深色</button></div>
           </div>
           <div>
-            <div class="subs"><button class="sub" type="button">语言</button><button class="sub" type="button">背景</button>
-            </div>
+            <div class="subs"><button class="sub" type="button">语言</button><button class="sub"
+                type="button">主题</button></div>
           </div>
         </div>
       </div>
       <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count"
             data-count="0"></span></button>
         <div id="challenge-app" class="links dropdown rendered">
-          <div class="empty text">No challenges.</div>
+          <div class="empty text">没有挑战。</div>
         </div>
       </div>
       <div id="user"></div>
+    </div>
   </header>
   <div id="main-wrap" class="isauthwrap">
     <main class="auth auth-login box box-pad">
@@ -75,7 +76,7 @@
               autocomplete="current-password"></input></div><button type="submit" class="submit button">登录</button>
         </div>
       </form>
-      <div class="alternative"><a href="/register">注册</a></div>
+      <div class="alternative"><a href="/zh/register">注册</a></div>
     </main>
   </div>
 </body>

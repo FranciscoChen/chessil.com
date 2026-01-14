@@ -5,14 +5,15 @@
   <title>ChessiL - Partida de ajedrez</title>
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
-  <meta name="description" content="Partida de ajedrez online en directo disputada entre usuarios o personas anónimas">
-  <meta name="keywords" content="ajedrez, línea, vivo, juego, tiempo, partida, real">
+  <meta name="description" content="Partida de ajedrez en línea entre usuarios o personas anónimas">
+  <meta name="keywords" content="ajedrez, online, en vivo, partida, realtime, encuentro">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/colors.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/footer.css">
+  <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/game.js"></script>
   <script src="/js/load.js"></script>
@@ -43,23 +44,24 @@
                 title="en">English</button><button class="current accepted" type="submit" name="lang" value="es"
                 title="es">Español</button><button type="submit" name="lang" value="zh" title="zh">中文</button></form>
           </div>
-          <div class="sub background"><button class="head text" type="button">Fondo</button>
+          <div class="sub background"><button class="head text" type="button">Tema</button>
             <div class="selector"><button id="lightmode" type="button">Claro</button><button id="darkmode"
                 type="button">Oscuro</button></div>
           </div>
           <div>
             <div class="subs"><button class="sub" type="button">Idioma</button><button class="sub"
-                type="button">Fondo</button></div>
+                type="button">Tema</button></div>
           </div>
         </div>
       </div>
       <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count"
             data-count="0"></span></button>
         <div id="challenge-app" class="links dropdown rendered">
-          <div class="empty text">No challenges.</div>
+          <div class="empty text">Sin desafíos.</div>
         </div>
       </div>
       <div id="user"></div>
+    </div>
   </header>
   <div id="main-wrap">
     <div class="round">
@@ -138,6 +140,9 @@
       <div class="setup">$initialtime+$increment • $rated • $gameserver • $side</div>
     </div>
   </div>
+  <footer>
+    <div><a href="/es/terms">Términos del servicio</a><a href="/es/privacy">Política de privacidad</a></div>
+  </footer>
 </body>
 
 </html>

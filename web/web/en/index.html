@@ -19,102 +19,104 @@
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
 </head>
-<header>
-  <div class="z">
-    <input type="checkbox" id="x" class="n" autocomplete="off">
-    <label for="x" class="q"></label>
-    <label for="x" class="r">
-      <span class="u"></span>
-    </label>
-    <div class="t"><a href="/en">Chess<span>iL</span></a></div>
-    <nav id="n">
-      <div class="m"><a href="/en/">Home</a></div>
-    </nav>
-  </div>
-  <div class="site-buttons">
-    <div id="clinput"><a class="link icon-search"><span></span></a><input spellcheck="false" autocomplete="off"
-        placeholder="Search" enterkeyhint="search">
-      <div class="complete-list none"></div>
+<body>
+  <header>
+    <div class="z">
+      <input type="checkbox" id="x" class="n" autocomplete="off">
+      <label for="x" class="q"></label>
+      <label for="x" class="r">
+        <span class="u"></span>
+      </label>
+      <div class="t"><a href="/en">Chess<span>iL</span></a></div>
+      <nav id="n">
+        <div class="m"><a href="/en/">Home</a></div>
+      </nav>
     </div>
-    <div class="dasher"><button class="toggle link anon icon-settings"><span></span></button>
-      <div id="dasher_app" class="dropdown">
-        <div class="sub langs"><button class="head text">Language</button>
-          <form method="post" action="/language"><button class="current accepted" type="submit" name="lang" value="en"
-              title="en">English</button><button type="submit" name="lang" value="es" title="es">Español</button><button
-              type="submit" name="lang" value="zh" title="zh">中文</button></form>
-        </div>
-        <div class="sub background"><button class="head text">Theme</button>
-          <div class="selector"><button id="lightmode">Light</button><button id="darkmode">Dark</button></div>
-        </div>
-        <div>
-          <div class="subs"><button class="sub">Language</button><button class="sub">Theme</button></div>
-        </div>
+    <div class="site-buttons">
+      <div id="clinput"><a class="link icon-search"><span></span></a><input spellcheck="false" autocomplete="off"
+          placeholder="Search" enterkeyhint="search">
+        <div class="complete-list none"></div>
       </div>
-    </div>
-    <div class="seek"><button id="challenge-toggle" class="toggle link icon-games"><span class="data-count"
-          data-count="0"></span></button>
-      <div id="challenge-app" class="links dropdown rendered">
-        <div class="empty text">No challenges.</div>
-      </div>
-    </div>
-    <div id="user">
-      <div id="user_button" class="icon-user toggle">
-        <div id="dasher_user_app" class="dropdown">
+      <div class="dasher"><button class="toggle link anon icon-settings"><span></span></button>
+        <div id="dasher_app" class="dropdown">
+          <div class="sub langs"><button class="head text">Language</button>
+            <form method="post" action="/language"><button class="current accepted" type="submit" name="lang" value="en"
+                title="en">English</button><button type="submit" name="lang" value="es" title="es">Español</button><button
+                type="submit" name="lang" value="zh" title="zh">中文</button></form>
+          </div>
+          <div class="sub background"><button class="head text">Theme</button>
+            <div class="selector"><button id="lightmode">Light</button><button id="darkmode">Dark</button></div>
+          </div>
           <div>
-            <div class="links">
-              <a id="profile" class="user-link online text is-green none" href="/profile">My profile</a>
-              <form id="logout" class="none" method="post" action="/logout"><button class="text" type="submit">Sign
-                  out</button></form>
-              <form id="login" method="post" action="/login"><button class="text" type="submit">Log in</button></form>
+            <div class="subs"><button class="sub">Language</button><button class="sub">Theme</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="seek"><button id="challenge-toggle" class="toggle link icon-games"><span class="data-count"
+            data-count="0"></span></button>
+        <div id="challenge-app" class="links dropdown rendered">
+          <div class="empty text">No challenges.</div>
+        </div>
+      </div>
+      <div id="user">
+        <div id="user_button" class="icon-user toggle">
+          <div id="dasher_user_app" class="dropdown">
+            <div>
+              <div class="links">
+                <a id="profile" class="user-link online text is-green none" href="/profile">My profile</a>
+                <form id="logout" class="none" method="post" action="/logout"><button class="text" type="submit">Sign
+                    out</button></form>
+                <form id="login" method="post" action="/login"><button class="text" type="submit">Log in</button></form>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </header>
+  <div class="main-wrap">
+    <div class="main">
+      <div class="showcase">
+        <div class="showcase-grid">
+          <h1 class="showcase-headings">Play</h1>
+          <p class="showcase-paragraph">Play a casual chess game or perhaps find a more suitable one</p>
+          <div class="showcase-action">
+            <button class="action">Easy Game</button>
+          </div>
+          <div class="showcase-alternative">
+            <a href="/en/lobby"><button class="action alternative" type="submit">Enter Lobby</button></a>
+          </div>
+        </div>
+      </div>
+      <div class="showcase">
+        <div class="showcase-grid">
+          <h1 class="showcase-headings">Exercise</h1>
+          <p class="showcase-paragraph">Drill your openings and practise your endings</p>
+          <div class="showcase-action">
+            <button class="action">Random Opening</button>
+          </div>
+          <div class="showcase-alternative">
+            <button class="action alternative" type="button">Endgame exercise</button>
+          </div>
+        </div>
+      </div>
+      <div class="showcase">
+        <div class="showcase-grid">
+          <h1 class="showcase-headings">Research</h1>
+          <p class="showcase-paragraph">Explore strategies and discover new ways to play the game</p>
+          <div class="showcase-action">
+            <button class="action">Top strategies</button>
+          </div>
+          <div class="showcase-alternative">
+            <button class="action alternative" type="button">Browse Database</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-</header>
-<div class="main-wrap">
-  <div class="main">
-    <div class="showcase">
-      <div class="showcase-grid">
-        <h1 class="showcase-headings">Play</h1>
-        <p class="showcase-paragraph">Play a casual chess game or perhaps find a more suitable one</p>
-        <div class="showcase-action">
-          <button class="action">Easy Game</button>
-        </div>
-        <div class="showcase-alternative">
-          <a href="/lobby"><button class="action alternative" type="submit">Enter Lobby</button></a>
-        </div>
-      </div>
-    </div>
-    <div class="showcase">
-      <div class="showcase-grid">
-        <h1 class="showcase-headings">Exercise</h1>
-        <p class="showcase-paragraph">Drill your openings and practise your endings</p>
-        <div class="showcase-action">
-          <button class="action">Random Opening</button>
-        </div>
-        <div class="showcase-alternative">
-          <button class="action alternative" type="button">Endgame exercise</button>
-        </div>
-      </div>
-    </div>
-    <div class="showcase">
-      <div class="showcase-grid">
-        <h1 class="showcase-headings">Research</h1>
-        <p class="showcase-paragraph">Explore strategies and discover new ways to play the game</p>
-        <div class="showcase-action">
-          <button class="action">Top strategies</button>
-        </div>
-        <div class="showcase-alternative">
-          <button class="action alternative" type="button">Browse Database</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-<footer>
-  <div><a href="/terms">Terms of service</a><a href="/privacy">Privacy policy</a></div>
-</footer>
+  <footer>
+    <div><a href="/en/terms">Terms of service</a><a href="/en/privacy">Privacy policy</a></div>
+  </footer>
+</body>
 
 </html>
