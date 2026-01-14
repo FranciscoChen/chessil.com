@@ -1,3 +1,5 @@
-const credentials = '03nhcvdh74m3dfj478gpz21mdfqb473i7672hdi7sb7v6fg35gdb60851'
+const config = require('../config.json');
 
-module.exports={credentials}
+const credentials = config.shared.websocketPassword;
+
+module.exports = { credentials };

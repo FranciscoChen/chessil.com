@@ -6,6 +6,7 @@ var path = require("path");
 const zlib = require('zlib');
 const crypto = require('crypto');
 const querystring = require('querystring');
+const observability = require('../observability');
 
 // Using Redis as Sessions database
 const Redis = require("ioredis");
@@ -13,11 +14,10 @@ const redis = new Redis();
 
 // Using PostgreSQL as main database for storing information about: users, game seeks, game data, etc.
 const pg = require("pg");
+const config = require("../config.json");
 
-// database.js is not included, because it contains the password to the database in plain text, but it should be a string as follows:
 // const conString = 'postgres://user:password@host:port/db?sslmode=require'
-const database = require('./database.js')
-const conString = database.credentials
+const conString = config.shared.postgresUrl;
 
 // Password complexity calculator
 const zxcvbn = require('zxcvbn');
@@ -31,14 +31,14 @@ const randidregex = new RegExp('^[1234567890abcdef]{32}$')
 const isodateregex = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
 
 // The IPs of one or more websocket servers
-const websocketserver = { '51.68.190.27': true }
+const websocketserver = config.web.websocketServerIps;
 
 // This could be a very long random string, but it has to match in both the web server and the websocket server. For example:
 // const websocketpassword = '4n729fm8dwyb475tynferh7w8qb7qwnrhmfx4362trgb627f3yg4n2f67svgb26734gnfb6weuysdf4738pzn1'
-const websocket = require('./websocket.js')
-const websocketpassword = websocket.credentials
+const websocketpassword = config.shared.websocketPassword;
 
-const domainname = 'https://chessil.com'
+const domainname = config.web.domainName;
+const authRateLimits = config.web.authRateLimits;
 
 const languages = {
   en: true,
@@ -47,9 +47,9 @@ const languages = {
 }
 
 // Maintenance mode switch
-const maintenance = true;
+const maintenance = config.web.maintenance;
 // The IPs that are allowed when server is down for maintenance
-const maintenanceips = { '2.38.67.180': true }
+const maintenanceips = config.web.maintenanceIps;
 
 // This is the root directory of the website, everything inside here could be requested
 // The name of the folder, which must be in the same directory as this file (server.js)
@@ -57,12 +57,18 @@ var folder = 'web'
 var dir = path.join(__dirname, folder)
 
 // This port is closed to the outside, but connected to our nginx instance
-const port = 8080;
+const port = config.web.port;
+const obs = observability.createObserver('web');
+obs.installProcessHandlers();
 
 // The mime types of files that can be served, and which ones are to be gzipped or cached. It is limited on purpose and can be expanded as needed
 const mime = require('./mime.js')
 
 process.chdir(dir);
+
+if (!authRateLimits || !authRateLimits.register || !authRateLimits.login || !authRateLimits.registered || !authRateLimits.logout) {
+  throw new Error('Missing authRateLimits config');
+}
 
 var server = http.createServer(function (req, res) {
 
@@ -117,10 +123,7 @@ var server = http.createServer(function (req, res) {
 
   // user-agent can get big, up to 8k with nginx header limits. If stored on a 2GB memory system, the maximum is 250000 user-agents
   // truncating user-agent to 255 characters gives way to 32 times 250000 user-agents
-  var useragent = ''
-  if (typeof req.headers['user-agent'] !== 'undefined') {
-    useragent = req.headers['user-agent']
-  }
+  var useragent = sanitizeUserAgent(req.headers['user-agent'])
   // If ip changes, and user-agent is the same, check that geographical area or country is the same
   var cookie = req.headers['cookie'];
   // The sessionid must always be of length 32 (16 random bytes as hex string)
@@ -162,7 +165,11 @@ var server = http.createServer(function (req, res) {
             newsession(filename, mime, ext, res, req, resHeaders, sessiondata)
           } else {
             // In case sessionid is found on redis
-            sessiondata = result.split(' ')
+            sessiondata = parseSessionData(result)
+            if (!sessiondata) {
+              newsession(filename, mime, ext, res, req, resHeaders, sessiondata)
+              return
+            }
             if (Math.floor(Date.now() / 1000) - sessiondata[4] > 31536000) {
               // Hard limit absolute timeout of 1 year
               newsession(filename, mime, ext, res, req, resHeaders, sessiondata)
@@ -174,7 +181,7 @@ var server = http.createServer(function (req, res) {
                 route(filename, mime, ext, res, req, resHeaders, sessiondata) //use sessiondata[1] which is the user id, to customise the html dynamically
               } else {
                 // Different IP, same cookie - cookie theft or dynamic IP reassignment?
-                if (useragent === sessiondata.slice(6).join(' ')) {
+                if (useragent === sessiondata[6]) {
                   // If same user agent, assuming dynamic IP case, but can be further checked to be in the same location or country
                   route(filename, mime, ext, res, req, resHeaders, sessiondata) //use sessiondata[1] which is the user id, to customise the html dynamically
                 } else {
@@ -195,10 +202,117 @@ var server = http.createServer(function (req, res) {
 })
 
 server.listen(port);
+obs.log('info', 'server_listen', { port: port });
 
 server.on('error', function (e) {
-  console.log(e)
+  obs.count('server_error');
+  obs.log('error', 'server_error', { error: e && e.stack ? e.stack : String(e) });
 });
+
+function sanitizeUserAgent(useragent) {
+  if (typeof useragent !== 'string') {
+    return ''
+  }
+  return useragent.replace(/[\r\n]/g, ' ').slice(0, 255)
+}
+
+function logAuthEvent(event, req, details) {
+  const entry = {
+    ip: req.headers['x-real-ip'],
+    ua: sanitizeUserAgent(req.headers['user-agent']),
+    session: typeof req.headers['cookie'] === 'string' ? req.headers['cookie'].slice(2) : '',
+  }
+  if (details && typeof details === 'object') {
+    Object.keys(details).forEach((key) => {
+      entry[key] = details[key]
+    })
+  }
+  obs.log('info', 'auth_' + event, entry)
+}
+
+function applyAuthRateLimit(action, req, res, resHeaders, callback) {
+  const limit = authRateLimits[action];
+  const ip = req.headers['x-real-ip'];
+  const key = 'rl:auth:' + action + ':' + ip;
+  redis.incr(key, (err, count) => {
+    if (err) {
+      res.writeHead(500, { "Content-Type": "text/html" });
+      res.end();
+      console.error(err);
+      return;
+    }
+    if (count === 1) {
+      redis.expire(key, limit.windowSec, (expireErr) => {
+        if (expireErr) {
+          console.error(expireErr);
+        }
+      });
+    }
+    if (count > limit.max) {
+      logAuthEvent('rate_limit', req, { action: action });
+      res.writeHead(429, { "Content-Type": "text/html" });
+      res.end();
+      return;
+    }
+    callback();
+  });
+}
+
+function setSessionProps(sessiondata) {
+  sessiondata.ip = sessiondata[0]
+  sessiondata.userid = sessiondata[1]
+  sessiondata.theme = sessiondata[2]
+  sessiondata.lang = sessiondata[3]
+  sessiondata.created = sessiondata[4]
+  sessiondata.username = sessiondata[5]
+  sessiondata.useragent = sessiondata[6] || ''
+  return sessiondata
+}
+
+function buildSessionData(ip, userid, theme, lang, created, username, useragent) {
+  const sessiondata = [ip, userid, theme, lang, created, username, useragent || '']
+  return setSessionProps(sessiondata)
+}
+
+function parseSessionData(raw) {
+  if (typeof raw !== 'string' || raw.length === 0) {
+    return null
+  }
+  if (raw[0] !== '{') {
+    return null
+  }
+  try {
+    const parsed = JSON.parse(raw)
+    return buildSessionData(
+      parsed.ip || '',
+      parsed.userid || '0',
+      parsed.theme || 'n',
+      parsed.lang || 'en',
+      parsed.created || '0',
+      parsed.username || 'u',
+      sanitizeUserAgent(parsed.useragent || '')
+    )
+  } catch (err) {
+    console.error(err)
+    return null
+  }
+}
+
+function serializeSessionData(sessiondata) {
+  return JSON.stringify({
+    ip: sessiondata[0] || sessiondata.ip || '',
+    userid: sessiondata[1] || sessiondata.userid || '0',
+    theme: sessiondata[2] || sessiondata.theme || 'n',
+    lang: sessiondata[3] || sessiondata.lang || 'en',
+    created: sessiondata[4] || sessiondata.created || '0',
+    username: sessiondata[5] || sessiondata.username || 'u',
+    useragent: sessiondata[6] || sessiondata.useragent || ''
+  })
+}
+
+function storeSessionData(sessionid, sessiondata, callback) {
+  redis.set(sessionid, serializeSessionData(sessiondata), 'EX', '604800', callback)
+}
 
 function newsession(filename, mime, ext, res, req, resHeaders, sessiondata) {
   crypto.randomBytes(16, (err, buf) => {
@@ -208,10 +322,7 @@ function newsession(filename, mime, ext, res, req, resHeaders, sessiondata) {
       console.log(err);
     } else {
       var sessionid = buf.toString('hex')
-      var useragent = ''
-      if (typeof req.headers['user-agent'] !== 'undefined') {
-        useragent = req.headers['user-agent']
-      }
+      var useragent = sanitizeUserAgent(req.headers['user-agent'])
       // Ensure it is a new id, not in use
       redis.get(sessionid, (err, result) => {
         if (err) {
@@ -233,7 +344,8 @@ function newsession(filename, mime, ext, res, req, resHeaders, sessiondata) {
                   client.end()
                   resHeaders["Set-Cookie"] = "s=" + sessionid + '; Domain=.chessil.com; Max-Age=31536000; HttpOnly; Path=/; Secure; SameSite=Lax'
                   // Set it in Redis and keep going normally
-                  redis.set(sessionid, req.headers['x-real-ip'] + ' 0 n en ' + Math.floor(Date.now() / 1000) + ' u ' + useragent, 'EX', '604800', (err, result) => {
+                  const sessiondata = buildSessionData(req.headers['x-real-ip'], '0', 'n', 'en', Math.floor(Date.now() / 1000), 'u', useragent)
+                  storeSessionData(sessionid, sessiondata, (err, result) => {
                     if (err) {
                       res.writeHead(500, { "Content-Type": "text/html" });
                       res.end();
@@ -250,7 +362,8 @@ function newsession(filename, mime, ext, res, req, resHeaders, sessiondata) {
               // There is no old cookie or sessionid to delete
               resHeaders["Set-Cookie"] = "s=" + sessionid + '; Domain=.chessil.com; Max-Age=31536000; HttpOnly; Path=/; Secure; SameSite=Lax'
               // Set it in Redis and keep going normally
-              redis.set(sessionid, req.headers['x-real-ip'] + ' 0 n en ' + Math.floor(Date.now() / 1000) + ' u ' + useragent, 'EX', '604800', (err, result) => {
+              const sessiondata = buildSessionData(req.headers['x-real-ip'], '0', 'n', 'en', Math.floor(Date.now() / 1000), 'u', useragent)
+              storeSessionData(sessionid, sessiondata, (err, result) => {
                 if (err) {
                   res.writeHead(500, { "Content-Type": "text/html" });
                   res.end();
@@ -277,7 +390,7 @@ function routelanguage(filename, mime, ext, res, req, resHeaders, sessiondata) {
   if (resHeaders["Location"] === '') resHeaders["Location"] = '/'
   // Accepted set language. Update in session...
   sessiondata[3] = req.url.slice(1, 3)
-  redis.set(req.headers['cookie'].slice(2), sessiondata[0] + ' ' + sessiondata[1] + ' ' + sessiondata[2] + ' ' + sessiondata[3] + ' ' + sessiondata[4] + ' ' + sessiondata[5] + ' ' + sessiondata.slice(6).join(), 'EX', '604800', (err, result) => {
+  storeSessionData(req.headers['cookie'].slice(2), sessiondata, (err, result) => {
     if (err) {
       res.writeHead(500, { "Content-Type": "text/html" });
       res.end();
@@ -301,6 +414,7 @@ function routelanguage(filename, mime, ext, res, req, resHeaders, sessiondata) {
 }
 
 function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  // Public endpoints are served here; internal-only endpoint is /websocket (restricted by auth + IP allowlist in wsauth).
   // Manage language part of url
   if (typeof languages[req.url.slice(1, 3)] !== 'undefined') {
     routelanguage(filename, mime, ext, res, req, resHeaders, sessiondata)
@@ -332,15 +446,21 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
   }
   // If the request is a POST for account creation (config nginx to rate limit this one for all languages)
   if (req.url === '/register' && req.method === 'POST') {
-    registration(filename, mime, ext, res, req, resHeaders, sessiondata)
+    applyAuthRateLimit('register', req, res, resHeaders, () => {
+      registration(filename, mime, ext, res, req, resHeaders, sessiondata)
+    })
     return
   }
   if (req.url === '/login' && req.method === 'POST') {
-    login(filename, mime, ext, res, req, resHeaders, sessiondata)
+    applyAuthRateLimit('login', req, res, resHeaders, () => {
+      login(filename, mime, ext, res, req, resHeaders, sessiondata)
+    })
     return
   }
   if (req.url === '/logout' && req.method === 'POST') {
-    logout(filename, mime, ext, res, req, resHeaders, sessiondata)
+    applyAuthRateLimit('logout', req, res, resHeaders, () => {
+      logout(filename, mime, ext, res, req, resHeaders, sessiondata)
+    })
     return
   }
   if (req.url === '/language' && req.method === 'POST') {
@@ -348,7 +468,9 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
     return
   }
   if (req.url === '/registered' && req.method === 'POST') {
-    checknewuser(filename, mime, ext, res, req, resHeaders, sessiondata)
+    applyAuthRateLimit('registered', req, res, resHeaders, () => {
+      checknewuser(filename, mime, ext, res, req, resHeaders, sessiondata)
+    })
     return
   }
   if (req.url === '/search' && req.method === 'POST') {
@@ -569,6 +691,7 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
     req.removeListener('data', registercheck);
     const postcontent = querystring.parse(chunk.toString())
     if (typeof postcontent === 'object') {
+      logAuthEvent('register_attempt', req, { username: postcontent.username || '' });
       if (postcontent.nocheating === 'true' &&
         postcontent.treatotherswell === 'true' &&
         postcontent.nomultiaccount === 'true' &&
@@ -605,6 +728,7 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
                   if (rere.rows.length === 0) {
                     // Makes sure a user opened the page, and connected to ws, and took 2 seconds or more to fill the form
                     // Bot and spam account creation protection number 1
+                    logAuthEvent('register_reject', req, { reason: 'missing_ws_handshake', username: postcontent.username });
                     res.writeHead(401, { "Content-Type": "text/html" });
                     res.end();
                     client.end();
@@ -622,6 +746,7 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
                       // If there are more than 70 accounts created from the same IP in the last month, deny further account creations
                       // Bot and spam account creation protection number 2
                       if (respo.rows[0].c > 70) {
+                        logAuthEvent('register_reject', req, { reason: 'ip_quota', username: postcontent.username });
                         res.writeHead(401, { "Content-Type": "text/html" });
                         res.end();
                         client.end();
@@ -648,6 +773,7 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
                                 , sessiondata[2], sessiondata[3]], (err, respo) => {
                                   if (err) {
                                     // Account creation unsuccessful
+                                    logAuthEvent('register_error', req, { reason: 'db_insert', username: postcontent.username });
                                     res.writeHead(500, { "Content-Type": "text/html" });
                                     res.end();
                                     console.log(err);
@@ -661,6 +787,7 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
                                         sessiondata[2] = response2.rows[0].theme
                                         sessiondata[3] = response2.rows[0].language
                                         sessiondata[5] = response2.rows[0].username
+                                        logAuthEvent('register_success', req, { userid: sessiondata[1], username: sessiondata[5] });
                                         newsessionwithloginuser(filename, mime, ext, res, req, resHeaders, sessiondata)
                                         client.end()
                                         return
@@ -686,6 +813,7 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
 
                         } else {
                           // Username already exists
+                          logAuthEvent('register_reject', req, { reason: 'username_exists', username: postcontent.username });
                           console.log('Username already exists')
                           client.end()
                           serve(filename, mime, ext, res, req, resHeaders, sessiondata)
@@ -703,6 +831,7 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
               } else {
                 res.writeHead(500, { "Content-Type": "text/html" });
                 res.end();
+                logAuthEvent('register_reject', req, { reason: 'weak_password', username: postcontent.username || '' });
                 console.log('Low password strength, not normal user behaviour')
                 return;
               }
@@ -715,24 +844,28 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
             } else {
               res.writeHead(500, { "Content-Type": "text/html" });
               res.end();
+              logAuthEvent('register_reject', req, { reason: 'password_length', username: postcontent.username || '' });
               console.log('Incorrect password length, not normal user behaviour')
               return;
             }
           } else {
             res.writeHead(500, { "Content-Type": "text/html" });
             res.end();
+            logAuthEvent('register_reject', req, { reason: 'username_invalid', username: postcontent.username || '' });
             console.log('Incorrect username length, or not conforming to the rules. not normal user behaviour')
             return;
           }
         } else {
           res.writeHead(500, { "Content-Type": "text/html" });
           res.end();
+          logAuthEvent('register_reject', req, { reason: 'missing_fields' });
           console.log('postcontent not fully defined, this is not normal user behaviour, but rather a custom packet send')
           return;
         }
 
       } else {
         // Could result in a web page message, you have to agree to the terms of service
+        logAuthEvent('register_reject', req, { reason: 'agreements_missing', username: postcontent.username || '' });
         console.log('Not all agreements were true or defined')
         res.writeHead(500, { "Content-Type": "text/html" });
         res.end();
@@ -743,6 +876,7 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
     } else {
       res.writeHead(500, { "Content-Type": "text/html" });
       res.end();
+      logAuthEvent('register_error', req, { reason: 'parse_failed' });
       console.log('failed to parse registration POST')
       return;
     }
@@ -760,12 +894,14 @@ function checknewuser(filename, mime, ext, res, req, resHeaders, sessiondata) {
       client.query('SELECT id FROM users WHERE canonical = $1', [uname.toLowerCase()], (err, response) => {
         if (response.rows.length === 0) {
           // Username is available
+          logAuthEvent('register_check', req, { username: uname, available: true });
           res.writeHead(200, { "Content-Type": "text/html" });
           res.end('false');
           client.end();
           return;
         } else {
           // Username already exists
+          logAuthEvent('register_check', req, { username: uname, available: false });
           res.writeHead(200, { "Content-Type": "text/html" });
           res.end('true');
           client.end();
@@ -775,6 +911,7 @@ function checknewuser(filename, mime, ext, res, req, resHeaders, sessiondata) {
     } else {
       res.writeHead(500, { "Content-Type": "text/html" });
       res.end();
+      logAuthEvent('register_check_reject', req, { reason: 'username_invalid', username: uname || '' });
       console.log('Incorrect username length, or not conforming to the rules. not normal user behaviour')
       return;
     }
@@ -817,10 +954,7 @@ function newsessionwithloginuser(filename, mime, ext, res, req, resHeaders, sess
       console.log(err);
     } else {
       var sessionid = buf.toString('hex')
-      var useragent = ''
-      if (typeof req.headers['user-agent'] !== 'undefined') {
-        useragent = req.headers['user-agent']
-      }
+      var useragent = sanitizeUserAgent(req.headers['user-agent'])
       // Ensure it is a new id, not in use
       redis.get(sessionid, (err, result) => {
         if (err) {
@@ -848,7 +982,8 @@ function newsessionwithloginuser(filename, mime, ext, res, req, resHeaders, sess
                     // Delete old cookie at client by overwriting new cookie
                     resHeaders["Set-Cookie"] = "s=" + sessionid + '; Domain=.chessil.com; Max-Age=31536000; HttpOnly; Path=/; Secure; SameSite=Lax'
                     // Register in Redis and keep going normally
-                    redis.set(sessionid, req.headers['x-real-ip'] + ' ' + sessiondata[1] + ' ' + sessiondata[2] + ' ' + sessiondata[3] + ' ' + Math.floor(Date.now() / 1000) + ' ' + sessiondata[5] + ' ' + useragent, 'EX', '604800', (err, result) => {
+                    const newdata = buildSessionData(req.headers['x-real-ip'], sessiondata[1], sessiondata[2], sessiondata[3], Math.floor(Date.now() / 1000), sessiondata[5], useragent)
+                    storeSessionData(sessionid, newdata, (err, result) => {
                       if (err) {
                         res.writeHead(500, { "Content-Type": "text/html" });
                         res.end();
@@ -879,6 +1014,7 @@ function login(filename, mime, ext, res, req, resHeaders, sessiondata) {
     req.removeListener('data', logincheck);
     const postcontent = querystring.parse(chunk.toString())
     if (typeof postcontent === 'object') {
+      logAuthEvent('login_attempt', req, { username: postcontent.username || '' });
       if (typeof postcontent.username !== 'undefined' && typeof postcontent.password !== 'undefined') {
         if (postcontent.username.length > 1 && postcontent.username.length < 21 && usernameregex.test(postcontent.username)) {
           if (postcontent.password.length > 3 && postcontent.password.length < 256) {
@@ -896,11 +1032,13 @@ function login(filename, mime, ext, res, req, resHeaders, sessiondata) {
                       sessiondata[2] = response.rows[0].theme
                       sessiondata[3] = response.rows[0].language
                       sessiondata[5] = response.rows[0].username
+                      logAuthEvent('login_success', req, { userid: sessiondata[1], username: sessiondata[5] });
                       newsessionwithloginuser(filename, mime, ext, res, req, resHeaders, sessiondata)
                       client.end()
                       return
                     } else {
                       // Wrong password
+                      logAuthEvent('login_failure', req, { reason: 'wrong_password', username: postcontent.username });
                       client.end()
                       serve(filename, mime, ext, res, req, resHeaders, sessiondata)
                     }
@@ -914,21 +1052,25 @@ function login(filename, mime, ext, res, req, resHeaders, sessiondata) {
                 }
               } else {
                 // Username not found 
+                logAuthEvent('login_failure', req, { reason: 'username_not_found', username: postcontent.username });
                 client.end()
                 serve(filename, mime, ext, res, req, resHeaders, sessiondata)
               }
             })
           } else {
+            logAuthEvent('login_reject', req, { reason: 'password_length', username: postcontent.username });
             serve(filename, mime, ext, res, req, resHeaders, sessiondata)
             // console.log('Incorrect password length, not normal user behaviour')
             return;
           }
         } else {
+          logAuthEvent('login_reject', req, { reason: 'username_invalid', username: postcontent.username });
           serve(filename, mime, ext, res, req, resHeaders, sessiondata)
           //console.log('Incorrect username length, not normal user behaviour')
           return;
         }
       } else {
+        logAuthEvent('login_reject', req, { reason: 'missing_fields' });
         serve(filename, mime, ext, res, req, resHeaders, sessiondata)
         //console.log('Username or password missing')
         return;
@@ -936,6 +1078,7 @@ function login(filename, mime, ext, res, req, resHeaders, sessiondata) {
     } else {
       res.writeHead(500, { "Content-Type": "text/html" });
       res.end();
+      logAuthEvent('login_error', req, { reason: 'parse_failed' });
       console.log('postcontent not fully defined, this is not normal user behaviour, but rather a custom packet send')
       return;
     }
@@ -943,6 +1086,7 @@ function login(filename, mime, ext, res, req, resHeaders, sessiondata) {
 }
 
 function logout(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  logAuthEvent('logout_attempt', req, { userid: sessiondata[1] || '0', username: sessiondata[5] || 'u' });
   crypto.randomBytes(16, (err, buf) => {
     if (err) {
       res.writeHead(500, { "Content-Type": "text/html" });
@@ -950,10 +1094,7 @@ function logout(filename, mime, ext, res, req, resHeaders, sessiondata) {
       console.log(err);
     } else {
       var sessionid = buf.toString('hex')
-      var useragent = ''
-      if (typeof req.headers['user-agent'] !== 'undefined') {
-        useragent = req.headers['user-agent']
-      }
+      var useragent = sanitizeUserAgent(req.headers['user-agent'])
       // Ensure it is a new id, not in use
       redis.get(sessionid, (err, result) => {
         if (err) {
@@ -981,13 +1122,15 @@ function logout(filename, mime, ext, res, req, resHeaders, sessiondata) {
                     // Delete old cookie at client by overwriting new cookie
                     resHeaders["Set-Cookie"] = "s=" + sessionid + '; Domain=.chessil.com; Max-Age=31536000; HttpOnly; Path=/; Secure; SameSite=Lax'
                     // Register logged out cookie in Redis
-                    redis.set(sessionid, req.headers['x-real-ip'] + ' 0 ' + sessiondata[2] + ' ' + sessiondata[3] + ' ' + Math.floor(Date.now() / 1000) + ' u ' + useragent, 'EX', '604800', (err, result) => {
+                    const newdata = buildSessionData(req.headers['x-real-ip'], '0', sessiondata[2], sessiondata[3], Math.floor(Date.now() / 1000), 'u', useragent)
+                    storeSessionData(sessionid, newdata, (err, result) => {
                       if (err) {
                         res.writeHead(500, { "Content-Type": "text/html" });
                         res.end();
                         console.error(err);
                       } else {
                         resHeaders["Location"] = domainname
+                        logAuthEvent('logout_success', req, { userid: sessiondata[1] || '0', username: sessiondata[5] || 'u' });
                         res.writeHead(303, resHeaders);
                         res.end();
                       }
@@ -1028,7 +1171,7 @@ function setlanguage(filename, mime, ext, res, req, resHeaders, sessiondata) {
           resHeaders["Location"] = req.headers.referer.slice(domainname.length)
           // Accepted set language. Update in session...
           sessiondata[3] = postcontent.lang
-          redis.set(req.headers['cookie'].slice(2), sessiondata[0] + ' ' + sessiondata[1] + ' ' + sessiondata[2] + ' ' + sessiondata[3] + ' ' + sessiondata[4] + ' ' + sessiondata[5] + ' ' + sessiondata.slice(6).join(), 'EX', '604800', (err, result) => {
+          storeSessionData(req.headers['cookie'].slice(2), sessiondata, (err, result) => {
             if (err) {
               res.writeHead(500, { "Content-Type": "text/html" });
               res.end();
@@ -1082,7 +1225,8 @@ function wsauth(filename, mime, ext, res, req, resHeaders, sessiondata) {
     const postcontent = chunk.toString()
 
     if (typeof postcontent === 'string' && postcontent.length === 34 && postcontent.slice(0, 2) === 's=') {
-      redis.get(postcontent.slice(2), (err, result) => {
+      const sessionid = postcontent.slice(2)
+      redis.get(sessionid, (err, result) => {
         if (err) {
           res.writeHead(500, { "Content-Type": "text/html" });
           res.end();
@@ -1092,8 +1236,14 @@ function wsauth(filename, mime, ext, res, req, resHeaders, sessiondata) {
             res.writeHead(404, { "Content-Type": "text/html" });
             res.end();
           } else {
+            const parsed = parseSessionData(result)
+            if (!parsed) {
+              res.writeHead(500, { "Content-Type": "text/html" });
+              res.end();
+              return;
+            }
             res.writeHead(200, { "Content-Type": "text/html" });
-            res.end(result);
+            res.end(serializeSessionData(parsed));
           }
         }
       })
@@ -1317,7 +1467,7 @@ function gamedata(filename, mime, ext, res, req, resHeaders, sessiondata) {
 
 function lightmode(filename, mime, ext, res, req, resHeaders, sessiondata) {
   sessiondata[2] = 'l'
-  redis.set(req.headers['cookie'].slice(2), sessiondata[0] + ' ' + sessiondata[1] + ' ' + sessiondata[2] + ' ' + sessiondata[3] + ' ' + sessiondata[4] + ' ' + sessiondata[5] + ' ' + sessiondata.slice(6).join(), 'EX', '604800', (err, result) => {
+  storeSessionData(req.headers['cookie'].slice(2), sessiondata, (err, result) => {
     if (err) {
       res.writeHead(500, { "Content-Type": "text/html" });
       res.end();
@@ -1341,7 +1491,7 @@ function lightmode(filename, mime, ext, res, req, resHeaders, sessiondata) {
 }
 function darkmode(filename, mime, ext, res, req, resHeaders, sessiondata) {
   sessiondata[2] = 'd'
-  redis.set(req.headers['cookie'].slice(2), sessiondata[0] + ' ' + sessiondata[1] + ' ' + sessiondata[2] + ' ' + sessiondata[3] + ' ' + sessiondata[4] + ' ' + sessiondata[5] + ' ' + sessiondata.slice(6).join(), 'EX', '604800', (err, result) => {
+  storeSessionData(req.headers['cookie'].slice(2), sessiondata, (err, result) => {
     if (err) {
       res.writeHead(500, { "Content-Type": "text/html" });
       res.end();

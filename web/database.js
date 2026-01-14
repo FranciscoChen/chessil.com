@@ -1,3 +1,5 @@
-const credentials = 'postgres://username:password@db.domain.com:5432/databasename?sslmode=require'
+const config = require('../config.json');
 
-module.exports={credentials}
+const credentials = config.shared.postgresUrl;
+
+module.exports = { credentials };
