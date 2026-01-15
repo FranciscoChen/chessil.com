@@ -39,6 +39,25 @@ const websocketpassword = config.shared.websocketPassword;
 
 const domainname = config.web.domainName;
 const authRateLimits = config.web.authRateLimits;
+const gameServerHost = config.engine.gameHost;
+const gameServerName = config.game.serverName;
+const gameServerAuthToken = config.shared.gameServerAuthToken;
+const lobbyWatchers = new Map();
+
+function getGameServerAuthIp() {
+  const entries = Object.entries(config.game.myServers || {});
+  for (var i = 0; i < entries.length; i++) {
+    if (entries[i][1] === 'http') {
+      return entries[i][0];
+    }
+  }
+  if (entries.length === 0) {
+    throw new Error('Missing config.game.myServers entries');
+  }
+  throw new Error('Missing http entry in config.game.myServers');
+}
+
+const gameServerAuthIp = getGameServerAuthIp();
 
 const languages = {
   en: true,
@@ -482,6 +501,12 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
   }
   if (req.url === '/lobby/list' && req.method === 'POST') {
     return handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata);
+  }
+  if (req.url === '/lobby/status' && req.method === 'POST') {
+    return handleLobbyStatus(filename, mime, ext, res, req, resHeaders, sessiondata);
+  }
+  if (req.url.slice(0, 12) === '/lobby/watch' && req.method === 'GET') {
+    return handleLobbyWatch(filename, mime, ext, res, req, resHeaders, sessiondata);
   }
   if (req.url === '/lobby/action' && req.method === 'POST') {
     return handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondata);
@@ -1520,6 +1545,130 @@ function randomString(length, chars) {
   return result;
 }
 
+function notifyLobbyWatchers(gameid) {
+  const watchers = lobbyWatchers.get(gameid);
+  if (!watchers || watchers.size === 0) return;
+  const payload = 'data: ' + JSON.stringify({ started: true, gameid: gameid }) + '\n\n';
+  watchers.forEach((entry) => {
+    entry.res.write(payload);
+    entry.res.end();
+    clearInterval(entry.keepalive);
+  });
+  lobbyWatchers.delete(gameid);
+}
+
+function parseTimeControl(timecontrol) {
+  if (typeof timecontrol !== 'string') {
+    return { minutes: 5, increment: 0, raw: '5+0' };
+  }
+  var parts = timecontrol.split('+');
+  if (parts.length !== 2) {
+    return { minutes: 5, increment: 0, raw: '5+0' };
+  }
+  var minutes = parseInt(parts[0], 10);
+  var increment = parseInt(parts[1], 10);
+  if (!Number.isFinite(minutes) || minutes < 0) {
+    minutes = 5;
+  }
+  if (!Number.isFinite(increment) || increment < 0) {
+    increment = 0;
+  }
+  return { minutes: minutes, increment: increment, raw: timecontrol };
+}
+
+function ratingModeForTime(minutes, increment) {
+  var total = minutes * 60 + increment * 40;
+  if (total <= 15) return 'ultrabullet';
+  if (total <= 180) return 'bullet';
+  if (total <= 480) return 'blitz';
+  if (total <= 1500) return 'rapid';
+  return 'classical';
+}
+
+function getPlayerIdentity(userid, sessionid) {
+  if (userid && userid !== '0') return String(userid);
+  return String(sessionid);
+}
+
+function assignColorsForGame(game) {
+  var color1 = game.color1;
+  var color2 = game.color2;
+  if (game.randomcolor || (color1 !== 'white' && color1 !== 'black')) {
+    if (Math.random() < 0.5) {
+      color1 = 'white';
+      color2 = 'black';
+    } else {
+      color1 = 'black';
+      color2 = 'white';
+    }
+  } else {
+    color2 = color1 === 'white' ? 'black' : 'white';
+  }
+  return { color1: color1, color2: color2, whiteIsPlayer1: color1 === 'white' };
+}
+
+function selectUserRatings(client, userIds, mode, callback) {
+  if (!Array.isArray(userIds) || userIds.length === 0) {
+    callback(null, {});
+    return;
+  }
+  const ratingField = mode + '_rating';
+  const deviationField = mode + '_deviation';
+  const volatilityField = mode + '_volatility';
+  const sql = 'SELECT id, ' + ratingField + ' AS rating, ' + deviationField + ' AS deviation, ' + volatilityField + ' AS volatility FROM users WHERE id = ANY($1)';
+  client.query(sql, [userIds], (err, result) => {
+    if (err) return callback(err);
+    const map = {};
+    for (var i = 0; i < result.rows.length; i++) {
+      const row = result.rows[i];
+      map[String(row.id)] = {
+        rating: Number(row.rating),
+        deviation: Number(row.deviation),
+        volatility: Number(row.volatility)
+      };
+    }
+    callback(null, map);
+  });
+}
+
+function startGameOnServer(payload, callback) {
+  const req = https.request(
+    {
+      hostname: gameServerHost,
+      path: '/ng',
+      method: 'POST',
+      port: 443,
+      headers: {
+        'authorization': gameServerAuthToken,
+        'x-real-ip': gameServerAuthIp,
+        'gn': payload.gameid,
+        'w': payload.whitePlayerId,
+        'b': payload.blackPlayerId,
+        'wt': String(payload.time.minutes),
+        'bt': String(payload.time.minutes),
+        'wi': String(payload.time.increment),
+        'bi': String(payload.time.increment),
+        'wr': String(payload.whiteRatings.rating),
+        'br': String(payload.blackRatings.rating),
+        'wd': String(payload.whiteRatings.deviation),
+        'bd': String(payload.blackRatings.deviation),
+        'wv': String(payload.whiteRatings.volatility),
+        'bv': String(payload.blackRatings.volatility)
+      }
+    },
+    (re) => {
+      re.resume();
+      if (re.statusCode === 200) {
+        callback(null);
+        return;
+      }
+      callback(new Error('game server /ng failed: ' + re.statusCode));
+    }
+  );
+  req.on('error', (err) => callback(err));
+  req.end();
+}
+
 function validateFilters(filters) {
   const safe = {};
 
@@ -1590,8 +1739,7 @@ function handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata)
     const filters = validateFilters(rawFilters);
 
     const values = [
-      filters.rated === undefined || filters.rated === '' ? null
-        : filters.rated === '1' ? true : filters.rated === '0' ? false : null,
+      typeof filters.rated === 'boolean' ? filters.rated : null,
       filters.eloMin ? Number(filters.eloMin) : null,
       filters.eloMax ? Number(filters.eloMax) : null,
       filters.username || null,
@@ -1657,6 +1805,107 @@ function handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata)
   });
 }
 
+function handleLobbyStatus(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  let body = '';
+  req.on('data', chunk => { body += chunk; });
+  req.on('end', () => {
+    let data;
+    try {
+      data = JSON.parse(body);
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Invalid JSON' }));
+    }
+    if (!data || typeof data.gameid !== 'string' || gameidregex.test(data.gameid) === false) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Invalid gameid' }));
+    }
+    var client = new pg.Client(conString);
+    client.connect();
+    client.query('SELECT started, finished FROM games WHERE gameid = $1', [data.gameid], (err, result) => {
+      if (err) {
+        console.error('lobby/status error', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        client.end()
+        return res.end(JSON.stringify({ error: 'Internal error' }));
+      }
+      if (result.rows.length === 0) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        client.end()
+        return res.end(JSON.stringify({ error: 'Game not found' }));
+      }
+      const row = result.rows[0];
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ started: !!row.started, finished: !!row.finished, gameid: data.gameid }));
+      client.end()
+    });
+  });
+}
+
+function handleLobbyWatch(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  const url = new URL(req.url, domainname);
+  const gameid = url.searchParams.get('gameid') || '';
+  if (gameidregex.test(gameid) === false) {
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Invalid gameid' }));
+  }
+
+  resHeaders["Content-Type"] = 'text/event-stream';
+  resHeaders["Cache-Control"] = 'no-cache';
+  resHeaders["Connection"] = 'keep-alive';
+  resHeaders["X-Accel-Buffering"] = 'no';
+  res.writeHead(200, resHeaders);
+
+  var client = new pg.Client(conString);
+  client.connect();
+  client.query('SELECT started, finished FROM games WHERE gameid = $1', [gameid], (err, result) => {
+    if (err) {
+      console.error('lobby/watch error', err);
+      res.write('data: ' + JSON.stringify({ error: 'Internal error' }) + '\n\n');
+      res.end();
+      client.end()
+      return;
+    }
+    if (result.rows.length === 0) {
+      res.write('data: ' + JSON.stringify({ error: 'Game not found' }) + '\n\n');
+      res.end();
+      client.end()
+      return;
+    }
+    const row = result.rows[0];
+    if (row.started || row.finished) {
+      res.write('data: ' + JSON.stringify({ started: !!row.started, finished: !!row.finished, gameid: gameid }) + '\n\n');
+      res.end();
+      client.end()
+      return;
+    }
+
+    const entry = {
+      res: res,
+      keepalive: setInterval(() => {
+        res.write(':\n\n');
+      }, 15000)
+    };
+
+    if (!lobbyWatchers.has(gameid)) {
+      lobbyWatchers.set(gameid, new Set());
+    }
+    lobbyWatchers.get(gameid).add(entry);
+    client.end()
+
+    req.on('close', () => {
+      clearInterval(entry.keepalive);
+      const watchers = lobbyWatchers.get(gameid);
+      if (watchers) {
+        watchers.delete(entry);
+        if (watchers.size === 0) {
+          lobbyWatchers.delete(gameid);
+        }
+      }
+    });
+  });
+}
+
 function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondata) {
   let body = '';
   req.on('data', chunk => { body += chunk; });
@@ -1677,7 +1926,7 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
 
     var client = new pg.Client(conString);
     client.connect();
-    client.query('SELECT id, gameid, userid1, userid2, started, finished FROM games WHERE id = $1', [id], (err, result) => {
+    client.query('SELECT id, gameid, userid1, userid2, sessionid1, sessionid2, rated, timecontrol1, randomcolor, color1, color2, started, finished FROM games WHERE id = $1', [id], (err, result) => {
       if (err) {
         console.error('lobby/action select error', err);
         res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -1692,6 +1941,94 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
       }
 
       const game = result.rows[0];
+      const defaultRatings = { rating: 1500, deviation: 200, volatility: 0.06 };
+      const originalColors = { color1: game.color1, color2: game.color2 };
+
+      function finalizeJoin() {
+        const time = parseTimeControl(game.timecontrol1);
+        const colors = assignColorsForGame(game);
+        const player1UserId = String(game.userid1 || '0');
+        const player2UserId = String(sessiondata[1] || '0');
+        const player1SessionId = game.sessionid1;
+        const player2SessionId = req.headers['cookie'].slice(2);
+
+        const whitePlayerId = colors.whiteIsPlayer1
+          ? getPlayerIdentity(player1UserId, player1SessionId)
+          : getPlayerIdentity(player2UserId, player2SessionId);
+        const blackPlayerId = colors.whiteIsPlayer1
+          ? getPlayerIdentity(player2UserId, player2SessionId)
+          : getPlayerIdentity(player1UserId, player1SessionId);
+
+        const updateSql = 'UPDATE games SET userid2 = $1, sessionid2 = $2, color1 = $3, color2 = $4, initialtime = $5, increment = $6, gameserver = $7 WHERE id = $8';
+        const updateValues = [player2UserId, player2SessionId, colors.color1, colors.color2, time.minutes, time.increment, gameServerName, id];
+
+        client.query(updateSql, updateValues, (err2) => {
+          if (err2) {
+            console.error('lobby/action update error', err2);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            client.end()
+            return res.end(JSON.stringify({ error: 'Internal error' }));
+          }
+
+          const mode = ratingModeForTime(time.minutes, time.increment);
+          const userIds = [];
+          if (player1UserId !== '0') userIds.push(Number(player1UserId));
+          if (player2UserId !== '0') userIds.push(Number(player2UserId));
+
+          selectUserRatings(client, userIds, mode, (err3, ratingsMap) => {
+            if (err3) {
+              console.error('lobby/action rating error', err3);
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              client.end()
+              return res.end(JSON.stringify({ error: 'Internal error' }));
+            }
+
+            const p1Ratings = player1UserId !== '0' && ratingsMap[player1UserId] ? ratingsMap[player1UserId] : defaultRatings;
+            const p2Ratings = player2UserId !== '0' && ratingsMap[player2UserId] ? ratingsMap[player2UserId] : defaultRatings;
+            const whiteRatings = colors.whiteIsPlayer1 ? p1Ratings : p2Ratings;
+            const blackRatings = colors.whiteIsPlayer1 ? p2Ratings : p1Ratings;
+
+            startGameOnServer(
+              {
+                gameid: game.gameid,
+                whitePlayerId: whitePlayerId,
+                blackPlayerId: blackPlayerId,
+                time: time,
+                whiteRatings: whiteRatings,
+                blackRatings: blackRatings
+              },
+              (err4) => {
+                if (err4) {
+                  console.error('lobby/action game server error', err4);
+                  const revertSql = 'UPDATE games SET userid2 = NULL, sessionid2 = NULL, started = NULL, color1 = $1, color2 = $2 WHERE id = $3';
+                  client.query(revertSql, [originalColors.color1, originalColors.color2, id], (err5) => {
+                    if (err5) {
+                      console.error('lobby/action revert error', err5);
+                    }
+                    res.writeHead(502, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Game server unavailable' }));
+                    client.end()
+                  });
+                  return;
+                }
+                client.query('UPDATE games SET started = NOW() WHERE id = $1', [id], (err6) => {
+                  if (err6) {
+                    console.error('lobby/action start update error', err6);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Internal error' }));
+                    client.end()
+                    return;
+                  }
+                  notifyLobbyWatchers(game.gameid);
+                  res.writeHead(200, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ success: true, mode: 'join', gameid: game.gameid }));
+                  client.end()
+                });
+              }
+            );
+          });
+        });
+      }
       if (action === 'join') {
         if (game.finished || game.started) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -1714,22 +2051,25 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
             (err3, result1) => {
               if (err3 || result1.rows.length === 0) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
+                client.end()
                 return res.end(JSON.stringify({ error: 'Error fetching ratings' }));
               }
               const rating1 = result1.rows[0].rating || 1200;
 
               // Current player (the one joining)
-              if (!isLoggedIn || userid === 0) {
+              if (sessiondata[1] === '0') {
                 res.writeHead(403, { 'Content-Type': 'application/json' });
+                client.end()
                 return res.end(JSON.stringify({ error: 'Anonymous users cannot join rated games' }));
               }
 
               client.query(
                 'SELECT rating FROM users WHERE id = $1',
-                [userid],
+                [sessiondata[1]],
                 (err4, result2) => {
                   if (err4 || result2.rows.length === 0) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
+                    client.end()
                     return res.end(JSON.stringify({ error: 'Error fetching rating' }));
                   }
                   const rating2 = result2.rows[0].rating || 1200;
@@ -1739,23 +2079,11 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
 
                   if (diff > maxDiff) {
                     res.writeHead(403, { 'Content-Type': 'application/json' });
+                    client.end()
                     return res.end(JSON.stringify({ error: 'Rating difference too large' }));
                   }
 
-                  // Allowed → update game
-                  client.query(
-                    'UPDATE games SET userid2 = $1, started = NOW() WHERE id = $2',
-                    [userid, id],
-                    (err5) => {
-                      if (err5) {
-                        console.error('lobby/action update error', err5);
-                        res.writeHead(500, { 'Content-Type': 'application/json' });
-                        return res.end(JSON.stringify({ error: 'Internal error' }));
-                      }
-                      res.writeHead(200, { 'Content-Type': 'application/json' });
-                      res.end(JSON.stringify({ success: true, mode: 'join', gameid: game.gameid }));
-                    }
-                  );
+                  finalizeJoin();
                 }
               );
             }
@@ -1763,19 +2091,7 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
           return; // stop here, don't run default join code
         }
 
-        client.query('UPDATE games SET userid2 = $1, sessionid2 = $2, started = NOW() WHERE id = $3',
-          [sessiondata[1], req.headers['cookie'].slice(2), id],
-          (err2) => {
-            if (err2) {
-              console.error('lobby/action update error', err2);
-              res.writeHead(500, { 'Content-Type': 'application/json' });
-              client.end()
-              return res.end(JSON.stringify({ error: 'Internal error' }));
-            }
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: true, mode: 'join', gameid: game.gameid }));
-            client.end()
-          });
+        finalizeJoin();
       } else if (action === 'watch') {
         if (game.started && !game.finished) {
           res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -1808,7 +2124,7 @@ function handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondat
 
     const rated = data.rated === true || data.rated === '1';
 
-    if (rated && sessiondata[1] === 0) {
+    if (rated && sessiondata[1] === '0') {
       res.writeHead(403, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: 'Anonymous users cannot create rated games' }));
     }

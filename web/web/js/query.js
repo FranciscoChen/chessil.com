@@ -10,6 +10,48 @@ function collectFilters() {
   };
 }
 
+var pendingGameId = null;
+var pendingEventSource = null;
+var createStatusEl = null;
+
+function ensureCreateStatusEl() {
+  if (createStatusEl) return createStatusEl;
+  var container = document.querySelector('.filters-primary');
+  if (!container) return null;
+  createStatusEl = document.createElement('div');
+  createStatusEl.id = 'create-status';
+  container.appendChild(createStatusEl);
+  return createStatusEl;
+}
+
+function setCreateStatus(message) {
+  var el = ensureCreateStatusEl();
+  if (!el) return;
+  el.textContent = message || '';
+}
+
+function watchPendingGame(gameid) {
+  if (!gameid) return;
+  pendingGameId = gameid;
+  setCreateStatus('Waiting for opponent...');
+  if (pendingEventSource) {
+    pendingEventSource.close();
+  }
+  pendingEventSource = new EventSource('/lobby/watch?gameid=' + encodeURIComponent(gameid));
+  pendingEventSource.onmessage = function (event) {
+    var res;
+    try {
+      res = JSON.parse(event.data);
+    } catch (e) {
+      return;
+    }
+    if (res && res.started && res.gameid) {
+      pendingEventSource.close();
+      window.location.href = '/game/' + res.gameid;
+    }
+  };
+}
+
 function loadLobby() {
   var filters = collectFilters();
   var xhr = new XMLHttpRequest();
@@ -114,7 +156,16 @@ function sendAction(id, action) {
   xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
   xhr.onreadystatechange = function () {
     if (xhr.readyState === 4 && xhr.status === 200) {
-      console.log('Action response', xhr.responseText);
+      var res;
+      try {
+        res = JSON.parse(xhr.responseText);
+      } catch (e) {
+        console.error('Invalid action response');
+        return;
+      }
+      if (res && res.success && res.gameid) {
+        window.location.href = '/game/' + res.gameid;
+      }
     }
   };
   xhr.send(JSON.stringify({ id: id, action: action }));
@@ -140,9 +191,18 @@ document.addEventListener('DOMContentLoaded', function () {
     xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
     xhr.onreadystatechange = function () {
       if (xhr.readyState === 4 && xhr.status === 200) {
-        var res = JSON.parse(xhr.responseText);
+        var res;
+        try {
+          res = JSON.parse(xhr.responseText);
+        } catch (e) {
+          console.error('Invalid create response');
+          return;
+        }
         if (res.success) {
           loadLobby();
+          if (res.gameid) {
+            watchPendingGame(res.gameid);
+          }
         } else {
           console.error(res.error || "Game creation failed");
         }
