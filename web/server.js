@@ -852,10 +852,10 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
                           // Username is available
                           try {
                             argon2.hash(postcontent.password).then(hashedpassword => {
-                              const rating = '1500'; const ratings = [rating, rating, rating, rating, rating].join(',')
-                              const deviation = '350'; const deviations = [deviation, deviation, deviation, deviation, deviation].join(',')
-                              const volatility = '0.06'; const volatilities = [volatility, volatility, volatility, volatility, volatility].join(',')
-                              client.query('INSERT INTO users (id,username,canonical,password,email,created,ip,theme,language,role,ultrabullet_rating,bullet_rating,blitz_rating,rapid_rating,classical_rating,ultrabullet_deviation,bullet_deviation,blitz_deviation,rapid_deviation,classical_deviation,ultrabullet_volatility,bullet_volatility,blitz_volatility,rapid_volatility,classical_volatility) VALUES (DEFAULT,$1,$2,$3,$4,NOW(),$5,$6,$7,$8,' + ratings + ',' + deviations + ',' + volatilities + ')', [postcontent.username, postcontent.username.toLowerCase(), hashedpassword,
+                              const rating = '1500';
+                              const deviation = '350';
+                              const volatility = '0.06';
+                              client.query('INSERT INTO users (id,username,canonical,password,email,created,ip,theme,language,role,rating,deviation,volatility) VALUES (DEFAULT,$1,$2,$3,$4,NOW(),$5,$6,$7,$8,' + rating + ',' + deviation + ',' + volatility + ')', [postcontent.username, postcontent.username.toLowerCase(), hashedpassword,
                                 //postcontent.email
                                 null, sessiondata[0]
                                 , sessiondata[2], sessiondata[3], 1], (err, respo) => {
@@ -1713,7 +1713,7 @@ function userratings(filename, mime, ext, res, req, resHeaders, sessiondata) {
       // User input validated
       var client = new pg.Client(conString);
       client.connect();
-      client.query('SELECT ROUND(ultrabullet_rating) as a, ROUND(bullet_rating) as b, ROUND(blitz_rating) as c, ROUND(rapid_rating) as d, ROUND(classical_rating) as e FROM users WHERE canonical = $1', [postcontent.toLowerCase()], (err, response) => {
+      client.query('SELECT ROUND(rating) as rating FROM users WHERE canonical = $1', [postcontent.toLowerCase()], (err, response) => {
         if (err) {
           res.writeHead(500, { "Content-Type": "text/html" });
           res.end();
@@ -1724,7 +1724,7 @@ function userratings(filename, mime, ext, res, req, resHeaders, sessiondata) {
         if (response.rows.length === 1) {
           const re = response.rows[0]
           res.writeHead(200, { "Content-Type": "text/javascript" });
-          res.end(JSON.stringify({ a: re.a, b: re.b, c: re.c, d: re.d, e: re.e }))
+          res.end(JSON.stringify({ rating: re.rating }))
         }
         client.end()
       })
@@ -1962,10 +1962,7 @@ function selectUserRatings(client, userIds, mode, callback) {
     callback(null, {});
     return;
   }
-  const ratingField = mode + '_rating';
-  const deviationField = mode + '_deviation';
-  const volatilityField = mode + '_volatility';
-  const sql = 'SELECT id, ' + ratingField + ' AS rating, ' + deviationField + ' AS deviation, ' + volatilityField + ' AS volatility FROM users WHERE id = ANY($1)';
+  const sql = 'SELECT id, rating AS rating, deviation AS deviation, volatility AS volatility FROM users WHERE id = ANY($1)';
   client.query(sql, [userIds], (err, result) => {
     if (err) return callback(err);
     const map = {};
@@ -2327,12 +2324,11 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
             return res.end(JSON.stringify({ error: 'Internal error' }));
           }
 
-          const mode = ratingModeForTime(time.minutes, time.increment);
           const userIds = [];
           if (player1UserId !== '0') userIds.push(Number(player1UserId));
           if (player2UserId !== '0') userIds.push(Number(player2UserId));
 
-          selectUserRatings(client, userIds, mode, (err3, ratingsMap) => {
+          selectUserRatings(client, userIds, null, (err3, ratingsMap) => {
             if (err3) {
               console.error('lobby/action rating error', err3);
               res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -2543,9 +2539,6 @@ function handleEasyBots(filename, mime, ext, res, req, resHeaders, sessiondata) 
     }
 
     const timecontrol = normalizeTimeControl(data.timecontrol);
-    const time = parseTimeControl(timecontrol);
-    const mode = ratingModeForTime(time.minutes, time.increment);
-    const ratingField = mode + '_rating';
 
     const rawMin = Number(data.eloMin);
     const rawMax = Number(data.eloMax);
@@ -2553,12 +2546,12 @@ function handleEasyBots(filename, mime, ext, res, req, resHeaders, sessiondata) 
     const eloMax = Number.isFinite(rawMax) && rawMax >= 0 && rawMax <= 4000 ? rawMax : null;
 
     const sql = `
-      SELECT id, username, ROUND(${ratingField}) AS rating
+      SELECT id, username, ROUND(rating) AS rating
       FROM users
       WHERE role = 3
-        AND ($1::numeric IS NULL OR ${ratingField} >= $1)
-        AND ($2::numeric IS NULL OR ${ratingField} <= $2)
-      ORDER BY ${ratingField} ASC
+        AND ($1::numeric IS NULL OR rating >= $1)
+        AND ($2::numeric IS NULL OR rating <= $2)
+      ORDER BY rating ASC
       LIMIT 200
     `;
 
@@ -2604,7 +2597,6 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
 
     const timecontrol = normalizeTimeControl(data.timecontrol);
     const time = parseTimeControl(timecontrol);
-    const mode = ratingModeForTime(time.minutes, time.increment);
 
     let randomcolor = true;
     let color1 = null;
@@ -2740,7 +2732,7 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
           });
         };
 
-        selectUserRatings(client, userIds, mode, (err4, ratingsMap) => {
+        selectUserRatings(client, userIds, null, (err4, ratingsMap) => {
           if (err4) {
             console.error('easy/start ratings error', err4);
             res.writeHead(500, { 'Content-Type': 'application/json' });

@@ -1,5 +1,5 @@
-var ultrabulletrating, bulletrating, blitzrating, rapidrating, classicalrating
-var ultrabulletgames, bulletgames, blitzgames, rapidgames, classicalgames
+var ratingvalue
+var ratinggames
 var allgamescount, ratedgamescount, allwincount, alllosscount, alldrawcount, livegamecount
 var allgamestab, ratedgamestab, allwintab, alllosstab, alldrawtab, livegametab
 var infinitescroll
@@ -38,16 +38,8 @@ function loaduserheader() {
 }
 function userpageload() {
   loaduserheader()
-  ultrabulletrating = document.getElementsByTagName('rating')[0].getElementsByTagName('strong')[0]
-  bulletrating = document.getElementsByTagName('rating')[1].getElementsByTagName('strong')[0]
-  blitzrating = document.getElementsByTagName('rating')[2].getElementsByTagName('strong')[0]
-  rapidrating = document.getElementsByTagName('rating')[3].getElementsByTagName('strong')[0]
-  classicalrating = document.getElementsByTagName('rating')[4].getElementsByTagName('strong')[0]
-  ultrabulletgames = document.getElementsByTagName('rating')[0].getElementsByTagName('n')[0]
-  bulletgames = document.getElementsByTagName('rating')[1].getElementsByTagName('n')[0]
-  blitzgames = document.getElementsByTagName('rating')[2].getElementsByTagName('n')[0]
-  rapidgames = document.getElementsByTagName('rating')[3].getElementsByTagName('n')[0]
-  classicalgames = document.getElementsByTagName('rating')[4].getElementsByTagName('n')[0]
+  ratingvalue = document.getElementsByTagName('rating')[0].getElementsByTagName('strong')[0]
+  ratinggames = document.getElementsByTagName('rating')[0].getElementsByTagName('n')[0]
   allgamestab = document.getElementsByClassName('to-all')[0]
   ratedgamestab = document.getElementsByClassName('to-rated')[0]
   allwintab = document.getElementsByClassName('to-win')[0]
@@ -64,11 +56,7 @@ function userpageload() {
   dbratings()
   function getgamecount() {
     if (document.visibilityState !== "visible") return
-    dbgamecount(ultrabulletgames, 'ultrabullet', 'all', 'all', 'all')
-    dbgamecount(bulletgames, 'bullet', 'all', 'all', 'all')
-    dbgamecount(blitzgames, 'blitz', 'all', 'all', 'all')
-    dbgamecount(rapidgames, 'rapid', 'all', 'all', 'all')
-    dbgamecount(classicalgames, 'classical', 'all', 'all', 'all')
+    dbgamecount(ratinggames, 'all', 'all', 'all', 'all')
     dbgamecount(allgamescount, 'all', 'all', 'all', 'all')
     dbgamecount(ratedgamescount, 'all', 'all', 'true', 'all')
     dbgamecount(allwincount, 'all', 'win', 'all', 'true')
@@ -82,11 +70,7 @@ function userpageload() {
   }
   setInterval(getlivegamecount, 7000);
   //dbgamecount(element,tc,wdl,rated,finished)
-  dbgamecount(ultrabulletgames, 'ultrabullet', 'all', 'all', 'all')
-  dbgamecount(bulletgames, 'bullet', 'all', 'all', 'all')
-  dbgamecount(blitzgames, 'blitz', 'all', 'all', 'all')
-  dbgamecount(rapidgames, 'rapid', 'all', 'all', 'all')
-  dbgamecount(classicalgames, 'classical', 'all', 'all', 'all')
+  dbgamecount(ratinggames, 'all', 'all', 'all', 'all')
   dbgamecount(allgamescount, 'all', 'all', 'all', 'all')
   dbgamecount(ratedgamescount, 'all', 'all', 'true', 'all')
   dbgamecount(allwincount, 'all', 'win', 'all', 'true')
@@ -304,11 +288,7 @@ function dbratings(userid) {
     if (this.readyState != 4) return;
     if (this.status == 200) {
       const ratings = JSON.parse(this.responseText)
-      ultrabulletrating.innerHTML = ratings.a
-      bulletrating.innerHTML = ratings.b
-      blitzrating.innerHTML = ratings.c
-      rapidrating.innerHTML = ratings.d
-      classicalrating.innerHTML = ratings.e
+      ratingvalue.innerHTML = ratings.rating
     }
   }
 }
