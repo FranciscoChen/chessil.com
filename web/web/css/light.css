@@ -107,14 +107,14 @@ html {
 
 @media (min-width: 799.3px),
 (orientation: landscape) {
-  rm6 .result-wrap {
+  moves-panel .result-wrap {
     width: 100%;
     text-align: center;
   }
 }
 
 @media (max-width: 799.29px) and (orientation: portrait) {
-  rm6 .col1-moves {
+  moves-panel .col1-moves {
     flex: 0 0 3.5em;
     display: flex;
     justify-content: space-between;
@@ -123,9 +123,9 @@ html {
 
 @media (max-width: 799.29px) and (orientation: portrait) {
 
-  rm6 i5z,
-  rm6 kwdb,
-  rm6 .result-wrap {
+  moves-panel move-number,
+  moves-panel move-entry,
+  moves-panel .result-wrap {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -133,13 +133,13 @@ html {
   }
 }
 
-rm6 l4x,
-rm6 .message {
+moves-panel moves-list,
+moves-panel .message {
   flex: 0 0 7.4rem;
 }
 
 @media (max-width: 799.29px) and (orientation: portrait) {
-  rm6 l4x {
+  moves-panel moves-list {
     flex: 1 1 100%;
     display: flex;
     align-items: stretch;
@@ -150,22 +150,22 @@ rm6 .message {
 }
 
 @media (max-width: 799.29px) and (orientation: portrait) {
-  rm6 l4x>:first-child {
+  moves-panel moves-list>:first-child {
     margin-left: auto;
   }
 
-  rm6 i5z {
+  moves-panel move-number {
     padding-right: .15em;
   }
 
-  rm6 kwdb {
+  moves-panel move-entry {
     font-size: 1.1em;
     cursor: pointer;
   }
 }
 
 @media (max-width: 799.29px) and (orientation: portrait) {
-  rm6 .status {
+  moves-panel .status {
     display: none;
   }
 }
@@ -258,7 +258,7 @@ cg-board {
 }
 
 cg-board {
-  background-image: url("/i/board.svg");
+  background-image: url("/img/board.svg");
 }
 
 square {
@@ -603,7 +603,7 @@ coords coord {
 }
 
 .rcontrols .rematch-decline,
-rm6 .buttons,
+moves-panel .buttons,
 .rclock .time,
 .round__app__table,
 #modal-wrap .close:hover,
@@ -766,12 +766,12 @@ rm6 .buttons,
     z-index: 0;
   }
 
-  .round__app l4x {
+  .round__app moves-list {
     display: none;
     background: none;
   }
 
-  rm6 l4x {
+  moves-panel moves-list {
     display: flex;
     flex-flow: row wrap;
     align-items: center;
@@ -784,7 +784,7 @@ rm6 .buttons,
     font-size: 1.1em;
   }
 
-  rm6 i5z {
+  moves-panel move-number {
     flex: 0 0 16.666%;
     display: flex;
     justify-content: center;
@@ -792,7 +792,7 @@ rm6 .buttons,
     background: #f1f3f4;
   }
 
-  rm6 kwdb {
+  moves-panel move-entry {
     flex: 0 0 36.666%;
     padding-left: .7em;
     cursor: pointer;
@@ -833,45 +833,45 @@ rm6 .buttons,
   background: #e8f0fe;
 }
 
-rm6 {
+moves-panel {
   position: relative;
 }
 
-rm6,
+moves-panel,
 .col1-rmoves-preload {
   grid-area: moves;
 }
 
 @media(max-width: 799.29px)and (orientation: portrait) {
-  rm6 {
+  moves-panel {
     overflow: hidden
   }
 }
 
-rm6 kwdb.a1t {
+moves-panel move-entry.a1t {
   font-weight: bold;
   background: #ccc;
 }
 
 @media (min-width: 799.3px),
 (orientation: landscape) {
-  .round__app rm6 {
+  .round__app moves-panel {
     margin-bottom: 1px;
   }
 
-  rm6 {
+  moves-panel {
     background: #fff;
   }
 
-  rm6 .fbt,
-  rm6 .noop {
+  moves-panel .fbt,
+  moves-panel .noop {
     height: 2.5rem;
     line-height: 2.4rem;
   }
 }
 
-rm6 .fbt,
-rm6 .noop {
+moves-panel .fbt,
+moves-panel .noop {
   flex: 0 0 16.6666666667%;
   text-align: center;
 }
@@ -897,12 +897,12 @@ a {
 
 @media (min-width: 799.3px) and (min-height: 500px),
 (orientation: landscape) and (min-height: 500px) {
-  .round__app l4x {
+  .round__app moves-list {
     display: flex;
   }
 }
 
-rm6 .buttons {
+moves-panel .buttons {
   flex: 0 0 2.5rem;
   display: flex;
   justify-content: stretch;
@@ -912,27 +912,27 @@ rm6 .buttons {
 }
 
 @media (max-width: 799.29px) and (orientation: portrait) {
-  rm6 l4x::-webkit-scrollbar {
+  moves-panel moves-list::-webkit-scrollbar {
     height: 0px;
   }
 }
 
 @media (max-width: 799.29px) and (orientation: portrait) {
-  rm6 .buttons {
+  moves-panel .buttons {
     display: none;
   }
 }
 
 @media (min-width: 799.3px),
 (orientation: landscape) {
-  rm6 .buttons {
+  moves-panel .buttons {
     order: 0;
   }
 
 }
 
 .rcontrols .follow-up,
-rm6,
+moves-panel,
 .round__side,
 .board-menu section,
 .board-menu>div,
@@ -948,13 +948,13 @@ rm6,
   flex-flow: column;
 }
 
-rm6,
+moves-panel,
 .cmn-toggle {
   touch-action: manipulation;
 }
 
-rm6 kwdb.a1t,
-rm6 kwdb:hover {
+moves-panel move-entry.a1t,
+moves-panel move-entry:hover {
   background: #ccc
 }
 
@@ -3586,12 +3586,12 @@ font-size:14px
 
 @media (min-width: 799.3px),
 (orientation: landscape) {
-  rm6 l4x::-webkit-scrollbar {
+  moves-panel moves-list::-webkit-scrollbar {
     width: 0px;
   }
 }
 
-#main-wrap {
+.main-wrap {
   display: grid;
   grid-template-areas: ". . main . .";
   --main-max-width: 1300px;
@@ -3601,7 +3601,7 @@ font-size:14px
 
 @media (max-width: 799.3px) and (orientation: portrait) {
 
-  #main-wrap {
+  .main-wrap {
     grid-template-columns: 0 1fr minmax(auto, calc(100vh - 60px - 100px - 3.5em)) 1fr 0;
 
   }
@@ -3632,7 +3632,7 @@ font-size:14px
   src: url(/lichess.chess.woff2) format("woff2"), url(/lichess.chess.woff) format("woff")
 }
 
-kwdb {
+move-entry {
   font-family: "Noto Chess", "Noto Sans";
 }
 
@@ -3651,7 +3651,7 @@ kwdb {
 }
 
 @media (max-width: 799.29px) and (orientation: portrait) {
-  rm6 .col1-moves .fbt {
+  moves-panel .col1-moves .fbt {
     flex: 0 0 auto;
     padding: 0 1.3em;
   }
@@ -3663,7 +3663,7 @@ p {
 }
 
 @media (max-width: 799.29px) and (orientation: portrait) {
-  rm6 .result {
+  moves-panel .result {
     margin: 0;
     font-weight: bold;
     font-size: 1.1em;
@@ -3671,7 +3671,7 @@ p {
 }
 
 @media(min-width: 799.3px), (orientation: landscape) {
-  rm6 .result {
+  moves-panel .result {
     border-top: 1px solid #ccc;
     font-weight: bold;
     font-size: 1.2em;

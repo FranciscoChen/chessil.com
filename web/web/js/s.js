@@ -271,8 +271,8 @@ function roundstart() {
   }
   var x = document.getElementsByClassName('buttons')[0];
   if (window.getComputedStyle(x).display === "none") {
-    var y = document.getElementsByTagName('l4x')[0]
-    var z = document.getElementsByTagName('rm6')[0]
+    var y = document.getElementsByTagName('moves-list')[0]
+    var z = document.getElementsByTagName('moves-panel')[0]
     const newelement = document.createElement('div')
     newelement.setAttribute('class', 'col1-moves')
     z.appendChild(newelement)
@@ -312,21 +312,21 @@ window.onresize = () => {
     s.setAttribute('style', 'transform: translate(' + trcol[playerside][square[0]] * dim + 'px, ' + trrow[playerside][square[1]] * dim + 'px);')
   }
   var buttons = document.getElementsByClassName('buttons')[0];
-  var l4x = document.getElementsByTagName('l4x')[0]
-  var rm6 = document.getElementsByTagName('rm6')[0]
+  var movesList = document.getElementsByTagName('moves-list')[0]
+  var movesPanel = document.getElementsByTagName('moves-panel')[0]
   if (window.getComputedStyle(buttons).display === "none") {
     if (document.getElementsByClassName('col1-moves').length === 0) {
       const newelement = document.createElement('div')
       newelement.setAttribute('class', 'col1-moves')
-      rm6.appendChild(newelement)
+      movesPanel.appendChild(newelement)
       newelement.appendChild(document.getElementsByClassName('fbt')[2].cloneNode(true))
-      newelement.appendChild(l4x)
+      newelement.appendChild(movesList)
       newelement.appendChild(document.getElementsByClassName('fbt')[3].cloneNode(true))
     }
   } else {
     if (document.getElementsByClassName('col1-moves').length > 0) {
-      rm6.appendChild(l4x)
-      rm6.removeChild(document.getElementsByClassName('col1-moves')[0])
+      movesPanel.appendChild(movesList)
+      movesPanel.removeChild(document.getElementsByClassName('col1-moves')[0])
     }
   }
 }

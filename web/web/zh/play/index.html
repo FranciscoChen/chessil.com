@@ -11,11 +11,13 @@
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/colors.css">
+  <link rel="stylesheet" href="/css/game.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/footer.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/game.js"></script>
+  <script src="/js/gamepage.js"></script>
   <script src="/js/load.js"></script>
 </head>
 
@@ -64,7 +66,7 @@
       <div id="user"></div>
     </div>
   </header>
-  <div id="main-wrap">
+  <div class="main-wrap">
     <div class="round">
       <div class="round__app">
         <div class="round__app__board board">
@@ -94,24 +96,24 @@
         <div class="material material-top"></div>
         <div class="round__app__table"></div>
         <div class="user-link ruser ruser-top online"><i class="line"></i>
-          <name>$username2</name>
-          <rating>$rating2</rating>
+          <name data-game-field="username2">...</name>
+          <rating data-game-field="rating2">-</rating>
         </div>
-        <rm6>
+        <moves-panel>
           <div class="buttons">
             <div class="noop"></div><button id="rw" class="fbt"></button><button id="sb" class="fbt"></button><button
               id="fw" class="fbt"></button><button id="ff" class="fbt"></button>
             <div class="noop"></div>
           </div>
-          <l4x></l4x>
-        </rm6>
+          <moves-list></moves-list>
+        </moves-panel>
         <div class="rcontrols">
           <div class="ricons"><button class="fbt draw-yes"><span></span></button><button
               class="fbt resign"><span></span></button></div>
         </div>
         <div class="user-link ruser ruser-bottom online"><i class="line"></i>
-          <name>$username1</name>
-          <rating>$rating1</rating>
+          <name data-game-field="username1">...</name>
+          <rating data-game-field="rating1">-</rating>
         </div>
         <div class="rclock rclock-top">
           <div class="bar"></div>
@@ -137,8 +139,8 @@
         </div>
       </div>
       <div class="round__underboard"></div>
-      <div class="status">$state</div>
-      <div class="setup">$initialtime+$increment • $rated • $gameserver • $side</div>
+      <div class="status" data-game-field="state">...</div>
+      <div class="setup" data-game-field="setup">...</div>
     </div>
   </div>
   <footer>

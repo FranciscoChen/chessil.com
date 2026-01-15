@@ -13,7 +13,7 @@ var turn = 'w'
 var movs, mclk, evts, eclk, rslt, stat, rt1, rt2, rd1, rd2, rtd, tc, drawbtn, resignbtn
 var events = []
 var eventstimes = []
-var buttons, l4x, rm6
+var buttons, movesList, movesPanel
 var a1ti = 0
 function msToTime(duration) {
   // var milliseconds = Math.floor((duration % 1000) / 100),
@@ -155,10 +155,10 @@ function displayTermination(code) {
   //sts.setAttribute('class','status')
   //rw.appendChild(sts)
   //sts.innerHTML = {}
-  l4x.appendChild(rw)
+  movesList.appendChild(rw)
   if (a1ti === uci.length) {
-    l4x.scrollTop = l4x.scrollHeight;
-    l4x.scrollLeft = l4x.scrollWidth;
+    movesList.scrollTop = movesList.scrollHeight;
+    movesList.scrollLeft = movesList.scrollWidth;
   }
 }
 
@@ -194,11 +194,11 @@ function wsgame(gameid, server = 'ws0') {
           // var moveinfo = 'm:'+clientmove+':'+side+':'+timeleft+':'+newuci.split(' ').length+':'+movereceived+':'+finishedstatus
           if (uci.length + 1 >= rawmove[3]) {
             // Normal order of moves received
-            if (l4x.childElementCount > 0) l4x.childNodes[l4x.childElementCount - 1].className = ''
+            if (movesList.childElementCount > 0) movesList.childNodes[movesList.childElementCount - 1].className = ''
             if (fen.split(' ')[1] === 'w') {
-              var tur = document.createElement('i5z')
+              var tur = document.createElement('move-number')
               tur.innerHTML = fen.split(' ')[5]
-              l4x.appendChild(tur)
+              movesList.appendChild(tur)
             }
             const san1 = gensanbase(rawmove[0], board, fen, moves)
             uci[rawmove[3] - 1] = rawmove[0]
@@ -209,17 +209,17 @@ function wsgame(gameid, server = 'ws0') {
             moves = mg(fen)
             premoves = pmg(fen, moves, uci)
             const san2 = gensancheck(moves, fen)
-            var nmo = document.createElement('kwdb')
+            var nmo = document.createElement('move-entry')
             nmo.innerHTML = san1 + san2
             if (a1ti === uci.length - 1) {
               nmo.setAttribute('class', 'a1t')
               a1ti = uci.length
             }
             nmo.setAttribute('ply', uci.length)
-            l4x.appendChild(nmo)
+            movesList.appendChild(nmo)
             if (a1ti === uci.length) {
-              l4x.scrollTop = l4x.scrollHeight;
-              l4x.scrollLeft = l4x.scrollWidth;
+              movesList.scrollTop = movesList.scrollHeight;
+              movesList.scrollLeft = movesList.scrollWidth;
             }
             turn = { w: 'b', b: 'w' }[rawmove[1]]
             const fromSq = rawmove[0].slice(0, 2)
@@ -283,11 +283,11 @@ function wsgame(gameid, server = 'ws0') {
             uci = event.data.slice(1).split(' ')
             const ucil = uci.length
             for (var i = 0; i < ucil; ++i) {
-              if (l4x.childElementCount > 0) l4x.childNodes[l4x.childElementCount - 1].className = ''
+              if (movesList.childElementCount > 0) movesList.childNodes[movesList.childElementCount - 1].className = ''
               if (fen.split(' ')[1] === 'w') {
-                var tur = document.createElement('i5z')
+                var tur = document.createElement('move-number')
                 tur.innerHTML = fen.split(' ')[5]
-                l4x.appendChild(tur)
+                movesList.appendChild(tur)
               }
               const mstr = uci.slice(i, i + 1)[0]
               const san1 = gensanbase(mstr, board, fen, moves)
@@ -297,14 +297,14 @@ function wsgame(gameid, server = 'ws0') {
               board = ucf.b
               moves = mg(fen)
               const san2 = gensancheck(moves, fen)
-              var nmo = document.createElement('kwdb')
+              var nmo = document.createElement('move-entry')
               nmo.setAttribute('class', 'a1t')
               nmo.setAttribute('ply', i + 1)
               a1ti = i + 1
               nmo.innerHTML = san1 + san2
-              l4x.appendChild(nmo)
-              l4x.scrollTop = l4x.scrollHeight;
-              l4x.scrollLeft = l4x.scrollWidth;
+              movesList.appendChild(nmo)
+              movesList.scrollTop = movesList.scrollHeight;
+              movesList.scrollLeft = movesList.scrollWidth;
               const s = pieceElements[mstr.slice(0, 2)]
               const square = mstr.slice(2, 4)
               if (typeof pieceElements[square] !== 'undefined') {
@@ -838,11 +838,11 @@ function dbgame(gameid) {
         uci = gdt.m.split(' ')
         const ucil = uci.length
         for (var i = 0; i < ucil; ++i) {
-          if (l4x.childElementCount > 0) l4x.childNodes[l4x.childElementCount - 1].className = ''
+          if (movesList.childElementCount > 0) movesList.childNodes[movesList.childElementCount - 1].className = ''
           if (fen.split(' ')[1] === 'w') {
-            var tur = document.createElement('i5z')
+            var tur = document.createElement('move-number')
             tur.innerHTML = fen.split(' ')[5]
-            l4x.appendChild(tur)
+            movesList.appendChild(tur)
           }
           const mstr = uci.slice(i, i + 1)[0]
           const san1 = gensanbase(mstr, board, fen, moves)
@@ -852,14 +852,14 @@ function dbgame(gameid) {
           board = ucf.b
           moves = mg(fen)
           const san2 = gensancheck(moves, fen)
-          var nmo = document.createElement('kwdb')
+          var nmo = document.createElement('move-entry')
           nmo.setAttribute('class', 'a1t')
           nmo.setAttribute('ply', i + 1)
           a1ti = i + 1
           nmo.innerHTML = san1 + san2
-          l4x.appendChild(nmo)
-          l4x.scrollTop = l4x.scrollHeight;
-          l4x.scrollLeft = l4x.scrollWidth;
+          movesList.appendChild(nmo)
+          movesList.scrollTop = movesList.scrollHeight;
+          movesList.scrollLeft = movesList.scrollWidth;
           const s = pieceElements[mstr.slice(0, 2)]
           const square = mstr.slice(2, 4)
           if (typeof pieceElements[square] !== 'undefined') {
@@ -943,43 +943,43 @@ function dbgame(gameid) {
 }
 function roundstart() {
   buttons = document.getElementsByClassName('buttons')[0];
-  l4x = document.getElementsByTagName('l4x')[0]
-  rm6 = document.getElementsByTagName('rm6')[0]
+  movesList = document.getElementsByTagName('moves-list')[0]
+  movesPanel = document.getElementsByTagName('moves-panel')[0]
   if (window.getComputedStyle(buttons).display === "none") {
     if (document.getElementsByClassName('col1-moves').length === 0) {
       const newelement = document.createElement('div')
       newelement.setAttribute('class', 'col1-moves')
-      rm6.appendChild(newelement)
+      movesPanel.appendChild(newelement)
       newelement.appendChild(document.getElementsByClassName('fbt')[1].cloneNode(true))
-      newelement.appendChild(l4x)
+      newelement.appendChild(movesList)
       newelement.appendChild(document.getElementsByClassName('fbt')[2].cloneNode(true))
     }
   } else {
     if (document.getElementsByClassName('col1-moves').length > 0) {
-      rm6.appendChild(l4x)
-      rm6.removeChild(document.getElementsByClassName('col1-moves')[0])
+      movesPanel.appendChild(movesList)
+      movesPanel.removeChild(document.getElementsByClassName('col1-moves')[0])
     }
   }
-  rm6.onclick = function (event) {
+  movesPanel.onclick = function (event) {
     if (stat == 0) return
     if (event.target.getAttribute('id') === 'rw') {
       a1ti = 0
       if (a1ti < 0) a1ti = 0
       if (a1ti > uci.length) a1ti = uci.length
-      if (l4x.getElementsByClassName('a1t').length > 0) l4x.getElementsByClassName('a1t')[0].classList.toggle('a1t')
+      if (movesList.getElementsByClassName('a1t').length > 0) movesList.getElementsByClassName('a1t')[0].classList.toggle('a1t')
       gamereplay(a1ti)
       document.getElementsByClassName('rclock-' + { b: 'white', w: 'black' }[turn])[0].getElementsByClassName('time')[0].innerHTML = msToTime(allmovetimes[a1ti - 1] || 1000 * 60 * tc.split('+')[0])
       document.getElementsByClassName('rclock-' + { w: 'white', b: 'black' }[turn])[0].getElementsByClassName('time')[0].innerHTML = msToTime(allmovetimes[a1ti - 2] || 1000 * 60 * tc.split('+')[0])
       if (a1ti > 0 && a1ti <= uci.length) {
-        l4x.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
-        l4x.querySelector("[ply='" + a1ti + "']").scrollIntoView()
+        movesList.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
+        movesList.querySelector("[ply='" + a1ti + "']").scrollIntoView()
       }
     }
     if (event.target.getAttribute('id') === 'ff') {
       a1ti = uci.length + 1
       if (a1ti < 0) a1ti = 0
       if (a1ti > uci.length) a1ti = uci.length + 1
-      if (l4x.getElementsByClassName('a1t').length > 0) l4x.getElementsByClassName('a1t')[0].classList.toggle('a1t')
+      if (movesList.getElementsByClassName('a1t').length > 0) movesList.getElementsByClassName('a1t')[0].classList.toggle('a1t')
       if (a1ti > uci.length) {
         gamereplay(uci.length)
         document.getElementsByClassName('rclock-white')[0].getElementsByClassName('time')[0].innerHTML = msToTime(clock.w)
@@ -990,28 +990,28 @@ function roundstart() {
         document.getElementsByClassName('rclock-' + { w: 'white', b: 'black' }[turn])[0].getElementsByClassName('time')[0].innerHTML = msToTime(allmovetimes[a1ti - 2] || 1000 * 60 * tc.split('+')[0])
       }
       if (a1ti > 0 && a1ti <= uci.length) {
-        l4x.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
-        l4x.querySelector("[ply='" + a1ti + "']").scrollIntoView()
+        movesList.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
+        movesList.querySelector("[ply='" + a1ti + "']").scrollIntoView()
       }
     }
     if (event.target.getAttribute('id') === 'sb') {
       a1ti -= 1
       if (a1ti < 0) a1ti = 0
       if (a1ti > uci.length) a1ti = uci.length
-      if (l4x.getElementsByClassName('a1t').length > 0) l4x.getElementsByClassName('a1t')[0].classList.toggle('a1t')
+      if (movesList.getElementsByClassName('a1t').length > 0) movesList.getElementsByClassName('a1t')[0].classList.toggle('a1t')
       gamereplay(a1ti)
       document.getElementsByClassName('rclock-' + { b: 'white', w: 'black' }[turn])[0].getElementsByClassName('time')[0].innerHTML = msToTime(allmovetimes[a1ti - 1] || 1000 * 60 * tc.split('+')[0])
       document.getElementsByClassName('rclock-' + { w: 'white', b: 'black' }[turn])[0].getElementsByClassName('time')[0].innerHTML = msToTime(allmovetimes[a1ti - 2] || 1000 * 60 * tc.split('+')[0])
       if (a1ti > 0 && a1ti <= uci.length) {
-        l4x.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
-        l4x.querySelector("[ply='" + a1ti + "']").scrollIntoView()
+        movesList.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
+        movesList.querySelector("[ply='" + a1ti + "']").scrollIntoView()
       }
     }
     if (event.target.getAttribute('id') === 'fw') {
       a1ti += 1
       if (a1ti < 1) a1ti = 1
       if (a1ti > uci.length) a1ti = uci.length + 1
-      if (l4x.getElementsByClassName('a1t').length > 0) l4x.getElementsByClassName('a1t')[0].classList.toggle('a1t')
+      if (movesList.getElementsByClassName('a1t').length > 0) movesList.getElementsByClassName('a1t')[0].classList.toggle('a1t')
       if (a1ti > uci.length) {
         gamereplay(uci.length)
         document.getElementsByClassName('rclock-white')[0].getElementsByClassName('time')[0].innerHTML = msToTime(clock.w)
@@ -1022,20 +1022,20 @@ function roundstart() {
         document.getElementsByClassName('rclock-' + { w: 'white', b: 'black' }[turn])[0].getElementsByClassName('time')[0].innerHTML = msToTime(allmovetimes[a1ti - 2] || 1000 * 60 * tc.split('+')[0])
       }
       if (a1ti > 0 && a1ti <= uci.length) {
-        l4x.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
-        l4x.querySelector("[ply='" + a1ti + "']").scrollIntoView()
+        movesList.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
+        movesList.querySelector("[ply='" + a1ti + "']").scrollIntoView()
       }
     }
 
     if (event.target.getAttribute('ply') > 0) {
-      if (l4x.getElementsByClassName('a1t').length > 0) l4x.getElementsByClassName('a1t')[0].classList.toggle('a1t')
+      if (movesList.getElementsByClassName('a1t').length > 0) movesList.getElementsByClassName('a1t')[0].classList.toggle('a1t')
       a1ti = 1 * event.target.getAttribute('ply')
-      if (l4x.getElementsByClassName('a1t').length > 0) l4x.getElementsByClassName('a1t')[0].classList.toggle('a1t')
+      if (movesList.getElementsByClassName('a1t').length > 0) movesList.getElementsByClassName('a1t')[0].classList.toggle('a1t')
       gamereplay(a1ti)
       document.getElementsByClassName('rclock-' + { b: 'white', w: 'black' }[turn])[0].getElementsByClassName('time')[0].innerHTML = msToTime(allmovetimes[a1ti - 1] || 1000 * 60 * tc.split('+')[0])
       document.getElementsByClassName('rclock-' + { w: 'white', b: 'black' }[turn])[0].getElementsByClassName('time')[0].innerHTML = msToTime(allmovetimes[a1ti - 2] || 1000 * 60 * tc.split('+')[0])
       if (a1ti > 0 && a1ti <= uci.length) {
-        l4x.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
+        movesList.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
       }
     }
   }
@@ -1147,20 +1147,20 @@ function roundstart() {
       if (document.getElementsByClassName('col1-moves').length === 0) {
         const newelement = document.createElement('div')
         newelement.setAttribute('class', 'col1-moves')
-        rm6.appendChild(newelement)
+        movesPanel.appendChild(newelement)
         newelement.appendChild(document.getElementsByClassName('fbt')[1].cloneNode(true))
-        newelement.appendChild(l4x)
+        newelement.appendChild(movesList)
         newelement.appendChild(document.getElementsByClassName('fbt')[2].cloneNode(true))
       }
     } else {
       if (document.getElementsByClassName('col1-moves').length > 0) {
-        rm6.appendChild(l4x)
-        rm6.removeChild(document.getElementsByClassName('col1-moves')[0])
+        movesPanel.appendChild(movesList)
+        movesPanel.removeChild(document.getElementsByClassName('col1-moves')[0])
       }
     }
     if (a1ti === uci.length) {
-      l4x.scrollTop = l4x.scrollHeight;
-      l4x.scrollLeft = l4x.scrollWidth;
+      movesList.scrollTop = movesList.scrollHeight;
+      movesList.scrollLeft = movesList.scrollWidth;
     }
     wrap = document.getElementsByClassName('cg-wrap')[0].getBoundingClientRect()
     container = document.getElementsByTagName('cg-container')[0]
@@ -1193,7 +1193,7 @@ function roundstart() {
   }
   stat = document.getElementsByClassName('status')[0].innerHTML
   if (stat == 0) {
-    l4x.innerHTML = ''
+    movesList.innerHTML = ''
     wsgame();
   } else {
     if (stat == 9) {

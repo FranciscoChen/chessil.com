@@ -288,6 +288,47 @@ function setSessionProps(sessiondata) {
   return sessiondata
 }
 
+function getUserRole(userid, callback) {
+  if (!userid || userid === '0') return callback(null, 0)
+  var client = new pg.Client(conString)
+  client.connect()
+  client.query('SELECT role FROM users WHERE id = $1', [userid], (err, response) => {
+    client.end()
+    if (err) return callback(err)
+    if (response.rows.length !== 1) return callback(null, 0)
+    return callback(null, Number(response.rows[0].role) || 0)
+  })
+}
+
+function denyAdmin(res, responseType) {
+  if (responseType === 'json') {
+    res.writeHead(403, { "Content-Type": "application/json" })
+    res.end(JSON.stringify({ error: 'admin_only' }))
+  } else {
+    res.writeHead(403, { "Content-Type": "text/html" })
+    res.end()
+  }
+}
+
+function requireAdmin(sessiondata, req, res, responseType, callback) {
+  if (!sessiondata || sessiondata[1] === '0') {
+    logAuthEvent('admin_reject', req, { reason: 'not_logged_in' })
+    return denyAdmin(res, responseType)
+  }
+  getUserRole(sessiondata[1], (err, role) => {
+    if (err) {
+      res.writeHead(500, { "Content-Type": responseType === 'json' ? "application/json" : "text/html" })
+      res.end(responseType === 'json' ? JSON.stringify({ error: 'db_error' }) : '')
+      return
+    }
+    if (role !== 2) {
+      logAuthEvent('admin_reject', req, { reason: 'not_admin', userid: sessiondata[1] })
+      return denyAdmin(res, responseType)
+    }
+    callback()
+  })
+}
+
 function buildSessionData(ip, userid, theme, lang, created, username, useragent) {
   const sessiondata = [ip, userid, theme, lang, created, username, useragent || '']
   return setSessionProps(sessiondata)
@@ -463,6 +504,14 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
     loggedin(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
   }
+  if (req.url === '/admin/user' && req.method === 'POST') {
+    adminUser(filename, mime, ext, res, req, resHeaders, sessiondata)
+    return
+  }
+  if (req.url.slice(0, 6) === '/admin') {
+    adminPage(filename, mime, ext, res, req, resHeaders, sessiondata)
+    return
+  }
   // If the request is a POST for account creation (config nginx to rate limit this one for all languages)
   if (req.url === '/register' && req.method === 'POST') {
     applyAuthRateLimit('register', req, res, resHeaders, () => {
@@ -499,6 +548,12 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
   if (req.url === '/lobby/create' && req.method === 'POST') {
     return handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondata);
   }
+  if (req.url === '/easy/bots' && req.method === 'POST') {
+    return handleEasyBots(filename, mime, ext, res, req, resHeaders, sessiondata);
+  }
+  if (req.url === '/easy/start' && req.method === 'POST') {
+    return handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata);
+  }
   if (req.url === '/lobby/list' && req.method === 'POST') {
     return handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata);
   }
@@ -521,6 +576,14 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
   }
   if (req.url === '/gamestate' && req.method === 'POST') {
     gamedata(filename, mime, ext, res, req, resHeaders, sessiondata)
+    return
+  }
+  if (req.url === '/gameinfo' && req.method === 'POST') {
+    gameinfo(filename, mime, ext, res, req, resHeaders, sessiondata)
+    return
+  }
+  if (req.url === '/userinfo' && req.method === 'POST') {
+    userinfo(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
   }
   if (req.url === '/ratings' && req.method === 'POST') {
@@ -792,10 +855,10 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
                               const rating = '1500'; const ratings = [rating, rating, rating, rating, rating].join(',')
                               const deviation = '350'; const deviations = [deviation, deviation, deviation, deviation, deviation].join(',')
                               const volatility = '0.06'; const volatilities = [volatility, volatility, volatility, volatility, volatility].join(',')
-                              client.query('INSERT INTO users (id,username,canonical,password,email,created,ip,theme,language,ultrabullet_rating,bullet_rating,blitz_rating,rapid_rating,classical_rating,ultrabullet_deviation,bullet_deviation,blitz_deviation,rapid_deviation,classical_deviation,ultrabullet_volatility,bullet_volatility,blitz_volatility,rapid_volatility,classical_volatility) VALUES (DEFAULT,$1,$2,$3,$4,NOW(),$5,$6,$7,' + ratings + ',' + deviations + ',' + volatilities + ')', [postcontent.username, postcontent.username.toLowerCase(), hashedpassword,
+                              client.query('INSERT INTO users (id,username,canonical,password,email,created,ip,theme,language,role,ultrabullet_rating,bullet_rating,blitz_rating,rapid_rating,classical_rating,ultrabullet_deviation,bullet_deviation,blitz_deviation,rapid_deviation,classical_deviation,ultrabullet_volatility,bullet_volatility,blitz_volatility,rapid_volatility,classical_volatility) VALUES (DEFAULT,$1,$2,$3,$4,NOW(),$5,$6,$7,$8,' + ratings + ',' + deviations + ',' + volatilities + ')', [postcontent.username, postcontent.username.toLowerCase(), hashedpassword,
                                 //postcontent.email
                                 null, sessiondata[0]
-                                , sessiondata[2], sessiondata[3]], (err, respo) => {
+                                , sessiondata[2], sessiondata[3], 1], (err, respo) => {
                                   if (err) {
                                     // Account creation unsuccessful
                                     logAuthEvent('register_error', req, { reason: 'db_insert', username: postcontent.username });
@@ -1184,6 +1247,188 @@ function loggedin(filename, mime, ext, res, req, resHeaders, sessiondata) {
   }
 }
 
+function adminPage(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  if (req.method !== 'GET') {
+    res.writeHead(405, { "Content-Type": "text/html" })
+    res.end()
+    return
+  }
+  requireAdmin(sessiondata, req, res, 'html', () => {
+    const adminSession = setSessionProps(sessiondata.slice())
+    adminSession[3] = 'en'
+    adminSession.lang = 'en'
+    serve(filename, mime, ext, res, req, resHeaders, adminSession)
+  })
+}
+
+function adminUser(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  requireAdmin(sessiondata, req, res, 'json', () => {
+    let body = ''
+    req.on('data', chunk => {
+      body += chunk
+      if (body.length > 2000000) {
+        res.writeHead(413, { "Content-Type": "application/json" })
+        res.end(JSON.stringify({ error: 'payload_too_large' }))
+        req.destroy()
+      }
+    })
+    req.on('end', () => {
+      let payload
+      if (body.trim() === '') {
+        res.writeHead(400, { "Content-Type": "application/json" })
+        res.end(JSON.stringify({ error: 'missing_payload' }))
+        return
+      }
+      try {
+        payload = JSON.parse(body)
+      } catch (err) {
+        payload = querystring.parse(body)
+      }
+      const action = payload.action
+      const identifier = payload.identifier === 'username' ? 'username' : 'id'
+      const target = payload.target
+      let data = payload.data
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data)
+        } catch (err) {
+          res.writeHead(400, { "Content-Type": "application/json" })
+          res.end(JSON.stringify({ error: 'invalid_data_json' }))
+          return
+        }
+      }
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        res.writeHead(400, { "Content-Type": "application/json" })
+        res.end(JSON.stringify({ error: 'invalid_data' }))
+        return
+      }
+      if (action !== 'create' && action !== 'update') {
+        res.writeHead(400, { "Content-Type": "application/json" })
+        res.end(JSON.stringify({ error: 'invalid_action' }))
+        return
+      }
+      if (data.username && !data.canonical) {
+        data.canonical = String(data.username).toLowerCase()
+      }
+      if (typeof data.role !== 'undefined') {
+        data.role = Number(data.role)
+      }
+      const applyChanges = () => {
+        const keys = Object.keys(data)
+        if (keys.length === 0) {
+          res.writeHead(400, { "Content-Type": "application/json" })
+          res.end(JSON.stringify({ error: 'empty_data' }))
+          return
+        }
+        var client = new pg.Client(conString)
+        client.connect()
+        client.query(
+          "SELECT column_name, is_nullable, column_default FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users'",
+          [],
+          (err, response) => {
+            if (err) {
+              client.end()
+              res.writeHead(500, { "Content-Type": "application/json" })
+              res.end(JSON.stringify({ error: 'db_error' }))
+              return
+            }
+            const columns = response.rows
+            const columnSet = new Set(columns.map(row => row.column_name))
+            const invalid = keys.filter(key => !columnSet.has(key))
+            if (invalid.length) {
+              client.end()
+              res.writeHead(400, { "Content-Type": "application/json" })
+              res.end(JSON.stringify({ error: 'unknown_columns', columns: invalid }))
+              return
+            }
+            if (action === 'create') {
+              const missingRequired = columns
+                .filter(row => row.is_nullable === 'NO' && row.column_default === null)
+                .map(row => row.column_name)
+                .filter(col => !Object.prototype.hasOwnProperty.call(data, col))
+              if (missingRequired.length) {
+                client.end()
+                res.writeHead(400, { "Content-Type": "application/json" })
+                res.end(JSON.stringify({ error: 'missing_required_columns', columns: missingRequired }))
+                return
+              }
+              const values = keys.map(key => data[key])
+              const placeholders = keys.map((_, idx) => '$' + (idx + 1))
+              const sql = 'INSERT INTO users (' + keys.join(',') + ') VALUES (' + placeholders.join(',') + ') RETURNING id'
+              client.query(sql, values, (err2, response2) => {
+                client.end()
+                if (err2) {
+                  res.writeHead(500, { "Content-Type": "application/json" })
+                  res.end(JSON.stringify({ error: 'db_insert_error' }))
+                  return
+                }
+                res.writeHead(200, { "Content-Type": "application/json" })
+                res.end(JSON.stringify({ ok: true, id: response2.rows[0] ? response2.rows[0].id : null }))
+              })
+              return
+            }
+            if (action === 'update') {
+              if (!target) {
+                client.end()
+                res.writeHead(400, { "Content-Type": "application/json" })
+                res.end(JSON.stringify({ error: 'missing_target' }))
+                return
+              }
+              const values = keys.map(key => data[key])
+              let whereValue = target
+              let whereColumn = 'id'
+              if (identifier === 'username') {
+                whereColumn = 'canonical'
+                whereValue = String(target).toLowerCase()
+              }
+              values.push(whereValue)
+              const setSql = keys.map((key, idx) => key + ' = $' + (idx + 1)).join(',')
+              const sql = 'UPDATE users SET ' + setSql + ' WHERE ' + whereColumn + ' = $' + (keys.length + 1) + ' RETURNING id'
+              client.query(sql, values, (err2, response2) => {
+                client.end()
+                if (err2) {
+                  res.writeHead(500, { "Content-Type": "application/json" })
+                  res.end(JSON.stringify({ error: 'db_update_error' }))
+                  return
+                }
+                if (response2.rows.length === 0) {
+                  res.writeHead(404, { "Content-Type": "application/json" })
+                  res.end(JSON.stringify({ error: 'user_not_found' }))
+                  return
+                }
+                res.writeHead(200, { "Content-Type": "application/json" })
+                res.end(JSON.stringify({ ok: true, id: response2.rows[0].id }))
+              })
+              return
+            }
+          }
+        )
+      }
+      if (typeof data.password !== 'undefined') {
+        if (typeof data.password !== 'string' || data.password.length < 4) {
+          res.writeHead(400, { "Content-Type": "application/json" })
+          res.end(JSON.stringify({ error: 'password_too_short' }))
+          return
+        }
+        try {
+          argon2.hash(data.password).then(hashedpassword => {
+            data.password = hashedpassword
+            applyChanges()
+          }).catch(() => {
+            res.writeHead(500, { "Content-Type": "application/json" })
+            res.end(JSON.stringify({ error: 'password_hash_error' }))
+          })
+        } catch (err) {
+          res.writeHead(500, { "Content-Type": "application/json" })
+          res.end(JSON.stringify({ error: 'password_hash_error' }))
+        }
+        return
+      }
+      applyChanges()
+    })
+  })
+}
+
 function setlanguage(filename, mime, ext, res, req, resHeaders, sessiondata) {
   req.on('data', setlang)
   function setlang(chunk) {
@@ -1427,6 +1672,38 @@ function userlivegamecount(filename, mime, ext, res, req, resHeaders, sessiondat
     }
   }
 }
+function userinfo(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  req.on('data', getuserinfo)
+  function getuserinfo(chunk) {
+    req.removeListener('data', getuserinfo);
+    const postcontent = chunk.toString();
+    if (usernameregex.test(postcontent) !== false) {
+      var client = new pg.Client(conString);
+      client.connect();
+      client.query('SELECT username FROM users WHERE canonical = $1', [postcontent.toLowerCase()], (err, response) => {
+        if (err) {
+          res.writeHead(500, { "Content-Type": "text/html" });
+          res.end();
+          client.end();
+          console.log(err);
+          return
+        }
+        if (response.rows.length === 1) {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ username: response.rows[0].username }))
+        } else {
+          res.writeHead(404, { "Content-Type": "text/html" });
+          res.end();
+        }
+        client.end()
+      })
+    } else {
+      res.writeHead(400, { "Content-Type": "text/html" });
+      res.end();
+      return;
+    }
+  }
+}
 function userratings(filename, mime, ext, res, req, resHeaders, sessiondata) {
   req.on('data', ff)
   function ff(chunk) {
@@ -1451,6 +1728,73 @@ function userratings(filename, mime, ext, res, req, resHeaders, sessiondata) {
         }
         client.end()
       })
+    } else {
+      res.writeHead(400, { "Content-Type": "text/html" });
+      res.end();
+      return;
+    }
+  }
+}
+function gameinfo(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  req.on('data', getgameinfo)
+  function getgameinfo(chunk) {
+    req.removeListener('data', getgameinfo);
+    const gameid = chunk.toString();
+    if (gameidregex.test(gameid) !== false) {
+      var client = new pg.Client(conString);
+      client.connect();
+      client.query(
+        'SELECT g.userid1, g.userid2, u1.username as username1, u2.username as username2, g.gameserver, g.rated, g.state, g.initialtime, g.increment, ROUND(g.rating1) as rating1, ROUND(g.rating2) as rating2, g.sessionid1, g.sessionid2, g.color1, g.color2 FROM games g LEFT JOIN users u1 ON u1.id = g.userid1 LEFT JOIN users u2 ON u2.id = g.userid2 WHERE g.gameid = $1',
+        [gameid],
+        (err, response) => {
+          if (err) {
+            res.writeHead(500, { "Content-Type": "text/html" });
+            res.end();
+            client.end();
+            console.log(err);
+            return
+          }
+          if (response.rows.length === 1) {
+            const row = response.rows[0]
+            const botLabel = { en: 'Bot', es: 'Bot', zh: '\u673a\u5668\u4eba' }[sessiondata[3]] || 'Bot'
+            const username1 = row.username1
+            const username2 = (row.sessionid2 && row.sessionid2.indexOf('bot:') === 0) ? botLabel : row.username2
+            const sessionId = req.headers['cookie'] ? req.headers['cookie'].slice(2) : ''
+            const userId = String(sessiondata[1] || '0')
+            const color1Side = row.color1 === 'black' ? 'b' : (row.color1 === 'white' ? 'w' : '')
+            const color2Side = row.color2 === 'black' ? 'b' : (row.color2 === 'white' ? 'w' : '')
+            let side = 's'
+
+            if (userId !== '0' && String(row.userid1 || '0') === userId && color1Side) {
+              side = color1Side
+            } else if (userId !== '0' && String(row.userid2 || '0') === userId && color2Side) {
+              side = color2Side
+            } else if (sessionId && row.sessionid1 === sessionId && color1Side) {
+              side = color1Side
+            } else if (sessionId && row.sessionid2 === sessionId && color2Side) {
+              side = color2Side
+            }
+
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({
+              username1: username1,
+              username2: username2,
+              rating1: row.rating1,
+              rating2: row.rating2,
+              state: row.state,
+              initialtime: row.initialtime,
+              increment: row.increment,
+              rated: row.rated,
+              gameserver: row.gameserver,
+              side: side
+            }))
+          } else {
+            res.writeHead(404, { "Content-Type": "text/html" });
+            res.end();
+          }
+          client.end()
+        }
+      )
     } else {
       res.writeHead(400, { "Content-Type": "text/html" });
       res.end();
@@ -1576,6 +1920,12 @@ function parseTimeControl(timecontrol) {
   return { minutes: minutes, increment: increment, raw: timecontrol };
 }
 
+function normalizeTimeControl(timecontrol) {
+  const allowedTimes = ['1+0', '3+0', '3+2', '5+0', '10+0', '15+10'];
+  if (allowedTimes.includes(timecontrol)) return timecontrol;
+  return '5+0';
+}
+
 function ratingModeForTime(minutes, increment) {
   var total = minutes * 60 + increment * 40;
   if (total <= 15) return 'ultrabullet';
@@ -1632,29 +1982,36 @@ function selectUserRatings(client, userIds, mode, callback) {
 }
 
 function startGameOnServer(payload, callback) {
+  const headers = {
+    'authorization': gameServerAuthToken,
+    'x-real-ip': gameServerAuthIp,
+    'gn': payload.gameid,
+    'w': payload.whitePlayerId,
+    'b': payload.blackPlayerId,
+    'wt': String(payload.time.minutes),
+    'bt': String(payload.time.minutes),
+    'wi': String(payload.time.increment),
+    'bi': String(payload.time.increment),
+    'wr': String(payload.whiteRatings.rating),
+    'br': String(payload.blackRatings.rating),
+    'wd': String(payload.whiteRatings.deviation),
+    'bd': String(payload.blackRatings.deviation),
+    'wv': String(payload.whiteRatings.volatility),
+    'bv': String(payload.blackRatings.volatility)
+  };
+  if (payload.bot && payload.bot.side) {
+    headers['bs'] = payload.bot.side;
+  }
+  if (payload.bot && payload.bot.elo) {
+    headers['be'] = String(payload.bot.elo);
+  }
   const req = https.request(
     {
       hostname: gameServerHost,
       path: '/ng',
       method: 'POST',
       port: 443,
-      headers: {
-        'authorization': gameServerAuthToken,
-        'x-real-ip': gameServerAuthIp,
-        'gn': payload.gameid,
-        'w': payload.whitePlayerId,
-        'b': payload.blackPlayerId,
-        'wt': String(payload.time.minutes),
-        'bt': String(payload.time.minutes),
-        'wi': String(payload.time.increment),
-        'bi': String(payload.time.increment),
-        'wr': String(payload.whiteRatings.rating),
-        'br': String(payload.blackRatings.rating),
-        'wd': String(payload.whiteRatings.deviation),
-        'bd': String(payload.blackRatings.deviation),
-        'wv': String(payload.whiteRatings.volatility),
-        'bv': String(payload.blackRatings.volatility)
-      }
+      headers: headers
     },
     (re) => {
       re.resume();
@@ -2169,6 +2526,232 @@ function handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondat
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, id: result.rows[0].id, gameid: result.rows[0].gameid }));
       client.end()
+    });
+  });
+}
+
+function handleEasyBots(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  let body = '';
+  req.on('data', chunk => { body += chunk; });
+  req.on('end', () => {
+    let data;
+    try {
+      data = JSON.parse(body);
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Invalid JSON' }));
+    }
+
+    const timecontrol = normalizeTimeControl(data.timecontrol);
+    const time = parseTimeControl(timecontrol);
+    const mode = ratingModeForTime(time.minutes, time.increment);
+    const ratingField = mode + '_rating';
+
+    const rawMin = Number(data.eloMin);
+    const rawMax = Number(data.eloMax);
+    const eloMin = Number.isFinite(rawMin) && rawMin >= 0 && rawMin <= 4000 ? rawMin : null;
+    const eloMax = Number.isFinite(rawMax) && rawMax >= 0 && rawMax <= 4000 ? rawMax : null;
+
+    const sql = `
+      SELECT id, username, ROUND(${ratingField}) AS rating
+      FROM users
+      WHERE role = 3
+        AND ($1::numeric IS NULL OR ${ratingField} >= $1)
+        AND ($2::numeric IS NULL OR ${ratingField} <= $2)
+      ORDER BY ${ratingField} ASC
+      LIMIT 200
+    `;
+
+    var client = new pg.Client(conString);
+    client.connect();
+    client.query(sql, [eloMin, eloMax], (err, result) => {
+      if (err) {
+        console.error('easy/bots error', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        client.end();
+        return res.end(JSON.stringify({ error: 'Internal error' }));
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result.rows));
+      client.end();
+    });
+  });
+}
+
+function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  let body = '';
+  req.on('data', chunk => { body += chunk; });
+  req.on('end', () => {
+    let data;
+    try {
+      data = JSON.parse(body);
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Invalid JSON' }));
+    }
+
+    const botId = Number(data.botId);
+    if (!Number.isFinite(botId)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Invalid bot' }));
+    }
+
+    const rated = data.rated === true || data.rated === '1';
+    if (rated && sessiondata[1] === '0') {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Anonymous users cannot play rated games' }));
+    }
+
+    const timecontrol = normalizeTimeControl(data.timecontrol);
+    const time = parseTimeControl(timecontrol);
+    const mode = ratingModeForTime(time.minutes, time.increment);
+
+    let randomcolor = true;
+    let color1 = null;
+    if (!rated && (data.color === 'white' || data.color === 'black')) {
+      randomcolor = false;
+      color1 = data.color === 'white' ? 'black' : 'white';
+    }
+    const colors = assignColorsForGame({ randomcolor: randomcolor, color1: color1, color2: null });
+
+    const prefix = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+    const gameid = prefix + Date.now().toString(36);
+    const sessionId = req.headers['cookie'].slice(2);
+    const botSessionId = 'bot:' + botId;
+    const userId = String(sessiondata[1] || '0');
+    const botUserId = String(botId);
+
+    const whitePlayerId = colors.whiteIsPlayer1
+      ? getPlayerIdentity(botUserId, botSessionId)
+      : getPlayerIdentity(userId, sessionId);
+    const blackPlayerId = colors.whiteIsPlayer1
+      ? getPlayerIdentity(userId, sessionId)
+      : getPlayerIdentity(botUserId, botSessionId);
+    const botSide = colors.whiteIsPlayer1 ? 'w' : 'b';
+
+    var client = new pg.Client(conString);
+    client.connect();
+    client.query('SELECT id FROM users WHERE id = $1 AND role = 3', [botId], (err, botResult) => {
+      if (err) {
+        console.error('easy/start bot check error', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        client.end();
+        return res.end(JSON.stringify({ error: 'Internal error' }));
+      }
+      if (botResult.rows.length === 0) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        client.end();
+        return res.end(JSON.stringify({ error: 'Bot not found' }));
+      }
+
+      const insertSql = `
+        INSERT INTO games (gameid, userid1, sessionid1, rated, timecontrol1, randomcolor, color1, created)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        RETURNING id, gameid
+      `;
+      const insertValues = [gameid, botUserId, botSessionId, rated, time.raw, randomcolor, colors.color1];
+
+      client.query(insertSql, insertValues, (err2, insertResult) => {
+        if (err2) {
+          console.error('easy/start insert error', err2);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          client.end();
+          return res.end(JSON.stringify({ error: 'Internal error' }));
+        }
+
+        const defaultRatings = { rating: 1500, deviation: 200, volatility: 0.06 };
+        const unratedRatings = { rating: -1, deviation: 0, volatility: 0 };
+        const userIds = [Number(botUserId)];
+        if (rated && userId !== '0') userIds.push(Number(userId));
+
+        const finalizeStart = (botRatings, userRatings) => {
+          const whiteRatings = colors.whiteIsPlayer1 ? botRatings : userRatings;
+          const blackRatings = colors.whiteIsPlayer1 ? userRatings : botRatings;
+
+          const rating1 = rated ? botRatings.rating : null;
+          const rating2 = rated ? userRatings.rating : null;
+          const botElo = Number.isFinite(botRatings.rating) ? Math.round(botRatings.rating) : 1500;
+
+          const updateValues = [
+            userId,
+            sessionId,
+            colors.color1,
+            colors.color2,
+            time.minutes,
+            time.increment,
+            gameServerName,
+            rating1,
+            rating2,
+            insertResult.rows[0].id
+          ];
+
+          const updateSql = `
+            UPDATE games
+            SET userid2 = $1,
+                sessionid2 = $2,
+                color1 = $3,
+                color2 = $4,
+                initialtime = $5,
+                increment = $6,
+                gameserver = $7,
+                rating1 = $8,
+                rating2 = $9,
+                started = NOW()
+            WHERE id = $10
+          `;
+
+          client.query(updateSql, updateValues, (err3) => {
+            if (err3) {
+              console.error('easy/start update error', err3);
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              client.end();
+              return res.end(JSON.stringify({ error: 'Internal error' }));
+            }
+
+            startGameOnServer(
+              {
+                gameid: gameid,
+                whitePlayerId: whitePlayerId,
+                blackPlayerId: blackPlayerId,
+                time: time,
+                whiteRatings: rated ? whiteRatings : unratedRatings,
+                blackRatings: rated ? blackRatings : unratedRatings,
+                bot: { side: botSide, elo: botElo }
+              },
+              (err4) => {
+                if (err4) {
+                  console.error('easy/start game server error', err4);
+                  client.query('DELETE FROM games WHERE id = $1', [insertResult.rows[0].id], (err5) => {
+                    if (err5) {
+                      console.error('easy/start cleanup error', err5);
+                    }
+                    res.writeHead(502, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Game server unavailable' }));
+                    client.end();
+                  });
+                  return;
+                }
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, gameid: gameid }));
+                client.end();
+              }
+            );
+          });
+        };
+
+        selectUserRatings(client, userIds, mode, (err4, ratingsMap) => {
+          if (err4) {
+            console.error('easy/start ratings error', err4);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            client.end();
+            return res.end(JSON.stringify({ error: 'Internal error' }));
+          }
+          const botRatings = ratingsMap[botUserId] || defaultRatings;
+          const userRatings = rated ? (ratingsMap[userId] || defaultRatings) : unratedRatings;
+          finalizeStart(botRatings, userRatings);
+        });
+      });
     });
   });
 }

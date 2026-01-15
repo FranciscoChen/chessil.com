@@ -6,7 +6,38 @@ var infinitescroll
 var allgames = {}
 var currentpage = 1
 var lastpage = false
+function loaduserheader() {
+  const match = window.location.pathname.match(/\/@\/([a-zA-Z0-9_-]+)/)
+  if (!match) return
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "/userinfo", true);
+  xhr.send(match[1])
+  xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+    if (this.status == 200) {
+      const info = JSON.parse(this.responseText)
+      if (!info || typeof info.username !== 'string') return
+      const username = info.username
+      const nameTargets = document.querySelectorAll('[data-user-field="username"]')
+      for (var i = 0; i < nameTargets.length; ++i) {
+        nameTargets[i].textContent = username
+      }
+      const linkTargets = document.querySelectorAll('[data-user-field="user-link"]')
+      for (var i = 0; i < linkTargets.length; ++i) {
+        linkTargets[i].setAttribute('data-href', '/@/' + username)
+        if (linkTargets[i].tagName === 'A') {
+          linkTargets[i].setAttribute('href', '/@/' + username)
+        }
+      }
+      const pagemenu = document.getElementsByClassName('page-menu')[0]
+      if (pagemenu) {
+        pagemenu.setAttribute('data-username', username)
+      }
+    }
+  }
+}
 function userpageload() {
+  loaduserheader()
   ultrabulletrating = document.getElementsByTagName('rating')[0].getElementsByTagName('strong')[0]
   bulletrating = document.getElementsByTagName('rating')[1].getElementsByTagName('strong')[0]
   blitzrating = document.getElementsByTagName('rating')[2].getElementsByTagName('strong')[0]
@@ -457,7 +488,7 @@ function seekfunctions() {
     var min = timecontrol.split('+')[0]
     var sec = timecontrol.split('+')[1]
     var tc = calctc(min, sec)
-    const lobby = document.getElementById('main-wrap')
+    const lobby = document.querySelector(".main-wrap")
     const dialog = document.createElement('dialog')
     const closebutton = document.createElement('div')
     closebutton.setAttribute('class', 'close-button-anchor')
@@ -615,4 +646,3 @@ function seekfunctions() {
     }
   }
 }
-
