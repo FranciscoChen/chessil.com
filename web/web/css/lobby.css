@@ -1,0 +1,318 @@
+/* Grid start */
+.lobby {
+  display: grid;
+  grid-template-areas:
+    "times"
+    "ads"
+    "play"
+    "new"
+    "tutorial"
+    "book"
+}
+
+.round {
+  grid-area: main;
+  display: grid;
+  grid-gap: 2vmin;
+  grid-template-areas: "app" "under" "side" "uchat";
+}
+
+@media (min-width: 799.3px),
+(orientation: landscape) {
+  .round {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto fit-content(0) fit-content(0);
+    grid-template-areas: "app   app" "under side" "under uchat";
+  }
+}
+
+@media (min-width: 1259.3px) {
+  .lobby {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, fit-content(0)) auto;
+    grid-template-areas:
+      "new times times play"
+      "tutorial ads ads book"
+  }
+
+  .round {
+    grid-template-columns: minmax(240px, 340px) calc(0.9 * min(calc(100vw - 240px - 240px - 20px), calc(100vh - 60px - 20px))) minmax(240px, 400px);
+    grid-template-rows: fit-content(0);
+    grid-template-areas: "side app app" "uchat under .";
+  }
+}
+
+/* Grid end*/
+/* Pool start*/
+.pools {
+  display: flex;
+  height: 550px;
+  flex-flow: column;
+  grid-area: times;
+}
+
+@media (min-width: 960px) {
+  .pools {
+    height: 650px;
+  }
+}
+
+.lobby__app__content {
+  flex: 1 1 100%;
+  position: relative;
+  background: rgba(140, 140, 140, 0);
+  background-size: 100% 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid rgba(140, 140, 140, .25);
+}
+
+
+.lpools {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  grid-gap: 9px;
+  padding: 9px
+}
+
+.lpools {
+  font-size: 14px
+}
+
+@media(min-width: 320px) {
+  .lpools {
+    font-size: calc(14px + 11 * ((100vw - 320px) / 880))
+  }
+}
+
+@media(min-width: 1200px) {
+  .lpools {
+    font-size: 25px
+  }
+}
+
+.lpools>div {
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border: 1px solid #777;
+}
+
+.lpools>div:hover {
+  background: rgba(140, 140, 140, .5);
+}
+
+.now-playing .meta,
+.lobby__nope .lobby__app__content,
+.lobby__side,
+.lobby__box,
+.lobby__start,
+.lobby__table,
+.lobby__app,
+#hook .inner,
+.lpools>div {
+  display: flex;
+  flex-flow: column
+}
+
+.p {
+  font-size: 18px;
+}
+
+/* Pool end*/
+/* Lobby start */
+
+.lobby {
+  --cols: 1;
+  grid-area: main;
+  display: grid;
+  grid-template-areas: "app" "table" "side" "blog" "support" "tv" "puzzle" "leader" "winner" "tours" "timeline" "about";
+  grid-gap: 2vmin
+}
+
+.lobby__tournaments,
+.lobby__simuls,
+.lobby__leaderboard,
+.lobby__winners {
+  max-height: 20em
+}
+
+@media(min-width: 499.3px) {
+  .lobby {
+    --cols: 2;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto repeat(3, fit-content(0));
+    grid-template-areas: "app      app" "side     table" "blog     blog" "tv       puzzle" "support  support" "tours    tours" "leader   winner" "timeline timeline" "about    about"
+  }
+
+  .lobby__support {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 2%
+  }
+}
+
+@media(min-width: 799.3px) {
+  .lobby {
+    --cols: 3;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 12em repeat(2, fit-content(0)) auto auto fit-content(0);
+    grid-template-areas: "table  app     app" "side   app     app" "tv     blog    blog" "tv     support support" "puzzle tours   tours" "puzzle leader  winner" ".      leader  winner" "about  about   about"
+  }
+
+  .lobby__start {
+    margin: 2em 0 0 0;
+    flex-flow: column;
+    align-items: stretch;
+    justify-content: center
+  }
+
+  .lobby__counters {
+    display: flex
+  }
+
+  .lobby__side,
+  .lobby__timeline {
+    margin-left: 0
+  }
+}
+
+@media(min-width: 1259.3px) {
+  .lobby {
+    --cols: 4;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, fit-content(0)) auto minmax(0, 1fr);
+    grid-template-areas: "side   app     app     table" "tv     blog    blog    puzzle" "tv     support support puzzle" "leader winner  tours   tours" "about  about   about   about"
+  }
+
+  .lobby__start {
+    justify-content: center
+  }
+
+  .lobby__start button {
+    margin: 1.2em 0;
+    padding: 1em
+  }
+
+  .lobby__side {
+    margin-top: 2em
+  }
+
+  .lobby__counters {
+    margin: 0;
+    flex-flow: column;
+    align-items: flex-start;
+    position: absolute;
+    bottom: 0
+  }
+
+  .lobby__support {
+    grid-gap: 2vmin
+  }
+}
+
+.lobby__about {
+  grid-area: about
+}
+
+.lobby__about {
+  display: flex;
+  align-content: flex-start;
+  justify-content: center;
+  flex-flow: row wrap;
+  font-size: .85em;
+  font-weight: bold
+}
+
+.lobby__about a {
+  margin-right: 1.2em;
+  white-space: nowrap;
+}
+
+@media(any-pointer: coarse) {
+  .lobby__about a {
+    padding: .5em .7em
+  }
+}
+
+.lobby__about a:hover {
+  color: #1b66c9
+}
+
+.lobby__side {
+  grid-area: side
+}
+
+.lobby__app {
+  min-height: 300px;
+  user-select: none
+}
+
+@media(min-width: 499.3px) {
+  .lobby__app {
+    min-height: 400px
+  }
+}
+
+@media(min-width: 799.3px) {
+  .lobby__app {
+    height: 600px;
+    max-height: calc(100vh - calc(var(--site-header-height) + var(--site-header-margin)) - 2vmin)
+  }
+}
+
+.lobby__app,
+.lobby__nope {
+  grid-area: app
+}
+
+.lobby__table {
+  grid-area: table
+}
+
+.lobby__tv {
+  grid-area: tv
+}
+
+.lobby__leaderboard {
+  grid-area: leader
+}
+
+.lobby__winners {
+  grid-area: winner
+}
+
+.lobby__wide-winners {
+  grid-area: leader/leader/leader/winner
+}
+
+.lobby__puzzle {
+  grid-area: puzzle
+}
+
+.lobby__tournaments-simuls {
+  grid-area: tours
+}
+
+.lobby__simuls {
+  margin-top: 2vmin
+}
+
+.lobby__blog {
+  grid-area: blog
+}
+
+.lobby__support {
+  grid-area: support
+}
+
+.lobby__about {
+  grid-area: about
+}
+
+.lobby__timeline {
+  grid-area: timeline
+}
+
+/* Lobby end */

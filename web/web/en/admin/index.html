@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <title>ChessiL - Admin</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
+  <meta name="description" content="Admin tools for ChessiL">
+  <meta name="keywords" content="chess, admin, tools">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/colors.css">
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/footer.css">
+  <script src="/js/connections.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/admin.js"></script>
+  <script src="/js/load.js"></script>
+</head>
+
+<body>
+  <header>
+    <div class="z">
+      <input type="checkbox" id="x" class="n" autocomplete="off">
+      <label for="x" class="q"></label>
+      <label for="x" class="r">
+        <span class="u"></span>
+      </label>
+      <div class="t"><a href="/en">Chess<span>iL</span></a></div>
+      <nav id="n">
+        <div class="m"><a href="/en/">Home</a></div>
+      </nav>
+    </div>
+    <div class="site-buttons">
+      <div id="clinput"><a class="link"><span></span></a><input spellcheck="false" autocomplete="off"
+          placeholder="Search" enterkeyhint="search">
+        <div class="complete-list none"></div>
+      </div>
+      <div class="dasher"><button class="toggle link anon"><span></span></button>
+        <div id="dasher_app" class="dropdown">
+          <div class="sub langs"><button class="head text" type="button">Language</button>
+            <form method="post" action="/language"><button class="current accepted" type="submit" name="lang" value="en"
+                title="en">English</button><button type="submit" name="lang" value="es"
+                title="es">Español</button><button type="submit" name="lang" value="zh" title="zh">中文</button></form>
+          </div>
+          <div class="sub background"><button class="head text" type="button">Theme</button>
+            <div class="selector"><button id="lightmode" type="button">Light</button><button id="darkmode"
+                type="button">Dark</button></div>
+          </div>
+          <div>
+            <div class="subs"><button class="sub" type="button">Language</button><button class="sub"
+                type="button">Theme</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count"
+            data-count="0"></span></button>
+        <div id="challenge-app" class="links dropdown rendered">
+          <div class="empty text">No challenges.</div>
+        </div>
+      </div>
+      <div id="user"></div>
+    </div>
+  </header>
+  <div class="main-wrap">
+    <main class="page-menu">
+      <aside class="page-menu__menu">
+        <div class="side">
+          <a class="active"><span>
+              <h3>User editor</h3>
+              <rating><span>Manage users</span></rating>
+            </span></a>
+          <a><span>
+              <h3>More tools</h3>
+              <rating><span>Coming soon</span></rating>
+            </span></a>
+        </div>
+      </aside>
+      <div class="page-menu__content box">
+        <div class="box__top">
+          <h1>Admin tools</h1>
+        </div>
+        <div class="angle-content">
+          <h2>User editor</h2>
+          <p>Roles: 1 = user, 2 = admin, 3 = bot.</p>
+          <form id="admin-user-form" class="form3">
+            <div class="form-group">
+              <label class="form-label" for="admin-user-action">Action</label>
+              <select id="admin-user-action" class="form-control">
+                <option value="create">Create</option>
+                <option value="update">Update</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-user-identifier">Find user by</label>
+              <select id="admin-user-identifier" class="form-control">
+                <option value="id">ID</option>
+                <option value="username">Username</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-user-target">Target (required for update)</label>
+              <input id="admin-user-target" class="form-control" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="admin-user-data">Data (JSON)</label>
+              <textarea id="admin-user-data" class="form-control" rows="8" spellcheck="false">
+{
+  "username": "NewUser",
+  "password": "ChangeMe",
+  "role": 1
+}
+              </textarea>
+            </div>
+            <button type="submit" class="submit button">Apply</button>
+          </form>
+          <div id="admin-user-output" class="text"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+
+</html>

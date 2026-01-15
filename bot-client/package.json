@@ -1,0 +1,10 @@
+{
+  "name": "chessil-bot-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bot client for chessil.com easy games",
+  "main": "node/play-game.js",
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

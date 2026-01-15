@@ -1,0 +1,388 @@
+/* Login start*/
+main {
+  grid-area: main;
+}
+
+.isauthwrap {
+  min-height: calc(95vh - 60px - 4em);
+}
+
+.box__top,
+.box-pad {
+  padding: 5vh var(--box-padding);
+}
+
+.box {
+  background: #fff;
+}
+
+.box {
+  --box-padding: 15px;
+}
+
+@media (min-width: 320px) {
+  .box {
+    --box-padding: calc(15px + 45 * ((100vw - 320px) / 880));
+  }
+}
+
+.auth {
+  width: 100%;
+  margin: auto;
+}
+
+@media (min-width: 649.3px) {
+  .auth {
+    width: 40em;
+  }
+}
+
+@media (min-width: 1200px) {
+  .box {
+    --box-padding: 60px;
+  }
+}
+
+@media (min-width: 499.3px) {
+  .auth-login {
+    width: 30em;
+  }
+}
+
+.btn-rack__btn i,
+.btn-rack form i,
+.mini-game__clock,
+.mini-game .rating,
+h1,
+h2,
+h3,
+h4 {
+  font-family: arial, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: normal;
+  font-size: 1em;
+}
+
+h1 {
+  font-size: 20px;
+}
+
+@media (min-width: 320px) {
+  h1 {
+    font-size: calc(20px + 20 * ((100vw - 320px) / 880));
+  }
+}
+
+@media (min-width: 1200px) {
+  h1 {
+    font-size: 40px;
+  }
+
+}
+
+.box__top,
+.box-pad {
+  padding: 5vh var(--box-padding);
+}
+
+#announce,
+.upt__mod,
+.upt__info__ratings,
+.upt__info__top,
+.box__top {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.box__top {
+  gap: 1rem;
+}
+
+.box-pad .box__top {
+  padding: 0 0 5vh 0;
+}
+
+.form-group {
+  margin-bottom: 3rem;
+}
+
+.form-label {
+  font-weight: bold;
+  display: inline-block;
+  margin-bottom: .5rem;
+  cursor: text;
+}
+
+.btn-rack,
+.button,
+.data-count::after,
+.unread,
+input,
+textarea,
+select,
+#powerTip,
+#miniGame,
+#miniBoard {
+  border-radius: 3px;
+}
+
+button,
+input,
+optgroup,
+select,
+textarea {
+  font: inherit;
+  color: #fff;
+  outline-color: #1a73e8;
+}
+
+input,
+textarea,
+select {
+  background: #fff;
+  border: 1px solid #404040;
+  padding: .6em 1em;
+}
+
+input {
+  color: #000;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  height: calc(2.7em + 2px);
+  background-clip: padding-box;
+}
+
+.form-control:invalid,
+.form-group.is-invalid .form-control {
+  border-color: #ffcc00;
+}
+
+.auth .alternative,
+.form-actions,
+.form-split {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth .alternative {
+  margin-top: 2rem;
+  font-size: .9em;
+  line-height: 2em;
+  gap: 1em;
+}
+
+.auth .button {
+  width: 100%;
+  padding: 1rem;
+}
+
+.auth .disabled {
+  background: rgba(70, 70, 70, .5);
+}
+
+.button:not(.disabled):hover {
+  box-shadow: 0 1px 3px 1px rgba(66, 64, 67, .15), 0 1px 2px 0 rgba(60, 64, 67, .3);
+}
+
+.button:not(.disabled):hover {
+  color: #fff;
+  background: #1b66c9;
+}
+
+/* Login end*/
+/* Register start */
+p {
+  margin-bottom: 1em;
+  unicode-bidi: plaintext;
+}
+
+.none {
+  display: none;
+}
+
+.form3 .error,
+.form-help,
+.password-complexity-label {
+  font-size: 90%;
+  margin-top: .25rem;
+  unicode-bidi: plaintext;
+}
+
+.form3 .error {
+  color: #ffcc00;
+}
+
+small {
+  font-size: .9em;
+}
+
+.form-help,
+.password-complexity-label {
+  color: #999;
+}
+
+.password-complexity {
+  margin-top: -2rem;
+  margin-bottom: 3rem;
+}
+
+.form-help,
+.password-complexity-label {
+  color: #999;
+}
+
+.password-complexity-meter {
+  display: flex;
+  grid-gap: .25rem;
+  height: .4rem;
+  margin-top: 1rem;
+}
+
+.password-complexity-meter>* {
+  background-color: gray;
+  width: 25%;
+}
+
+.form-check {
+  display: flex;
+  flex-flow: column;
+}
+
+.form-group {
+  margin-bottom: 3rem;
+}
+
+.form-check {
+  justify-content: center;
+}
+
+.form-check div {
+  display: flex;
+}
+
+.form-check-input {
+  margin-right: .5rem;
+}
+
+.form-label {
+  font-weight: bold;
+  display: inline-block;
+  margin-bottom: .5rem;
+  cursor: text;
+}
+
+.form-check .form-label {
+  margin-bottom: 0;
+  cursor: pointer;
+  unicode-bidi: plaintext;
+}
+
+.auth .agreement label {
+  font-weight: normal;
+}
+
+.cmn-toggle {
+  position: absolute;
+  margin-left: -99999px;
+}
+
+.cmn-toggle {
+  touch-action: manipulation;
+}
+
+.cmn-toggle+label {
+  display: block;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+  padding: 1px;
+  width: 40px;
+  height: 24px;
+  border: 1px solid #404040;
+  border-radius: 24px;
+}
+
+.cmn-toggle:checked+label {
+  background-color: #1a73e8;
+}
+
+.cmn-toggle:not(:checked)+label {
+  background-color: #ffcc00;
+}
+
+.auth .agreement label {
+  font-weight: normal;
+}
+
+.flash::before,
+.cmn-toggle+label::before {
+  font-size: 1.2em;
+  vertical-align: middle;
+  font-family: "lichess";
+  font-style: normal;
+  font-weight: normal;
+  text-transform: none;
+  speak: none;
+  content: attr(data-icon);
+  opacity: .9;
+  unicode-bidi: isolate;
+}
+
+.cmn-toggle:hover:not(:disabled)+label::after,
+.cmn-toggle+label::after {
+  background: linear-gradient(to bottom, hsl(37, 7%, 22%), hsl(37, 5%, 19%) 100%);
+}
+
+.cmn-toggle+label::before,
+.cmn-toggle+label::after {
+  display: block;
+  position: absolute;
+  content: "";
+  width: 22px;
+  height: 22px;
+  bottom: 0;
+  left: 0;
+}
+
+.cmn-toggle+label::before {
+  font-size: 1em;
+  z-index: 1;
+  text-align: center;
+  line-height: 22px;
+}
+
+.cmn-toggle:checked+label::before,
+.cmn-toggle:checked+label::after {
+  margin-left: 16px;
+}
+
+.cmn-toggle:not(:checked)+label::before {
+  content: "";
+  color: #ffcc00;
+}
+
+.cmn-toggle:checked+label::before {
+  content: "";
+  color: #1a73e8;
+}
+
+.cmn-toggle+label::after {
+  border-radius: 100%;
+  box-shadow: 0 1px 2.5px rgba(0, 0, 0, .3);
+}
+
+
+/* Register end*/

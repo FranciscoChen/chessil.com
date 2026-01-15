@@ -1,0 +1,23 @@
+:root {
+  --text: #f1f4f8;
+  --text2: #b6c0cc;
+  --bg: #0f1318;
+  --bg2: #151b22;
+  --bg3: #1c2430;
+  --highlight: #7fb4e1;
+  --link: #7fb4e1;
+  --link2: #9cc9ee;
+  --art: #d4b067;
+  --cover: rgba(0, 0, 0, 0.6);
+  --hover: rgba(127, 180, 225, 0.12);
+  --border: rgba(241, 244, 248, 0.12);
+  --shadow: rgba(0, 0, 0, 0.5);
+  --attention: #e27c6a;
+  --grey: #9aa5b1;
+  --icons: invert(1);
+  --bg-card: #161c24;
+  --bg-panel: #121820;
+  --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.35);
+  --white: #ffffff;
+  --pattern: rgba(255, 255, 255, 0.05);
+}

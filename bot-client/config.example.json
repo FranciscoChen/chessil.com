@@ -1,0 +1,24 @@
+{
+  "webBaseUrl": "https://chessil.com",
+  "engineBaseUrl": "https://sf0.chessil.com",
+  "engineAuthToken": "replace-with-engine-auth-token",
+  "engineXRealIp": "replace-with-allowed-engine-ip",
+  "admin": {
+    "username": "admin",
+    "password": "replace-with-admin-password"
+  },
+  "bot": {
+    "username": "bot-client-001",
+    "password": "replace-with-bot-password",
+    "uci_elo": 900
+  },
+  "easy": {
+    "timecontrol": "5+0",
+    "rated": false,
+    "color": "random",
+    "opponentBotId": null,
+    "opponentUciElo": 800,
+    "opponentEloRange": 150,
+    "filterBy": "uci_elo"
+  }
+}

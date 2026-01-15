@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <title>ChessiL - Easy Game</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
+  <meta name="description" content="Start a rated or unrated game against a chess bot">
+  <meta name="keywords" content="chess, bot, easy, play, rated, unrated">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/colors.css">
+  <link rel="stylesheet" href="/css/buttons.css">
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/footer.css">
+  <link rel="stylesheet" href="/css/showcase.css">
+  <link rel="stylesheet" href="/css/lobby.css">
+  <script src="/js/connections.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/easy.js"></script>
+  <script src="/js/load.js"></script>
+</head>
+
+<body>
+  <header>
+    <div class="z">
+      <input type="checkbox" id="x" class="n" autocomplete="off">
+      <label for="x" class="q"></label>
+      <label for="x" class="r">
+        <span class="u"></span>
+      </label>
+      <div class="t"><a href="/en">Chess<span>iL</span></a></div>
+      <nav id="n">
+        <div class="m"><a href="/en/">Home</a></div>
+      </nav>
+    </div>
+    <div class="site-buttons">
+      <div id="clinput"><a class="link icon-search"><span></span></a><input spellcheck="false" autocomplete="off"
+          placeholder="Search" enterkeyhint="search">
+        <div class="complete-list none"></div>
+      </div>
+      <div class="dasher"><button class="toggle link anon icon-settings"><span></span></button>
+        <div id="dasher_app" class="dropdown">
+          <div class="sub langs"><button class="head text">Language</button>
+            <form method="post" action="/language"><button class="current accepted" type="submit" name="lang" value="en"
+                title="en">English</button><button type="submit" name="lang" value="es" title="es">Español</button><button
+                type="submit" name="lang" value="zh" title="zh">中文</button></form>
+          </div>
+          <div class="sub background"><button class="head text">Theme</button>
+            <div class="selector"><button id="lightmode">Light</button><button id="darkmode">Dark</button></div>
+          </div>
+          <div>
+            <div class="subs"><button class="sub">Language</button><button class="sub">Theme</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="seek"><button id="challenge-toggle" class="toggle link icon-games"><span class="data-count"
+            data-count="0"></span></button>
+        <div id="challenge-app" class="links dropdown rendered">
+          <div class="empty text">No challenges.</div>
+        </div>
+      </div>
+      <div id="user">
+        <div id="user_button" class="icon-user toggle">
+          <div id="dasher_user_app" class="dropdown">
+            <div>
+              <div class="links">
+                <a id="profile" class="user-link online text is-green none" href="/profile">My profile</a>
+                <form id="logout" class="none" method="post" action="/logout"><button class="text" type="submit">Sign
+                    out</button></form>
+                <form id="login" method="post" action="/login"><button class="text" type="submit">Log in</button></form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="main-wrap">
+    <div class="main">
+      <div class="showcase">
+        <div class="showcase-grid">
+          <h1 class="showcase-headings">Easy Game</h1>
+          <p class="showcase-paragraph">Choose a bot and start a rated or unrated game against the engine.</p>
+          <div class="showcase-action">
+            <div class="filters-primary">
+              <select id="easy-rated">
+                <option value="0" selected>Unrated</option>
+                <option value="1">Rated</option>
+              </select>
+              <select id="easy-color">
+                <option value="random" selected>Random</option>
+                <option value="white">White</option>
+                <option value="black">Black</option>
+              </select>
+              <select id="easy-time">
+                <option value="1+0">1+0</option>
+                <option value="3+0">3+0</option>
+                <option value="3+2">3+2</option>
+                <option value="5+0" selected>5+0</option>
+                <option value="10+0">10+0</option>
+                <option value="15+10">15+10</option>
+              </select>
+            </div>
+            <div class="filters-secondary">
+              <select id="easy-filter-by">
+                <option value="rating" selected>Filter by Elo</option>
+                <option value="uci_elo">Filter by UCI Elo</option>
+              </select>
+              <input id="easy-elo-min" type="number" placeholder="Min Elo">
+              <input id="easy-elo-max" type="number" placeholder="Max Elo">
+            </div>
+          </div>
+          <div class="text">Rated games require Elo within 500.</div>
+          <div class="results">
+            <div id="easy-bot-list" class="results-flex"></div>
+          </div>
+          <div id="easy-status" class="text"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer>
+    <div><a href="/en/terms">Terms of service</a><a href="/en/privacy">Privacy policy</a></div>
+  </footer>
+</body>
+
+</html>

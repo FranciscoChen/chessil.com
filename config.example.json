@@ -1,0 +1,36 @@
+{
+  "shared": {
+    "postgresUrl": "postgres://username:password@db.domain.com:5432/databasename?sslmode=require",
+    "websocketPassword": "replace-with-strong-random-string",
+    "gameServerAuthToken": "replace-with-strong-random-string",
+    "engineAuthToken": "replace-with-strong-random-string"
+  },
+  "web": {
+    "domainName": "https://chessil.com",
+    "port": 8080,
+    "maintenance": true,
+    "maintenanceIps": { "2.38.67.180": true },
+    "websocketServerIps": { "51.68.190.27": true },
+    "authRateLimits": {
+      "register": { "max": 5, "windowSec": 300 },
+      "login": { "max": 12, "windowSec": 60 },
+      "registered": { "max": 30, "windowSec": 60 },
+      "logout": { "max": 20, "windowSec": 60 }
+    }
+  },
+  "game": {
+    "domainName": "https://chessil.com",
+    "serverName": "ws0",
+    "myServers": {
+      "162.19.242.82": "http",
+      "57.129.4.53": "sf"
+    },
+    "engineHost": "sf0.chessil.com"
+  },
+  "engine": {
+    "domainName": "https://sf0.chessil.com",
+    "port": 8080,
+    "myServers": { "51.68.190.27": "ws" },
+    "gameHost": "ws0.chessil.com"
+  }
+}

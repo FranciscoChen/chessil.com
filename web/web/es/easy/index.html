@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <title>ChessiL - Partida fácil</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
+  <meta name="description" content="Inicia una partida clasificada o amistosa contra un bot de ajedrez">
+  <meta name="keywords" content="ajedrez, bot, fácil, jugar, clasificada, amistosa">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/colors.css">
+  <link rel="stylesheet" href="/css/buttons.css">
+  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" href="/css/footer.css">
+  <link rel="stylesheet" href="/css/showcase.css">
+  <link rel="stylesheet" href="/css/lobby.css">
+  <script src="/js/connections.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/easy.js"></script>
+  <script src="/js/load.js"></script>
+</head>
+
+<body>
+  <header>
+    <div class="z">
+      <input type="checkbox" id="x" class="n" autocomplete="off">
+      <label for="x" class="q"></label>
+      <label for="x" class="r">
+        <span class="u"></span>
+      </label>
+      <div class="t"><a href="/es">Chess<span>iL</span></a></div>
+      <nav id="n">
+        <div class="m"><a href="/es/">Inicio</a></div>
+      </nav>
+    </div>
+    <div class="site-buttons">
+      <div id="clinput"><a class="link icon-search"><span></span></a><input spellcheck="false" autocomplete="off"
+          placeholder="Buscar" enterkeyhint="search">
+        <div class="complete-list none"></div>
+      </div>
+      <div class="dasher"><button class="toggle link anon icon-settings"><span></span></button>
+        <div id="dasher_app" class="dropdown">
+          <div class="sub langs"><button class="head text">Idioma</button>
+            <form method="post" action="/language"><button type="submit" name="lang" value="en" title="en">English</button><button
+                class="current accepted" type="submit" name="lang" value="es" title="es">Español</button><button
+                type="submit" name="lang" value="zh" title="zh">中文</button></form>
+          </div>
+          <div class="sub background"><button class="head text">Tema</button>
+            <div class="selector"><button id="lightmode">Claro</button><button id="darkmode">Oscuro</button></div>
+          </div>
+          <div>
+            <div class="subs"><button class="sub">Idioma</button><button class="sub">Tema</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="seek"><button id="challenge-toggle" class="toggle link icon-games"><span class="data-count"
+            data-count="0"></span></button>
+        <div id="challenge-app" class="links dropdown rendered">
+          <div class="empty text">Sin desafíos.</div>
+        </div>
+      </div>
+      <div id="user">
+        <div id="user_button" class="icon-user toggle">
+          <div id="dasher_user_app" class="dropdown">
+            <div>
+              <div class="links">
+                <a id="profile" class="user-link online text is-green none" href="/profile">Mi perfil</a>
+                <form id="logout" class="none" method="post" action="/logout"><button class="text" type="submit">Cerrar
+                    sesión</button></form>
+                <form id="login" method="post" action="/login"><button class="text" type="submit">Iniciar
+                    sesión</button></form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="main-wrap">
+    <div class="main">
+      <div class="showcase">
+        <div class="showcase-grid">
+          <h1 class="showcase-headings">Partida fácil</h1>
+          <p class="showcase-paragraph">Elige un bot y empieza una partida clasificada o amistosa contra el motor.</p>
+          <div class="showcase-action">
+            <div class="filters-primary">
+              <select id="easy-rated">
+                <option value="0" selected>Amistosa</option>
+                <option value="1">Clasificatoria</option>
+              </select>
+              <select id="easy-color">
+                <option value="random" selected>Aleatorio</option>
+                <option value="white">Blancas</option>
+                <option value="black">Negras</option>
+              </select>
+              <select id="easy-time">
+                <option value="1+0">1+0</option>
+                <option value="3+0">3+0</option>
+                <option value="3+2">3+2</option>
+                <option value="5+0" selected>5+0</option>
+                <option value="10+0">10+0</option>
+                <option value="15+10">15+10</option>
+              </select>
+            </div>
+            <div class="filters-secondary">
+              <select id="easy-filter-by">
+                <option value="rating" selected>Filtrar por Elo</option>
+                <option value="uci_elo">Filtrar por UCI Elo</option>
+              </select>
+              <input id="easy-elo-min" type="number" placeholder="Elo mín.">
+              <input id="easy-elo-max" type="number" placeholder="Elo máx.">
+            </div>
+          </div>
+          <div class="text">Las partidas clasificatorias requieren Elo dentro de 500.</div>
+          <div class="results">
+            <div id="easy-bot-list" class="results-flex"></div>
+          </div>
+          <div id="easy-status" class="text"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer>
+    <div><a href="/es/terms">Términos del servicio</a><a href="/es/privacy">Política de privacidad</a></div>
+  </footer>
+</body>
+
+</html>

@@ -1,0 +1,467 @@
+/* Create game dialog start */
+
+dialog:not(.touch-scroll) {
+  margin-top: 16px;
+  overflow: visible;
+}
+
+dialog {
+  position: fixed;
+  max-height: 100%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 110;
+  padding: 0;
+  border: none;
+  background: #fff;
+}
+
+dialog,
+.btn-rack,
+.button,
+.data-count::after,
+.unread,
+input,
+textarea,
+select,
+#powerTip,
+#miniGame,
+#miniBoard {
+  border-radius: 3px;
+}
+
+dialog,
+#announce,
+#reconnecting,
+#powerTip,
+#miniGame,
+#miniBoard {
+  box-shadow: 0 14px 28px rgba(0, 0, 0, .25), 0 10px 10px rgba(0, 0, 0, .22);
+}
+
+dialog div.close-button-anchor {
+  position: relative;
+  width: 100%;
+  height: 0;
+}
+
+dialog>div.scrollable {
+  max-height: calc(100vh - 16px);
+  overflow-x: clip;
+  overflow-y: auto;
+}
+
+.dialog-content {
+  text-align: center;
+  padding: 2em;
+  color: #000;
+}
+
+.game-setup {
+  width: 30em;
+  max-width: 96vw;
+  padding: 0;
+  text-align: center;
+}
+
+.game-setup h2 {
+  margin: 1.5rem 0;
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, .6);
+}
+
+dialog button.close-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 40px;
+  height: 40px;
+  z-index: 111;
+  background: #fff;
+  color: #bababa;
+  border-radius: 6px;
+  border: 1px solid #404040;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer
+}
+
+dialog button.close-button:not(:focus) {
+  outline: none
+}
+
+
+dialog div.close-button-anchor {
+  position: relative;
+  width: 100%;
+  height: 0
+}
+
+dialog:not(.touch-scroll) {
+  margin-top: 16px;
+  overflow: visible
+}
+
+dialog:not(.touch-scroll) button.close-button {
+  transform: translate(18px, -18px);
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
+  border-radius: 50%;
+  border: none
+}
+
+dialog:not(.touch-scroll) button.close-button:hover {
+  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, .14), 0 3px 1px -2px rgba(0, 0, 0, .2), 0 1px 5px 0 rgba(0, 0, 0, .12);
+  background: #c33;
+  color: #fff
+}
+
+
+.dialog-content {
+  text-align: center;
+  padding: 2em;
+  color: #000
+}
+
+
+.game-setup {
+  width: 30em;
+  max-width: 96vw;
+  padding: 0;
+  text-align: center
+}
+
+.game-setup h2 {
+  margin: 1.5rem 0
+}
+
+.game-setup .setup-content>div {
+  padding: 1em 1em
+}
+
+.game-setup group.radio {
+  margin: 0 auto 1em auto;
+  width: 70%
+}
+
+.game-setup group.radio .disabled {
+  opacity: .4;
+  cursor: default
+}
+
+.game-setup group.radio input:checked+label {
+  background: #1b66c9
+}
+
+.game-setup .optional-config {
+  border-bottom: 0px solid rgba(170, 170, 170, .7)
+}
+
+.game-setup .optional-config.disabled {
+  opacity: .5;
+  cursor: not-allowed
+}
+
+.game-setup .optional-config,
+.game-setup .ratings {
+  background: #fff;
+  border-top: 0px solid rgba(170, 170, 170, .7)
+}
+
+.game-setup .mode-choice {
+  margin-top: 1em
+}
+
+.game-setup .label-select label {
+  flex: 0 0 33%;
+  text-align: right
+}
+
+.game-setup .label-select select {
+  margin-left: .8em;
+  font-weight: bold
+}
+
+.game-setup .fen__board {
+  display: block;
+  width: 50%;
+  margin: .5em auto 0 auto
+}
+
+.game-setup #fen-input {
+  flex: 1 1 100%
+}
+
+.game-setup .failure {
+  background: #472725;
+  box-shadow: 0 0 13px 6px #472725;
+  border-radius: .5em
+}
+
+.game-setup .color-submits {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-end;
+  justify-content: center;
+  margin: 1em auto;
+  text-align: center
+}
+
+.game-setup .color-submits__button {
+  margin: 0 .5em;
+  width: 64px;
+  height: 64px;
+  padding: 7px
+}
+
+.game-setup .color-submits__button i {
+  display: block;
+  padding: 0;
+  width: 50px;
+  height: 50px;
+  background-size: 50px 50px
+}
+
+.game-setup .color-submits__button.white i {
+  background-image: url("/i/wK.svg")
+}
+
+.game-setup .color-submits__button.black i {
+  background-image: url("/i/bK.svg")
+}
+
+.game-setup .color-submits__button.random {
+  width: 85px;
+  height: 85px;
+  padding: 10px
+}
+
+.game-setup .color-submits__button.random i {
+  background-image: url("/i/wbK.svg");
+  background-size: 65px 65px;
+  width: 65px;
+  height: 65px
+}
+
+.game-setup .color-submits__button:disabled {
+  opacity: .3;
+  cursor: not-allowed
+}
+
+.game-setup .color-submits .spinner {
+  width: 85px;
+  height: 85px;
+  margin: 10px auto 20px auto
+}
+
+.game-setup .label-select.variant {
+  margin-bottom: 1em;
+  padding-bottom: 0
+}
+
+.game-setup .range {
+  padding-top: 1em
+}
+
+.game-setup .range span {
+  font-weight: bold
+}
+
+.game-setup .range input {
+  font-size: 1.5em;
+  margin-top: .5em;
+  padding: 0;
+  width: 90%
+}
+
+.game-setup .rating-range {
+  justify-content: center
+}
+
+.game-setup .rating-range .rating-min,
+.game-setup .rating-range .rating-max {
+  flex: 0 0 7ch
+}
+
+.game-setup .rating-range input {
+  width: 30%;
+  padding: .6em 0
+}
+
+.game-setup .ratings {
+  padding: 1em;
+  width: 100%;
+  text-align: center
+}
+
+.game-setup .ratings strong {
+  margin-right: .25em
+}
+
+
+input.range {
+  -webkit-appearance: none;
+  background: none;
+  border: 0;
+}
+
+input.range:focus {
+  outline: none
+}
+
+input.range::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 1em;
+  cursor: pointer;
+  background: rgba(170, 170, 170, .2);
+  border-radius: .5em
+}
+
+input.range::-webkit-slider-thumb {
+  background: linear-gradient(to bottom, hsl(37, 7%, 22%), hsl(37, 5%, 19%) 100%);
+  border: 1px solid #1b66c9;
+  height: 1em;
+  width: 1.5em;
+  border-radius: 12px;
+  background: #1a73e8;
+  cursor: pointer;
+  -webkit-appearance: none
+}
+
+input.range::-moz-range-track {
+  width: 100%;
+  height: 1em;
+  cursor: pointer;
+  background: rgba(170, 170, 170, .2);
+  border-radius: .5em
+}
+
+input.range::-moz-range-thumb {
+  background: linear-gradient(to bottom, hsl(37, 7%, 22%), hsl(37, 5%, 19%) 100%);
+  border: 1px solid #1b66c9;
+  height: 1em;
+  width: 1.5em;
+  border-radius: 12px;
+  background: #1a73e8;
+  cursor: pointer
+}
+
+input.range::-ms-track {
+  width: 100%;
+  height: 1em;
+  cursor: pointer;
+  background: rgba(170, 170, 170, .2);
+  border-radius: .5em
+}
+
+input.range::-ms-fill-lower {
+  background: rgba(170, 170, 170, .5);
+  border-radius: 11.8px
+}
+
+input.range::-ms-fill-upper {
+  background: rgba(170, 170, 170, .5);
+  border-radius: 11.8px
+}
+
+input.range::-ms-thumb {
+  background: linear-gradient(to bottom, hsl(37, 7%, 22%), hsl(37, 5%, 19%) 100%);
+  border: 1px solid #1b66c9;
+  height: 1em;
+  width: 1.5em;
+  border-radius: 12px;
+  background: #1a73e8;
+  cursor: pointer;
+  border-color: rgba(0, 0, 0, 0);
+  color: rgba(0, 0, 0, 0)
+}
+
+group.radio {
+  overflow: hidden
+}
+
+group.radio div {
+  flex: 1 1 auto;
+  position: relative
+}
+
+group.radio input {
+  position: absolute;
+  left: -99999px
+}
+
+group.radio label,
+group.radio .label {
+  justify-content: center;
+  padding: 10px;
+  height: 100%;
+  cursor: pointer;
+  border-right: 1px solid #404040;
+  user-select: none
+}
+
+group.radio div:last-child label {
+  border-right: 0
+}
+
+group.radio label,
+group.radio .label {
+  background: linear-gradient(to bottom, hsl(37, 7%, 22%, 10%), hsl(37, 5%, 19%, 10%) 100%)
+}
+
+group.radio label:hover,
+group.radio .label:hover {
+  background: linear-gradient(to bottom, hsl(37, 7%, 25%, 10%), hsl(37, 5%, 22%, 10%) 100%);
+  color: #1a73e8
+}
+
+group.radio input:checked+label {
+  box-shadow: 0 3px 4px rgba(0, 0, 0, .15) inset
+}
+
+group.radio input:checked+label {
+  background: #d64f00;
+  color: #fff;
+  text-shadow: 0 1px 1px #000 !important
+}
+
+group.radio {
+  display: flex;
+  flex-flow: row wrap
+}
+
+.game-setup .label-select,
+group.radio label,
+group.radio .label {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center
+}
+
+.game-setup .rating-range,
+.game-setup .fen__form {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center
+}
+
+group.radio {
+  border-radius: 3px
+}
+
+group.radio {
+  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, .14), 0 3px 1px -2px rgba(0, 0, 0, .2), 0 1px 5px 0 rgba(0, 0, 0, .12)
+}
+
+.button.button-metal,
+.button.button-metal:hover {
+  color: #999;
+  background-color: rgba(170, 170, 170, .2);
+}
+
+/* Create game dialog end */

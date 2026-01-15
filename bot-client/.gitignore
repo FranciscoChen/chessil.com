@@ -1,0 +1,11 @@
+# Local config and secrets
+config.json
+
+# Runtime state
+state/
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log

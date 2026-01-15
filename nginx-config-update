@@ -1,0 +1,35 @@
+# Nginx global rate limits for auth endpoints
+# Place this in your nginx config (http block), then reference from the server block.
+
+## 1) http{} block
+# Shared memory zone for all auth endpoints
+limit_req_zone $binary_remote_addr zone=auth_global:10m rate=30r/m;
+
+## 2) server{} block (for chessil.com)
+# Apply to auth endpoints (global across all /register and /login requests)
+location = /register {
+    limit_req zone=auth_global burst=10 nodelay;
+    proxy_pass http://127.0.0.1:8080;
+}
+
+location = /login {
+    limit_req zone=auth_global burst=20 nodelay;
+    proxy_pass http://127.0.0.1:8080;
+}
+
+# Optional: block fast username checks from hammering the DB
+location = /registered {
+    limit_req zone=auth_global burst=40 nodelay;
+    proxy_pass http://127.0.0.1:8080;
+}
+
+# Optional: limit logout storms
+location = /logout {
+    limit_req zone=auth_global burst=20 nodelay;
+    proxy_pass http://127.0.0.1:8080;
+}
+
+## Notes
+# - Adjust rate/burst values to your traffic profile.
+# - If you already have a shared proxy config, include it in each location or use a named location.
+# - Ensure your existing locations for these paths do not conflict or get bypassed.
