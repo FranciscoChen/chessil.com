@@ -11,6 +11,8 @@ const observability = require('../observability');
 // Using Redis as Sessions database
 const Redis = require("ioredis");
 const redis = new Redis();
+const redisSub = new Redis();
+const lobbyChannel = 'lobby:started';
 
 // Using PostgreSQL as main database for storing information about: users, game seeks, game data, etc.
 const pg = require("pg");
@@ -76,9 +78,22 @@ var folder = 'web'
 var dir = path.join(__dirname, folder)
 
 // This port is closed to the outside, but connected to our nginx instance
-const port = config.web.port;
+const envPort = parseInt(process.env.PORT || '', 10);
+const port = Number.isFinite(envPort) ? envPort : config.web.port;
 const obs = observability.createObserver('web');
 obs.installProcessHandlers();
+
+redisSub.subscribe(lobbyChannel, (err) => {
+  if (err) {
+    obs.log('error', 'lobby_subscribe_error', { error: err && err.stack ? err.stack : String(err) });
+  }
+});
+
+redisSub.on('message', (channel, message) => {
+  if (channel !== lobbyChannel) return;
+  if (typeof message !== 'string' || message.length === 0) return;
+  notifyLobbyWatchers(message, false);
+});
 
 // The mime types of files that can be served, and which ones are to be gzipped or cached. It is limited on purpose and can be expanded as needed
 const mime = require('./mime.js')
@@ -227,6 +242,42 @@ server.on('error', function (e) {
   obs.count('server_error');
   obs.log('error', 'server_error', { error: e && e.stack ? e.stack : String(e) });
 });
+
+let shuttingDown = false;
+
+function shutdown(reason) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  obs.log('info', 'shutdown_start', { reason: reason });
+
+  server.close(() => {
+    obs.log('info', 'shutdown_server_closed', {});
+  });
+
+  lobbyWatchers.forEach((watchers) => {
+    watchers.forEach((entry) => {
+      clearInterval(entry.keepalive);
+      try {
+        entry.res.write('data: ' + JSON.stringify({ shutdown: true }) + '\n\n');
+      } catch (e) {}
+      entry.res.end();
+    });
+  });
+  lobbyWatchers.clear();
+
+  redisSub.unsubscribe(lobbyChannel, () => {
+    redisSub.quit().catch(() => {});
+  });
+  redis.quit().catch(() => {});
+
+  setTimeout(() => {
+    obs.log('info', 'shutdown_forced_exit', {});
+    process.exit(0);
+  }, 30000);
+}
+
+process.on('SIGTERM', () => shutdown('sigterm'));
+process.on('SIGINT', () => shutdown('sigint'));
 
 function sanitizeUserAgent(useragent) {
   if (typeof useragent !== 'string') {
@@ -1919,7 +1970,10 @@ function randomString(length, chars) {
   return result;
 }
 
-function notifyLobbyWatchers(gameid) {
+function notifyLobbyWatchers(gameid, publish) {
+  if (publish) {
+    redis.publish(lobbyChannel, gameid);
+  }
   const watchers = lobbyWatchers.get(gameid);
   if (!watchers || watchers.size === 0) return;
   const payload = 'data: ' + JSON.stringify({ started: true, gameid: gameid }) + '\n\n';
@@ -2438,7 +2492,7 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
                     client.end()
                     return;
                   }
-                  notifyLobbyWatchers(game.gameid);
+                  notifyLobbyWatchers(game.gameid, true);
                   res.writeHead(200, { 'Content-Type': 'application/json' });
                   res.end(JSON.stringify({ success: true, mode: 'join', gameid: game.gameid }));
                   client.end()
