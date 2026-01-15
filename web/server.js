@@ -590,6 +590,10 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
     userratings(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
   }
+  if (req.url === '/myrating' && req.method === 'POST') {
+    myrating(filename, mime, ext, res, req, resHeaders, sessiondata)
+    return
+  }
   if (req.url === '/gamecount' && req.method === 'POST') {
     usergamecount(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
@@ -1735,6 +1739,32 @@ function userratings(filename, mime, ext, res, req, resHeaders, sessiondata) {
     }
   }
 }
+
+function myrating(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  if (!sessiondata || sessiondata.userid === '0') {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ rating: null }));
+    return;
+  }
+  var client = new pg.Client(conString);
+  client.connect();
+  client.query('SELECT ROUND(rating) as rating FROM users WHERE id = $1', [sessiondata.userid], (err, response) => {
+    if (err) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: 'Internal error' }));
+      client.end();
+      return;
+    }
+    if (response.rows.length === 1) {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ rating: response.rows[0].rating }));
+    } else {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ rating: null }));
+    }
+    client.end();
+  });
+}
 function gameinfo(filename, mime, ext, res, req, resHeaders, sessiondata) {
   req.on('data', getgameinfo)
   function getgameinfo(chunk) {
@@ -1972,6 +2002,29 @@ function selectUserRatings(client, userIds, mode, callback) {
         rating: Number(row.rating),
         deviation: Number(row.deviation),
         volatility: Number(row.volatility)
+      };
+    }
+    callback(null, map);
+  });
+}
+
+function selectUserDetails(client, userIds, callback) {
+  if (!Array.isArray(userIds) || userIds.length === 0) {
+    callback(null, {});
+    return;
+  }
+  const sql = 'SELECT id, rating, deviation, volatility, role, uci_elo FROM users WHERE id = ANY($1)';
+  client.query(sql, [userIds], (err, result) => {
+    if (err) return callback(err);
+    const map = {};
+    for (var i = 0; i < result.rows.length; i++) {
+      const row = result.rows[i];
+      map[String(row.id)] = {
+        rating: Number(row.rating),
+        deviation: Number(row.deviation),
+        volatility: Number(row.volatility),
+        role: Number(row.role) || 1,
+        uci_elo: row.uci_elo
       };
     }
     callback(null, map);
@@ -2328,7 +2381,7 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
           if (player1UserId !== '0') userIds.push(Number(player1UserId));
           if (player2UserId !== '0') userIds.push(Number(player2UserId));
 
-          selectUserRatings(client, userIds, null, (err3, ratingsMap) => {
+          selectUserDetails(client, userIds, (err3, detailsMap) => {
             if (err3) {
               console.error('lobby/action rating error', err3);
               res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -2336,10 +2389,22 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
               return res.end(JSON.stringify({ error: 'Internal error' }));
             }
 
-            const p1Ratings = player1UserId !== '0' && ratingsMap[player1UserId] ? ratingsMap[player1UserId] : defaultRatings;
-            const p2Ratings = player2UserId !== '0' && ratingsMap[player2UserId] ? ratingsMap[player2UserId] : defaultRatings;
+            const defaultUser = { rating: 1500, deviation: 200, volatility: 0.06, role: 1, uci_elo: null };
+            const p1User = player1UserId !== '0' && detailsMap[player1UserId] ? detailsMap[player1UserId] : defaultUser;
+            const p2User = player2UserId !== '0' && detailsMap[player2UserId] ? detailsMap[player2UserId] : defaultUser;
+            const p1Ratings = { rating: p1User.rating, deviation: p1User.deviation, volatility: p1User.volatility };
+            const p2Ratings = { rating: p2User.rating, deviation: p2User.deviation, volatility: p2User.volatility };
             const whiteRatings = colors.whiteIsPlayer1 ? p1Ratings : p2Ratings;
             const blackRatings = colors.whiteIsPlayer1 ? p2Ratings : p1Ratings;
+
+            let botPayload = null;
+            if (p1User.role === 3) {
+              const botElo = Number.isFinite(Number(p1User.uci_elo)) ? Math.round(Number(p1User.uci_elo)) : Math.round(p1User.rating);
+              botPayload = { side: colors.whiteIsPlayer1 ? 'w' : 'b', elo: botElo };
+            } else if (p2User.role === 3) {
+              const botElo = Number.isFinite(Number(p2User.uci_elo)) ? Math.round(Number(p2User.uci_elo)) : Math.round(p2User.rating);
+              botPayload = { side: colors.whiteIsPlayer1 ? 'b' : 'w', elo: botElo };
+            }
 
             startGameOnServer(
               {
@@ -2348,7 +2413,8 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
                 blackPlayerId: blackPlayerId,
                 time: time,
                 whiteRatings: whiteRatings,
-                blackRatings: blackRatings
+                blackRatings: blackRatings,
+                bot: botPayload
               },
               (err4) => {
                 if (err4) {
@@ -2490,6 +2556,11 @@ function handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondat
       randomcolor = false;
     }
 
+    const botId = Number(data.botId);
+    const useBot = (data.easy === true || data.easy === '1') && Number.isFinite(botId);
+    let creatorId = sessiondata[1];
+    let creatorSession = req.headers['cookie'].slice(2);
+
     // Pick a random lowercase letter (a–z)
     const prefix = String.fromCharCode(97 + Math.floor(Math.random() * 26));
     const gameid = prefix + Date.now().toString(36);
@@ -2500,29 +2571,53 @@ function handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondat
       RETURNING id, gameid
     `;
 
-    const values = [
-      gameid,
-      sessiondata[1],
-      req.headers['cookie'].slice(2),
-      rated,
-      timecontrol,
-      randomcolor,
-      color
-    ];
-
     var client = new pg.Client(conString);
     client.connect();
-    client.query(sql, values, (err, result) => {
-      if (err) {
-        console.error('lobby/create error', err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
+
+    function insertGame() {
+      const values = [
+        gameid,
+        creatorId,
+        creatorSession,
+        rated,
+        timecontrol,
+        randomcolor,
+        color
+      ];
+      client.query(sql, values, (err, result) => {
+        if (err) {
+          console.error('lobby/create error', err);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          client.end()
+          return res.end(JSON.stringify({ error: 'Internal error' }));
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, id: result.rows[0].id, gameid: result.rows[0].gameid }));
         client.end()
-        return res.end(JSON.stringify({ error: 'Internal error' }));
-      }
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, id: result.rows[0].id, gameid: result.rows[0].gameid }));
-      client.end()
-    });
+      });
+    }
+
+    if (useBot) {
+      client.query('SELECT id FROM users WHERE id = $1 AND role = 3', [botId], (err, result) => {
+        if (err) {
+          console.error('lobby/create bot error', err);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          client.end()
+          return res.end(JSON.stringify({ error: 'Internal error' }));
+        }
+        if (result.rows.length === 0) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          client.end()
+          return res.end(JSON.stringify({ error: 'Bot not found' }));
+        }
+        creatorId = String(botId);
+        creatorSession = 'bot:' + botId;
+        insertGame();
+      });
+      return;
+    }
+
+    insertGame();
   });
 }
 
@@ -2544,14 +2639,16 @@ function handleEasyBots(filename, mime, ext, res, req, resHeaders, sessiondata) 
     const rawMax = Number(data.eloMax);
     const eloMin = Number.isFinite(rawMin) && rawMin >= 0 && rawMin <= 4000 ? rawMin : null;
     const eloMax = Number.isFinite(rawMax) && rawMax >= 0 && rawMax <= 4000 ? rawMax : null;
+    const filterBy = data.filterBy === 'uci_elo' ? 'uci_elo' : 'rating';
+    const filterField = filterBy === 'uci_elo' ? 'uci_elo' : 'rating';
 
     const sql = `
-      SELECT id, username, ROUND(rating) AS rating
+      SELECT id, username, ROUND(rating) AS rating, ROUND(uci_elo) AS uci_elo
       FROM users
       WHERE role = 3
-        AND ($1::numeric IS NULL OR rating >= $1)
-        AND ($2::numeric IS NULL OR rating <= $2)
-      ORDER BY rating ASC
+        AND ($1::numeric IS NULL OR ${filterField} >= $1)
+        AND ($2::numeric IS NULL OR ${filterField} <= $2)
+      ORDER BY ${filterField} ASC
       LIMIT 200
     `;
 
@@ -2623,7 +2720,7 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
 
     var client = new pg.Client(conString);
     client.connect();
-    client.query('SELECT id FROM users WHERE id = $1 AND role = 3', [botId], (err, botResult) => {
+    client.query('SELECT id, rating, deviation, volatility, uci_elo FROM users WHERE id = $1 AND role = 3', [botId], (err, botResult) => {
       if (err) {
         console.error('easy/start bot check error', err);
         res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -2653,16 +2750,22 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
 
         const defaultRatings = { rating: 1500, deviation: 200, volatility: 0.06 };
         const unratedRatings = { rating: -1, deviation: 0, volatility: 0 };
-        const userIds = [Number(botUserId)];
+        const botRow = botResult.rows[0];
+        const botRatings = {
+          rating: Number(botRow.rating) || defaultRatings.rating,
+          deviation: Number(botRow.deviation) || defaultRatings.deviation,
+          volatility: Number(botRow.volatility) || defaultRatings.volatility
+        };
+        const botEngineElo = Number.isFinite(Number(botRow.uci_elo)) ? Math.round(Number(botRow.uci_elo)) : Math.round(botRatings.rating);
+        const userIds = [];
         if (rated && userId !== '0') userIds.push(Number(userId));
 
-        const finalizeStart = (botRatings, userRatings) => {
+        const finalizeStart = (userRatings) => {
           const whiteRatings = colors.whiteIsPlayer1 ? botRatings : userRatings;
           const blackRatings = colors.whiteIsPlayer1 ? userRatings : botRatings;
 
           const rating1 = rated ? botRatings.rating : null;
           const rating2 = rated ? userRatings.rating : null;
-          const botElo = Number.isFinite(botRatings.rating) ? Math.round(botRatings.rating) : 1500;
 
           const updateValues = [
             userId,
@@ -2708,7 +2811,7 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
                 time: time,
                 whiteRatings: rated ? whiteRatings : unratedRatings,
                 blackRatings: rated ? blackRatings : unratedRatings,
-                bot: { side: botSide, elo: botElo }
+                bot: { side: botSide, elo: botEngineElo }
               },
               (err4) => {
                 if (err4) {
@@ -2739,9 +2842,8 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
             client.end();
             return res.end(JSON.stringify({ error: 'Internal error' }));
           }
-          const botRatings = ratingsMap[botUserId] || defaultRatings;
           const userRatings = rated ? (ratingsMap[userId] || defaultRatings) : unratedRatings;
-          finalizeStart(botRatings, userRatings);
+          finalizeStart(userRatings);
         });
       });
     });
