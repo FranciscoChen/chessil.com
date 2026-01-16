@@ -6,6 +6,10 @@ const observability = require('../observability');
 const obs = observability.createObserver('engine-worker');
 obs.installProcessHandlers();
 
+const queueHost = process.env.QUEUE_HOST || '127.0.0.1';
+const envQueuePort = parseInt(process.env.QUEUE_PORT || '', 10);
+const queuePort = Number.isFinite(envQueuePort) ? envQueuePort : 8092;
+
 var bestmoveregexp=/bestmove\s\w{4,5}/;
 var uciregexp=/uciok/;
 var sfregexp=/Stockfish/;
@@ -15,12 +19,14 @@ var retry=0
 var sfstdout = ''
 var restarting = false
 var analysing = false
+var shuttingDown = false
 
 var dirfiles = fs.readdirSync('.')
 var files = dirfiles.filter(fn => fn.startsWith('stockfish'));
 sfname = files[files.length-1]
 
 function restartStockfish() {
+  if (shuttingDown) return
   if (restarting) return
   restarting = true
   analysing = false
@@ -35,6 +41,7 @@ function restartStockfish() {
 }
 
 function startStockfish() {
+  if (shuttingDown) return
   stockfish = cp.execFile('./'+sfname);
   stockfish.stdout.on('data', (data) => {
     var da = `${data}`;
@@ -63,10 +70,11 @@ startStockfish()
 obs.log('info', 'worker_start', { stockfish: sfname });
 
 function analyse(){
+  if (shuttingDown) return
   if (analysing) return
   analysing = true
   
-  const req = http.request({hostname: '127.0.0.1', path:'/lpop', port: 8092}, (res) => {
+  const req = http.request({hostname: queueHost, path:'/lpop', port: queuePort}, (res) => {
     if (res.statusCode == 404) {
       analysing = false
       if (retry < 32) retry++
@@ -128,7 +136,7 @@ function analyse(){
             score = score.split(' ');
             score = [score[0],score[1]].join(' ');
             obs.log('info', 'analysis_result', { uuidhm: uuidhm, bm: bestmove, eval: score });
-            const setReq = http.request({hostname: '127.0.0.1', path:'/set', port: 8092, headers:{'uuidhm': uuidhm, 'bm': bestmove, 'eval': score}}, (resp) => {});
+            const setReq = http.request({hostname: queueHost, path:'/set', port: queuePort, headers:{'uuidhm': uuidhm, 'bm': bestmove, 'eval': score}}, (resp) => {});
             setReq.on('error', (err) => {
               obs.count('queue_set_error');
               obs.log('error', 'queue_set_error', { error: err && err.stack ? err.stack : String(err) });
@@ -161,3 +169,19 @@ function analyse(){
   });
   req.end();
 }
+
+function shutdown(reason) {
+  if (shuttingDown) return
+  shuttingDown = true
+  obs.log('info', 'shutdown_start', { reason: reason });
+  try {
+    if (stockfish) stockfish.kill();
+  } catch (e) {}
+  setTimeout(function () {
+    obs.log('info', 'shutdown_forced_exit', {});
+    process.exit(0);
+  }, 30000);
+}
+
+process.on('SIGTERM', () => shutdown('sigterm'));
+process.on('SIGINT', () => shutdown('sigint'));

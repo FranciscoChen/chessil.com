@@ -26,7 +26,8 @@ const isodateregex= new RegExp ('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
 const myServers = config.engine.myServers;
 
 const domainname = config.engine.domainName;
-const port = config.engine.port;
+const envPort = parseInt(process.env.PORT || '', 10);
+const port = Number.isFinite(envPort) ? envPort : config.engine.port;
 const obs = observability.createObserver('engine');
 obs.installProcessHandlers();
 
@@ -66,6 +67,28 @@ server.on('error', function(e) {
   obs.count('server_error');
   obs.log('error', 'server_error', { error: e && e.stack ? e.stack : String(e) });
 });
+
+let shuttingDown = false;
+
+function shutdown(reason) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  obs.log('info', 'shutdown_start', { reason: reason });
+
+  server.close(() => {
+    obs.log('info', 'shutdown_server_closed', {});
+  });
+
+  redis.quit().catch(() => {});
+
+  setTimeout(() => {
+    obs.log('info', 'shutdown_forced_exit', {});
+    process.exit(0);
+  }, 30000);
+}
+
+process.on('SIGTERM', () => shutdown('sigterm'));
+process.on('SIGINT', () => shutdown('sigint'));
 
 
 function detectcheating(game){

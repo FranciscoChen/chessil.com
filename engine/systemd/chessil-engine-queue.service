@@ -1,0 +1,20 @@
+[Unit]
+Description=Chessil engine queue server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/chessil.com/engine
+Environment=PORT=8092
+ExecStart=/usr/bin/node queue.js
+Restart=always
+RestartSec=1
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Adjust as needed
+User=ubuntu
+Group=ubuntu
+
+[Install]
+WantedBy=multi-user.target

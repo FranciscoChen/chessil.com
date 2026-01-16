@@ -1,0 +1,21 @@
+[Unit]
+Description=Chessil engine worker (%i)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/chessil.com/engine
+Environment=QUEUE_HOST=127.0.0.1
+Environment=QUEUE_PORT=8092
+ExecStart=/usr/bin/node sf.js
+Restart=always
+RestartSec=1
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Adjust as needed
+User=ubuntu
+Group=ubuntu
+
+[Install]
+WantedBy=multi-user.target

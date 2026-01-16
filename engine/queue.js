@@ -15,7 +15,8 @@
 
 const http = require('http');
 const url = require('url');
-const port = 8092;
+const envPort = parseInt(process.env.PORT || '', 10);
+const port = Number.isFinite(envPort) ? envPort : 8092;
 const observability = require('../observability');
 const obs = observability.createObserver('engine-queue');
 obs.installProcessHandlers();
@@ -247,6 +248,27 @@ server.on('error', (err) => {
   obs.log('error', 'server_error', { error: err && err.stack ? err.stack : String(err) });
 });
 
-setInterval(function () {
+let shuttingDown = false;
+const cleanupInterval = setInterval(function () {
   answers.cleanup()
 }, CLEANUP_INTERVAL_MS);
+
+function shutdown(reason) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  obs.log('info', 'shutdown_start', { reason: reason });
+
+  server.close(() => {
+    obs.log('info', 'shutdown_server_closed', {});
+  });
+
+  clearInterval(cleanupInterval);
+
+  setTimeout(() => {
+    obs.log('info', 'shutdown_forced_exit', {});
+    process.exit(0);
+  }, 30000);
+}
+
+process.on('SIGTERM', () => shutdown('sigterm'));
+process.on('SIGINT', () => shutdown('sigint'));

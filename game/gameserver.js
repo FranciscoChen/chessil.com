@@ -1,6 +1,7 @@
 const http = require('http');
 const https = require('https');
 const server = http.createServer();
+const crypto = require('crypto');
 const observability = require('../observability');
 const obs = observability.createObserver('game');
 obs.installProcessHandlers();
@@ -8,6 +9,9 @@ obs.log('info', 'server_start', { ts: Date.now() });
 // Session database
 const Redis = require("ioredis");
 const redis = new Redis();
+const redisSub = new Redis();
+const serverId = crypto.randomBytes(8).toString('hex');
+const gameChannelPrefix = 'game:';
 
 // Users, seeks and games database
 const pg = require("pg");
@@ -18,6 +22,8 @@ const conString = config.shared.postgresUrl
 const domainname = config.game.domainName
 const servername = config.game.serverName
 const myServers = config.game.myServers
+const envPort = parseInt(process.env.PORT || '', 10);
+const port = Number.isFinite(envPort) ? envPort : 8080;
 
 const childprocess = require('child_process');
 
@@ -39,10 +45,110 @@ var settings = {
 // Subscription system instead of Redis Pub/Sub. Memory leak is possible, but hard if well managed
 const subs = {}
 const wsconnections = {}
+
+redisSub.psubscribe(gameChannelPrefix + '*', (err) => {
+  if (err) {
+    obs.log('error', 'game_pubsub_subscribe_error', { error: err && err.stack ? err.stack : String(err) });
+  }
+});
+
+redisSub.on('pmessage', (pattern, channel, message) => {
+  if (typeof channel !== 'string' || channel.indexOf(gameChannelPrefix) !== 0) return;
+  if (typeof message !== 'string' || message.length === 0) return;
+  let payload;
+  try {
+    payload = JSON.parse(message);
+  } catch (e) {
+    return;
+  }
+  if (payload && payload.origin === serverId) return;
+  const gameid = channel.slice(gameChannelPrefix.length);
+  deliverGameBroadcast(gameid, payload);
+});
 function randomString(length, chars) {
   var result = '';
   for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
   return result;
+}
+
+function scheduleTimeout(key, gameid, delayMs) {
+  var when = Date.now() + Math.max(0, delayMs);
+  redis.zadd(key, when, gameid, (err) => {
+    if (err) console.error(err);
+  });
+}
+
+function cancelTimeout(key, gameid) {
+  redis.zrem(key, gameid, (err) => {
+    if (err) console.error(err);
+  });
+}
+
+function clearGameTimeouts(gameid) {
+  cancelTimeout(timeoutKeyAbort, gameid);
+  cancelTimeout(timeoutKeyFinish, gameid);
+}
+
+let pollingTimeouts = false;
+const timeoutPoller = setInterval(() => {
+  if (pollingTimeouts) return;
+  pollingTimeouts = true;
+  const now = Date.now();
+  redis.eval(popDueTimeoutsLua, 1, timeoutKeyAbort, now, timeoutBatchSize, (err, items) => {
+    if (err) console.error(err);
+    if (Array.isArray(items)) {
+      for (var i = 0; i < items.length; i++) {
+        abortgame(items[i]);
+      }
+    }
+    redis.eval(popDueTimeoutsLua, 1, timeoutKeyFinish, now, timeoutBatchSize, (err2, items2) => {
+      if (err2) console.error(err2);
+      if (Array.isArray(items2)) {
+        for (var j = 0; j < items2.length; j++) {
+          finishgame(items2[j]);
+        }
+      }
+      pollingTimeouts = false;
+    });
+  });
+}, timeoutPollIntervalMs);
+
+function deliverGameBroadcast(gameid, payload) {
+  if (!payload || typeof payload !== 'object') return;
+  const websockets = subs[gameid];
+  if (!websockets) return;
+  const messages = payload.messages || {};
+  const terminate = payload.terminate || {};
+  const sides = ['w', 'b', 's'];
+  for (var i = 0; i < sides.length; i++) {
+    const side = sides[i];
+    const group = websockets[side];
+    if (!group) continue;
+    const raw = messages[side];
+    const list = Array.isArray(raw) ? raw : (typeof raw === 'string' ? [raw] : null);
+    if (list) {
+      for (var user in group) {
+        for (var j = 0; j < list.length; j++) {
+          group[user].send(list[j]);
+        }
+      }
+    }
+    if (terminate[side]) {
+      for (var user in group) {
+        group[user].terminate();
+      }
+    }
+  }
+}
+
+function broadcastGameUpdate(gameid, messages, terminate) {
+  const payload = {
+    origin: serverId,
+    messages: messages || {},
+    terminate: terminate || {}
+  };
+  deliverGameBroadcast(gameid, payload);
+  redis.publish(gameChannelPrefix + gameid, JSON.stringify(payload));
 }
 
 function sanitizeUserAgent(useragent) {
@@ -92,10 +198,24 @@ function parseSessionData(raw) {
   }
 }
 
-// Timeout system
-const timeouts = {}
+// Timeout system (stored in Redis)
+const timeoutKeyAbort = 'game:timeouts:abort'
+const timeoutKeyFinish = 'game:timeouts:finish'
+const timeoutPollIntervalMs = 250
+const timeoutBatchSize = 100
+const popDueTimeoutsLua = [
+  "local key=KEYS[1]",
+  "local now=tonumber(ARGV[1])",
+  "local limit=tonumber(ARGV[2])",
+  "local items=redis.call('ZRANGEBYSCORE', key, '-inf', now, 'LIMIT', 0, limit)",
+  "if #items > 0 then",
+  "  redis.call('ZREM', key, unpack(items))",
+  "end",
+  "return items"
+].join("\n")
 const aborttimer = 14000
-const botPending = {}
+const botPendingPrefix = 'game:bot:pending:'
+const botPendingTtlMs = 30000
 // Give back 2 ms every move by default, because of server processing time
 const timeback = 2
 
@@ -118,15 +238,12 @@ exec('./mg '+fenstr, function(error, stdout, stderr) {
 function onSocketError(err) { console.error(err); }
 
 function clearBotPending(gameid) {
-  if (typeof botPending[gameid] !== 'undefined') {
-    delete botPending[gameid]
-  }
+  redis.del(botPendingPrefix + gameid, (err) => {
+    if (err) console.error(err);
+  });
 }
 
 function requestBotMove(gameid) {
-  if (typeof botPending[gameid] !== 'undefined') {
-    return
-  }
   redis.hmget(gameid, 'bs', 'be', 'f', 't', 'm', 'l', 'n', 'o', 'z', (err, re) => {
     if (err) { console.error(err); return; }
     const botside = re[0]
@@ -139,63 +256,69 @@ function requestBotMove(gameid) {
     const moves = re[4] || ''
     const hm = moves.length ? moves.split(' ').length : 0
     const uuidhm = gameid + '-' + hm + '-' + botside
-    botPending[gameid] = uuidhm
-
-    const payload = JSON.stringify({
-      gameid: gameid,
-      uuidhm: uuidhm,
-      moves: moves,
-      wtime: Number(re[5] || 0),
-      btime: Number(re[6] || 0),
-      winc: Number(re[7] || 0),
-      binc: Number(re[8] || 0),
-      elo: botelo,
-      turn: botside
-    })
-    const myURL = new URL('https://' + config.game.engineHost + '/play')
-    const options = {
-      hostname: myURL.hostname,
-      port: 443,
-      path: myURL.pathname,
-      method: 'POST',
-      headers: {
-        'authorization': config.shared.engineAuthToken,
-        'content-type': 'application/json',
-        'content-length': Buffer.byteLength(payload)
+    const pendingKey = botPendingPrefix + gameid
+    redis.set(pendingKey, uuidhm, 'NX', 'PX', botPendingTtlMs, (err2, result) => {
+      if (err2) { console.error(err2); return; }
+      if (result !== 'OK') {
+        return
       }
-    }
 
-    const newreq = https.request(options, (res) => {
-      let response = ''
-      res.on('data', (chunk) => { response += chunk })
-      res.on('end', () => {
-        clearBotPending(gameid)
-        if (res.statusCode !== 200) {
-          return
+      const payload = JSON.stringify({
+        gameid: gameid,
+        uuidhm: uuidhm,
+        moves: moves,
+        wtime: Number(re[5] || 0),
+        btime: Number(re[6] || 0),
+        winc: Number(re[7] || 0),
+        binc: Number(re[8] || 0),
+        elo: botelo,
+        turn: botside
+      })
+      const myURL = new URL('https://' + config.game.engineHost + '/play')
+      const options = {
+        hostname: myURL.hostname,
+        port: 443,
+        path: myURL.pathname,
+        method: 'POST',
+        headers: {
+          'authorization': config.shared.engineAuthToken,
+          'content-type': 'application/json',
+          'content-length': Buffer.byteLength(payload)
         }
-        let result
-        try {
-          result = JSON.parse(response)
-        } catch (e) {
-          return
-        }
-        if (!result || typeof result.bestmove !== 'string') return
-        redis.hmget(gameid, 't', 'm', 'f', (err2, state) => {
-          if (err2) { console.error(err2); return }
-          if (state[2] !== '0') return
-          const currentMoves = state[1] || ''
-          const currentHm = currentMoves.length ? currentMoves.split(' ').length : 0
-          const currentUuid = gameid + '-' + currentHm + '-' + state[0]
-          if (currentUuid !== result.uuidhm) return
-          handleMove(gameid, botside, result.bestmove, { send: function () { }, terminate: function () { } })
+      }
+
+      const newreq = https.request(options, (res) => {
+        let response = ''
+        res.on('data', (chunk) => { response += chunk })
+        res.on('end', () => {
+          clearBotPending(gameid)
+          if (res.statusCode !== 200) {
+            return
+          }
+          let result
+          try {
+            result = JSON.parse(response)
+          } catch (e) {
+            return
+          }
+          if (!result || typeof result.bestmove !== 'string') return
+          redis.hmget(gameid, 't', 'm', 'f', (err3, state) => {
+            if (err3) { console.error(err3); return }
+            if (state[2] !== '0') return
+            const currentMoves = state[1] || ''
+            const currentHm = currentMoves.length ? currentMoves.split(' ').length : 0
+            const currentUuid = gameid + '-' + currentHm + '-' + state[0]
+            if (currentUuid !== result.uuidhm) return
+            handleMove(gameid, botside, result.bestmove, { send: function () { }, terminate: function () { } })
+          })
         })
       })
+      newreq.on('error', (e) => {
+        clearBotPending(gameid)
+        console.log(e)
+      })
+      newreq.end(payload)
     })
-    newreq.on('error', (e) => {
-      clearBotPending(gameid)
-      console.log(e)
-    })
-    newreq.end(payload)
   })
 }
 
@@ -215,7 +338,7 @@ function handleMove(gameid, side, clientmove, ws) {
         // Verified legal move, but if not legal ignore it
         var movereceived = Date.now()
         // Could be the timeout before making first move, or the clock flag timeout, taking over time management here
-        clearTimeout(timeouts[gameid])
+        clearGameTimeouts(gameid)
         if (ws && typeof ws.receivedRTT !== 'undefined' && ws.receivedRTT === false) {
           // Someone is trying to abuse the RTT detection system, they shouldn't be able to emit two moves if the ping of the first move has not arrived yet
           // No lag compensation!
@@ -299,30 +422,21 @@ function handleMove(gameid, side, clientmove, ws) {
                       'v', 0,
                       (err, result) => {
                         if (err) { console.error(err); return terminate(); };
-                        const websockets = subs[gameid] // = {userid:ws,userid:ws,userid:ws}
                         var moveinfo = 'm:' + clientmove + ':' + side + ':' + timeleft + ':' + (newuci.split(' ').length - 1) + ':' + movereceived
                         var pmoveinfo = 'm:' + premov + ':' + otherside + ':' + othertime + ':' + newuci.split(' ').length + ':' + movereceived
                         if (finished > 0) pmoveinfo += ':' + finished
-                        if (typeof websockets !== 'undefined') {
-                          const nextplayer = websockets[otherside]
-                          const turnplayer = websockets[side]
-                          const spectators = websockets.s
-                          for (user in nextplayer) { nextplayer[user].send(moveinfo); nextplayer[user].send(pmoveinfo) }
-                          for (user in turnplayer) { turnplayer[user].send(moveinfo); turnplayer[user].send(pmoveinfo) }
-                          for (user in spectators) { spectators[user].send(moveinfo); spectators[user].send(pmoveinfo) }
-                        } else {
+                        broadcastGameUpdate(gameid, { w: [moveinfo, pmoveinfo], b: [moveinfo, pmoveinfo], s: [moveinfo, pmoveinfo] }, {});
+                        if (typeof subs[gameid] === 'undefined') {
                           subs[gameid] = { w: {}, b: {}, s: {} }  // Initialise after a crash?
                         }
                         // Clock flag timeout
-                        clearTimeout(timeouts[gameid])
-                        timeouts[gameid] = setTimeout(finishgame, 1 * timeleft + 400, gameid)
+                        scheduleTimeout(timeoutKeyFinish, gameid, 1 * timeleft + 400)
                         if (finished === 0) {
                           requestBotMove(gameid)
                         }
                         if (finished === 0 && newuci.length > 8) { checkgame(gameid) }
                         if (finished > 0) {
-                          clearTimeout(timeouts[gameid])
-                          delete timeouts[gameid]
+                          clearGameTimeouts(gameid)
                           // 0 - Not finished
                           // 1 - Checkmate, turn player loses
                           // 2 - Stalemate draw
@@ -353,9 +467,6 @@ function handleMove(gameid, side, clientmove, ws) {
                             }
                             const websockets = subs[gameid] // = {userid:ws,userid:ws,userid:ws}
                             if (typeof websockets !== 'undefined') {
-                              const nextplayer = websockets[otherside]
-                              const turnplayer = websockets[side]
-                              const spectators = websockets.s
                               // var diffinfo = 'd:'+wdiff+':'+bdiff
                               if (rated === true) {
                                 client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [wdiff, wpl.getRd(), wpl.getVol(), rtn[8]], (err, response) => {
@@ -371,9 +482,7 @@ function handleMove(gameid, side, clientmove, ws) {
                                   })
                                 })
                               } else {
-                                for (user in nextplayer) { nextplayer[user].terminate(); }
-                                for (user in turnplayer) { turnplayer[user].terminate(); }
-                                for (user in spectators) { spectators[user].terminate(); }
+                                broadcastGameUpdate(gameid, {}, { w: true, b: true, s: true });
                               }
                               delete subs[gameid] // free memory
                             }
@@ -430,35 +539,24 @@ function handleMove(gameid, side, clientmove, ws) {
                   'v', 0,
                   (err, result) => {
                     if (err) { console.error(err); return terminate(); };
-                    const websockets = subs[gameid] // = {userid:ws,userid:ws,userid:ws}
                     var moveinfo = 'm:' + clientmove + ':' + side + ':' + timeleft + ':' + newuci.split(' ').length + ':' + movereceived
                     if (finished > 0) moveinfo += ':' + finished
-                    if (typeof websockets !== 'undefined') {
-                      const nextplayer = websockets[otherside]
-                      const turnplayer = websockets[side]
-                      const spectators = websockets.s
-                      for (user in nextplayer) { nextplayer[user].send(moveinfo) }
-                      for (user in turnplayer) { turnplayer[user].send(moveinfo) }
-                      for (user in spectators) { spectators[user].send(moveinfo) }
-                      //if (finished > 0) delete subs[gameid] // free memory
-                    } else {
+                    broadcastGameUpdate(gameid, { w: [moveinfo], b: [moveinfo], s: [moveinfo] }, {});
+                    if (typeof subs[gameid] === 'undefined') {
                       subs[gameid] = { w: {}, b: {}, s: {} }  // Initialise after a crash?
                     }
                     // If just after first white move, give grace period to black player
                     if (re[0].length === 0) {
-                      clearTimeout(timeouts[gameid])
-                      timeouts[gameid] = setTimeout(abortgame, aborttimer, gameid)
+                      scheduleTimeout(timeoutKeyAbort, gameid, aborttimer)
                     } else {
-                      clearTimeout(timeouts[gameid])
-                      timeouts[gameid] = setTimeout(finishgame, 1 * re[{ w: 6, b: 7 }[otherside]] + 400, gameid)
+                      scheduleTimeout(timeoutKeyFinish, gameid, 1 * re[{ w: 6, b: 7 }[otherside]] + 400)
                     }
                     if (finished === 0) {
                       requestBotMove(gameid)
                     }
                     if (finished === 0 && newuci.length > 8) { checkgame(gameid) }
                     if (finished > 0) {
-                      clearTimeout(timeouts[gameid])
-                      delete timeouts[gameid]
+                      clearGameTimeouts(gameid)
                       // 0 - Not finished
                       // 1 - Checkmate, turn player loses
                       // 2 - Stalemate draw
@@ -489,9 +587,6 @@ function handleMove(gameid, side, clientmove, ws) {
                         }
                         const websockets = subs[gameid] // = {userid:ws,userid:ws,userid:ws}
                         if (typeof websockets !== 'undefined') {
-                          const nextplayer = websockets[otherside]
-                          const turnplayer = websockets[side]
-                          const spectators = websockets.s
                           if (rated === true) {
                             client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [wdiff, wpl.getRd(), wpl.getVol(), rtn[8]], (err, response) => {
                               if (err) { console.log(err) }
@@ -506,9 +601,7 @@ function handleMove(gameid, side, clientmove, ws) {
                               })
                             })
                           } else {
-                            for (user in nextplayer) { nextplayer[user].terminate(); }
-                            for (user in turnplayer) { turnplayer[user].terminate(); }
-                            for (user in spectators) { spectators[user].terminate(); }
+                            broadcastGameUpdate(gameid, {}, { w: true, b: true, s: true });
                           }
                           delete subs[gameid] // free memory
                         }
@@ -586,12 +679,8 @@ function handleMove(gameid, side, clientmove, ws) {
                   bdiff = bpl.getRating() - rtn[1]
                   diffinfo = 'd:' + Math.floor(wdiff) + ':' + Math.floor(bdiff)
                 }
-                const websockets = subs[gameid] // = {userid:ws,userid:ws,userid:ws}
                 var moveinfo = 't:' + side + ':' + timeleft + ':' + finished
-                if (typeof websockets !== 'undefined') {
-                  const nextplayer = websockets.w
-                  const turnplayer = websockets.b
-                  const spectators = websockets.s
+                if (typeof subs[gameid] !== 'undefined') {
                   //var diffinfo = 'd:'+wdiff+':'+bdiff
                   if (rated === true) {
                     client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [wdiff, wpl.getRd(), wpl.getVol(), rtn[8]], (err, response) => {
@@ -607,9 +696,7 @@ function handleMove(gameid, side, clientmove, ws) {
                       })
                     })
                   } else {
-                    for (user in nextplayer) { nextplayer[user].send(moveinfo); nextplayer[user].terminate(); }
-                    for (user in turnplayer) { turnplayer[user].send(moveinfo); turnplayer[user].terminate(); }
-                    for (user in spectators) { spectators[user].send(moveinfo); spectators[user].terminate(); }
+                    broadcastGameUpdate(gameid, { w: [moveinfo], b: [moveinfo], s: [moveinfo] }, { w: true, b: true, s: true });
                   }
                   delete subs[gameid] // free memory
                 } else {
@@ -812,7 +899,7 @@ server.on('request', (req, res) => {
           console.error(err);
         }
         subs[r.gn] = { w: {}, b: {}, s: {} }
-        timeouts[r.gn] = setTimeout(abortgame, aborttimer, r.gn)
+        scheduleTimeout(timeoutKeyAbort, r.gn, aborttimer)
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end();
         requestBotMove(r.gn)
@@ -841,7 +928,8 @@ server.on('upgrade', function upgrade(req, socket, head) {
   });
 });
 
-server.listen(8080);
+server.listen(port);
+obs.log('info', 'server_listen', { port: port });
 
 var WebSocketServer = require('ws').Server
   // , wss = new WebSocketServer({port: 8080});
@@ -1066,16 +1154,14 @@ function checkgame(gameid) {
 
 function abortgamecheater(gameid,side) {
   clearBotPending(gameid)
-  clearTimeout(timeouts[gameid])
-  delete timeouts[gameid]
+  clearGameTimeouts(gameid)
   const websockets = subs[gameid] // = {userid:ws,userid:ws,userid:ws}
   if (typeof websockets !== 'undefined') {
-    const nextplayer = websockets.w
-    const turnplayer = websockets.b
-    const spectators = websockets.s
-    for (user in nextplayer) { nextplayer[user].send({'w':'9c','b':'9'}[side]); nextplayer[user].terminate(); }
-    for (user in turnplayer) { turnplayer[user].send({'w':'9','b':'9c'}[side]); turnplayer[user].terminate(); }
-    for (user in spectators) { spectators[user].send('9'); spectators[user].terminate(); }
+    broadcastGameUpdate(
+      gameid,
+      { w: [{'w':'9c','b':'9'}[side]], b: [{'w':'9','b':'9c'}[side]], s: ['9'] },
+      { w: true, b: true, s: true }
+    );
     delete subs[gameid] // free memory
   }
   // Delete this game from Redis and terminate the ws connection
@@ -1091,16 +1177,10 @@ function abortgamecheater(gameid,side) {
 }
 function abortgame(gameid) {
   clearBotPending(gameid)
-  clearTimeout(timeouts[gameid])
-  delete timeouts[gameid]
+  clearGameTimeouts(gameid)
   const websockets = subs[gameid] // = {userid:ws,userid:ws,userid:ws}
   if (typeof websockets !== 'undefined') {
-    const nextplayer = websockets.w
-    const turnplayer = websockets.b
-    const spectators = websockets.s
-    for (user in nextplayer) { nextplayer[user].send('9'); nextplayer[user].terminate(); }
-    for (user in turnplayer) { turnplayer[user].send('9'); turnplayer[user].terminate(); }
-    for (user in spectators) { spectators[user].send('9'); spectators[user].terminate(); }
+    broadcastGameUpdate(gameid, { w: ['9'], b: ['9'], s: ['9'] }, { w: true, b: true, s: true });
     delete subs[gameid] // free memory
   }
   // Delete this game from Redis and terminate the ws connection
@@ -1116,8 +1196,7 @@ function abortgame(gameid) {
 }
 function finishgame(gameid) {
   clearBotPending(gameid)
-  clearTimeout(timeouts[gameid])
-  delete timeouts[gameid]
+  clearGameTimeouts(gameid)
   redis.hmget(gameid, 'f', 'm', 't', (err, re) => {
     if (err) { console.error(err); return; };
     if (re[0] === '0') {
@@ -1157,12 +1236,8 @@ function finishgame(gameid) {
               bdiff = bpl.getRating() - rtn[1]
               diffinfo = 'd:' + Math.floor(wdiff) + ':' + Math.floor(bdiff)
             }
-            const websockets = subs[gameid] // = {userid:ws,userid:ws,userid:ws}
             var moveinfo = 't:' + turn + ':' + timeleft + ':' + finished
-            if (typeof websockets !== 'undefined') {
-              const nextplayer = websockets.w
-              const turnplayer = websockets.b
-              const spectators = websockets.s
+            if (typeof subs[gameid] !== 'undefined') {
               if (rated === true) {
                 client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [wdiff, wpl.getRd(), wpl.getVol(), rtn[8]], (err, response) => {
                   if (err) { console.log(err) }
@@ -1177,9 +1252,7 @@ function finishgame(gameid) {
                   })
                 })
               } else {
-                for (user in nextplayer) { nextplayer[user].send(moveinfo); nextplayer[user].terminate(); }
-                for (user in turnplayer) { turnplayer[user].send(moveinfo); turnplayer[user].terminate(); }
-                for (user in spectators) { spectators[user].send(moveinfo); spectators[user].terminate(); }
+                broadcastGameUpdate(gameid, { w: [moveinfo], b: [moveinfo], s: [moveinfo] }, { w: true, b: true, s: true });
               }
               delete subs[gameid] // free memory
             } else {
@@ -3382,3 +3455,45 @@ function bpiececount(str) {
   }
   return pieces;
 }
+
+let shuttingDown = false;
+
+function shutdown(reason) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  obs.log('info', 'shutdown_start', { reason: reason });
+
+  server.close(() => {
+    obs.log('info', 'shutdown_server_closed', {});
+  });
+
+  wss.close(() => {
+    obs.log('info', 'shutdown_ws_closed', {});
+  });
+
+  clearInterval(timeoutPoller);
+
+  Object.keys(subs).forEach((gameid) => {
+    const websockets = subs[gameid];
+    ['w', 'b', 's'].forEach((side) => {
+      const group = websockets[side];
+      if (!group) return;
+      for (var user in group) {
+        group[user].terminate();
+      }
+    });
+  });
+  Object.keys(subs).forEach((gameid) => delete subs[gameid]);
+  Object.keys(wsconnections).forEach((id) => delete wsconnections[id]);
+
+  redisSub.quit().catch(() => {});
+  redis.quit().catch(() => {});
+
+  setTimeout(() => {
+    obs.log('info', 'shutdown_forced_exit', {});
+    process.exit(0);
+  }, 30000);
+}
+
+process.on('SIGTERM', () => shutdown('sigterm'));
+process.on('SIGINT', () => shutdown('sigint'));
