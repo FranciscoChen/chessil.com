@@ -732,7 +732,7 @@ function gamepage(filename, mime, ext, res, req, resHeaders, sessiondata) {
   }
   var client = new pg.Client(conString);
   client.connect();
-  client.query('SELECT g.userid1, g.userid2, u1.username as username1, u2.username as username2, g.gameserver, g.rated, g.state, g.initialtime, g.increment, ROUND(g.rating1) as rating1, ROUND(g.rating2) as rating2, g.created, g.session1, g.session2 FROM games g LEFT JOIN users u1 ON u1.id = g.userid1 LEFT JOIN users u2 ON u2.id = g.userid2 WHERE g.gameid = $1', [req.url.slice(6, 15)], (err, response) => {
+  client.query('SELECT g.userid1, g.userid2, u1.username as username1, u2.username as username2, g.gameserver, g.rated, g.state, g.initialtime, g.increment, ROUND(g.rating1) as rating1, ROUND(g.rating2) as rating2, g.created, g.sessionid1, g.sessionid2 FROM games g LEFT JOIN users u1 ON u1.id = g.userid1 LEFT JOIN users u2 ON u2.id = g.userid2 WHERE g.gameid = $1', [req.url.slice(6, 15)], (err, response) => {
     if (response.rows.length === 1) {
       const template = '/play/index.html'
       if (ext === '.html') {
