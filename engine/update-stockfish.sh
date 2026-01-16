@@ -1,10 +1,29 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -euo pipefail
 
-# go to the src directory for Stockfish on my hard drive (edit accordingly)
-cd /home/ubuntu/Stockfish
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+STOCKFISH_DIR="${SCRIPT_DIR}/Stockfish"
+CONFIG_FILE="${SCRIPT_DIR}/engine-services.conf"
+
+cd "$SCRIPT_DIR"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+  echo "Missing config: $CONFIG_FILE" >&2
+  exit 1
+fi
+
+. "$CONFIG_FILE"
+: "${ENGINE_WORKER_COUNT:?Missing ENGINE_WORKER_COUNT in $CONFIG_FILE}"
+
+if [ ! -d "$STOCKFISH_DIR/.git" ]; then
+  echo "Cloning official Stockfish repository..."
+  git clone https://github.com/official-stockfish/Stockfish.git "$STOCKFISH_DIR"
+fi
+
+cd "$STOCKFISH_DIR"
 
 echo "Adding official Stockfish's public GitHub repository URL as a remote in my local git repository..."
-git remote add     official https://github.com/official-stockfish/Stockfish.git
+git remote add official https://github.com/official-stockfish/Stockfish.git 2>/dev/null || true
 git remote set-url official https://github.com/official-stockfish/Stockfish.git
 echo "Downloading official Stockfish's branches and commits..."
 git checkout master
@@ -15,21 +34,20 @@ then
 echo "No need to do anything."
 else
 echo "Compiling new master..."
-cd /home/ubuntu/Stockfish/src
+cd "${STOCKFISH_DIR}/src"
 make clean
 make build
 
 # Remove old nn files
-ls -t /home/ubuntu/Stockfish/src/nn-*.nnue | tail -n +2 | xargs rm -f
-
-# Find the processes which are using stockfish and kill those processes
-kill -9 $(ps -aef|grep 'node sf.js'|grep -Eo 'ubuntu +[0-9]+'|grep -Eo '[0-9]+'|awk '{print $1}')
-sleep 1
+ls -t "${STOCKFISH_DIR}/src/nn-*.nnue" 2>/dev/null | tail -n +2 | xargs -r rm -f
 
 # Move and overwrite stockfish
-mv -f stockfish /home/ubuntu
-# Restart the processes
-cd /home/ubuntu
-nohup node sf.js >/dev/null 2>&1 &
+mv -f stockfish "$SCRIPT_DIR"
+# Restart the workers to pick up the new binary
+worker_units=()
+for i in $(seq 1 "$ENGINE_WORKER_COUNT"); do
+  worker_units+=("chessil-engine-worker@${i}")
+done
+sudo systemctl restart "${worker_units[@]}"
 fi
 echo "Done."

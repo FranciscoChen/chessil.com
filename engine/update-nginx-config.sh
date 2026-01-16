@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SRC="/home/ubuntu/chessil.com/engine/nginx-engine-upstream.conf"
+SCRIPT_DIR="/home/ubuntu/chessil.com/engine"
+SRC="${SCRIPT_DIR}/nginx-engine-upstream.conf"
 DEST="/etc/nginx/sites-enabled/default"
 BACKUP_DIR="/etc/nginx/backups"
 BACKUP="${BACKUP_DIR}/default.$(date +%Y%m%d-%H%M%S).bak"
+
+if [ -x "${SCRIPT_DIR}/generate-nginx-upstream.sh" ]; then
+  "${SCRIPT_DIR}/generate-nginx-upstream.sh"
+fi
 
 if [ ! -f "$SRC" ]; then
   echo "Source config not found: $SRC" >&2

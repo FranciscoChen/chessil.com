@@ -12,8 +12,10 @@ Setup (one time)
    sudo cp engine/systemd/chessil-engine-worker@.service /etc/systemd/system/
    sudo systemctl daemon-reload
 2) Start and enable services:
-   sudo systemctl enable --now chessil-engine-queue chessil-engine-worker@1 chessil-engine-worker@2 chessil-engine-api@8081 chessil-engine-api@8082
+   - Set `ENGINE_WORKER_COUNT` and `ENGINE_API_PORTS` in engine/engine-services.conf
+   - Run ./engine/install-engine-service.sh
 3) Configure nginx to proxy to both API instances:
+   - Generate the upstream with ./engine/generate-nginx-upstream.sh.
    - Copy the upstream from engine/nginx-engine-upstream.conf into your nginx config.
    - Ensure your server block proxies / to http://chessil_engine_api.
    - Reload nginx after changes.
