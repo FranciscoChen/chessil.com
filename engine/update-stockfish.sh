@@ -53,6 +53,7 @@ else
   echo "Failed to install stockfish to $STOCKFISH_BIN" >&2
   exit 1
 fi
+
 # Restart the workers to pick up the new binary
 worker_units=()
 for i in $(seq 1 "$ENGINE_WORKER_COUNT"); do
