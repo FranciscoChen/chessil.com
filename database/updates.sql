@@ -4,10 +4,20 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS deviation numeric NOT NULL DEFAULT 35
 ALTER TABLE users ADD COLUMN IF NOT EXISTS volatility numeric NOT NULL DEFAULT 0.06;
 
 -- Migrate existing ratings (using blitz as baseline)
-UPDATE users
-SET rating = blitz_rating,
-    deviation = blitz_deviation,
-    volatility = blitz_volatility;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'users'
+      AND column_name = 'blitz_rating'
+  ) THEN
+    UPDATE users
+    SET rating = blitz_rating,
+        deviation = blitz_deviation,
+        volatility = blitz_volatility;
+  END IF;
+END $$;
 
 -- Remove time-control specific columns
 ALTER TABLE users
