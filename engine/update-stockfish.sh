@@ -15,9 +15,11 @@ fi
 . "$CONFIG_FILE"
 : "${ENGINE_WORKER_COUNT:?Missing ENGINE_WORKER_COUNT in $CONFIG_FILE}"
 
+repo_changed=0
 if [ ! -d "$STOCKFISH_DIR/.git" ]; then
   echo "Cloning official Stockfish repository..."
   git clone https://github.com/official-stockfish/Stockfish.git "$STOCKFISH_DIR"
+  repo_changed=1
 fi
 
 cd "$STOCKFISH_DIR"
@@ -29,7 +31,7 @@ echo "Downloading official Stockfish's branches and commits..."
 git checkout master
 echo "Updating my local master branch with the new commits from official Stockfish's master..."
 git reset --hard
-if [ $(git pull|grep "up to date"|wc -l) -eq 1 ] 
+if [ "$repo_changed" -eq 0 ] && [ $(git pull|grep "up to date"|wc -l) -eq 1 ] 
 then
 echo "No need to do anything."
 else
