@@ -58,4 +58,7 @@ function gamepageload() {
         roundstart()
       }
     })
+    .catch(() => {
+      // Ignore fetch errors; game page can still render without metadata.
+    })
 }

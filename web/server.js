@@ -924,6 +924,14 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
                                   } else {
                                     // Account creation successful, autoperform login and go to main page
                                     client.query('SELECT * FROM users WHERE canonical = $1', [postcontent.username.toLowerCase()], (err, response2) => {
+                                      if (err) {
+                                        logAuthEvent('register_error', req, { reason: 'db_select', username: postcontent.username });
+                                        res.writeHead(500, { "Content-Type": "text/html" });
+                                        res.end();
+                                        console.log(err);
+                                        client.end()
+                                        return
+                                      }
                                       if (response2.rows.length === 1) {
                                         // Authenticated sessionid to userid, make new sessionid, expire old session, assign new sessionid which is linked to userid
                                         sessiondata[1] = response2.rows[0].id
@@ -945,12 +953,20 @@ function registration(filename, mime, ext, res, req, resHeaders, sessiondata) {
                                     })
                                   }
                                 })
+                            }).catch(err => {
+                              res.writeHead(500, { "Content-Type": "text/html" });
+                              res.end();
+                              console.log('Password hashing error')
+                              console.log(err)
+                              client.end()
+                              return
                             });
                           } catch (err) {
                             res.writeHead(500, { "Content-Type": "text/html" });
                             res.end();
                             console.log('Password hashing error')
                             console.log(err)
+                            client.end()
                             return;
                           }
 
@@ -1165,6 +1181,14 @@ function login(filename, mime, ext, res, req, resHeaders, sessiondata) {
             var client = new pg.Client(conString);
             client.connect();
             client.query('SELECT * FROM users WHERE canonical = $1', [postcontent.username.toLowerCase()], (err, response) => {
+              if (err) {
+                logAuthEvent('login_failure', req, { reason: 'db_select', username: postcontent.username });
+                res.writeHead(500, { "Content-Type": "text/html" });
+                res.end();
+                console.log(err);
+                client.end()
+                return
+              }
               if (response.rows.length === 1) {
                 try {
                   argon2.verify(response.rows[0].password, postcontent.password).then(passwordmatch => {
@@ -1185,12 +1209,20 @@ function login(filename, mime, ext, res, req, resHeaders, sessiondata) {
                       client.end()
                       serve(filename, mime, ext, res, req, resHeaders, sessiondata)
                     }
+                  }).catch(err => {
+                    res.writeHead(500, { "Content-Type": "text/html" });
+                    res.end();
+                    console.log('Password hashing error')
+                    console.log(err)
+                    client.end()
+                    return
                   });
                 } catch (err) {
                   res.writeHead(500, { "Content-Type": "text/html" });
                   res.end();
                   console.log('Password hashing error')
                   console.log(err)
+                  client.end()
                   return;
                 }
               } else {

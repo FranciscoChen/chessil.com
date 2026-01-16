@@ -214,12 +214,16 @@ document.addEventListener('DOMContentLoaded', function () {
     updateColorState();
   });
   filterBy.addEventListener('change', function () {
-    applyFilterDefaults().then(loadBots);
+    applyFilterDefaults().then(loadBots).catch(function () {
+      setStatus(messages.failed);
+    });
   });
   time.addEventListener('change', loadBots);
   if (eloMin) eloMin.addEventListener('input', loadBots);
   if (eloMax) eloMax.addEventListener('input', loadBots);
 
   updateColorState();
-  applyFilterDefaults().then(loadBots);
+  applyFilterDefaults().then(loadBots).catch(function () {
+    setStatus(messages.failed);
+  });
 });
