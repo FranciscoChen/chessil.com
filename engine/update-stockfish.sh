@@ -44,16 +44,15 @@ make build
 # Remove old nn files
 ls -t "${STOCKFISH_DIR}/src/nn-*.nnue" 2>/dev/null | tail -n +2 | xargs -r rm -f
 
-run_cmd() {
-  if [ "$(id -u)" -eq 0 ]; then
-    "$@"
-  else
-    sudo "$@"
-  fi
-}
-
 # Move and overwrite stockfish
-run_cmd install -m 0755 stockfish "$STOCKFISH_BIN"
+if install -m 0755 stockfish "$STOCKFISH_BIN"; then
+  :
+elif [ "$(id -u)" -ne 0 ]; then
+  sudo install -m 0755 stockfish "$STOCKFISH_BIN"
+else
+  echo "Failed to install stockfish to $STOCKFISH_BIN" >&2
+  exit 1
+fi
 # Restart the workers to pick up the new binary
 worker_units=()
 for i in $(seq 1 "$ENGINE_WORKER_COUNT"); do
