@@ -3,7 +3,8 @@ set -euo pipefail
 
 SRC="/home/ubuntu/chessil.com/web/nginx-web-upstream.conf"
 DEST="/etc/nginx/sites-enabled/default"
-BACKUP="/etc/nginx/sites-enabled/default.$(date +%Y%m%d-%H%M%S).bak"
+BACKUP_DIR="/etc/nginx/backups"
+BACKUP="${BACKUP_DIR}/default.$(date +%Y%m%d-%H%M%S).bak"
 
 if [ ! -f "$SRC" ]; then
   echo "Source config not found: $SRC" >&2
@@ -11,6 +12,7 @@ if [ ! -f "$SRC" ]; then
 fi
 
 if [ -f "$DEST" ]; then
+  sudo mkdir -p "$BACKUP_DIR"
   sudo cp -a "$DEST" "$BACKUP"
   echo "Backup saved to $BACKUP"
 fi
