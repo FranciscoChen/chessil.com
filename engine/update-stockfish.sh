@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 STOCKFISH_DIR="${SCRIPT_DIR}/Stockfish"
 CONFIG_FILE="${SCRIPT_DIR}/engine-services.conf"
+STOCKFISH_BIN="${SCRIPT_DIR}/stockfish"
 
 cd "$SCRIPT_DIR"
 
@@ -43,8 +44,16 @@ make build
 # Remove old nn files
 ls -t "${STOCKFISH_DIR}/src/nn-*.nnue" 2>/dev/null | tail -n +2 | xargs -r rm -f
 
+run_cmd() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
+
 # Move and overwrite stockfish
-mv -f stockfish "$SCRIPT_DIR"
+run_cmd install -m 0755 stockfish "$STOCKFISH_BIN"
 # Restart the workers to pick up the new binary
 worker_units=()
 for i in $(seq 1 "$ENGINE_WORKER_COUNT"); do
