@@ -89,6 +89,7 @@ function clearGameTimeouts(gameid) {
   cancelTimeout(timeoutKeyFinish, gameid);
 }
 
+const timeoutPollIntervalMs = 250
 let pollingTimeouts = false;
 const timeoutPoller = setInterval(() => {
   if (pollingTimeouts) return;
@@ -201,7 +202,6 @@ function parseSessionData(raw) {
 // Timeout system (stored in Redis)
 const timeoutKeyAbort = 'game:timeouts:abort'
 const timeoutKeyFinish = 'game:timeouts:finish'
-const timeoutPollIntervalMs = 250
 const timeoutBatchSize = 100
 const popDueTimeoutsLua = [
   "local key=KEYS[1]",
