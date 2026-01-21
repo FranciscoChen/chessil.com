@@ -18,6 +18,8 @@ Scripts
   Connects to the game server, calls /play for each move, and plays the game.
 - scripts/register-user.sh
   Registers a normal user via /register and stores the new session cookie.
+- scripts/sync-bot-client.sh
+  RSync helper to keep a copied bot-client folder in sync.
 
 State files (auto-created)
 - state/admin-session.txt
@@ -32,3 +34,4 @@ Notes
 - If you want a different user role, set bot.role in config.json (defaults to 3).
 - register-user requires a strong password that passes the server strength check (zxcvbn score 4).
 - wsPingUrl should point at the game server ping endpoint, e.g. wss://ws0.chessil.com/ping.
+- sync-bot-client usage: set SRC and DEST paths in the script, run manually or via cron.
