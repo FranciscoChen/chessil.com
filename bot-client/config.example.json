@@ -1,5 +1,6 @@
 {
   "webBaseUrl": "https://chessil.com",
+  "wsPingUrl": "wss://ws0.chessil.com/ping",
   "engineBaseUrl": "https://sf0.chessil.com",
   "engineAuthToken": "replace-with-engine-auth-token",
   "engineXRealIp": "replace-with-allowed-engine-ip",
@@ -11,6 +12,10 @@
     "username": "bot-client-001",
     "password": "replace-with-bot-password",
     "uci_elo": 900
+  },
+  "register": {
+    "username": "new-user-001",
+    "password": "replace-with-very-strong-password"
   },
   "easy": {
     "timecontrol": "5+0",
