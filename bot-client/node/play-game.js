@@ -135,7 +135,8 @@ async function main() {
   const ws = new WebSocket(`wss://${gameServer}.chessil.com/game/${gameid}`, {
     headers: {
       Cookie: `s=${session}`,
-      'User-Agent': 'chessil-bot-client'
+      'User-Agent': 'chessil-bot-client',
+      Origin: baseUrl
     }
   });
 

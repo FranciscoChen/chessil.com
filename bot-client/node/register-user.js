@@ -141,6 +141,9 @@ async function main() {
   );
 
   const newSession = extractSessionCookie(response.headers);
+  const bodyPreview = typeof response.body === 'string'
+    ? response.body.slice(0, 200).replace(/\s+/g, ' ').trim()
+    : '';
   if (newSession) {
     writeStateFile('register-session.txt', newSession + '\n');
   }
@@ -154,7 +157,14 @@ async function main() {
   if (newSession) {
     console.log('New session saved to state/register-session.txt');
   } else {
-    console.log('No session cookie returned. Check response status.');
+    console.log('No session cookie returned.');
+    console.log(`Status: ${response.statusCode}`);
+    if (response.headers && response.headers.location) {
+      console.log(`Location: ${response.headers.location}`);
+    }
+    if (bodyPreview) {
+      console.log(`Body preview: ${bodyPreview}`);
+    }
   }
 }
 
