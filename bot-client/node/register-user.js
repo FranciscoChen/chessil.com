@@ -39,13 +39,14 @@ async function seedSession(baseUrl) {
   return seedCookie;
 }
 
-function wsPing(wsPingUrl, sessionCookie) {
+function wsPing(wsPingUrl, sessionCookie, origin) {
   return new Promise((resolve, reject) => {
     let settled = false;
     const ws = new WebSocket(wsPingUrl, {
       headers: {
         'Cookie': `s=${sessionCookie}`,
-        'User-Agent': 'chessil-bot-client'
+        'User-Agent': 'chessil-bot-client',
+        ...(origin ? { 'Origin': origin } : {})
       }
     });
 
@@ -129,7 +130,7 @@ async function main() {
   ensureStateDir();
 
   const sessionCookie = await seedSession(baseUrl);
-  await wsPing(wsPingUrl, sessionCookie);
+  await wsPing(wsPingUrl, sessionCookie, baseUrl);
   await sleep(2500);
 
   const response = await registerUser(
