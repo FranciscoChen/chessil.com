@@ -1,0 +1,10 @@
+{
+  "name": "chessil-bot-matchmaker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bot vs bot matchmaker for chessil.com (server-side bots)",
+  "main": "matchmaker.js",
+  "dependencies": {
+    "pg": "^8.11.5"
+  }
+}

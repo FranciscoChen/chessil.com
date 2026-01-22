@@ -22,6 +22,7 @@ const conString = config.shared.postgresUrl
 const domainname = config.game.domainName
 const servername = config.game.serverName
 const myServers = config.game.myServers
+const engineAuthIp = getEngineAuthIp()
 const envPort = parseInt(process.env.PORT || '', 10);
 const port = Number.isFinite(envPort) ? envPort : 8080;
 
@@ -76,6 +77,19 @@ function scheduleTimeout(key, gameid, delayMs) {
   redis.zadd(key, when, gameid, (err) => {
     if (err) console.error(err);
   });
+}
+
+function getEngineAuthIp() {
+  const entries = Object.entries(config.engine.myServers || {});
+  for (var i = 0; i < entries.length; i++) {
+    if (entries[i][1] === 'ws') {
+      return entries[i][0];
+    }
+  }
+  if (entries.length === 0) {
+    throw new Error('Missing config.engine.myServers entries');
+  }
+  throw new Error('Missing ws entry in config.engine.myServers');
 }
 
 function cancelTimeout(key, gameid) {
@@ -244,14 +258,23 @@ function clearBotPending(gameid) {
 }
 
 function requestBotMove(gameid) {
-  redis.hmget(gameid, 'bs', 'be', 'f', 't', 'm', 'l', 'n', 'o', 'z', (err, re) => {
+  redis.hmget(gameid, 'bw', 'bb', 'f', 't', 'm', 'l', 'n', 'o', 'z', (err, re) => {
     if (err) { console.error(err); return; }
-    const botside = re[0]
-    const botelo = parseInt(re[1], 10)
-    if (botside !== 'w' && botside !== 'b') return
-    if (!Number.isFinite(botelo)) return
+    const botWhiteElo = parseInt(re[0], 10)
+    const botBlackElo = parseInt(re[1], 10)
     if (re[2] !== '0') return
-    if (re[3] !== botside) return
+    const turn = re[3]
+    let botside = null
+    let botelo = null
+    if (turn === 'w' && Number.isFinite(botWhiteElo)) {
+      botside = 'w'
+      botelo = botWhiteElo
+    } else if (turn === 'b' && Number.isFinite(botBlackElo)) {
+      botside = 'b'
+      botelo = botBlackElo
+    } else {
+      return
+    }
 
     const moves = re[4] || ''
     const hm = moves.length ? moves.split(' ').length : 0
@@ -282,6 +305,7 @@ function requestBotMove(gameid) {
         method: 'POST',
         headers: {
           'authorization': config.shared.engineAuthToken,
+          'x-real-ip': engineAuthIp,
           'content-type': 'application/json',
           'content-length': Buffer.byteLength(payload)
         }
@@ -890,8 +914,8 @@ server.on('request', (req, res) => {
       'x': r.bv, // Black volatility
       'y': r.wt // initial time
     };
-    if (typeof r.bs !== 'undefined') gameData.bs = r.bs;
-    if (typeof r.be !== 'undefined') gameData.be = r.be;
+    if (typeof r.bw !== 'undefined') gameData.bw = r.bw;
+    if (typeof r.bb !== 'undefined') gameData.bb = r.bb;
     redis.hset(r.gn, gameData, (err, result) => {
         if (err) {
           res.writeHead(500, { "Content-Type": "text/html" });

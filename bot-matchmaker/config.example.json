@@ -1,0 +1,28 @@
+{
+  "webBaseUrl": "https://chessil.com",
+  "postgresUrl": "postgres://username:password@db.domain.com:5432/databasename?sslmode=require",
+  "matchmaker": {
+    "intervalSec": 60,
+    "maxConcurrentGames": 10,
+    "maxStartsPerRun": 2,
+    "rated": true,
+    "timecontrol": "5+0",
+    "color": "random",
+    "eloRange": 150,
+    "filterBy": "uci_elo",
+    "bots": [
+      {
+        "id": 1,
+        "username": "bot-001",
+        "password": "replace-with-bot-password",
+        "uci_elo": 900
+      },
+      {
+        "id": 2,
+        "username": "bot-002",
+        "password": "replace-with-bot-password",
+        "uci_elo": 1000
+      }
+    ]
+  }
+}

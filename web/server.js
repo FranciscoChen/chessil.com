@@ -2135,11 +2135,13 @@ function startGameOnServer(payload, callback) {
     'wv': String(payload.whiteRatings.volatility),
     'bv': String(payload.blackRatings.volatility)
   };
-  if (payload.bot && payload.bot.side) {
-    headers['bs'] = payload.bot.side;
-  }
-  if (payload.bot && payload.bot.elo) {
-    headers['be'] = String(payload.bot.elo);
+  if (payload.bot && typeof payload.bot === 'object') {
+    if (Number.isFinite(Number(payload.bot.w))) {
+      headers['bw'] = String(payload.bot.w);
+    }
+    if (Number.isFinite(Number(payload.bot.b))) {
+      headers['bb'] = String(payload.bot.b);
+    }
   }
   const req = https.request(
     {
@@ -2483,14 +2485,18 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
             const whiteRatings = colors.whiteIsPlayer1 ? p1Ratings : p2Ratings;
             const blackRatings = colors.whiteIsPlayer1 ? p2Ratings : p1Ratings;
 
-            let botPayload = null;
+            const botPayload = {};
             if (p1User.role === 3) {
               const botElo = Number.isFinite(Number(p1User.uci_elo)) ? Math.round(Number(p1User.uci_elo)) : Math.round(p1User.rating);
-              botPayload = { side: colors.whiteIsPlayer1 ? 'w' : 'b', elo: botElo };
-            } else if (p2User.role === 3) {
-              const botElo = Number.isFinite(Number(p2User.uci_elo)) ? Math.round(Number(p2User.uci_elo)) : Math.round(p2User.rating);
-              botPayload = { side: colors.whiteIsPlayer1 ? 'b' : 'w', elo: botElo };
+              const botSide = colors.whiteIsPlayer1 ? 'w' : 'b';
+              botPayload[botSide] = botElo;
             }
+            if (p2User.role === 3) {
+              const botElo = Number.isFinite(Number(p2User.uci_elo)) ? Math.round(Number(p2User.uci_elo)) : Math.round(p2User.rating);
+              const botSide = colors.whiteIsPlayer1 ? 'b' : 'w';
+              botPayload[botSide] = botElo;
+            }
+            const botPayloadFinal = Object.keys(botPayload).length ? botPayload : null;
 
             startGameOnServer(
               {
@@ -2500,7 +2506,7 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
                 time: time,
                 whiteRatings: whiteRatings,
                 blackRatings: blackRatings,
-                bot: botPayload
+                bot: botPayloadFinal
               },
               (err4) => {
                 if (err4) {
@@ -2844,9 +2850,13 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
         };
         const botEngineElo = Number.isFinite(Number(botRow.uci_elo)) ? Math.round(Number(botRow.uci_elo)) : Math.round(botRatings.rating);
         const userIds = [];
-        if (rated && userId !== '0') userIds.push(Number(userId));
+        if (userId !== '0') userIds.push(Number(userId));
 
-        const finalizeStart = (userRatings) => {
+        const finalizeStart = (userDetails) => {
+          const userInfo = userDetails[userId] || { rating: defaultRatings.rating, deviation: defaultRatings.deviation, volatility: defaultRatings.volatility, role: 1, uci_elo: null };
+          const userRatings = rated ? { rating: userInfo.rating, deviation: userInfo.deviation, volatility: userInfo.volatility } : unratedRatings;
+          const userIsBot = userInfo.role === 3;
+          const userEngineElo = Number.isFinite(Number(userInfo.uci_elo)) ? Math.round(Number(userInfo.uci_elo)) : Math.round(userRatings.rating);
           const whiteRatings = colors.whiteIsPlayer1 ? botRatings : userRatings;
           const blackRatings = colors.whiteIsPlayer1 ? userRatings : botRatings;
 
@@ -2889,6 +2899,13 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
               return res.end(JSON.stringify({ error: 'Internal error' }));
             }
 
+            const botPayload = {};
+            botPayload[botSide] = botEngineElo;
+            if (userIsBot) {
+              const userSide = botSide === 'w' ? 'b' : 'w';
+              botPayload[userSide] = userEngineElo;
+            }
+
             startGameOnServer(
               {
                 gameid: gameid,
@@ -2897,7 +2914,7 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
                 time: time,
                 whiteRatings: rated ? whiteRatings : unratedRatings,
                 blackRatings: rated ? blackRatings : unratedRatings,
-                bot: { side: botSide, elo: botEngineElo }
+                bot: botPayload
               },
               (err4) => {
                 if (err4) {
@@ -2921,15 +2938,14 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
           });
         };
 
-        selectUserRatings(client, userIds, null, (err4, ratingsMap) => {
+        selectUserDetails(client, userIds, (err4, detailsMap) => {
           if (err4) {
             console.error('easy/start ratings error', err4);
             res.writeHead(500, { 'Content-Type': 'application/json' });
             client.end();
             return res.end(JSON.stringify({ error: 'Internal error' }));
           }
-          const userRatings = rated ? (ratingsMap[userId] || defaultRatings) : unratedRatings;
-          finalizeStart(userRatings);
+          finalizeStart(detailsMap);
         });
       });
     });
