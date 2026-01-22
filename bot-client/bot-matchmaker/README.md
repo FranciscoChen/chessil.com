@@ -5,7 +5,7 @@ Purpose
 - Uses server-side bot moves (ws0 calls the engine).
 
 Setup
-1) Copy `config.example.json` to `config.json` and fill in the values.
+1) Copy `bot-client/config.example.json` to `bot-client/config.json` and fill in `matchmaker` values.
 2) Run `npm install` in this folder.
 3) Run `node matchmaker.js` (single run + optional loop via `intervalSec`).
 

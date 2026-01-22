@@ -18,8 +18,15 @@ Scripts
   Connects to the game server, calls /play for each move, and plays the game.
 - scripts/register-user.sh
   Registers a normal user via /register and stores the new session cookie.
+- scripts/run-matchmaker.sh
+  Runs the bot vs bot matchmaker.
 - scripts/sync-bot-client.sh
   RSync helper to keep a copied bot-client folder in sync.
+- bot-matchmaker/
+  Bot vs bot matchmaker (server-side bots).
+
+Matchmaker setup
+- Fill in the matchmaker section inside config.json (copy from config.example.json).
 
 State files (auto-created)
 - state/admin-session.txt

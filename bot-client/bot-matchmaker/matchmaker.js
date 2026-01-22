@@ -6,7 +6,7 @@ const { URL } = require('url');
 const { Client } = require('pg');
 
 function readConfig() {
-  const configPath = path.join(__dirname, 'config.json');
+  const configPath = path.join(__dirname, '..', 'config.json');
   const raw = fs.readFileSync(configPath, 'utf8');
   return JSON.parse(raw);
 }
@@ -189,7 +189,7 @@ async function runOnce(config) {
   const bots = Array.isArray(mm.bots) ? mm.bots : [];
 
   if (!baseUrl) throw new Error('Missing webBaseUrl in config.json');
-  if (!config.postgresUrl) throw new Error('Missing postgresUrl in config.json');
+  if (!mm.postgresUrl) throw new Error('Missing matchmaker.postgresUrl in config.json');
   if (bots.length < 2) {
     console.log('Not enough bots configured.');
     return;
@@ -200,7 +200,7 @@ async function runOnce(config) {
     throw new Error('Bots must include numeric id values.');
   }
 
-  const client = new Client({ connectionString: config.postgresUrl });
+  const client = new Client({ connectionString: mm.postgresUrl });
   await client.connect();
 
   try {

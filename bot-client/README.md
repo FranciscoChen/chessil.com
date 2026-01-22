@@ -12,7 +12,12 @@ Scripts
 - `scripts/easy-start.sh` starts a new Easy game against a server bot and stores the `gameid`.
 - `scripts/play-game.sh` connects to the game server, calls `/play` for each move, and plays the game.
 - `scripts/register-user.sh` registers a normal user via `/register` and stores the new session cookie.
+- `scripts/run-matchmaker.sh` runs the bot vs bot matchmaker.
 - `scripts/sync-bot-client.sh` rsync helper to keep a copied bot-client folder in sync.
+- `bot-matchmaker/` contains the bot vs bot matchmaker (server-side bots).
+
+Matchmaker setup
+- Fill in the `matchmaker` section inside `config.json` (copy from `config.example.json`).
 
 State Files (auto-created)
 - `state/admin-session.txt`
