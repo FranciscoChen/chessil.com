@@ -36,6 +36,8 @@
     "color": "random",
     "eloRange": 150,
     "filterBy": "uci_elo",
+    "loginBots": true,
+    "sessionTtlSec": 21600,
     "bots": [
       {
         "id": 1,

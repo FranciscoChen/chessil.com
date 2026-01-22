@@ -11,6 +11,21 @@ function readConfig() {
   return JSON.parse(raw);
 }
 
+function ensureDir(dirPath) {
+  fs.mkdirSync(dirPath, { recursive: true });
+}
+
+function shouldRefreshSession(filePath, ttlSec) {
+  if (!ttlSec || ttlSec <= 0) return true;
+  try {
+    const stat = fs.statSync(filePath);
+    const ageMs = Date.now() - stat.mtimeMs;
+    return ageMs > ttlSec * 1000;
+  } catch (_) {
+    return true;
+  }
+}
+
 function request({ method, url, headers = {}, body = null, timeoutMs = 15000 }) {
   return new Promise((resolve, reject) => {
     const target = new URL(url);
@@ -94,6 +109,19 @@ async function login(baseUrl, username, password) {
   }
 
   return loginCookie;
+}
+
+async function ensureBotSessions(baseUrl, bots, ttlSec) {
+  const stateDir = path.join(__dirname, '..', 'state', 'matchmaker-sessions');
+  ensureDir(stateDir);
+  for (const bot of bots) {
+    const sessionFile = path.join(stateDir, `bot-${bot.id}.txt`);
+    if (!shouldRefreshSession(sessionFile, ttlSec)) {
+      continue;
+    }
+    const session = await login(baseUrl, bot.username, bot.password);
+    fs.writeFileSync(sessionFile, session + '\n', 'utf8');
+  }
 }
 
 async function startEasyGame(baseUrl, session, botId, opts) {
@@ -198,6 +226,11 @@ async function runOnce(config) {
   const botIds = bots.map((bot) => Number(bot.id)).filter((id) => Number.isFinite(id));
   if (botIds.length < 2) {
     throw new Error('Bots must include numeric id values.');
+  }
+
+  if (mm.loginBots) {
+    const ttlSec = Number.isFinite(Number(mm.sessionTtlSec)) ? Number(mm.sessionTtlSec) : 0;
+    await ensureBotSessions(baseUrl, bots, ttlSec);
   }
 
   const client = new Client({ connectionString: mm.postgresUrl });

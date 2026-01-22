@@ -14,6 +14,8 @@ Config notes
 - `maxConcurrentGames` is enforced using the database (games with `state = 0`).
 - `maxStartsPerRun` limits how many new games are created per run.
 - `intervalSec` enables looping; set to 0 for single-run (use cron).
+- `loginBots` logs in each bot (stores sessions in `bot-client/state/matchmaker-sessions`).
+- `sessionTtlSec` controls how often those logins refresh.
 
 Requirements
 - The web server must accept the matchmaker host IP (maintenance + auth rate limits).
