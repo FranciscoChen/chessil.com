@@ -11,8 +11,10 @@
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/colors.css">
+  <link rel="stylesheet" href="/css/buttons.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/footer.css">
+  <link rel="stylesheet" href="/css/showcase.css">
   <link rel="stylesheet" href="/css/legal.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
@@ -64,26 +66,26 @@
     </div>
   </header>
   <div class="main-wrap">
-    <main class="page-menu">
-      <aside class="subnav">
-        <div class="subnav__inner page-menu__menu"><a href="/en/terms">Terms of service</a><a class="active"
-            href="/en/privacy">Privacy policy</a></div>
-      </aside>
-      <div class="page-menu__content page box box-pad force-ltr">
-        <div class="body legal">
-          <section class="legal-hero">
-            <div class="legal-hero__text">
-              <h1 class="box__top">Privacy policy</h1>
-              <p class="legal-lead">This policy explains how ChessiL.com collects, uses, and protects personal data
-                when you use our chess services.</p>
-            </div>
-            <div class="legal-meta">
-              <span>Effective date: January 29, 2026</span>
-              <span>Applies to: chessil.com and related services</span>
-            </div>
-          </section>
+    <main class="main legal-main">
+      <section class="showcase legal-showcase legal-hero-showcase">
+        <div class="showcase-grid legal-grid">
+          <h1 class="legal-title">Privacy policy</h1>
+          <p class="legal-lead">This policy explains how ChessiL.com collects, uses, and protects personal data when you
+            use our chess services.</p>
+          <div class="legal-actions">
+            <a href="/en/terms"><button class="action">Terms of service</button></a>
+            <a href="/en/privacy"><button class="action alternative">Privacy policy</button></a>
+          </div>
+          <div class="legal-meta">
+            <span>Effective date: January 29, 2026</span>
+            <span>Applies to: chessil.com and related services</span>
+          </div>
+        </div>
+      </section>
 
-          <section class="legal-section">
+      <section class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
             <h2>Summary</h2>
             <div class="legal-cards">
               <div class="legal-card">
@@ -99,9 +101,13 @@
                 <p>You can access or delete your account data, and request help through the site.</p>
               </div>
             </div>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          <section class="legal-section">
+      <section class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
             <h2>Information we collect</h2>
             <ul>
               <li>Account data: username and password (stored as an argon2id hash).</li>
@@ -109,9 +115,13 @@
               <li>Technical data: IP address, session identifiers, and HTTP request metadata.</li>
               <li>Authentication and session data to keep you logged in.</li>
             </ul>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          <section class="legal-section">
+      <section class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
             <h2>How we use information</h2>
             <ul>
               <li>Provide real-time chess play, analysis, and learning tools.</li>
@@ -119,9 +129,13 @@
               <li>Detect abuse, cheating, and fraud.</li>
               <li>Maintain system reliability and performance.</li>
             </ul>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          <section class="legal-section">
+      <section class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
             <h2>Legal bases for processing (GDPR)</h2>
             <ul>
               <li>Contract: to provide the service you request.</li>
@@ -129,53 +143,80 @@
               <li>Consent: where required by law, such as optional cookies.</li>
               <li>Legal obligations: if we must comply with lawful requests.</li>
             </ul>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          <section class="legal-section">
+      <section class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
             <h2>Data retention</h2>
             <p>Accounts and related data may be deleted after one year of inactivity. IP addresses and request logs are
               retained for up to one year to prevent abuse and maintain security. Session cookies expire after one week
               of inactivity or one year, whichever comes first. Game data is anonymized if an account is deleted and
               removed entirely when both players are anonymous.</p>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          <section class="legal-section">
+      <section class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
             <h2>Sharing and transfers</h2>
             <p>We do not sell your data. We may share data with service providers that help host, secure, or operate the
               platform, under confidentiality obligations. If data is processed internationally, we use appropriate
               safeguards.</p>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          <section class="legal-section">
+      <section class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
             <h2>Security</h2>
             <p>We use industry-standard security practices, including hashed passwords, secure session handling, and
               monitoring for abuse. No online system is 100% secure, but we work continuously to protect your data.</p>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          <section class="legal-section">
+      <section class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
             <h2>Your rights</h2>
             <ul>
               <li>Access, correct, or delete your account data.</li>
               <li>Object to or restrict certain processing where legally applicable.</li>
               <li>Request a copy of your data in a portable format.</li>
             </ul>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          <section class="legal-section">
+      <section class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
             <h2>Children and minors</h2>
             <p>ChessiL.com is designed to be safe for minors. If you are under the age that requires parental consent,
               you must have permission from a parent or guardian to use the service.</p>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          <section class="legal-section">
+      <section class="showcase legal-showcase legal-last-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
             <h2>Changes to this policy</h2>
             <p>We may update this policy from time to time. We will post the new policy on this page with an updated
               effective date.</p>
-          </section>
+          </div>
         </div>
-      </div>
+      </section>
     </main>
   </div>
+  <footer>
+    <div><a href="/en/terms">Terms of service</a><a href="/en/privacy">Privacy policy</a></div>
+  </footer>
 </body>
 
 </html>
