@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PORT="${1:-8090}"
+PORTS=("${@:-8090 8091}")
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -22,8 +22,11 @@ echo "Copying systemd unit..."
 sudo cp "${SERVICE_FILE}" /etc/systemd/system/
 
 sudo systemctl daemon-reload
-sudo systemctl enable --now "chessil-notify@${PORT}"
+for port in "${PORTS[@]}"; do
+  sudo systemctl enable --now "chessil-notify@${port}"
+done
 
-echo "Installed systemd unit chessil-notify@${PORT}"
-echo "Nginx snippet (include in your HTTPS server block):"
+echo "Installed systemd unit(s): ${PORTS[*]}"
+echo "Nginx snippets:"
 echo "  ${NGINX_SNIPPET}"
+echo "  ${ROOT_DIR}/notify/nginx/notify-upstream.conf"

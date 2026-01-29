@@ -27,7 +27,9 @@
   - `sudo systemctl daemon-reload`
   - `sudo systemctl enable --now chessil-notify@8090`
 - Operation: publishes notifications to Redis channels `notify:global` and `notify:user:<userid>`.
+- Anonymous sessions can receive `notify:session:<sessionid>` notifications (sessionid from `s=` cookie).
 - Helper: `notify/scripts/install-notify.sh 8090` installs and enables the unit.
+ - Zero-downtime: run two instances (e.g. 8090 + 8091) and use `notify/nginx/notify-upstream.conf`.
 
 ## Common issues
 - Many `auth_rate_limit` logs: raise nginx/app limits or investigate abusive IPs.

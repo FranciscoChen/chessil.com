@@ -20,10 +20,12 @@ obs.installProcessHandlers();
 const redisSub = new Redis();
 const notifyGlobalChannel = 'notify:global';
 const notifyUserPrefix = 'notify:user:';
+const notifySessionPrefix = 'notify:session:';
 
 const pool = new pg.Pool({ connectionString: config.shared.postgresUrl });
 
 const clientsByUser = new Map();
+const clientsBySession = new Map();
 const userByClient = new Map();
 
 function sanitizeUserAgent(useragent) {
@@ -63,6 +65,7 @@ function authenticate(req, callback) {
   if (typeof cookie !== 'string' || cookie.length !== 34 || cookie.slice(0, 2) !== 's=') {
     return callback(new Error('missing_cookie'));
   }
+  const sessionid = cookie.slice(2);
 
   const myURL = new URL(domainName + '/websocket');
   const options = {
@@ -84,8 +87,8 @@ function authenticate(req, callback) {
     res.on('end', () => {
       const sessiondata = parseSessionData(rawData);
       if (!sessiondata) return callback(new Error('bad_session'));
-      if (req.headers['x-real-ip'] === sessiondata[0]) return callback(null, sessiondata);
-      if (useragent === sessiondata[6]) return callback(null, sessiondata);
+      if (req.headers['x-real-ip'] === sessiondata[0]) return callback(null, sessiondata, sessionid);
+      if (useragent === sessiondata[6]) return callback(null, sessiondata, sessionid);
       return callback(new Error('ip_mismatch'));
     });
   });
@@ -103,6 +106,16 @@ function ensureUserSet(userid) {
   return clientsByUser.get(userid);
 }
 
+function ensureSessionSet(sessionid) {
+  if (!clientsBySession.has(sessionid)) {
+    clientsBySession.set(sessionid, new Set());
+    redisSub.subscribe(notifySessionPrefix + sessionid, (err) => {
+      if (err) obs.log('error', 'redis_subscribe_error', { channel: notifySessionPrefix + sessionid, error: String(err) });
+    });
+  }
+  return clientsBySession.get(sessionid);
+}
+
 function removeUserClient(userid, ws) {
   const set = clientsByUser.get(userid);
   if (!set) return;
@@ -111,6 +124,18 @@ function removeUserClient(userid, ws) {
     clientsByUser.delete(userid);
     redisSub.unsubscribe(notifyUserPrefix + userid, (err) => {
       if (err) obs.log('error', 'redis_unsubscribe_error', { channel: notifyUserPrefix + userid, error: String(err) });
+    });
+  }
+}
+
+function removeSessionClient(sessionid, ws) {
+  const set = clientsBySession.get(sessionid);
+  if (!set) return;
+  set.delete(ws);
+  if (set.size === 0) {
+    clientsBySession.delete(sessionid);
+    redisSub.unsubscribe(notifySessionPrefix + sessionid, (err) => {
+      if (err) obs.log('error', 'redis_unsubscribe_error', { channel: notifySessionPrefix + sessionid, error: String(err) });
     });
   }
 }
@@ -134,6 +159,15 @@ function normalizeMessage(channel, message) {
 
 function sendToUser(userid, payload) {
   const set = clientsByUser.get(userid);
+  if (!set) return;
+  const data = JSON.stringify(payload);
+  set.forEach((ws) => {
+    if (ws.readyState === WebSocket.OPEN) ws.send(data);
+  });
+}
+
+function sendToSession(sessionid, payload) {
+  const set = clientsBySession.get(sessionid);
   if (!set) return;
   const data = JSON.stringify(payload);
   set.forEach((ws) => {
@@ -182,6 +216,11 @@ redisSub.on('message', (channel, message) => {
   if (channel.startsWith(notifyUserPrefix)) {
     const userid = channel.slice(notifyUserPrefix.length);
     sendToUser(userid, payload);
+    return;
+  }
+  if (channel.startsWith(notifySessionPrefix)) {
+    const sessionid = channel.slice(notifySessionPrefix.length);
+    sendToSession(sessionid, payload);
   }
 });
 
@@ -192,13 +231,21 @@ const server = http.createServer((req, res) => {
 
 const wss = new WebSocket.Server({ noServer: true });
 
-wss.on('connection', (ws, req, sessiondata) => {
+wss.on('connection', (ws, req, sessiondata, sessionid) => {
   const userid = sessiondata[1];
-  userByClient.set(ws, userid);
-  const set = ensureUserSet(userid);
-  set.add(ws);
+  userByClient.set(ws, { userid: userid, sessionid: sessionid });
+  if (sessionid) {
+    const sessionSet = ensureSessionSet(sessionid);
+    sessionSet.add(ws);
+  }
+  if (userid !== '0') {
+    const userSet = ensureUserSet(userid);
+    userSet.add(ws);
+  }
 
-  sendActiveGames(userid, ws).catch(() => {});
+  if (userid !== '0') {
+    sendActiveGames(userid, ws).catch(() => {});
+  }
 
   ws.isAlive = true;
   ws.on('pong', () => { ws.isAlive = true; });
@@ -211,8 +258,14 @@ wss.on('connection', (ws, req, sessiondata) => {
   });
 
   ws.on('close', () => {
+    const info = userByClient.get(ws);
     userByClient.delete(ws);
-    removeUserClient(userid, ws);
+    if (info && info.sessionid) {
+      removeSessionClient(info.sessionid, ws);
+    }
+    if (info && info.userid && info.userid !== '0') {
+      removeUserClient(info.userid, ws);
+    }
   });
 });
 
@@ -223,14 +276,14 @@ server.on('upgrade', (req, socket, head) => {
     socket.destroy();
     return;
   }
-  authenticate(req, (err, sessiondata) => {
-    if (err || !sessiondata || sessiondata[1] === '0') {
+  authenticate(req, (err, sessiondata, sessionid) => {
+    if (err || !sessiondata) {
       socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
       socket.destroy();
       return;
     }
     wss.handleUpgrade(req, socket, head, (ws) => {
-      wss.emit('connection', ws, req, sessiondata);
+      wss.emit('connection', ws, req, sessiondata, sessionid);
     });
   });
 });

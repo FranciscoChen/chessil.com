@@ -14,6 +14,7 @@ Add the notify host IP to `config.web.websocketServerIps` so `/websocket` auth a
 ## Channels
 - `notify:global` (broadcast to all connected users)
 - `notify:user:<userid>` (per-user notifications)
+- `notify:session:<sessionid>` (per-session notifications, including anonymous users)
 
 ## Payloads
 Messages are JSON and forwarded as-is to the client. If a message is not JSON, it is wrapped as:
@@ -37,7 +38,7 @@ sudo systemctl enable --now chessil-notify@8090
 ```
 
 ## Nginx
-Example mapping (snippet included at `notify/nginx/notify-location.conf`):
+Example mapping (single instance; snippet at `notify/nginx/notify-location.conf`):
 ```
 location /notify {
   proxy_pass http://127.0.0.1:8090;
@@ -48,7 +49,16 @@ location /notify {
 }
 ```
 
+For zero-downtime restarts, use the upstream snippet in `notify/nginx/notify-upstream.conf`
+and run two instances (8090 + 8091).
+
 ## Helper install script
+Single instance:
 ```
 notify/scripts/install-notify.sh 8090
+```
+
+Zero-downtime (two instances):
+```
+notify/scripts/install-notify.sh 8090 8091
 ```
