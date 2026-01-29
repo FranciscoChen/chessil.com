@@ -33,36 +33,84 @@ footer::before{
   opacity: .7;
 }
 
-footer > div{
+.footer-inner{
   grid-column: 3;
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 5vw, 3rem);
   align-items: center;
-  gap: clamp(1.2rem, 3vw, 2.5rem);
 }
 
-footer a{
+.footer-brand{
+  display: grid;
+  gap: .6rem;
+}
+
+.footer-logo{
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -.02em;
+}
+
+.footer-logo span{
+  color: #00a2ff;
+}
+
+.footer-brand p{
+  margin: 0;
+  color: var(--text2);
+  max-width: 40ch;
+}
+
+.footer-links{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1rem, 3vw, 2rem);
+}
+
+.footer-group{
+  display: grid;
+  gap: .5rem;
+}
+
+.footer-group h4{
+  margin: 0 0 .3rem 0;
+  font-size: .9rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+
+.footer-group a{
   color: var(--text2);
   text-decoration: none;
-  padding: .45rem .9rem;
+  padding: .35rem .6rem;
   border-radius: 999px;
   border: 1px solid transparent;
   transition: all .2s ease;
+  width: fit-content;
 }
 
-footer a:hover{
+.footer-group a:hover{
   color: var(--text);
   background: rgba(0, 162, 255, .08);
   border-color: rgba(0, 162, 255, .2);
 }
 
+@media (max-width: 900px){
+  .footer-inner{
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+}
+
 @media (max-width: 720px){
   footer{
-    min-height: 120px;
+    min-height: 140px;
   }
 
-  footer > div{
-    flex-direction: column;
-    gap: .6rem;
+  .footer-links{
+    grid-template-columns: 1fr;
   }
 }
