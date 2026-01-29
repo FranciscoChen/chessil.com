@@ -69,6 +69,33 @@
   border-radius: 999px;
 }
 
+.legal-toc {
+  grid-column: 2 / 8;
+  grid-row: 7 / 9;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  align-items: center;
+  justify-content: center;
+  padding-top: .5rem;
+}
+
+.legal-toc a {
+  padding: .35rem .8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(2, 31, 78, .12);
+  background: #fff;
+  color: rgba(0, 0, 0, .7);
+  font-size: .95rem;
+  transition: all .2s ease;
+}
+
+.legal-toc a:hover {
+  color: #0f1d3a;
+  border-color: rgba(0, 162, 255, .4);
+  box-shadow: 0 8px 16px rgba(0, 162, 255, .15);
+}
+
 .legal-panel {
   grid-column: 2 / 8;
   grid-row: 2 / 8;
@@ -159,6 +186,10 @@
 .legal-hero-showcase .showcase-grid > * {
   position: relative;
   z-index: 1;
+}
+
+.legal-showcase {
+  scroll-margin-top: 120px;
 }
 
 .legal-last-showcase {
