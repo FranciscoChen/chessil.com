@@ -84,26 +84,16 @@
       <section class="showcase easy-showcase" aria-labelledby="easy-title">
         <div class="showcase-grid">
           <h1 id="easy-title" class="showcase-headings">Partida fácil</h1>
-          <p id="easy-subtitle" class="showcase-paragraph">Elige un bot y empieza una partida clasificada o amistosa contra el motor.</p>
+          <p id="easy-subtitle" class="showcase-paragraph">Empieza rápido o ajusta tu partida contra un bot.</p>
 
-          <section class="easy-filters easy-card" aria-labelledby="easy-filters-title">
-            <h2 id="easy-filters-title" class="easy-section-title">Filtros de partida</h2>
-            <div class="filters-primary">
-              <div class="easy-field">
-                <label for="easy-rated">Clasificada</label>
-                <select id="easy-rated" aria-describedby="easy-rating-hint">
-                  <option value="0" selected>Amistosa</option>
-                  <option value="1">Clasificada</option>
-                </select>
-              </div>
-              <div class="easy-field">
-                <label for="easy-color">Color</label>
-                <select id="easy-color">
-                  <option value="random" selected>Aleatorio</option>
-                  <option value="white">Blancas</option>
-                  <option value="black">Negras</option>
-                </select>
-              </div>
+          <section class="easy-quick easy-card" aria-labelledby="easy-quick-title">
+            <h2 id="easy-quick-title" class="easy-section-title">Inicio rápido</h2>
+            <p class="text easy-muted">No clasificada por defecto. Elegimos un bot cercano a tu Elo.</p>
+            <div class="easy-quick-actions">
+              <button id="easy-quick-start" class="action easy-primary">Inicio rápido</button>
+              <a href="#easy-more" class="action alternative easy-more-link">Más opciones</a>
+            </div>
+            <div class="easy-quick-controls" aria-label="Ajustes rápidos">
               <div class="easy-field">
                 <label for="easy-time">Control de tiempo</label>
                 <select id="easy-time">
@@ -115,8 +105,36 @@
                   <option value="15+10">15+10</option>
                 </select>
               </div>
+              <div class="easy-field">
+                <label for="easy-color">Color</label>
+                <select id="easy-color">
+                  <option value="random" selected>Aleatorio</option>
+                  <option value="white">Blancas</option>
+                  <option value="black">Negras</option>
+                </select>
+              </div>
             </div>
-            <div class="filters-secondary">
+          </section>
+
+          <div id="easy-status" class="text" role="status" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="easy-more" class="showcase easy-showcase" aria-labelledby="easy-more-title">
+        <div class="showcase-grid">
+          <h2 id="easy-more-title" class="showcase-headings">Más opciones</h2>
+          <p class="showcase-paragraph">Ajusta filtros y elige un bot específico.</p>
+
+          <section class="easy-filters easy-card" aria-labelledby="easy-filters-title">
+            <h3 id="easy-filters-title" class="easy-section-title">Filtros</h3>
+            <div class="filters-primary">
+              <div class="easy-field">
+                <label for="easy-rated">Clasificada</label>
+                <select id="easy-rated" aria-describedby="easy-rating-hint">
+                  <option value="0" selected>Amistosa</option>
+                  <option value="1">Clasificada</option>
+                </select>
+              </div>
               <div class="easy-field">
                 <label for="easy-filter-by">Filtrar por</label>
                 <select id="easy-filter-by">
@@ -138,15 +156,13 @@
 
           <section class="easy-results easy-card" aria-labelledby="easy-results-title">
             <div class="easy-results-head">
-              <h2 id="easy-results-title" class="easy-section-title">Bots disponibles</h2>
+              <h3 id="easy-results-title" class="easy-section-title">Bots disponibles</h3>
               <p class="easy-results-meta text">Elige un bot para empezar al instante.</p>
             </div>
             <div class="results">
               <div id="easy-bot-list" class="results-flex" role="region" aria-label="Bots disponibles"></div>
             </div>
           </section>
-
-          <div id="easy-status" class="text" role="status" aria-live="polite"></div>
         </div>
       </section>
     </main>

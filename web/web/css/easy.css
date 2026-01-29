@@ -52,6 +52,32 @@
   box-shadow: var(--easy-shadow);
 }
 
+.easy-page .easy-quick {
+  grid-column: 1 / 9;
+  grid-row: 3 / 6;
+  display: grid;
+  gap: var(--easy-space-4);
+}
+
+.easy-page .easy-quick-actions {
+  display: grid;
+  gap: var(--easy-space-3);
+}
+
+.easy-page .easy-primary {
+  font-size: 18px;
+  padding: var(--easy-space-4) var(--easy-space-5);
+}
+
+.easy-page .easy-more-link {
+  text-align: center;
+}
+
+.easy-page .easy-quick-controls {
+  display: grid;
+  gap: var(--easy-space-3);
+}
+
 .easy-page .easy-filters {
   grid-column: 1 / 9;
   grid-row: 3 / 5;
@@ -121,6 +147,10 @@
   color: var(--grey);
 }
 
+.easy-page .easy-muted {
+  color: var(--text2);
+}
+
 .easy-page .results {
   width: 100%;
 }
@@ -182,28 +212,29 @@
 
 .easy-page #easy-status {
   grid-column: 1 / 9;
-  grid-row: 8;
+  grid-row: 6;
   text-align: center;
   min-height: 1.2em;
   color: var(--text2);
 }
 
-.easy-page .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+.easy-page #easy-more {
+  scroll-margin-top: 90px;
 }
 
 @media (min-width: 700px) {
-  .easy-page .filters-primary,
-  .easy-page .filters-secondary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .easy-page .filters-primary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .easy-page .filters-secondary,
+  .easy-page .easy-quick-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .easy-page .easy-quick-actions {
+    grid-template-columns: 2fr 1fr;
+    align-items: center;
   }
 
   .easy-page .showcase-grid {
@@ -220,15 +251,14 @@
     grid-column: 2 / 8;
   }
 
-  .easy-page .easy-filters {
-    grid-column: 2 / 8;
-  }
-
-  .easy-page .easy-results {
-    grid-column: 2 / 8;
-  }
-
+  .easy-page .easy-quick,
+  .easy-page .easy-filters,
+  .easy-page .easy-results,
   .easy-page #easy-status {
     grid-column: 2 / 8;
+  }
+
+  .easy-page .filters-primary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

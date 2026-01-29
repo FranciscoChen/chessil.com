@@ -45,9 +45,10 @@ document.addEventListener('DOMContentLoaded', function () {
   var eloMax = document.getElementById('easy-elo-max');
   var list = document.getElementById('easy-bot-list');
   var status = document.getElementById('easy-status');
+  var quickStartBtn = document.getElementById('easy-quick-start');
   var messages = easyGameMessages();
 
-  if (!rated || !color || !time || !filterBy || !list || !status) return;
+  if (!rated || !color || !time || !filterBy || !list || !status || !quickStartBtn) return;
 
   var state = {
     loading: false
@@ -195,13 +196,82 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 
-  function startGame(botId) {
+  function selectClosestBots(bots, target, count) {
+    if (!bots || bots.length === 0) return [];
+    var scored = bots.map(function (bot) {
+      var rating = Number.isFinite(Number(bot.rating)) ? Number(bot.rating) : null;
+      if (rating === null || rating === 0) {
+        rating = Number.isFinite(Number(bot.uci_elo)) ? Number(bot.uci_elo) : 1500;
+      }
+      return { bot: bot, score: Math.abs(rating - target) };
+    });
+    scored.sort(function (a, b) { return a.score - b.score; });
+    return scored.slice(0, count).map(function (entry) { return entry.bot; });
+  }
+
+  function getTargetRating() {
+    return fetch('/myrating', { method: 'POST' })
+      .then(function (resp) {
+        if (!resp.ok) return null;
+        return resp.json();
+      })
+      .then(function (data) {
+        var rating = data && Number.isFinite(Number(data.rating)) ? Number(data.rating) : null;
+        var target = rating ? Math.round(rating) - 500 : 1300;
+        if (target < 1300) target = 1300;
+        return target;
+      })
+      .catch(function () {
+        return 1300;
+      });
+  }
+
+  function quickStart() {
+    setLoading(true, messages.loadingBots);
+    getTargetRating()
+      .then(function (target) {
+        return fetch('/easy/bots', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            timecontrol: time.value || '5+0',
+            filterBy: 'rating',
+            eloMin: null,
+            eloMax: null
+          })
+        })
+          .then(function (resp) {
+            if (!resp.ok) throw new Error('bots failed');
+            return resp.json();
+          })
+          .then(function (bots) {
+            var closest = selectClosestBots(bots, target, 1);
+            if (!closest || closest.length === 0) throw new Error('no bots');
+            return closest[0].id;
+          });
+      })
+      .then(function (botId) {
+        setLoading(false);
+        startGame(botId, { rated: false, timecontrol: time.value, color: color.value });
+      })
+      .catch(function () {
+        setLoading(false);
+        setStatus(messages.noBots);
+      });
+  }
+
+  function startGame(botId, overrides) {
     var filters = currentFilters();
+    var ratedValue = overrides && typeof overrides.rated === 'boolean' ? (overrides.rated ? '1' : '0') : filters.rated;
+    var timeValue = overrides && overrides.timecontrol ? overrides.timecontrol : filters.timecontrol;
+    var colorValue = overrides && overrides.color ? overrides.color : filters.color;
+
     setStatus(messages.starting);
+
     var botColor = null;
-    if (filters.rated !== '1') {
-      if (filters.color === 'white') botColor = 'black';
-      if (filters.color === 'black') botColor = 'white';
+    if (ratedValue !== '1') {
+      if (colorValue === 'white') botColor = 'black';
+      if (colorValue === 'black') botColor = 'white';
     }
     fetch('/lobby/create', {
       method: 'POST',
@@ -209,8 +279,8 @@ document.addEventListener('DOMContentLoaded', function () {
       body: JSON.stringify({
         botId: botId,
         easy: true,
-        rated: filters.rated === '1',
-        timecontrol: filters.timecontrol,
+        rated: ratedValue === '1',
+        timecontrol: timeValue,
         color: botColor
       })
     })
@@ -255,6 +325,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   var debouncedLoad = debounce(loadBots, 250);
+
+  quickStartBtn.addEventListener('click', quickStart);
 
   rated.addEventListener('change', function () {
     updateColorState();

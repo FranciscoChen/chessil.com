@@ -82,26 +82,16 @@
       <section class="showcase easy-showcase" aria-labelledby="easy-title">
         <div class="showcase-grid">
           <h1 id="easy-title" class="showcase-headings">简单对局</h1>
-          <p id="easy-subtitle" class="showcase-paragraph">选择一个机器人，与引擎开始一局计分或非计分对局。</p>
+          <p id="easy-subtitle" class="showcase-paragraph">快速开始或调整参数与机器人对局。</p>
 
-          <section class="easy-filters easy-card" aria-labelledby="easy-filters-title">
-            <h2 id="easy-filters-title" class="easy-section-title">对局筛选</h2>
-            <div class="filters-primary">
-              <div class="easy-field">
-                <label for="easy-rated">计分</label>
-                <select id="easy-rated" aria-describedby="easy-rating-hint">
-                  <option value="0" selected>非计分</option>
-                  <option value="1">计分</option>
-                </select>
-              </div>
-              <div class="easy-field">
-                <label for="easy-color">颜色</label>
-                <select id="easy-color">
-                  <option value="random" selected>随机</option>
-                  <option value="white">白方</option>
-                  <option value="black">黑方</option>
-                </select>
-              </div>
+          <section class="easy-quick easy-card" aria-labelledby="easy-quick-title">
+            <h2 id="easy-quick-title" class="easy-section-title">快速开始</h2>
+            <p class="text easy-muted">默认非计分，选择接近你 Elo 的机器人。</p>
+            <div class="easy-quick-actions">
+              <button id="easy-quick-start" class="action easy-primary">快速开始</button>
+              <a href="#easy-more" class="action alternative easy-more-link">更多选项</a>
+            </div>
+            <div class="easy-quick-controls" aria-label="快速设置">
               <div class="easy-field">
                 <label for="easy-time">用时</label>
                 <select id="easy-time">
@@ -113,8 +103,36 @@
                   <option value="15+10">15+10</option>
                 </select>
               </div>
+              <div class="easy-field">
+                <label for="easy-color">颜色</label>
+                <select id="easy-color">
+                  <option value="random" selected>随机</option>
+                  <option value="white">白方</option>
+                  <option value="black">黑方</option>
+                </select>
+              </div>
             </div>
-            <div class="filters-secondary">
+          </section>
+
+          <div id="easy-status" class="text" role="status" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="easy-more" class="showcase easy-showcase" aria-labelledby="easy-more-title">
+        <div class="showcase-grid">
+          <h2 id="easy-more-title" class="showcase-headings">更多选项</h2>
+          <p class="showcase-paragraph">调整筛选并选择指定机器人。</p>
+
+          <section class="easy-filters easy-card" aria-labelledby="easy-filters-title">
+            <h3 id="easy-filters-title" class="easy-section-title">筛选</h3>
+            <div class="filters-primary">
+              <div class="easy-field">
+                <label for="easy-rated">计分</label>
+                <select id="easy-rated" aria-describedby="easy-rating-hint">
+                  <option value="0" selected>非计分</option>
+                  <option value="1">计分</option>
+                </select>
+              </div>
               <div class="easy-field">
                 <label for="easy-filter-by">筛选方式</label>
                 <select id="easy-filter-by">
@@ -136,15 +154,13 @@
 
           <section class="easy-results easy-card" aria-labelledby="easy-results-title">
             <div class="easy-results-head">
-              <h2 id="easy-results-title" class="easy-section-title">可用机器人</h2>
+              <h3 id="easy-results-title" class="easy-section-title">可用机器人</h3>
               <p class="easy-results-meta text">选择机器人即可开始。</p>
             </div>
             <div class="results">
               <div id="easy-bot-list" class="results-flex" role="region" aria-label="可用机器人"></div>
             </div>
           </section>
-
-          <div id="easy-status" class="text" role="status" aria-live="polite"></div>
         </div>
       </section>
     </main>
