@@ -84,41 +84,48 @@
       <div class="showcase">
         <div class="showcase-grid">
           <h1 class="showcase-headings">Partida fácil</h1>
-          <p class="showcase-paragraph">Elige un bot y empieza una partida clasificada o amistosa contra el motor.</p>
+          <p class="showcase-paragraph">Empieza al instante o elige un rival a medida.</p>
           <div class="showcase-action">
             <div class="filters-primary">
-              <select id="easy-rated">
-                <option value="0" selected>Amistosa</option>
-                <option value="1">Clasificatoria</option>
-              </select>
-              <select id="easy-color">
-                <option value="random" selected>Aleatorio</option>
-                <option value="white">Blancas</option>
-                <option value="black">Negras</option>
-              </select>
-              <select id="easy-time">
-                <option value="1+0">1+0</option>
-                <option value="3+0">3+0</option>
-                <option value="3+2">3+2</option>
-                <option value="5+0" selected>5+0</option>
-                <option value="10+0">10+0</option>
-                <option value="15+10">15+10</option>
-              </select>
+              <button id="easy-quick-start" class="action">Inicio rápido</button>
+              <button id="easy-choose-difficulty" class="action">Elegir dificultad</button>
             </div>
-            <div class="filters-secondary">
-              <select id="easy-filter-by">
-                <option value="rating" selected>Filtrar por Elo</option>
-                <option value="uci_elo">Filtrar por UCI Elo</option>
-              </select>
-              <input id="easy-elo-min" type="number" placeholder="Elo mín.">
-              <input id="easy-elo-max" type="number" placeholder="Elo máx.">
+          </div>
+          <div class="text">Inicio rápido elige un bot cercano a tu Elo.</div>
+          <div id="easy-status" class="text"></div>
+        </div>
+      </div>
+      <div id="difficulty" class="showcase showcase-secondary">
+        <div class="showcase-grid">
+          <h2 class="showcase-subheading">Elegir dificultad</h2>
+          <p class="showcase-paragraph">Elige nivel, tiempo y color en pasos cortos.</p>
+          <div class="showcase-action">
+            <div id="easy-step-difficulty" class="filters-primary">
+              <button class="action" data-difficulty="easy">Fácil</button>
+              <button class="action" data-difficulty="balanced">Equilibrado</button>
+              <button class="action" data-difficulty="hard">Difícil</button>
+              <button class="action" data-difficulty="expert">Experto</button>
+            </div>
+            <div id="easy-step-time" class="filters-primary none">
+              <button class="action" data-time="1+0">Bullet 1+0</button>
+              <button class="action" data-time="3+0">Blitz 3+0</button>
+              <button class="action" data-time="5+0">Rapid 5+0</button>
+              <button class="action" data-time="15+10">Clásico 15+10</button>
+            </div>
+            <div id="easy-step-color" class="filters-primary none">
+              <button class="action" data-color="random">Aleatorio</button>
+              <button class="action" data-color="white">Blancas</button>
+              <button class="action" data-color="black">Negras</button>
+            </div>
+            <div id="easy-step-rated" class="filters-primary none">
+              <button class="action" data-rated="0">Amistosa</button>
+              <button class="action" data-rated="1">Clasificatoria</button>
             </div>
           </div>
           <div class="text">Las partidas clasificatorias requieren Elo dentro de 500.</div>
           <div class="results">
             <div id="easy-bot-list" class="results-flex"></div>
           </div>
-          <div id="easy-status" class="text"></div>
         </div>
       </div>
     </div>

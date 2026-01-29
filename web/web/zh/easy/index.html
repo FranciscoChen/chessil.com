@@ -83,41 +83,48 @@
       <div class="showcase">
         <div class="showcase-grid">
           <h1 class="showcase-headings">简单对局</h1>
-          <p class="showcase-paragraph">选择机器人，开始排位或非排位对局。</p>
+          <p class="showcase-paragraph">立即开局，或按难度挑选对手。</p>
           <div class="showcase-action">
             <div class="filters-primary">
-              <select id="easy-rated">
-                <option value="0" selected>非排位</option>
-                <option value="1">排位</option>
-              </select>
-              <select id="easy-color">
-                <option value="random" selected>随机</option>
-                <option value="white">白方</option>
-                <option value="black">黑方</option>
-              </select>
-              <select id="easy-time">
-                <option value="1+0">1+0</option>
-                <option value="3+0">3+0</option>
-                <option value="3+2">3+2</option>
-                <option value="5+0" selected>5+0</option>
-                <option value="10+0">10+0</option>
-                <option value="15+10">15+10</option>
-              </select>
+              <button id="easy-quick-start" class="action">快速开始</button>
+              <button id="easy-choose-difficulty" class="action">选择难度</button>
             </div>
-            <div class="filters-secondary">
-              <select id="easy-filter-by">
-                <option value="rating" selected>按 Elo 筛选</option>
-                <option value="uci_elo">按 UCI Elo 筛选</option>
-              </select>
-              <input id="easy-elo-min" type="number" placeholder="最低 Elo">
-              <input id="easy-elo-max" type="number" placeholder="最高 Elo">
+          </div>
+          <div class="text">快速开始会选择接近你 Elo 的机器人。</div>
+          <div id="easy-status" class="text"></div>
+        </div>
+      </div>
+      <div id="difficulty" class="showcase showcase-secondary">
+        <div class="showcase-grid">
+          <h2 class="showcase-subheading">选择难度</h2>
+          <p class="showcase-paragraph">按步骤选择难度、时间和颜色。</p>
+          <div class="showcase-action">
+            <div id="easy-step-difficulty" class="filters-primary">
+              <button class="action" data-difficulty="easy">简单</button>
+              <button class="action" data-difficulty="balanced">平衡</button>
+              <button class="action" data-difficulty="hard">困难</button>
+              <button class="action" data-difficulty="expert">高手</button>
+            </div>
+            <div id="easy-step-time" class="filters-primary none">
+              <button class="action" data-time="1+0">超快 1+0</button>
+              <button class="action" data-time="3+0">快棋 3+0</button>
+              <button class="action" data-time="5+0">快速 5+0</button>
+              <button class="action" data-time="15+10">经典 15+10</button>
+            </div>
+            <div id="easy-step-color" class="filters-primary none">
+              <button class="action" data-color="random">随机</button>
+              <button class="action" data-color="white">白方</button>
+              <button class="action" data-color="black">黑方</button>
+            </div>
+            <div id="easy-step-rated" class="filters-primary none">
+              <button class="action" data-rated="0">非排位</button>
+              <button class="action" data-rated="1">排位</button>
             </div>
           </div>
           <div class="text">排位对局要求 Elo 差距不超过 500。</div>
           <div class="results">
             <div id="easy-bot-list" class="results-flex"></div>
           </div>
-          <div id="easy-status" class="text"></div>
         </div>
       </div>
     </div>
