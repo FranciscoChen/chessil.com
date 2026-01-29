@@ -2,25 +2,34 @@ function easyGameMessages() {
   var lang = document.documentElement.lang || 'en';
   if (lang === 'es') {
     return {
-      starting: 'Iniciando partida...',
-      failed: 'No se pudo iniciar la partida.',
+      loadingBots: 'Buscando bots disponibles...',
+      starting: 'Creando la partida...',
+      redirecting: 'Entrando en la partida...',
+      failed: 'No se pudo iniciar la partida. Intenta nuevamente.',
+      failedBots: 'No se pudieron cargar los bots. Revisa tu conexion y vuelve a intentar.',
       noBots: 'No hay bots disponibles.',
       play: 'Jugar',
-      headers: ['Bot', 'Elo', 'UCI Elo', 'Accion']
+      headers: ['Bot', 'Elo', 'Elo UCI', 'Accion']
     };
   }
   if (lang === 'zh') {
     return {
-      starting: '\u6b63\u5728\u5f00\u59cb\u5bf9\u5c40...',
-      failed: '\u65e0\u6cd5\u5f00\u59cb\u5bf9\u5c40\u3002',
+      loadingBots: '\u6b63\u5728\u83b7\u53d6\u673a\u5668\u4eba...',
+      starting: '\u6b63\u5728\u521b\u5efa\u5bf9\u5c40...',
+      redirecting: '\u6b63\u5728\u8fdb\u5165\u5bf9\u5c40...',
+      failed: '\u65e0\u6cd5\u5f00\u59cb\u5bf9\u5c40\u3002\u8bf7\u91cd\u8bd5\u3002',
+      failedBots: '\u65e0\u6cd5\u83b7\u53d6\u673a\u5668\u4eba\u5217\u8868\u3002\u8bf7\u68c0\u67e5\u7f51\u7edc\u540e\u91cd\u8bd5\u3002',
       noBots: '\u6682\u65e0\u53ef\u7528\u673a\u5668\u4eba\u3002',
       play: '\u5f00\u59cb\u5bf9\u5c40',
       headers: ['\u673a\u5668\u4eba', 'Elo', 'UCI Elo', '\u64cd\u4f5c']
     };
   }
   return {
-    starting: 'Starting game...',
-    failed: 'Could not start the game.',
+    loadingBots: 'Loading available bots...',
+    starting: 'Creating game...',
+    redirecting: 'Joining game...',
+    failed: 'Could not start the game. Please try again.',
+    failedBots: 'Could not load bots. Check your connection and try again.',
     noBots: 'No bots available.',
     play: 'Play',
     headers: ['Bot', 'Elo', 'UCI Elo', 'Action']
@@ -28,30 +37,59 @@ function easyGameMessages() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  var rated = document.getElementById('easy-rated');
+  var color = document.getElementById('easy-color');
+  var time = document.getElementById('easy-time');
+  var filterBy = document.getElementById('easy-filter-by');
+  var eloMin = document.getElementById('easy-elo-min');
+  var eloMax = document.getElementById('easy-elo-max');
   var list = document.getElementById('easy-bot-list');
   var status = document.getElementById('easy-status');
-  var quickStartBtn = document.getElementById('easy-quick-start');
-  var chooseDifficultyBtn = document.getElementById('easy-choose-difficulty');
-  var stepDifficulty = document.getElementById('easy-step-difficulty');
-  var stepTime = document.getElementById('easy-step-time');
-  var stepColor = document.getElementById('easy-step-color');
-  var stepRated = document.getElementById('easy-step-rated');
   var messages = easyGameMessages();
 
-  if (!list || !stepDifficulty || !stepTime || !stepColor || !stepRated) return;
+  if (!rated || !color || !time || !filterBy || !list || !status) return;
 
   var state = {
-    difficulty: null,
-    time: null,
-    color: null,
-    rated: null
+    loading: false
   };
 
   function setStatus(text) {
-    if (status) status.textContent = text || '';
+    status.textContent = text || '';
   }
 
-  function getUserRating() {
+  function setLoading(isLoading, message) {
+    state.loading = !!isLoading;
+    list.classList.toggle('easy-loading', state.loading);
+    list.setAttribute('aria-busy', state.loading ? 'true' : 'false');
+    if (state.loading) {
+      setStatus(message || messages.loadingBots);
+    }
+  }
+
+  function currentFilters() {
+    return {
+      rated: rated.value,
+      color: color.value,
+      timecontrol: time.value,
+      filterBy: filterBy.value,
+      eloMin: eloMin && eloMin.value ? Number(eloMin.value) : null,
+      eloMax: eloMax && eloMax.value ? Number(eloMax.value) : null
+    };
+  }
+
+  function updateColorState() {
+    var isRated = rated.value === '1';
+    color.disabled = isRated;
+    color.setAttribute('aria-disabled', isRated ? 'true' : 'false');
+  }
+
+  function applyUciDefaults() {
+    if (eloMin) eloMin.value = '1300';
+    if (eloMax) eloMax.value = '2500';
+  }
+
+  function loadUserRatingDefault() {
+    if (!eloMin || !eloMax) return Promise.resolve();
     return fetch('/myrating', { method: 'POST' })
       .then(function (resp) {
         if (!resp.ok) return null;
@@ -59,13 +97,29 @@ document.addEventListener('DOMContentLoaded', function () {
       })
       .then(function (data) {
         var rating = data && Number.isFinite(Number(data.rating)) ? Number(data.rating) : null;
-        return rating;
+        var min = rating ? Math.max(1300, Math.round(rating) - 500) : 1300;
+        var max = rating ? Math.round(rating) + 500 : 2500;
+        eloMin.value = String(min);
+        eloMax.value = String(max);
       })
-      .catch(function () { return null; });
+      .catch(function () {
+        applyUciDefaults();
+      });
+  }
+
+  function applyFilterDefaults() {
+    if (!filterBy || !eloMin || !eloMax) return Promise.resolve();
+    if (filterBy.value === 'uci_elo') {
+      applyUciDefaults();
+      return Promise.resolve();
+    }
+    return loadUserRatingDefault();
   }
 
   function renderBots(bots) {
     list.innerHTML = '';
+    setLoading(false);
+
     if (!bots || bots.length === 0) {
       var empty = document.createElement('div');
       empty.className = 'empty text';
@@ -74,123 +128,80 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
 
+    var table = document.createElement('table');
+    var thead = document.createElement('thead');
+    var headerRow = document.createElement('tr');
+    messages.headers.forEach(function (label) {
+      var th = document.createElement('th');
+      th.textContent = label;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
     bots.forEach(function (bot) {
-      var card = document.createElement('div');
-      card.className = 'bot-card';
+      var tr = document.createElement('tr');
+      var nameTd = document.createElement('td');
+      nameTd.textContent = bot.username || 'Bot';
+      tr.appendChild(nameTd);
 
-      var title = document.createElement('div');
-      title.className = 'text';
-      title.textContent = bot.username || 'Bot';
+      var ratingTd = document.createElement('td');
+      ratingTd.textContent = bot.rating != null ? String(bot.rating) : '-';
+      tr.appendChild(ratingTd);
 
-      var meta = document.createElement('div');
-      meta.className = 'text';
-      var ratingText = bot.rating != null ? String(bot.rating) : '-';
-      var uciText = bot.uci_elo != null ? String(bot.uci_elo) : '-';
-      meta.textContent = 'Elo ' + ratingText + ' · UCI ' + uciText;
+      var uciTd = document.createElement('td');
+      uciTd.textContent = bot.uci_elo != null ? String(bot.uci_elo) : '-';
+      tr.appendChild(uciTd);
 
+      var actionTd = document.createElement('td');
       var btn = document.createElement('button');
-      btn.className = 'action';
+      btn.className = 'easy-cta';
       btn.textContent = messages.play;
+      btn.setAttribute('aria-label', messages.play + ' ' + (bot.username || 'bot'));
       btn.onclick = function () { startGame(bot.id); };
+      actionTd.appendChild(btn);
+      tr.appendChild(actionTd);
 
-      card.appendChild(title);
-      card.appendChild(meta);
-      card.appendChild(btn);
-      list.appendChild(card);
+      tbody.appendChild(tr);
     });
+    table.appendChild(tbody);
+    list.appendChild(table);
   }
 
-  function selectClosestBots(bots, target, count) {
-    if (!bots || bots.length === 0) return [];
-    var scored = bots.map(function (bot) {
-      var rating = Number.isFinite(Number(bot.rating)) ? Number(bot.rating) : null;
-      if (rating === null || rating === 0) {
-        rating = Number.isFinite(Number(bot.uci_elo)) ? Number(bot.uci_elo) : 1500;
-      }
-      return { bot: bot, score: Math.abs(rating - target) };
-    });
-    scored.sort(function (a, b) { return a.score - b.score; });
-    return scored.slice(0, count).map(function (entry) { return entry.bot; });
-  }
-
-  function getTargetRating(rating) {
-    var base = rating ? Math.round(rating) : 1300;
-    var offsets = { easy: -500, balanced: -200, hard: 100, expert: 400 };
-    var offset = offsets[state.difficulty] || -500;
-    var target = base + offset;
-    if (target < 1300) target = 1300;
-    return target;
-  }
-
-  function loadBotsForState() {
-    setStatus('');
-    return getUserRating()
-      .then(function (rating) {
-        var target = getTargetRating(rating);
-        return fetch('/easy/bots', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            timecontrol: state.time || '5+0',
-            filterBy: 'rating',
-            eloMin: null,
-            eloMax: null
-          })
-        })
-          .then(function (resp) {
-            if (!resp.ok) throw new Error('bots failed');
-            return resp.json();
-          })
-          .then(function (bots) {
-            renderBots(selectClosestBots(bots, target, 4));
-          });
+  function loadBots() {
+    setLoading(true, messages.loadingBots);
+    var filters = currentFilters();
+    fetch('/easy/bots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        timecontrol: filters.timecontrol,
+        filterBy: filters.filterBy,
+        eloMin: filters.eloMin,
+        eloMax: filters.eloMax
+      })
+    })
+      .then(function (resp) {
+        if (!resp.ok) throw new Error('bots failed');
+        return resp.json();
+      })
+      .then(function (data) {
+        renderBots(data);
       })
       .catch(function () {
-        setStatus(messages.failed);
+        setLoading(false);
+        setStatus(messages.failedBots);
       });
   }
 
-  function quickStart() {
-    setStatus(messages.starting);
-    getUserRating()
-      .then(function (rating) {
-        var target = rating ? Math.round(rating) - 500 : 1300;
-        if (target < 1300) target = 1300;
-        return fetch('/easy/bots', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            timecontrol: '5+0',
-            filterBy: 'rating',
-            eloMin: null,
-            eloMax: null
-          })
-        }).then(function (resp) {
-          if (!resp.ok) throw new Error('bots failed');
-          return resp.json().then(function (bots) {
-            var closest = selectClosestBots(bots, target, 1);
-            if (!closest || closest.length === 0) throw new Error('no bots');
-            return closest[0].id;
-          });
-        });
-      })
-      .then(function (botId) {
-        startGame(botId, { timecontrol: '5+0', rated: false, color: 'random' });
-      })
-      .catch(function () {
-        setStatus(messages.noBots);
-      });
-  }
-
-  function startGame(botId, overrides) {
-    var ratedValue = overrides && typeof overrides.rated === 'boolean' ? (overrides.rated ? '1' : '0') : state.rated;
-    var timeValue = overrides && overrides.timecontrol ? overrides.timecontrol : (state.time || '5+0');
-    var colorValue = overrides && overrides.color ? overrides.color : (state.color || 'random');
+  function startGame(botId) {
+    var filters = currentFilters();
     setStatus(messages.starting);
     var botColor = null;
-    if (ratedValue !== '1') {
-      if (colorValue === 'white') botColor = 'black';
-      if (colorValue === 'black') botColor = 'white';
+    if (filters.rated !== '1') {
+      if (filters.color === 'white') botColor = 'black';
+      if (filters.color === 'black') botColor = 'white';
     }
     fetch('/lobby/create', {
       method: 'POST',
@@ -198,8 +209,8 @@ document.addEventListener('DOMContentLoaded', function () {
       body: JSON.stringify({
         botId: botId,
         easy: true,
-        rated: ratedValue === '1',
-        timecontrol: timeValue,
+        rated: filters.rated === '1',
+        timecontrol: filters.timecontrol,
         color: botColor
       })
     })
@@ -221,6 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
       })
       .then(function (data) {
         if (data && data.gameid) {
+          setStatus(messages.redirecting);
           window.location.href = '/game/' + data.gameid;
         } else {
           throw new Error('missing gameid');
@@ -231,82 +243,33 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   }
 
-  function showStep(el) {
-    if (el) el.classList.remove('none');
+  function debounce(fn, delay) {
+    var timer = null;
+    return function () {
+      var args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        fn.apply(null, args);
+      }, delay);
+    };
   }
 
-  function hideStep(el) {
-    if (el) el.classList.add('none');
-  }
+  var debouncedLoad = debounce(loadBots, 250);
 
-  function resetAfter(step) {
-    if (step === 'difficulty') {
-      state.time = null;
-      state.color = null;
-      state.rated = null;
-      hideStep(stepTime);
-      hideStep(stepColor);
-      hideStep(stepRated);
-      list.innerHTML = '';
-    } else if (step === 'time') {
-      state.color = null;
-      state.rated = null;
-      hideStep(stepColor);
-      hideStep(stepRated);
-      list.innerHTML = '';
-    } else if (step === 'color') {
-      state.rated = null;
-      hideStep(stepRated);
-      list.innerHTML = '';
-    }
-  }
-
-  if (stepDifficulty) {
-    stepDifficulty.querySelectorAll('button[data-difficulty]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        state.difficulty = btn.getAttribute('data-difficulty');
-        resetAfter('difficulty');
-        showStep(stepTime);
-      });
+  rated.addEventListener('change', function () {
+    updateColorState();
+  });
+  filterBy.addEventListener('change', function () {
+    applyFilterDefaults().then(loadBots).catch(function () {
+      setStatus(messages.failedBots);
     });
-  }
+  });
+  time.addEventListener('change', loadBots);
+  if (eloMin) eloMin.addEventListener('input', debouncedLoad);
+  if (eloMax) eloMax.addEventListener('input', debouncedLoad);
 
-  if (stepTime) {
-    stepTime.querySelectorAll('button[data-time]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        state.time = btn.getAttribute('data-time');
-        resetAfter('time');
-        showStep(stepColor);
-      });
-    });
-  }
-
-  if (stepColor) {
-    stepColor.querySelectorAll('button[data-color]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        state.color = btn.getAttribute('data-color');
-        resetAfter('color');
-        showStep(stepRated);
-      });
-    });
-  }
-
-  if (stepRated) {
-    stepRated.querySelectorAll('button[data-rated]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        state.rated = btn.getAttribute('data-rated');
-        loadBotsForState();
-      });
-    });
-  }
-
-  if (quickStartBtn) quickStartBtn.addEventListener('click', quickStart);
-  if (chooseDifficultyBtn) {
-    chooseDifficultyBtn.addEventListener('click', function () {
-      var target = document.getElementById('difficulty');
-      if (target && target.scrollIntoView) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  }
+  updateColorState();
+  applyFilterDefaults().then(loadBots).catch(function () {
+    setStatus(messages.failedBots);
+  });
 });

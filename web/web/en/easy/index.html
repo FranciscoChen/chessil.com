@@ -79,55 +79,76 @@
     </div>
   </header>
   <div class="main-wrap">
-    <div class="main">
-      <div class="showcase">
+    <main class="main" id="main">
+      <section class="showcase easy-showcase" aria-labelledby="easy-title">
         <div class="showcase-grid">
-          <h1 class="showcase-headings">Easy Game</h1>
-          <p class="showcase-paragraph">Start instantly or pick a tailored bot matchup.</p>
-          <div class="showcase-action">
+          <h1 id="easy-title" class="showcase-headings">Easy Game</h1>
+          <p id="easy-subtitle" class="showcase-paragraph">Choose a bot and start a rated or unrated game against the engine.</p>
+
+          <section class="easy-filters easy-card" aria-labelledby="easy-filters-title">
+            <h2 id="easy-filters-title" class="easy-section-title">Game filters</h2>
             <div class="filters-primary">
-              <button id="easy-quick-start" class="action">Quick Start</button>
-              <button id="easy-choose-difficulty" class="action">Choose Difficulty</button>
+              <div class="easy-field">
+                <label for="easy-rated">Rated</label>
+                <select id="easy-rated" aria-describedby="easy-rating-hint">
+                  <option value="0" selected>Unrated</option>
+                  <option value="1">Rated</option>
+                </select>
+              </div>
+              <div class="easy-field">
+                <label for="easy-color">Color</label>
+                <select id="easy-color">
+                  <option value="random" selected>Random</option>
+                  <option value="white">White</option>
+                  <option value="black">Black</option>
+                </select>
+              </div>
+              <div class="easy-field">
+                <label for="easy-time">Time control</label>
+                <select id="easy-time">
+                  <option value="1+0">1+0</option>
+                  <option value="3+0">3+0</option>
+                  <option value="3+2">3+2</option>
+                  <option value="5+0" selected>5+0</option>
+                  <option value="10+0">10+0</option>
+                  <option value="15+10">15+10</option>
+                </select>
+              </div>
             </div>
-          </div>
-          <div class="text">Quick start picks a bot near your Elo.</div>
-          <div id="easy-status" class="text"></div>
+            <div class="filters-secondary">
+              <div class="easy-field">
+                <label for="easy-filter-by">Filter by</label>
+                <select id="easy-filter-by">
+                  <option value="rating" selected>Filter by Elo</option>
+                  <option value="uci_elo">Filter by UCI Elo</option>
+                </select>
+              </div>
+              <div class="easy-field">
+                <label for="easy-elo-min">Min Elo</label>
+                <input id="easy-elo-min" type="number" placeholder="Min Elo">
+              </div>
+              <div class="easy-field">
+                <label for="easy-elo-max">Max Elo</label>
+                <input id="easy-elo-max" type="number" placeholder="Max Elo">
+              </div>
+            </div>
+            <p id="easy-rating-hint" class="text easy-hint">Rated games require Elo within 500.</p>
+          </section>
+
+          <section class="easy-results easy-card" aria-labelledby="easy-results-title">
+            <div class="easy-results-head">
+              <h2 id="easy-results-title" class="easy-section-title">Available bots</h2>
+              <p class="easy-results-meta text">Choose a bot to start immediately.</p>
+            </div>
+            <div class="results">
+              <div id="easy-bot-list" class="results-flex" role="region" aria-label="Available bots"></div>
+            </div>
+          </section>
+
+          <div id="easy-status" class="text" role="status" aria-live="polite"></div>
         </div>
-      </div>
-      <div id="difficulty" class="showcase showcase-secondary">
-        <div class="showcase-grid">
-          <h2 class="showcase-subheading">Choose Difficulty</h2>
-          <p class="showcase-paragraph">Pick a tier, time, and color in short steps.</p>
-          <div class="showcase-action">
-            <div id="easy-step-difficulty" class="filters-primary">
-              <button class="action" data-difficulty="easy">Easy</button>
-              <button class="action" data-difficulty="balanced">Balanced</button>
-              <button class="action" data-difficulty="hard">Hard</button>
-              <button class="action" data-difficulty="expert">Expert</button>
-            </div>
-            <div id="easy-step-time" class="filters-primary none">
-              <button class="action" data-time="1+0">Bullet 1+0</button>
-              <button class="action" data-time="3+0">Blitz 3+0</button>
-              <button class="action" data-time="5+0">Rapid 5+0</button>
-              <button class="action" data-time="15+10">Classical 15+10</button>
-            </div>
-            <div id="easy-step-color" class="filters-primary none">
-              <button class="action" data-color="random">Random</button>
-              <button class="action" data-color="white">White</button>
-              <button class="action" data-color="black">Black</button>
-            </div>
-            <div id="easy-step-rated" class="filters-primary none">
-              <button class="action" data-rated="0">Unrated</button>
-              <button class="action" data-rated="1">Rated</button>
-            </div>
-          </div>
-          <div class="text">Rated games require Elo within 500.</div>
-          <div class="results">
-            <div id="easy-bot-list" class="results-flex"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+      </section>
+    </main>
   </div>
   <footer>
     <div><a href="/en/terms">Terms of service</a><a href="/en/privacy">Privacy policy</a></div>

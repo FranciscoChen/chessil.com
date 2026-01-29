@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PORTS=("${@:-8090 8091}")
+if [[ $# -gt 0 ]]; then
+  PORTS=("$@")
+else
+  PORTS=(8090 8091)
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
