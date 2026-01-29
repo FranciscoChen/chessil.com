@@ -87,7 +87,10 @@ async function login(baseUrl, username, password) {
   });
   const seedCookie = extractSessionCookie(seed.headers);
   if (!seedCookie) {
-    throw new Error('Missing session cookie from initial request');
+    const status = seed.statusCode || 'unknown';
+    const setCookie = seed.headers ? seed.headers['set-cookie'] : null;
+    const location = seed.headers ? seed.headers['location'] : null;
+    throw new Error(`Missing session cookie from initial request (status=${status}, set-cookie=${setCookie || 'none'}, location=${location || 'none'})`);
   }
 
   const form = encodeForm({ username, password });

@@ -22,7 +22,6 @@ const conString = config.shared.postgresUrl
 const domainname = config.game.domainName
 const servername = config.game.serverName
 const myServers = config.game.myServers
-const engineAuthIp = getEngineAuthIp()
 const envPort = parseInt(process.env.PORT || '', 10);
 const port = Number.isFinite(envPort) ? envPort : 8080;
 
@@ -77,19 +76,6 @@ function scheduleTimeout(key, gameid, delayMs) {
   redis.zadd(key, when, gameid, (err) => {
     if (err) console.error(err);
   });
-}
-
-function getEngineAuthIp() {
-  const entries = Object.entries(config.engine.myServers || {});
-  for (var i = 0; i < entries.length; i++) {
-    if (entries[i][1] === 'ws') {
-      return entries[i][0];
-    }
-  }
-  if (entries.length === 0) {
-    throw new Error('Missing config.engine.myServers entries');
-  }
-  throw new Error('Missing ws entry in config.engine.myServers');
 }
 
 function cancelTimeout(key, gameid) {
@@ -228,8 +214,6 @@ const popDueTimeoutsLua = [
   "return items"
 ].join("\n")
 const aborttimer = 14000
-const botPendingPrefix = 'game:bot:pending:'
-const botPendingTtlMs = 30000
 // Give back 2 ms every move by default, because of server processing time
 const timeback = 2
 
@@ -250,101 +234,6 @@ exec('./mg '+fenstr, function(error, stdout, stderr) {
 */
 
 function onSocketError(err) { console.error(err); }
-
-function clearBotPending(gameid) {
-  redis.del(botPendingPrefix + gameid, (err) => {
-    if (err) console.error(err);
-  });
-}
-
-function requestBotMove(gameid) {
-  redis.hmget(gameid, 'bw', 'bb', 'f', 't', 'm', 'l', 'n', 'o', 'z', (err, re) => {
-    if (err) { console.error(err); return; }
-    const botWhiteElo = parseInt(re[0], 10)
-    const botBlackElo = parseInt(re[1], 10)
-    if (re[2] !== '0') return
-    const turn = re[3]
-    let botside = null
-    let botelo = null
-    if (turn === 'w' && Number.isFinite(botWhiteElo)) {
-      botside = 'w'
-      botelo = botWhiteElo
-    } else if (turn === 'b' && Number.isFinite(botBlackElo)) {
-      botside = 'b'
-      botelo = botBlackElo
-    } else {
-      return
-    }
-
-    const moves = re[4] || ''
-    const hm = moves.length ? moves.split(' ').length : 0
-    const uuidhm = gameid + '-' + hm + '-' + botside
-    const pendingKey = botPendingPrefix + gameid
-    redis.set(pendingKey, uuidhm, 'NX', 'PX', botPendingTtlMs, (err2, result) => {
-      if (err2) { console.error(err2); return; }
-      if (result !== 'OK') {
-        return
-      }
-
-      const payload = JSON.stringify({
-        gameid: gameid,
-        uuidhm: uuidhm,
-        moves: moves,
-        wtime: Number(re[5] || 0),
-        btime: Number(re[6] || 0),
-        winc: Number(re[7] || 0),
-        binc: Number(re[8] || 0),
-        elo: botelo,
-        turn: botside
-      })
-      const myURL = new URL('https://' + config.game.engineHost + '/play')
-      const options = {
-        hostname: myURL.hostname,
-        port: 443,
-        path: myURL.pathname,
-        method: 'POST',
-        headers: {
-          'authorization': config.shared.engineAuthToken,
-          'x-real-ip': engineAuthIp,
-          'content-type': 'application/json',
-          'content-length': Buffer.byteLength(payload)
-        }
-      }
-
-      const newreq = https.request(options, (res) => {
-        let response = ''
-        res.on('data', (chunk) => { response += chunk })
-        res.on('end', () => {
-          clearBotPending(gameid)
-          if (res.statusCode !== 200) {
-            return
-          }
-          let result
-          try {
-            result = JSON.parse(response)
-          } catch (e) {
-            return
-          }
-          if (!result || typeof result.bestmove !== 'string') return
-          redis.hmget(gameid, 't', 'm', 'f', (err3, state) => {
-            if (err3) { console.error(err3); return }
-            if (state[2] !== '0') return
-            const currentMoves = state[1] || ''
-            const currentHm = currentMoves.length ? currentMoves.split(' ').length : 0
-            const currentUuid = gameid + '-' + currentHm + '-' + state[0]
-            if (currentUuid !== result.uuidhm) return
-            handleMove(gameid, botside, result.bestmove, { send: function () { }, terminate: function () { } })
-          })
-        })
-      })
-      newreq.on('error', (e) => {
-        clearBotPending(gameid)
-        console.log(e)
-      })
-      newreq.end(payload)
-    })
-  })
-}
 
 function handleMove(gameid, side, clientmove, ws) {
   const otherside = { w: 'b', b: 'w' }[side]
@@ -455,9 +344,6 @@ function handleMove(gameid, side, clientmove, ws) {
                         }
                         // Clock flag timeout
                         scheduleTimeout(timeoutKeyFinish, gameid, 1 * timeleft + 400)
-                        if (finished === 0) {
-                          requestBotMove(gameid)
-                        }
                         if (finished === 0 && newuci.length > 8) { checkgame(gameid) }
                         if (finished > 0) {
                           clearGameTimeouts(gameid)
@@ -574,9 +460,6 @@ function handleMove(gameid, side, clientmove, ws) {
                       scheduleTimeout(timeoutKeyAbort, gameid, aborttimer)
                     } else {
                       scheduleTimeout(timeoutKeyFinish, gameid, 1 * re[{ w: 6, b: 7 }[otherside]] + 400)
-                    }
-                    if (finished === 0) {
-                      requestBotMove(gameid)
                     }
                     if (finished === 0 && newuci.length > 8) { checkgame(gameid) }
                     if (finished > 0) {
@@ -914,8 +797,6 @@ server.on('request', (req, res) => {
       'x': r.bv, // Black volatility
       'y': r.wt // initial time
     };
-    if (typeof r.bw !== 'undefined') gameData.bw = r.bw;
-    if (typeof r.bb !== 'undefined') gameData.bb = r.bb;
     redis.hset(r.gn, gameData, (err, result) => {
         if (err) {
           res.writeHead(500, { "Content-Type": "text/html" });
@@ -926,7 +807,6 @@ server.on('request', (req, res) => {
         scheduleTimeout(timeoutKeyAbort, r.gn, aborttimer)
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end();
-        requestBotMove(r.gn)
       });
   }
 });

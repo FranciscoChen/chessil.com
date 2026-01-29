@@ -1,0 +1,14 @@
+{
+  "name": "chessil-notify",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ioredis": "^5.3.2",
+    "pg": "^8.11.5",
+    "ws": "^8.17.0"
+  }
+}

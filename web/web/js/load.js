@@ -14,6 +14,9 @@ window.onload = () => {
   if (typeof wsconnect === 'function') {
     wsconnect('ws0')
   }
+  if (typeof notifyconnect === 'function') {
+    notifyconnect()
+  }
   if (typeof gamepageload === 'function') {
     gamepageload()
   } else if (typeof roundstart === 'function') {

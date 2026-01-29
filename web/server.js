@@ -13,6 +13,8 @@ const Redis = require("ioredis");
 const redis = new Redis();
 const redisSub = new Redis();
 const lobbyChannel = 'lobby:started';
+const notifyGlobalChannel = 'notify:global';
+const notifyUserChannelPrefix = 'notify:user:';
 
 // Using PostgreSQL as main database for storing information about: users, game seeks, game data, etc.
 const pg = require("pg");
@@ -2017,6 +2019,23 @@ function notifyLobbyWatchers(gameid, publish) {
   lobbyWatchers.delete(gameid);
 }
 
+function publishUserNotification(userid, payload) {
+  if (!userid || userid === '0') return;
+  try {
+    redis.publish(notifyUserChannelPrefix + userid, JSON.stringify(payload));
+  } catch (err) {
+    console.error('notify/user publish error', err);
+  }
+}
+
+function publishGlobalNotification(payload) {
+  try {
+    redis.publish(notifyGlobalChannel, JSON.stringify(payload));
+  } catch (err) {
+    console.error('notify/global publish error', err);
+  }
+}
+
 function parseTimeControl(timecontrol) {
   if (typeof timecontrol !== 'string') {
     return { minutes: 5, increment: 0, raw: '5+0' };
@@ -2135,14 +2154,6 @@ function startGameOnServer(payload, callback) {
     'wv': String(payload.whiteRatings.volatility),
     'bv': String(payload.blackRatings.volatility)
   };
-  if (payload.bot && typeof payload.bot === 'object') {
-    if (Number.isFinite(Number(payload.bot.w))) {
-      headers['bw'] = String(payload.bot.w);
-    }
-    if (Number.isFinite(Number(payload.bot.b))) {
-      headers['bb'] = String(payload.bot.b);
-    }
-  }
   const req = https.request(
     {
       hostname: gameServerHost,
@@ -2485,19 +2496,6 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
             const whiteRatings = colors.whiteIsPlayer1 ? p1Ratings : p2Ratings;
             const blackRatings = colors.whiteIsPlayer1 ? p2Ratings : p1Ratings;
 
-            const botPayload = {};
-            if (p1User.role === 3) {
-              const botElo = Number.isFinite(Number(p1User.uci_elo)) ? Math.round(Number(p1User.uci_elo)) : Math.round(p1User.rating);
-              const botSide = colors.whiteIsPlayer1 ? 'w' : 'b';
-              botPayload[botSide] = botElo;
-            }
-            if (p2User.role === 3) {
-              const botElo = Number.isFinite(Number(p2User.uci_elo)) ? Math.round(Number(p2User.uci_elo)) : Math.round(p2User.rating);
-              const botSide = colors.whiteIsPlayer1 ? 'b' : 'w';
-              botPayload[botSide] = botElo;
-            }
-            const botPayloadFinal = Object.keys(botPayload).length ? botPayload : null;
-
             startGameOnServer(
               {
                 gameid: game.gameid,
@@ -2505,8 +2503,7 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
                 blackPlayerId: blackPlayerId,
                 time: time,
                 whiteRatings: whiteRatings,
-                blackRatings: blackRatings,
-                bot: botPayloadFinal
+                blackRatings: blackRatings
               },
               (err4) => {
                 if (err4) {
@@ -2531,6 +2528,18 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
                     return;
                   }
                   notifyLobbyWatchers(game.gameid, true);
+                  const whiteUserId = colors.whiteIsPlayer1 ? player1UserId : player2UserId;
+                  const blackUserId = colors.whiteIsPlayer1 ? player2UserId : player1UserId;
+                  const notifyPayload = {
+                    type: 'game_start',
+                    gameid: game.gameid,
+                    server: gameServerName,
+                    rated: Boolean(game.rated),
+                    time: time.minutes,
+                    increment: time.increment
+                  };
+                  publishUserNotification(whiteUserId, Object.assign({ color: 'w' }, notifyPayload));
+                  publishUserNotification(blackUserId, Object.assign({ color: 'b' }, notifyPayload));
                   res.writeHead(200, { 'Content-Type': 'application/json' });
                   res.end(JSON.stringify({ success: true, mode: 'join', gameid: game.gameid }));
                   client.end()
@@ -2899,13 +2908,6 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
               return res.end(JSON.stringify({ error: 'Internal error' }));
             }
 
-            const botPayload = {};
-            botPayload[botSide] = botEngineElo;
-            if (userIsBot) {
-              const userSide = botSide === 'w' ? 'b' : 'w';
-              botPayload[userSide] = userEngineElo;
-            }
-
             startGameOnServer(
               {
                 gameid: gameid,
@@ -2913,8 +2915,7 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
                 blackPlayerId: blackPlayerId,
                 time: time,
                 whiteRatings: rated ? whiteRatings : unratedRatings,
-                blackRatings: rated ? blackRatings : unratedRatings,
-                bot: botPayload
+                blackRatings: rated ? blackRatings : unratedRatings
               },
               (err4) => {
                 if (err4) {
@@ -2929,6 +2930,19 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
                   });
                   return;
                 }
+
+                const whiteUserId = colors.whiteIsPlayer1 ? botUserId : userId;
+                const blackUserId = colors.whiteIsPlayer1 ? userId : botUserId;
+                const notifyPayload = {
+                  type: 'game_start',
+                  gameid: gameid,
+                  server: gameServerName,
+                  rated: Boolean(rated),
+                  time: time.minutes,
+                  increment: time.increment
+                };
+                publishUserNotification(whiteUserId, Object.assign({ color: 'w' }, notifyPayload));
+                publishUserNotification(blackUserId, Object.assign({ color: 'b' }, notifyPayload));
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: true, gameid: gameid }));

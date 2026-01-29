@@ -6,6 +6,7 @@
 - engine: Stockfish API + cheat detection.
 - engine-queue: internal analysis queue.
 - engine-worker: Stockfish worker process.
+- notify: WebSocket notifications service (Redis pub/sub + active games snapshot).
 
 ## Logs and counters
 - All services emit JSON lines to stdout.
@@ -16,6 +17,17 @@
 ## Health checks
 - engine-queue: `curl -s http://127.0.0.1:8092/health`
 - web/game/engine: rely on process uptime + nginx proxy checks.
+- notify: rely on process uptime + nginx proxy checks.
+
+## Notify service setup
+- Config: ensure `config.notify.*` is set and that the notify host IP is present in `config.web.websocketServerIps`.
+- Nginx: proxy `/notify` to the notify port with WebSocket upgrade headers (see `notify/README.md`).
+- Systemd:
+  - `sudo cp notify/systemd/chessil-notify@.service /etc/systemd/system/`
+  - `sudo systemctl daemon-reload`
+  - `sudo systemctl enable --now chessil-notify@8090`
+- Operation: publishes notifications to Redis channels `notify:global` and `notify:user:<userid>`.
+- Helper: `notify/scripts/install-notify.sh 8090` installs and enables the unit.
 
 ## Common issues
 - Many `auth_rate_limit` logs: raise nginx/app limits or investigate abusive IPs.

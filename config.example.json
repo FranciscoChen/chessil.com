@@ -32,5 +32,12 @@
     "port": 8080,
     "myServers": { "51.68.190.27": "ws" },
     "gameHost": "ws0.chessil.com"
+  },
+  "notify": {
+    "domainName": "https://chessil.com",
+    "port": 8090,
+    "wsPath": "/notify",
+    "sendActiveGamesOnConnect": true,
+    "activeGamesLimit": 10
   }
 }
