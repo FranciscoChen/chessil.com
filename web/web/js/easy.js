@@ -67,7 +67,11 @@ document.addEventListener('DOMContentLoaded', function () {
     list.classList.toggle('easy-loading', state.loading);
     list.setAttribute('aria-busy', state.loading ? 'true' : 'false');
     if (state.loading) {
-      setStatus(message || messages.loadingBots);
+      list.innerHTML = '';
+      var loading = document.createElement('div');
+      loading.className = 'empty text';
+      loading.textContent = message || messages.loadingBots;
+      list.appendChild(loading);
     }
   }
 
