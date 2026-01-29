@@ -141,10 +141,22 @@
   box-shadow: 0 0 0 var(--easy-space-1) rgba(2, 31, 78, 0.12);
 }
 
+.easy-page select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .easy-page .easy-hint {
   text-align: center;
   font-size: 14px;
   color: var(--grey);
+}
+
+.easy-page .easy-note {
+  text-align: center;
+  font-size: 14px;
+  color: var(--attention);
+  min-height: 1.2em;
 }
 
 .easy-page .easy-muted {

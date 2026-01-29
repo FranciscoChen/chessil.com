@@ -8,6 +8,7 @@ function easyGameMessages() {
       failed: 'No se pudo iniciar la partida. Intenta nuevamente.',
       failedBots: 'No se pudieron cargar los bots. Revisa tu conexion y vuelve a intentar.',
       noBots: 'No hay bots disponibles.',
+      ratedLocked: 'Inicia sesion para jugar partidas clasificatorias.',
       play: 'Jugar',
       headers: ['Bot', 'Elo', 'Elo UCI', 'Accion']
     };
@@ -20,6 +21,7 @@ function easyGameMessages() {
       failed: '\u65e0\u6cd5\u5f00\u59cb\u5bf9\u5c40\u3002\u8bf7\u91cd\u8bd5\u3002',
       failedBots: '\u65e0\u6cd5\u83b7\u53d6\u673a\u5668\u4eba\u5217\u8868\u3002\u8bf7\u68c0\u67e5\u7f51\u7edc\u540e\u91cd\u8bd5\u3002',
       noBots: '\u6682\u65e0\u53ef\u7528\u673a\u5668\u4eba\u3002',
+      ratedLocked: '\u767b\u5f55\u540e\u624d\u80fd\u8fdb\u884c\u8ba1\u5206\u5bf9\u5c40\u3002',
       play: '\u5f00\u59cb\u5bf9\u5c40',
       headers: ['\u673a\u5668\u4eba', 'Elo', 'UCI Elo', '\u64cd\u4f5c']
     };
@@ -31,6 +33,7 @@ function easyGameMessages() {
     failed: 'Could not start the game. Please try again.',
     failedBots: 'Could not load bots. Check your connection and try again.',
     noBots: 'No bots available.',
+    ratedLocked: 'Log in to play rated games.',
     play: 'Play',
     headers: ['Bot', 'Elo', 'UCI Elo', 'Action']
   };
@@ -46,6 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var list = document.getElementById('easy-bot-list');
   var status = document.getElementById('easy-status');
   var quickStartBtn = document.getElementById('easy-quick-start');
+  var ratedNote = document.getElementById('easy-rated-note');
   var messages = easyGameMessages();
 
   if (!rated || !color || !time || !filterBy || !list || !status || !quickStartBtn) return;
@@ -82,6 +86,33 @@ document.addEventListener('DOMContentLoaded', function () {
     var isRated = rated.value === '1';
     color.disabled = isRated;
     color.setAttribute('aria-disabled', isRated ? 'true' : 'false');
+  }
+
+  function setRatedAvailability(isLoggedIn) {
+    if (!isLoggedIn) {
+      rated.value = '0';
+      rated.disabled = true;
+      rated.setAttribute('aria-disabled', 'true');
+      if (ratedNote) ratedNote.textContent = messages.ratedLocked;
+    } else {
+      rated.disabled = false;
+      rated.setAttribute('aria-disabled', 'false');
+      if (ratedNote) ratedNote.textContent = '';
+    }
+  }
+
+  function checkLoggedIn() {
+    return fetch('/loggedin', { method: 'POST' })
+      .then(function (resp) {
+        if (!resp.ok) return false;
+        return resp.text();
+      })
+      .then(function (text) {
+        return String(text).trim() === '1';
+      })
+      .catch(function () {
+        return false;
+      });
   }
 
   function applyUciDefaults() {
@@ -341,7 +372,11 @@ document.addEventListener('DOMContentLoaded', function () {
   if (eloMax) eloMax.addEventListener('input', debouncedLoad);
 
   updateColorState();
-  applyFilterDefaults().then(loadBots).catch(function () {
+  checkLoggedIn().then(function (isLoggedIn) {
+    setRatedAvailability(isLoggedIn);
+    updateColorState();
+    return applyFilterDefaults().then(loadBots);
+  }).catch(function () {
     setStatus(messages.failedBots);
   });
 });
