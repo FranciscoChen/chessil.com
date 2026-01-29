@@ -4,7 +4,7 @@ set -euo pipefail
 PORT="${1:-8090}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SERVICE_FILE="${ROOT_DIR}/notify/systemd/chessil-notify@.service"
 NGINX_SNIPPET="${ROOT_DIR}/notify/nginx/notify-location.conf"
 
