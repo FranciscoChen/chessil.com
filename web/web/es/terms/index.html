@@ -11,8 +11,11 @@
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/colors.css">
+  <link rel="stylesheet" href="/css/buttons.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/footer.css">
+  <link rel="stylesheet" href="/css/showcase.css">
+  <link rel="stylesheet" href="/css/legal.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
@@ -63,47 +66,235 @@
     </div>
   </header>
   <div class="main-wrap">
-    <main class="page-menu">
-      <aside class="subnav">
-        <div class="subnav__inner page-menu__menu"><a class="active" href="/es/terms">Términos del servicio</a><a
-            href="/es/privacy">Política de privacidad</a></div>
-      </aside>
-      <div class="page-menu__content page box box-pad force-ltr">
-        <h1 class="box__top">Términos del servicio</h1>
-        <div class="body">
-          <p>ChessiL.com es un sitio web de ajedrez.</p>
-          <p>Estos términos del servicio son un acuerdo legalmente vinculante.</p>
-          <p>ChessiL.com ofrece un sitio web y servicio de ajedrez en línea.</p>
-          <p>Al acceder o usar el sitio web o los servicios, aceptas estos términos:</p>
-          <h2>Descargo de responsabilidad</h2>
-          <p>El sitio web y los servicios se proporcionan "tal cual"; ChessiL.com no será responsable de ningún daño o
-            pérdida de cualquier tipo derivados del uso del sitio web o los servicios.</p>
-          <h2>Uso del sitio web o los servicios</h2>
-          <p>No accederás sin autorización a ningún computador, sistema, servidor, red, datos, cuenta o base de datos
-            conectados al sitio web o los servicios.</p>
-          <p>No atacarás el sitio web o los servicios con ataques volumétricos o de denegación de servicio.</p>
-          <p>No explotarás errores o vulnerabilidades del sitio web o los servicios.</p>
-          <h2>Crear una cuenta</h2>
-          <p>Puedes crear una cuenta para jugar partidas clasificadas.</p>
-          <p>No crearás más de 4 cuentas.</p>
-          <p>Eres responsable de toda la actividad que ocurra en tu cuenta.</p>
-          <p>No compartirás tu cuenta ni tu contraseña con nadie.</p>
-          <p>No suplantarás a nadie.</p>
-          <p>Elegirás un nombre de usuario adecuado para niños y que no ofenda ni dañe a nadie.</p>
-          <p>Las cuentas deben usarse; por lo tanto, ChessiL.com eliminará tu cuenta después de 1 año de inactividad.</p>
-          <h2>Juego limpio</h2>
-          <p>No recibirás ayuda mientras juegas.</p>
-          <p>Jugarás honestamente y tratarás de ganar.</p>
-          <p>No arreglarás resultados con nadie.</p>
-          <p>No jugarás contra ti mismo para subir tu puntuación.</p>
-          <p>No abandonarás tus partidas obligando a tus oponentes a esperarte.</p>
-          <p>No abortarás demasiadas partidas.</p>
-          <p>ChessiL.com se reserva el derecho de eliminar tu cuenta o tomar cualquier otra acción por cualquier razón
-            sin previo aviso.</p>
+    <main class="main legal-main">
+      <section class="showcase legal-showcase legal-hero-showcase">
+        <div class="showcase-grid legal-grid">
+          <h1 class="legal-title">Términos del servicio</h1>
+          <p class="legal-lead">Estos términos constituyen un acuerdo legalmente vinculante entre tú y ChessiL.com para
+            acceder a nuestros servicios de ajedrez, incluidos el juego en tiempo real, el análisis y las herramientas
+            de aprendizaje.</p>
+          <div class="legal-actions">
+            <a href="/es/terms"><button class="action">Términos del servicio</button></a>
+            <a href="/es/privacy"><button class="action alternative">Política de privacidad</button></a>
+          </div>
+          <div class="legal-meta">
+            <span>Fecha de vigencia: 29 de enero de 2026</span>
+            <span>Aplica a: chessil.com y servicios relacionados</span>
+          </div>
+          <nav class="legal-toc" aria-label="En esta página">
+            <a href="#acceptance">Aceptación</a>
+            <a href="#eligibility">Elegibilidad</a>
+            <a href="#accounts">Cuentas</a>
+            <a href="#fair-play">Juego limpio</a>
+            <a href="#acceptable-use">Uso aceptable</a>
+            <a href="#compliance">Cumplimiento</a>
+            <a href="#user-content">Contenido de usuario</a>
+            <a href="#community">Comunidad</a>
+            <a href="#availability">Disponibilidad</a>
+            <a href="#intellectual-property">Propiedad intelectual</a>
+            <a href="#termination">Terminación</a>
+            <a href="#indemnification">Indemnización</a>
+            <a href="#disclaimers">Exenciones</a>
+            <a href="#governing-law">Ley aplicable</a>
+            <a href="#changes">Cambios</a>
+          </nav>
         </div>
-      </div>
+      </section>
+
+      <section id="acceptance" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Aceptación de los términos</h2>
+            <p>Al acceder o usar ChessiL.com, aceptas estos Términos del Servicio y nuestra Política de Privacidad. Si no
+              estás de acuerdo, no uses el sitio web ni los servicios.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="eligibility" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Elegibilidad y acceso</h2>
+            <p>Debes poder celebrar un contrato legalmente vinculante en tu jurisdicción. Si eres menor de la edad que
+              requiere consentimiento parental, solo puedes usar ChessiL.com con permiso y supervisión.</p>
+            <p>ChessiL.com está destinado a permanecer gratuito mientras exista, pero podemos introducir funciones
+              opcionales de pago en el futuro con aviso claro.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="accounts" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Cuentas y seguridad</h2>
+            <ul>
+              <li>Puedes crear una cuenta para jugar partidas clasificadas y mantener un historial.</li>
+              <li>No crearás más de cuatro cuentas.</li>
+              <li>Eres responsable de la actividad de tu cuenta y de mantener tus credenciales en secreto.</li>
+              <li>No suplantarás a otros ni elegirás nombres ofensivos, engañosos o inseguros para menores.</li>
+              <li>Las cuentas pueden eliminarse después de un año de inactividad.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="fair-play" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Juego limpio e integridad competitiva</h2>
+            <ul>
+              <li>Sin ayuda externa durante las partidas, incluidos motores o herramientas de análisis de terceros.</li>
+              <li>No manipular calificaciones, arreglar partidas ni coordinar resultados.</li>
+              <li>No usar múltiples cuentas para obtener ventaja o evadir restricciones.</li>
+              <li>No abandonar partidas en exceso ni abusar de la anulación o rendición.</li>
+            </ul>
+            <p>Usamos métodos automatizados y manuales, incluido el análisis con motores, para detectar trampas. Las
+              infracciones pueden resultar en restricciones, ajustes de rating o cierre de cuenta.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="acceptable-use" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Uso aceptable</h2>
+            <ul>
+              <li>No acceder a ningún sistema, servidor, cuenta o dato sin autorización.</li>
+              <li>No sondear, escanear ni explotar vulnerabilidades ni intentar evadir la seguridad.</li>
+              <li>No usar ataques de denegación de servicio, abuso de automatización o manipulación de tráfico.</li>
+              <li>No interferir con la experiencia de otros usuarios.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="compliance" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Cumplimiento legal</h2>
+            <p>Aceptas usar ChessiL.com conforme a todas las leyes y regulaciones aplicables. Eres responsable de
+              asegurar que tu acceso y uso sean legales en tu ubicación.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="user-content" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Contenido de usuario y datos de partidas</h2>
+            <p>Las partidas, movimientos, chat y datos del perfil se consideran contenido de usuario. Concedes a
+              ChessiL.com una licencia no exclusiva, mundial y libre de regalías para alojar, almacenar, procesar y
+              mostrar este contenido con el fin de operar y mejorar los servicios.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="community" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Conducta de la comunidad</h2>
+            <p>El contenido que envíes debe ser legal y respetuoso. Podemos eliminar contenido abusivo, engañoso o que
+              viole estos términos.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="availability" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Disponibilidad del servicio y cambios</h2>
+            <p>Buscamos un acceso confiable pero no garantizamos un servicio ininterrumpido. Podemos modificar,
+              suspender o descontinuar cualquier parte del servicio en cualquier momento. Cuando sea posible,
+              proporcionaremos aviso de cambios significativos.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="intellectual-property" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Propiedad intelectual</h2>
+            <p>El sitio web, los logotipos, las marcas y el software son propiedad de ChessiL.com o están licenciados a
+              este. No puedes copiar, modificar, distribuir ni realizar ingeniería inversa de ninguna parte del
+              servicio salvo lo permitido por la ley.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="termination" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Terminación y aplicación</h2>
+            <p>ChessiL.com puede suspender o terminar el acceso en cualquier momento por cualquier motivo, incluido el
+              incumplimiento de estos términos, obligaciones legales o seguridad de la plataforma. También podemos
+              eliminar o restringir contenido para proteger a los usuarios y la integridad del servicio.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="indemnification" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Indemnización</h2>
+            <p>Aceptas indemnizar y mantener indemne a ChessiL.com frente a reclamaciones derivadas de tu uso de los
+              servicios, tu contenido o tu violación de estos términos, en la medida permitida por la ley.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="disclaimers" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Exenciones de responsabilidad y limitación</h2>
+            <p>Los servicios se proporcionan "tal cual" y "según disponibilidad". En la máxima medida permitida por la
+              ley, ChessiL.com no ofrece garantías y no será responsable por daños indirectos, incidentales o
+              consecuentes derivados del uso de los servicios.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="governing-law" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Ley aplicable</h2>
+            <p>Estos términos se rigen por las leyes aplicables en el lugar donde opera ChessiL.com, sin considerar
+              principios de conflicto de leyes.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="changes" class="showcase legal-showcase legal-last-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>Cambios a estos términos</h2>
+            <p>Podemos actualizar estos términos de vez en cuando. La versión actualizada se publicará en esta página
+              con una nueva fecha de vigencia. El uso continuado después de los cambios implica tu aceptación.</p>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="footer-logo" href="/es">Chess<span>iL</span></a>
+        <p>Juega, aprende y analiza ajedrez en tiempo real.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-group">
+          <h4>Sitio</h4>
+          <a href="/es/">Inicio</a>
+          <a href="/es/easy">Partida fácil</a>
+          <a href="/es/lobby">Lobby</a>
+        </div>
+        <div class="footer-group">
+          <h4>Legal</h4>
+          <a href="/es/terms">Términos</a>
+          <a href="/es/privacy">Privacidad</a>
+        </div>
+      </div>
+    </div>
+  </footer>
 </body>
 
 </html>

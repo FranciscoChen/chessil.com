@@ -11,8 +11,11 @@
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/colors.css">
+  <link rel="stylesheet" href="/css/buttons.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/footer.css">
+  <link rel="stylesheet" href="/css/showcase.css">
+  <link rel="stylesheet" href="/css/legal.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
@@ -64,52 +67,181 @@
     </div>
   </header>
   <div class="main-wrap">
-    <main class="page-menu">
-      <aside class="subnav">
-        <div class="subnav__inner page-menu__menu"><a href="/zh/terms">服务条款</a><a class="active"
-            href="/zh/privacy">隐私政策</a></div>
-      </aside>
-      <div class="page-menu__content page box box-pad force-ltr">
-        <h1 class="box__top">隐私政策</h1>
-        <div class="body">
-          <p>ChessiL.com 是一个国际象棋网站。</p>
-          <p>ChessiL.com 仅收集和使用提供服务所需的数据。</p>
-          <p>你可以创建账号以进行排位对局并保存对局历史。</p>
-          <p>账号及相关数据将在 1 年不活跃后删除。</p>
-          <p>你的数据不会与第三方共享。</p>
-          <h2>IP 地址</h2>
-          <p>建立互联网连接所必需。</p>
-          <p>用于防范网络攻击和欺诈。</p>
-          <p>1 年后删除。</p>
-          <h2>会话 Cookie</h2>
-          <p>由 ChessiL.com 提供，请妥善保管。</p>
-          <p>用于身份验证并保持登录状态。</p>
-          <p>用于以你的身份进行对局和走棋。</p>
-          <p>用于识别未注册用户。</p>
-          <p>不活跃 1 周或 1 年后删除。</p>
-          <h2>HTTP 请求</h2>
-          <p>由你发送给 ChessiL.com。</p>
-          <p>用于浏览网站。</p>
-          <p>用于防范网络攻击和欺诈。</p>
-          <p>1 年后删除。</p>
-          <h2>用户名</h2>
-          <p>由你主动提供，用于创建账号。</p>
-          <p>用于向 ChessiL.com 和其他用户标识你。</p>
-          <p>随账号删除而删除。</p>
-          <h2>密码</h2>
-          <p>由你主动提供，用于创建账号。</p>
-          <p>使用 argon2id 哈希，绝不会以明文存储。</p>
-          <p>用于登录账号。</p>
-          <p>随账号删除而删除。</p>
-          <h2>对局与走棋</h2>
-          <p>在对局时由你主动提供。</p>
-          <p>用于展示历史对局并防止作弊。</p>
-          <p>随账号删除而匿名化。</p>
-          <p>双方均为匿名时删除。</p>
+    <main class="main legal-main">
+      <section class="showcase legal-showcase legal-hero-showcase">
+        <div class="showcase-grid legal-grid">
+          <h1 class="legal-title">隐私政策</h1>
+          <p class="legal-lead">本政策说明 ChessiL.com 在你使用我们的国际象棋服务时如何收集、使用并保护个人数据。</p>
+          <div class="legal-actions">
+            <a href="/zh/terms"><button class="action">服务条款</button></a>
+            <a href="/zh/privacy"><button class="action alternative">隐私政策</button></a>
+          </div>
+          <div class="legal-meta">
+            <span>生效日期：2026年1月29日</span>
+            <span>适用范围：chessil.com 及相关服务</span>
+          </div>
+          <nav class="legal-toc" aria-label="页面目录">
+            <a href="#summary">概览</a>
+            <a href="#info-collect">收集的信息</a>
+            <a href="#use-info">信息用途</a>
+            <a href="#legal-basis">法律依据</a>
+            <a href="#retention">数据保留</a>
+            <a href="#sharing">共享</a>
+            <a href="#security">安全</a>
+            <a href="#rights">你的权利</a>
+            <a href="#children">未成年人</a>
+            <a href="#changes">变更</a>
+          </nav>
         </div>
-      </div>
+      </section>
+
+      <section id="summary" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>概览</h2>
+            <div class="legal-cards">
+              <div class="legal-card">
+                <h3>我们收集的数据</h3>
+                <p>账户信息、对局数据以及提供服务所需的基本技术数据。</p>
+              </div>
+              <div class="legal-card">
+                <h3>如何使用</h3>
+                <p>用于运行对局、保护账户安全、检测作弊并提升可靠性。</p>
+              </div>
+              <div class="legal-card">
+                <h3>你的控制</h3>
+                <p>你可以访问或删除账户数据，并通过站点请求帮助。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="info-collect" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>收集的信息</h2>
+            <ul>
+              <li>账户数据：用户名和密码（使用 argon2id 哈希存储）。</li>
+              <li>对局数据：对局、走子和分析结果。</li>
+              <li>技术数据：IP 地址、会话标识符和 HTTP 请求元数据。</li>
+              <li>认证与会话数据，用于保持登录状态。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="use-info" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>信息用途</h2>
+            <ul>
+              <li>提供实时对局、分析和学习工具。</li>
+              <li>验证用户身份并保护账户安全。</li>
+              <li>检测滥用、作弊和欺诈。</li>
+              <li>维护系统可靠性与性能。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="legal-basis" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>处理的法律依据（GDPR）</h2>
+            <ul>
+              <li>合同：为你提供所请求的服务。</li>
+              <li>合法利益：保障平台安全并防止滥用。</li>
+              <li>同意：在法律要求时，例如可选 cookies。</li>
+              <li>法律义务：如需配合法律要求。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="retention" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>数据保留</h2>
+            <p>账户及相关数据可能在一年不活跃后删除。IP 地址和请求日志保留最长一年以防止滥用并维护安全。会话
+              Cookie 在一周不活跃或一年后过期，以先到者为准。账户删除后对局数据将匿名化，若双方均匿名则会被删除。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="sharing" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>共享与传输</h2>
+            <p>我们不会出售你的数据。我们可能与帮助托管、安全或运营平台的服务提供商共享数据，并受保密义务约束。
+              如涉及跨境处理，我们会采取适当的保护措施。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="security" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>安全</h2>
+            <p>我们使用行业标准安全实践，包括密码哈希、安全会话处理和滥用监测。任何在线系统都无法做到 100% 安全，
+              但我们持续努力保护你的数据。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="rights" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>你的权利</h2>
+            <ul>
+              <li>访问、更正或删除你的账户数据。</li>
+              <li>在法律适用范围内反对或限制某些处理。</li>
+              <li>请求以可移植格式获取你的数据副本。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="children" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>未成年人</h2>
+            <p>ChessiL.com 面向未成年人也应安全使用。如你未达到需要家长同意的年龄，必须取得父母或监护人的许可。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="changes" class="showcase legal-showcase legal-last-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>政策变更</h2>
+            <p>我们可能不时更新本政策，并在本页面发布新版本及更新后的生效日期。</p>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="footer-logo" href="/zh">Chess<span>iL</span></a>
+        <p>实时对弈、学习与分析国际象棋。</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-group">
+          <h4>站点</h4>
+          <a href="/zh/">首页</a>
+          <a href="/zh/easy">简单对局</a>
+          <a href="/zh/lobby">大厅</a>
+        </div>
+        <div class="footer-group">
+          <h4>法律</h4>
+          <a href="/zh/terms">条款</a>
+          <a href="/zh/privacy">隐私</a>
+        </div>
+      </div>
+    </div>
+  </footer>
 </body>
 
 </html>

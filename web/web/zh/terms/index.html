@@ -11,8 +11,11 @@
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/colors.css">
+  <link rel="stylesheet" href="/css/buttons.css">
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/footer.css">
+  <link rel="stylesheet" href="/css/showcase.css">
+  <link rel="stylesheet" href="/css/legal.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
@@ -64,44 +67,221 @@
     </div>
   </header>
   <div class="main-wrap">
-    <main class="page-menu">
-      <aside class="subnav">
-        <div class="subnav__inner page-menu__menu"><a class="active" href="/zh/terms">服务条款</a><a
-            href="/zh/privacy">隐私政策</a></div>
-      </aside>
-      <div class="page-menu__content page box box-pad force-ltr">
-        <h1 class="box__top">服务条款</h1>
-        <div class="body">
-          <p>ChessiL.com 是一个国际象棋网站。</p>
-          <p>这些服务条款具有法律约束力。</p>
-          <p>ChessiL.com 向你提供在线国际象棋网站与服务。</p>
-          <p>访问或使用本网站或服务即表示你同意以下条款：</p>
-          <h2>免责声明</h2>
-          <p>网站与服务按“原样”提供，ChessiL.com 对因使用网站或服务造成的任何损失不承担责任。</p>
-          <h2>使用网站或服务</h2>
-          <p>未经授权不得访问与网站或服务相关的任何计算机、系统、服务器、网络、数据、账号或数据库。</p>
-          <p>不得对网站或服务实施流量或拒绝服务攻击。</p>
-          <p>不得利用网站或服务的漏洞或缺陷。</p>
-          <h2>创建账号</h2>
-          <p>你可以创建账号以进行排位对局。</p>
-          <p>不得创建超过 4 个账号。</p>
-          <p>你对账号内发生的一切活动负责。</p>
-          <p>不得与他人共享账号或密码。</p>
-          <p>不得冒充他人。</p>
-          <p>用户名应适合儿童且不得冒犯或伤害他人。</p>
-          <p>账号应保持使用，若 1 年不活跃，ChessiL.com 将删除该账号。</p>
-          <h2>公平对局</h2>
-          <p>对局时不得接受任何帮助。</p>
-          <p>应诚实对局并尽力取胜。</p>
-          <p>不得与他人安排对局结果。</p>
-          <p>不得与自己对局以提升评分。</p>
-          <p>不得离开对局让对手等待。</p>
-          <p>不得频繁中止对局。</p>
-          <p>ChessiL.com 保留随时删除账号或采取其他措施的权利，恕不另行通知。</p>
+    <main class="main legal-main">
+      <section class="showcase legal-showcase legal-hero-showcase">
+        <div class="showcase-grid legal-grid">
+          <h1 class="legal-title">服务条款</h1>
+          <p class="legal-lead">这些条款构成你与 ChessiL.com 之间具有法律约束力的协议，适用于我们的国际象棋服务，
+            包括实时对局、分析和学习工具。</p>
+          <div class="legal-actions">
+            <a href="/zh/terms"><button class="action">服务条款</button></a>
+            <a href="/zh/privacy"><button class="action alternative">隐私政策</button></a>
+          </div>
+          <div class="legal-meta">
+            <span>生效日期：2026年1月29日</span>
+            <span>适用范围：chessil.com 及相关服务</span>
+          </div>
+          <nav class="legal-toc" aria-label="页面目录">
+            <a href="#acceptance">接受条款</a>
+            <a href="#eligibility">资格与访问</a>
+            <a href="#accounts">账户与安全</a>
+            <a href="#fair-play">公平竞赛</a>
+            <a href="#acceptable-use">可接受使用</a>
+            <a href="#compliance">合规</a>
+            <a href="#user-content">用户内容</a>
+            <a href="#community">社区规范</a>
+            <a href="#availability">服务可用性</a>
+            <a href="#intellectual-property">知识产权</a>
+            <a href="#termination">终止</a>
+            <a href="#indemnification">赔偿</a>
+            <a href="#disclaimers">免责声明</a>
+            <a href="#governing-law">适用法律</a>
+            <a href="#changes">变更</a>
+          </nav>
         </div>
-      </div>
+      </section>
+
+      <section id="acceptance" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>接受条款</h2>
+            <p>访问或使用 ChessiL.com 即表示你同意本服务条款及我们的隐私政策。若不同意，请勿使用网站或服务。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="eligibility" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>资格与访问</h2>
+            <p>你必须在所在司法辖区具备订立法律合同的能力。如需家长同意，你只能在家长或监护人的许可与监督下使用
+              ChessiL.com。</p>
+            <p>ChessiL.com 旨在长期免费提供访问，但未来可能推出可选付费功能，并会提前明确告知。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="accounts" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>账户与安全</h2>
+            <ul>
+              <li>你可以创建账户以进行排位对局并保留对局记录。</li>
+              <li>不得创建超过四个账户。</li>
+              <li>你对账户内的所有活动负责，并应妥善保管登录凭据。</li>
+              <li>不得冒充他人或使用对未成年人不适宜、冒犯或欺骗性的用户名。</li>
+              <li>账户可能在连续一年不活跃后被删除。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="fair-play" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>公平竞赛与竞技诚信</h2>
+            <ul>
+              <li>对局中不得借助引擎或第三方分析工具。</li>
+              <li>不得操控评分、安排对局结果或协调比赛。</li>
+              <li>不得使用多账户获取优势或规避限制。</li>
+              <li>不得频繁弃局或滥用中止/投降功能。</li>
+            </ul>
+            <p>我们使用自动化与人工方法（包括引擎分析）检测作弊。违规可能导致限制、评分调整或账户关闭。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="acceptable-use" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>可接受使用</h2>
+            <ul>
+              <li>不得未经授权访问任何系统、服务器、账户或数据。</li>
+              <li>不得扫描、探测或利用漏洞，亦不得尝试绕过安全措施。</li>
+              <li>不得实施拒绝服务攻击、自动化滥用或流量操控。</li>
+              <li>不得干扰其他用户的体验。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="compliance" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>合规</h2>
+            <p>你同意遵守所有适用法律与法规，并确保在你所在地的访问与使用是合法的。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="user-content" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>用户内容与对局数据</h2>
+            <p>对局、走子、聊天内容以及账户资料均视为用户内容。你授予 ChessiL.com 非独占、全球范围、免版税的许可，
+              仅用于托管、存储、处理与展示这些内容以运营和改进服务。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="community" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>社区规范</h2>
+            <p>你提交的内容必须合法且尊重他人。我们可移除辱骂、误导或违反条款的内容。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="availability" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>服务可用性与变更</h2>
+            <p>我们致力于提供可靠访问，但不保证服务持续不中断。我们可随时修改、暂停或停止服务的任何部分；如有重大
+              变更，我们会尽可能提前通知。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="intellectual-property" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>知识产权</h2>
+            <p>网站、标识、商标和软件归 ChessiL.com 所有或已获授权。除法律允许外，不得复制、修改、分发或反向工程
+              服务的任何部分。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="termination" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>终止与执行</h2>
+            <p>ChessiL.com 可因任何原因随时暂停或终止访问，包括违反条款、法律义务或平台安全。我们也可移除或限制
+              内容以保护用户与服务完整性。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="indemnification" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>赔偿</h2>
+            <p>在法律允许范围内，你同意就因你使用服务、提交内容或违反条款而产生的索赔向 ChessiL.com 进行赔偿。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="disclaimers" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>免责声明与责任限制</h2>
+            <p>服务按“现状”和“可用”提供。法律允许的最大范围内，ChessiL.com 不提供任何保证，且不对因使用服务造成的
+              间接、附带或后果性损失承担责任。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="governing-law" class="showcase legal-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>适用法律</h2>
+            <p>本条款受 ChessiL.com 运营所在地适用法律管辖，不适用法律冲突原则。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="changes" class="showcase legal-showcase legal-last-showcase">
+        <div class="showcase-grid legal-grid">
+          <div class="legal-panel">
+            <h2>条款变更</h2>
+            <p>我们可能不时更新条款。更新后的版本将发布在本页面并标注新的生效日期。继续使用即表示你接受更新。</p>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="footer-logo" href="/zh">Chess<span>iL</span></a>
+        <p>实时对弈、学习与分析国际象棋。</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-group">
+          <h4>站点</h4>
+          <a href="/zh/">首页</a>
+          <a href="/zh/easy">简单对局</a>
+          <a href="/zh/lobby">大厅</a>
+        </div>
+        <div class="footer-group">
+          <h4>法律</h4>
+          <a href="/zh/terms">条款</a>
+          <a href="/zh/privacy">隐私</a>
+        </div>
+      </div>
+    </div>
+  </footer>
 </body>
 
 </html>
