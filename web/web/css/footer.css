@@ -44,7 +44,7 @@ footer::before{
 
 .footer-brand{
   display: grid;
-  gap: .6rem;
+  gap: .35rem;
 }
 
 .footer-logo{
@@ -63,7 +63,8 @@ footer::before{
   color: var(--text2);
   max-width: 40ch;
   font-size: .78em;
-  line-height: 1.35;
+  line-height: 1.2;
+  font-style: italic;
 }
 
 .footer-links{
