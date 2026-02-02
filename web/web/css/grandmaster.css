@@ -17,8 +17,13 @@
 }
 
 body{
-  background: radial-gradient(circle at 20% 10%, rgba(212,175,55,.08), transparent 60%), var(--bg);
+  background:
+    radial-gradient(circle at 20% 10%, rgba(212,175,55,.08), transparent 60%),
+    radial-gradient(circle at 80% 0%, rgba(212,175,55,.05), transparent 55%),
+    var(--bg);
   color: var(--text);
+  background-size: 140% 140%;
+  animation: grandmaster-ambient 40s ease-in-out infinite;
 }
 
 header, footer{
@@ -28,4 +33,16 @@ header, footer{
 
 .showcase{
   background: linear-gradient(135deg, rgba(13,13,29,.96), rgba(26,26,26,.92));
+}
+
+@keyframes grandmaster-ambient{
+  0%{
+    background-position: 0% 0%, 100% 0%, 0 0;
+  }
+  50%{
+    background-position: 100% 20%, 0% 10%, 0 0;
+  }
+  100%{
+    background-position: 0% 0%, 100% 0%, 0 0;
+  }
 }
