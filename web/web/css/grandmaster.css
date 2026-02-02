@@ -31,6 +31,24 @@ header, footer{
   border-color: var(--border);
 }
 
+footer{
+  box-shadow: inset 0 1px 0 rgba(212,175,55,.2);
+}
+
+.footer-logo span{
+  color: var(--link);
+}
+
+.footer-group h4{
+  color: rgba(212,175,55,.7);
+}
+
+.footer-group a:hover{
+  color: var(--link);
+  background: rgba(212,175,55,.12);
+  border-color: rgba(212,175,55,.28);
+}
+
 .showcase{
   background: linear-gradient(135deg, rgba(13,13,29,.96), rgba(26,26,26,.92));
 }
