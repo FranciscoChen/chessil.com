@@ -4,8 +4,8 @@
 
 footer{
   font-weight: 500;
-  font-family: var(--serif-font);
-  font-size: calc(0.78*var(--font-size));
+  font-family: var(--sans-font);
+  font-size: calc(0.72*var(--font-size));
   position: relative;
   z-index: 6;
   background:
@@ -39,6 +39,9 @@ footer::before{
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: clamp(1.5rem, 5vw, 3rem);
   align-items: center;
+  width: 100%;
+  max-width: var(--main-max-width);
+  justify-self: center;
 }
 
 .footer-brand{
@@ -47,7 +50,7 @@ footer::before{
 }
 
 .footer-logo{
-  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
   color: var(--text);
   text-decoration: none;
   letter-spacing: -.02em;
@@ -76,7 +79,7 @@ footer::before{
 
 .footer-group h4{
   margin: 0 0 .3rem 0;
-  font-size: .85rem;
+  font-size: .8rem;
   letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--text2);
@@ -85,7 +88,7 @@ footer::before{
 .footer-group a{
   color: var(--text2);
   text-decoration: none;
-  padding: .3rem .55rem;
+  padding: .28rem .5rem;
   border-radius: 999px;
   border: 1px solid transparent;
   transition: all .2s ease;
