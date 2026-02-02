@@ -62,6 +62,8 @@ footer::before{
   margin: 0;
   color: var(--text2);
   max-width: 40ch;
+  font-size: .78em;
+  line-height: 1.35;
 }
 
 .footer-links{
