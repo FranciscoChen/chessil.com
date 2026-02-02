@@ -76,7 +76,7 @@ footer::before{
 
 .footer-group h4{
   margin: 0 0 .3rem 0;
-  font-size: .9rem;
+  font-size: .85rem;
   letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--text2);
@@ -85,7 +85,7 @@ footer::before{
 .footer-group a{
   color: var(--text2);
   text-decoration: none;
-  padding: .35rem .6rem;
+  padding: .3rem .55rem;
   border-radius: 999px;
   border: 1px solid transparent;
   transition: all .2s ease;
@@ -108,9 +108,18 @@ footer::before{
 @media (max-width: 720px){
   footer{
     min-height: 140px;
+    font-size: calc(0.72*var(--font-size));
   }
 
   .footer-links{
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footer-group h4{
+    font-size: .78rem;
+  }
+
+  .footer-group a{
+    font-size: .9em;
   }
 }
