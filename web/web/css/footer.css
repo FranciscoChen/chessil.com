@@ -70,11 +70,13 @@ footer::before{
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(1rem, 3vw, 2rem);
+  align-items: start;
 }
 
 .footer-group{
   display: grid;
   gap: .5rem;
+  align-content: start;
 }
 
 .footer-group h4{
@@ -83,6 +85,7 @@ footer::before{
   letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--text2);
+  line-height: 1.2;
 }
 
 .footer-group a{
@@ -93,6 +96,7 @@ footer::before{
   border: 1px solid transparent;
   transition: all .2s ease;
   width: fit-content;
+  line-height: 1.2;
 }
 
 .footer-group a:hover{
