@@ -1,0 +1,31 @@
+:root{
+  --text: #e9f3ff;
+  --text2: rgba(233,243,255,.7);
+  --bg: #364251;
+  --bg2: #1b2230;
+  --highlight: #00dfff;
+  --link: #39ff14;
+  --link2: #00dfff;
+  --art: #39ff14;
+  --cover: rgba(0,0,0,.55);
+  --hover: rgba(0,223,255,.16);
+  --border: rgba(0,223,255,.28);
+  --shadow: rgba(0,0,0,.45);
+  --attention: #3a00f9;
+  --grey: rgba(233,243,255,.55);
+  --icons: invert(1);
+}
+
+body{
+  background: radial-gradient(circle at 20% 10%, rgba(0,223,255,.16), transparent 60%), var(--bg);
+  color: var(--text);
+}
+
+header, footer{
+  background: var(--bg2);
+  border-color: var(--border);
+}
+
+.showcase{
+  background: linear-gradient(135deg, rgba(27,34,48,.96), rgba(54,66,81,.92));
+}
