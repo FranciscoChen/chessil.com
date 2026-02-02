@@ -14,8 +14,7 @@ footer{
     var(--bg);
   margin: 0 auto;
   min-height: var(--footer-height);
-  display: grid;
-  grid-template-columns: var(--main-margin) 1fr minmax(auto, var(--main-max-width)) 1fr var(--main-margin);
+  display: block;
   align-items: center;
   padding: clamp(1.5rem, 4vw, 2.5rem) 0;
   border-top: 1px solid var(--border);
@@ -27,21 +26,20 @@ footer::before{
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: min(480px, 70vw);
+  width: min(520px, 80vw);
   height: 2px;
   background: linear-gradient(90deg, transparent, #00a2ff, transparent);
   opacity: .7;
 }
 
 .footer-inner{
-  grid-column: 3;
+  margin: 0 auto;
+  width: min(100%, var(--main-max-width));
+  padding: 0 clamp(1.2rem, 4vw, 2.6rem);
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: clamp(1.5rem, 5vw, 3rem);
   align-items: center;
-  width: 100%;
-  max-width: var(--main-max-width);
-  justify-self: center;
 }
 
 .footer-brand{
