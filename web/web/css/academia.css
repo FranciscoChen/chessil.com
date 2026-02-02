@@ -1,30 +1,31 @@
 :root{
   --academia-ink: #2a1f16;
-  --academia-paper: #f4eee4;
-  --academia-parchment: #e9dfcf;
+  --academia-paper: #f1f3f4;
+  --academia-parchment: #e5e7ea;
   --academia-wood: #5b3a24;
-  --academia-gold: #b48b3c;
+  --academia-woodtone: #8b5a2b;
+  --academia-dark: #2b2b2b;
   --academia-shadow: rgba(42, 31, 22, .22);
 }
 
 body{
   background:
-    radial-gradient(circle at 10% 0%, rgba(180, 139, 60, .18), transparent 60%),
-    radial-gradient(circle at 90% 10%, rgba(91, 58, 36, .2), transparent 55%),
-    linear-gradient(180deg, #f7f0e6 0%, #efe4d6 40%, #f6efe5 100%);
+    radial-gradient(circle at 10% 0%, rgba(139, 90, 43, .18), transparent 60%),
+    radial-gradient(circle at 90% 10%, rgba(43, 43, 43, .2), transparent 55%),
+    linear-gradient(180deg, var(--academia-paper) 0%, var(--academia-parchment) 45%, #f5f6f7 100%);
   color: var(--academia-ink);
 }
 
 header{
-  background: rgba(244, 238, 228, .92);
-  border-bottom: 1px solid rgba(91, 58, 36, .18);
+  background: rgba(241, 243, 244, .92);
+  border-bottom: 1px solid rgba(43, 43, 43, .2);
   box-shadow: 0 12px 24px rgba(42, 31, 22, .12);
 }
 
 .showcase{
   background:
-    linear-gradient(135deg, rgba(244, 238, 228, .9), rgba(233, 223, 207, .85));
-  border-top: 1px solid rgba(91, 58, 36, .12);
+    linear-gradient(135deg, rgba(241, 243, 244, .92), rgba(229, 231, 234, .88));
+  border-top: 1px solid rgba(43, 43, 43, .12);
 }
 
 .showcase-grid{
@@ -37,8 +38,8 @@ header{
   inset: 12% 8%;
   border-radius: 18px;
   background:
-    radial-gradient(circle at 20% 20%, rgba(180, 139, 60, .25), transparent 55%),
-    linear-gradient(135deg, rgba(255, 255, 255, .7), rgba(244, 238, 228, .35));
+    radial-gradient(circle at 20% 20%, rgba(139, 90, 43, .28), transparent 55%),
+    linear-gradient(135deg, rgba(255, 255, 255, .7), rgba(241, 243, 244, .4));
   box-shadow: 0 30px 60px rgba(42, 31, 22, .18);
   z-index: 0;
 }
@@ -74,17 +75,17 @@ header{
   background: transparent;
   color: var(--academia-wood);
   border: 1px solid rgba(91, 58, 36, .35);
-  box-shadow: inset 0 0 0 1px rgba(180, 139, 60, .12);
+  box-shadow: inset 0 0 0 1px rgba(139, 90, 43, .2);
 }
 
 .action.alternative:hover{
-  background: rgba(180, 139, 60, .12);
+  background: rgba(139, 90, 43, .14);
 }
 
 footer{
   background:
-    linear-gradient(180deg, rgba(233, 223, 207, .85), rgba(244, 238, 228, 1));
-  border-top: 1px solid rgba(91, 58, 36, .18);
+    linear-gradient(180deg, rgba(229, 231, 234, .85), rgba(241, 243, 244, 1));
+  border-top: 1px solid rgba(43, 43, 43, .18);
 }
 
 .footer-logo{
@@ -92,7 +93,7 @@ footer{
 }
 
 .footer-logo span{
-  color: var(--academia-gold);
+  color: var(--academia-woodtone);
 }
 
 .footer-group h4{
@@ -105,8 +106,8 @@ footer{
 
 .footer-group a:hover{
   color: var(--academia-wood);
-  background: rgba(180, 139, 60, .14);
-  border-color: rgba(180, 139, 60, .25);
+  background: rgba(139, 90, 43, .14);
+  border-color: rgba(139, 90, 43, .25);
 }
 
 @media (max-width: 720px){
