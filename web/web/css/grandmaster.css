@@ -53,6 +53,31 @@ footer{
   background: linear-gradient(135deg, rgba(13,13,29,.96), rgba(26,26,26,.92));
 }
 
+.showcase-grid{
+  position: relative;
+}
+
+.showcase-grid::after{
+  content: "";
+  position: absolute;
+  inset: 8% 6%;
+  background-image:
+    radial-gradient(circle, rgba(212,175,55,.7) 0 1px, transparent 2px),
+    radial-gradient(circle, rgba(212,175,55,.5) 0 1px, transparent 2px),
+    radial-gradient(circle, rgba(212,175,55,.6) 0 1px, transparent 2px),
+    radial-gradient(circle, rgba(212,175,55,.45) 0 1px, transparent 2px);
+  background-size: 180px 180px, 240px 240px, 300px 300px, 360px 360px;
+  background-position: 0 0, 60px 40px, 120px 90px, 200px 140px;
+  opacity: .55;
+  pointer-events: none;
+  animation: grandmaster-glitter 18s ease-in-out infinite;
+}
+
+.showcase-grid > *{
+  position: relative;
+  z-index: 1;
+}
+
 .showcase-headings{
   position: relative;
   padding-bottom: .35em;
@@ -99,6 +124,21 @@ footer{
 @keyframes grandmaster-underline{
   to{
     transform: scaleX(1);
+  }
+}
+
+@keyframes grandmaster-glitter{
+  0%{
+    opacity: .35;
+    transform: translateY(0);
+  }
+  50%{
+    opacity: .7;
+    transform: translateY(-6px);
+  }
+  100%{
+    opacity: .4;
+    transform: translateY(0);
   }
 }
 
