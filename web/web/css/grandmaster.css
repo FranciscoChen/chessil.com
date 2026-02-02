@@ -57,20 +57,30 @@ footer{
   position: relative;
 }
 
+.showcase-grid::before,
 .showcase-grid::after{
   content: "";
   position: absolute;
   inset: 8% 6%;
   background-image:
-    radial-gradient(circle, rgba(212,175,55,.7) 0 1px, transparent 2px),
-    radial-gradient(circle, rgba(212,175,55,.5) 0 1px, transparent 2px),
-    radial-gradient(circle, rgba(212,175,55,.6) 0 1px, transparent 2px),
-    radial-gradient(circle, rgba(212,175,55,.45) 0 1px, transparent 2px);
-  background-size: 180px 180px, 240px 240px, 300px 300px, 360px 360px;
-  background-position: 0 0, 60px 40px, 120px 90px, 200px 140px;
-  opacity: .55;
+    radial-gradient(circle, rgba(212,175,55,.95) 0 1px, transparent 2px),
+    radial-gradient(circle, rgba(212,175,55,.85) 0 1px, transparent 2px);
+  opacity: .8;
   pointer-events: none;
-  animation: grandmaster-glitter 18s ease-in-out infinite;
+}
+
+.showcase-grid::before{
+  background-size: 260px 260px, 380px 380px;
+  background-position: 40px 20px, 160px 140px;
+  animation: grandmaster-glitter-a 16s ease-in-out infinite;
+  animation-delay: -4s;
+}
+
+.showcase-grid::after{
+  background-size: 320px 320px, 520px 520px;
+  background-position: 120px 60px, 260px 200px;
+  animation: grandmaster-glitter-b 22s ease-in-out infinite;
+  animation-delay: -9s;
 }
 
 .showcase-grid > *{
@@ -127,18 +137,33 @@ footer{
   }
 }
 
-@keyframes grandmaster-glitter{
+@keyframes grandmaster-glitter-a{
   0%{
-    opacity: .35;
-    transform: translateY(0);
+    opacity: .25;
+    transform: translateY(0) translateX(0);
   }
-  50%{
-    opacity: .7;
-    transform: translateY(-6px);
+  45%{
+    opacity: 1;
+    transform: translateY(-4px) translateX(2px);
   }
   100%{
-    opacity: .4;
-    transform: translateY(0);
+    opacity: .35;
+    transform: translateY(0) translateX(0);
+  }
+}
+
+@keyframes grandmaster-glitter-b{
+  0%{
+    opacity: .2;
+    transform: translateY(0) translateX(0);
+  }
+  55%{
+    opacity: .95;
+    transform: translateY(-6px) translateX(-2px);
+  }
+  100%{
+    opacity: .3;
+    transform: translateY(0) translateX(0);
   }
 }
 
