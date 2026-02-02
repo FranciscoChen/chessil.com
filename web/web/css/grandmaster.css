@@ -73,14 +73,14 @@ footer{
 .showcase-grid::before{
   background-size: 260px 260px, 380px 380px, 520px 520px;
   background-position: 40px 20px, 160px 140px, 220px 260px;
-  animation: grandmaster-glitter-a 16s ease-in-out infinite;
+  animation: grandmaster-glitter-a 8s ease-in-out infinite;
   animation-delay: -4s;
 }
 
 .showcase-grid::after{
   background-size: 320px 320px, 520px 520px, 680px 680px;
   background-position: 120px 60px, 260px 200px, 60px 280px;
-  animation: grandmaster-glitter-b 22s ease-in-out infinite;
+  animation: grandmaster-glitter-b 11s ease-in-out infinite;
   animation-delay: -9s;
 }
 
