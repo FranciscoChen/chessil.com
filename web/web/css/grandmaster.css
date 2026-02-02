@@ -35,6 +35,55 @@ header, footer{
   background: linear-gradient(135deg, rgba(13,13,29,.96), rgba(26,26,26,.92));
 }
 
+.showcase-headings{
+  position: relative;
+  padding-bottom: .35em;
+}
+
+.showcase-headings::after{
+  content: "";
+  position: absolute;
+  left: 15%;
+  right: 15%;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--link), transparent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: grandmaster-underline 1.6s ease forwards;
+}
+
+.action{
+  position: relative;
+  border-color: rgba(212,175,55,.55);
+  background-image:
+    linear-gradient(var(--link), var(--link)),
+    linear-gradient(var(--link), var(--link));
+  background-repeat: no-repeat;
+  background-size: 18px 2px, 2px 18px;
+  background-position: left top, left top;
+}
+
+.action::after{
+  content: "";
+  position: absolute;
+  inset: 2px;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--link2), var(--link2)),
+    linear-gradient(var(--link2), var(--link2));
+  background-repeat: no-repeat;
+  background-size: 18px 2px, 2px 18px;
+  background-position: right bottom, right bottom;
+  opacity: .8;
+}
+
+@keyframes grandmaster-underline{
+  to{
+    transform: scaleX(1);
+  }
+}
+
 @keyframes grandmaster-ambient{
   0%{
     background-position: 0% 0%, 100% 0%, 0 0;
