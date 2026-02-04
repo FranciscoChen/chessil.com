@@ -362,7 +362,7 @@ body.d .m a {
 
 @media (max-width: 960px) {
   nav {
-    display: none;
+    display: flex;
     position: fixed;
     top: 60px;
     left: 0;
@@ -370,10 +370,17 @@ body.d .m a {
     z-index: 9;
     flex-flow: column;
     width: 50%;
+    background: var(--bg2);
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .3s ease-in-out, opacity .3s ease-in-out;
   }
 
   .n:checked~#n {
-    display: flex;
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .n:checked~.r {
@@ -389,11 +396,14 @@ body.d .m a {
     right: 0;
     background: var(--cover);
     z-index: 8;
-    display: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s ease-in-out;
   }
 
   .n:checked~.q {
-    display: block;
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .r {
