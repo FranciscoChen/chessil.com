@@ -415,6 +415,7 @@ footer{
   position: relative;
   border-color: rgba(212,175,55,.55);
   overflow: hidden;
+  transition: box-shadow .2s ease-in-out, transform .2s ease-in-out;
 }
 
 .action::before{
