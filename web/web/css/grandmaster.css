@@ -74,22 +74,16 @@ footer{
   animation: grandmaster-star-pulse 9s ease-in-out infinite;
 }
 
-.star.s1{ left: var(--s1-x, 18%); top: var(--s1-y, 35%); width: 14px; height: 14px; }
-.star.s2{ left: var(--s2-x, 40%); top: var(--s2-y, 30%); width: 10px; height: 10px; opacity: .85; }
-.star.s3{ left: var(--s3-x, 62%); top: var(--s3-y, 40%); width: 8px; height: 8px; opacity: .75; }
-.star.s4{ left: var(--s4-x, 78%); top: var(--s4-y, 28%); width: 12px; height: 12px; opacity: .9; }
-.star.s5{ left: var(--s5-x, 30%); top: var(--s5-y, 60%); width: 6px; height: 6px; opacity: .65; }
-.star.s6{ left: var(--s6-x, 52%); top: var(--s6-y, 68%); width: 9px; height: 9px; opacity: .8; }
-.star.s7{ left: var(--s7-x, 70%); top: var(--s7-y, 62%); width: 7px; height: 7px; opacity: .7; }
+.star.s1{ left: var(--s1-x, 18%); top: var(--s1-y, 35%); width: 18px; height: 18px; }
+.star.s2{ left: var(--s2-x, 40%); top: var(--s2-y, 30%); width: 14px; height: 14px; opacity: .85; }
+.star.s3{ left: var(--s3-x, 62%); top: var(--s3-y, 40%); width: 12px; height: 12px; opacity: .75; }
+.star.s4{ left: var(--s4-x, 78%); top: var(--s4-y, 28%); width: 16px; height: 16px; opacity: .9; }
 
 .showcase-border:nth-of-type(4n+1){
   --s1-x: 16%; --s1-y: 30%;
   --s2-x: 34%; --s2-y: 22%;
   --s3-x: 58%; --s3-y: 36%;
   --s4-x: 78%; --s4-y: 26%;
-  --s5-x: 28%; --s5-y: 62%;
-  --s6-x: 52%; --s6-y: 70%;
-  --s7-x: 70%; --s7-y: 58%;
 }
 
 .showcase-border:nth-of-type(4n+2){
@@ -97,9 +91,6 @@ footer{
   --s2-x: 46%; --s2-y: 34%;
   --s3-x: 62%; --s3-y: 22%;
   --s4-x: 82%; --s4-y: 40%;
-  --s5-x: 30%; --s5-y: 66%;
-  --s6-x: 54%; --s6-y: 60%;
-  --s7-x: 72%; --s7-y: 68%;
 }
 
 .showcase-border:nth-of-type(4n+3){
@@ -107,9 +98,6 @@ footer{
   --s2-x: 36%; --s2-y: 24%;
   --s3-x: 58%; --s3-y: 44%;
   --s4-x: 76%; --s4-y: 30%;
-  --s5-x: 26%; --s5-y: 72%;
-  --s6-x: 50%; --s6-y: 64%;
-  --s7-x: 68%; --s7-y: 70%;
 }
 
 .showcase-border:nth-of-type(4n){
@@ -117,9 +105,6 @@ footer{
   --s2-x: 30%; --s2-y: 20%;
   --s3-x: 52%; --s3-y: 32%;
   --s4-x: 80%; --s4-y: 24%;
-  --s5-x: 24%; --s5-y: 60%;
-  --s6-x: 48%; --s6-y: 70%;
-  --s7-x: 74%; --s7-y: 62%;
 }
 
 @keyframes grandmaster-star-pulse{
