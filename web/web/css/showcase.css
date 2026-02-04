@@ -56,6 +56,7 @@
   justify-content: center;
   text-align: center;
   min-height: 4em;
+  min-width: 12em;
   line-height: 1.15;
   padding-block: .6em;
 }
