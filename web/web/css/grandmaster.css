@@ -110,6 +110,22 @@ footer{
   clip-path: var(--l3-path, polygon(0% 20%, 100% 60%, 100% 80%, 0% 40%));
 }
 
+.line.l4{
+  left: 0;
+  top: var(--l4-y, 48%);
+  width: var(--l4-w, 12%);
+  height: 2px;
+  clip-path: var(--l4-path, polygon(0% 50%, 100% 0%, 100% 100%, 0% 50%));
+}
+
+.line.l5{
+  right: 0;
+  top: var(--l5-y, 46%);
+  width: var(--l5-w, 12%);
+  height: 2px;
+  clip-path: var(--l5-path, polygon(0% 0%, 100% 50%, 0% 100%, 0% 0%));
+}
+
 .showcase-border:nth-of-type(3n+1){
   --s1-x: 18%; --s1-y: 36%;
   --s2-x: 38%; --s2-y: 28%;
@@ -118,6 +134,8 @@ footer{
   --l1-path: polygon(0% 55%, 100% 10%, 100% 25%, 0% 70%);
   --l2-path: polygon(0% 35%, 100% 75%, 100% 90%, 0% 50%);
   --l3-path: polygon(0% 20%, 100% 65%, 100% 85%, 0% 40%);
+  --l4-y: 44%;
+  --l5-y: 50%;
 }
 
 .showcase-border:nth-of-type(3n+2){
@@ -128,6 +146,8 @@ footer{
   --l1-path: polygon(0% 35%, 100% 60%, 100% 78%, 0% 50%);
   --l2-path: polygon(0% 60%, 100% 20%, 100% 40%, 0% 80%);
   --l3-path: polygon(0% 25%, 100% 70%, 100% 90%, 0% 45%);
+  --l4-y: 52%;
+  --l5-y: 40%;
 }
 
 .showcase-border:nth-of-type(3n){
@@ -138,6 +158,8 @@ footer{
   --l1-path: polygon(0% 65%, 100% 30%, 100% 45%, 0% 80%);
   --l2-path: polygon(0% 30%, 100% 70%, 100% 88%, 0% 50%);
   --l3-path: polygon(0% 20%, 100% 50%, 100% 70%, 0% 35%);
+  --l4-y: 40%;
+  --l5-y: 54%;
 }
 
 @keyframes grandmaster-star-pulse{
