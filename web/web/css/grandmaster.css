@@ -53,6 +53,10 @@ footer{
   position: relative;
 }
 
+.showcase:nth-of-type(2){
+  background: linear-gradient(135deg, rgba(54,69,79,.28), rgba(13,13,29,.92));
+}
+
 .showcase-border{
   background: var(--bg2);
   display: grid;
