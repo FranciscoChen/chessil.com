@@ -1,8 +1,10 @@
 function collectFilters() {
+  var timeGroup = document.getElementById('timeGroup').value;
+  var timeValue = timeGroup === 'any' ? '' : document.getElementById('time').value;
   return {
     rated: document.getElementById('rated').value,
     color: document.getElementById('color').value,
-    time: document.getElementById('time').value,
+    time: timeValue,
     eloMin: document.getElementById('eloMin').value,
     eloMax: document.getElementById('eloMax').value,
     username: document.getElementById('username').value,
@@ -16,11 +18,7 @@ var createStatusEl = null;
 
 function ensureCreateStatusEl() {
   if (createStatusEl) return createStatusEl;
-  var container = document.querySelector('.filters-primary');
-  if (!container) return null;
-  createStatusEl = document.createElement('div');
-  createStatusEl.id = 'create-status';
-  container.appendChild(createStatusEl);
+  createStatusEl = document.getElementById('create-status');
   return createStatusEl;
 }
 
@@ -211,19 +209,135 @@ function sendAction(id, action) {
   xhr.send(JSON.stringify({ id: id, action: action }));
 }
 document.addEventListener('DOMContentLoaded', function () {
+  function openDialog(id) {
+    var dialog = document.getElementById(id);
+    if (!dialog) return;
+    dialog.classList.remove('hidden');
+  }
 
-  // Toggle secondary filters
-  document.getElementById('toggle-secondary').addEventListener('click', function () {
-    document.querySelector('.filters-secondary').classList.toggle('hidden');
+  function closeDialog(id) {
+    var dialog = document.getElementById(id);
+    if (!dialog) return;
+    dialog.classList.add('hidden');
+  }
+
+  function setupBackdrop(id) {
+    var dialog = document.getElementById(id);
+    if (!dialog) return;
+    dialog.addEventListener('click', function (e) {
+      if (e.target === dialog) closeDialog(id);
+    });
+    var closeBtn = dialog.querySelector('[data-dialog-close]');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function () { closeDialog(id); });
+    }
+  }
+
+  var timeOptionsByGroup = {
+    fast: ['1+0', '3+0', '3+2', '5+0'],
+    slow: ['10+0', '15+10']
+  };
+
+  function syncTimeOptions(groupSelectId, timeSelectId, defaultValue) {
+    var groupEl = document.getElementById(groupSelectId);
+    var timeEl = document.getElementById(timeSelectId);
+    if (!groupEl || !timeEl) return;
+    var group = groupEl.value;
+    if (group === 'any') {
+      timeEl.innerHTML = '';
+      timeEl.disabled = true;
+      return;
+    }
+    var options = timeOptionsByGroup[group] || timeOptionsByGroup.fast;
+    timeEl.disabled = false;
+    timeEl.innerHTML = '';
+    options.forEach(function (value) {
+      var opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = value;
+      timeEl.appendChild(opt);
+    });
+    if (defaultValue && options.indexOf(defaultValue) !== -1) {
+      timeEl.value = defaultValue;
+    } else {
+      timeEl.value = options[0];
+    }
+  }
+
+  function setFilterDefaults() {
+    document.getElementById('rated').value = '';
+    document.getElementById('color').value = 'random';
+    document.getElementById('timeGroup').value = 'fast';
+    syncTimeOptions('timeGroup', 'time', '5+0');
+    document.getElementById('eloMin').value = '';
+    document.getElementById('eloMax').value = '';
+    document.getElementById('username').value = '';
+    document.getElementById('mode').value = '';
+  }
+
+  function setCreateDefaults() {
+    document.getElementById('create-rated').value = '0';
+    document.getElementById('create-color').value = 'random';
+    document.getElementById('create-time-group').value = 'fast';
+    syncTimeOptions('create-time-group', 'create-time', '5+0');
+    document.getElementById('create-color').disabled = false;
+  }
+
+  function syncCreateColorAvailability() {
+    var ratedEl = document.getElementById('create-rated');
+    var colorEl = document.getElementById('create-color');
+    if (!ratedEl || !colorEl) return;
+    if (ratedEl.value === '1') {
+      colorEl.disabled = true;
+      colorEl.value = 'random';
+    } else {
+      colorEl.disabled = false;
+    }
+  }
+
+  setupBackdrop('filters-dialog');
+  setupBackdrop('create-dialog');
+
+  setFilterDefaults();
+  setCreateDefaults();
+
+  document.getElementById('open-filters').addEventListener('click', function () {
+    openDialog('filters-dialog');
+  });
+  document.getElementById('open-create').addEventListener('click', function () {
+    openDialog('create-dialog');
+  });
+
+  document.getElementById('timeGroup').addEventListener('change', function () {
+    syncTimeOptions('timeGroup', 'time', '5+0');
+  });
+  document.getElementById('create-time-group').addEventListener('change', function () {
+    syncTimeOptions('create-time-group', 'create-time', '5+0');
+  });
+  document.getElementById('create-rated').addEventListener('change', syncCreateColorAvailability);
+  syncCreateColorAvailability();
+
+  document.getElementById('filters-reset').addEventListener('click', function () {
+    setFilterDefaults();
+    loadLobby();
+    closeDialog('filters-dialog');
+  });
+  document.getElementById('filters-apply').addEventListener('click', function () {
+    loadLobby();
+    closeDialog('filters-dialog');
   });
 
   // Create game
-  document.getElementById('create-game').addEventListener('click', function () {
-    var filters = collectFilters();
+  document.getElementById('create-game-confirm').addEventListener('click', function () {
+    var ratedValue = document.getElementById('create-rated').value;
+    var rated = ratedValue === '1';
+    var timecontrol = document.getElementById('create-time').value;
+    var colorValue = document.getElementById('create-color').value;
+    var color = (!rated && (colorValue === 'white' || colorValue === 'black')) ? colorValue : null;
     const payload = {
-      rated: filters.rated,
-      timecontrol: filters.time,
-      color: (filters.rated === '0' ? filters.color : null) // unrated only
+      rated: rated,
+      timecontrol: timecontrol,
+      color: color // unrated only
     };
 
     var xhr = new XMLHttpRequest();
@@ -243,6 +357,7 @@ document.addEventListener('DOMContentLoaded', function () {
           if (res.gameid) {
             watchPendingGame(res.gameid);
           }
+          closeDialog('create-dialog');
         } else {
           console.error(res.error || "Game creation failed");
         }

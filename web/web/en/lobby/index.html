@@ -15,7 +15,8 @@
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/footer.css">
   <link rel="stylesheet" href="/css/query.css">
-    <link rel="stylesheet" href="/css/grandmaster.css">
+  <link rel="stylesheet" href="/css/dialog.css">
+  <link rel="stylesheet" href="/css/grandmaster.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
@@ -85,52 +86,111 @@
       <div class="query">
         <div class="query-flex">
 
-          <!-- Always visible filters -->
-          <div class="filters-primary">
-            <select id="rated">
-              <option value="">Any</option>
-              <option value="1">Rated</option>
-              <option value="0">Unrated</option>
-            </select>
-
-            <select id="color">
-              <option value="random">Random</option>
-              <option value="white">White</option>
-              <option value="black">Black</option>
-            </select>
-
-            <select id="time">
-              <option value="1+0">1+0</option>
-              <option value="3+0">3+0</option>
-              <option value="3+2">3+2</option>
-              <option value="5+0" selected>5+0</option>
-              <option value="10+0">10+0</option>
-              <option value="15+10">15+10</option>
-            </select>
-
-            <button id="create-game" class="btn-create">Create Game</button>
+          <div class="query-actions" style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+            <button id="open-filters" class="btn-toggle">Filters</button>
+            <button id="open-create" class="btn-create">Create Game</button>
           </div>
-
-          <!-- Toggle button (mobile only) -->
-          <button id="toggle-secondary" class="btn-toggle">More Filters</button>
-
-          <!-- Secondary filters -->
-          <div class="filters-secondary hidden">
-            <input id="eloMin" type="number" placeholder="Min Elo">
-            <input id="eloMax" type="number" placeholder="Max Elo">
-            <input id="username" type="text" placeholder="Username">
-            <select id="mode">
-              <option value="">Any</option>
-              <option value="play">Play</option>
-              <option value="watch">Watch</option>
-              <option value="finished">Finished</option>
-            </select>
-          </div>
+          <div id="create-status"></div>
 
         </div>
       </div>
       <div class="results">
         <div class="results-flex"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="filters-dialog" class="dialog-backdrop hidden" aria-hidden="true">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="filters-title">
+      <div class="dialog-header">
+        <h2 id="filters-title">Lobby Filters</h2>
+        <button type="button" class="dialog-close" data-dialog-close>Close</button>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-grid">
+          <label for="rated">Rated</label>
+          <select id="rated">
+            <option value="">Any</option>
+            <option value="1">Rated</option>
+            <option value="0">Unrated</option>
+          </select>
+
+          <label for="color">Color</label>
+          <select id="color">
+            <option value="random">Random</option>
+            <option value="white">White</option>
+            <option value="black">Black</option>
+          </select>
+
+          <label for="timeGroup">Time Group</label>
+          <select id="timeGroup">
+            <option value="any">Any</option>
+            <option value="fast">Fast</option>
+            <option value="slow">Slow</option>
+          </select>
+
+          <label for="time">Time Control</label>
+          <select id="time"></select>
+
+          <label for="eloMin">Min Elo</label>
+          <input id="eloMin" type="number" placeholder="Min Elo">
+
+          <label for="eloMax">Max Elo</label>
+          <input id="eloMax" type="number" placeholder="Max Elo">
+
+          <label for="username">Username</label>
+          <input id="username" type="text" placeholder="Username">
+
+          <label for="mode">Mode</label>
+          <select id="mode">
+            <option value="">Any</option>
+            <option value="play">Play</option>
+            <option value="watch">Watch</option>
+          </select>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="dialog-secondary" id="filters-reset">Reset</button>
+        <button type="button" class="dialog-secondary" data-dialog-close>Cancel</button>
+        <button type="button" class="dialog-primary" id="filters-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="create-dialog" class="dialog-backdrop hidden" aria-hidden="true">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="create-title">
+      <div class="dialog-header">
+        <h2 id="create-title">Create Game</h2>
+        <button type="button" class="dialog-close" data-dialog-close>Close</button>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-grid">
+          <label for="create-rated">Rated</label>
+          <select id="create-rated">
+            <option value="1">Rated</option>
+            <option value="0">Unrated</option>
+          </select>
+
+          <label for="create-color">Color</label>
+          <select id="create-color">
+            <option value="random">Random</option>
+            <option value="white">White</option>
+            <option value="black">Black</option>
+          </select>
+
+          <label for="create-time-group">Time Group</label>
+          <select id="create-time-group">
+            <option value="fast">Fast</option>
+            <option value="slow">Slow</option>
+          </select>
+
+          <label for="create-time">Time Control</label>
+          <select id="create-time"></select>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="dialog-secondary" data-dialog-close>Cancel</button>
+        <button type="button" class="dialog-primary" id="create-game-confirm">Create</button>
       </div>
     </div>
   </div>

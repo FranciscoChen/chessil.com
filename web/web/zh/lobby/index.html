@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="/css/header.css">
   <link rel="stylesheet" href="/css/footer.css">
   <link rel="stylesheet" href="/css/query.css">
-    <link rel="stylesheet" href="/css/grandmaster.css">
+  <link rel="stylesheet" href="/css/grandmaster.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
@@ -87,49 +87,111 @@
       <div class="query">
         <div class="query-flex">
 
-          <div class="filters-primary">
-            <select id="rated">
-              <option value="">不限</option>
-              <option value="1">排位</option>
-              <option value="0">非排位</option>
-            </select>
-
-            <select id="color">
-              <option value="random">随机</option>
-              <option value="white">白方</option>
-              <option value="black">黑方</option>
-            </select>
-
-            <select id="time">
-              <option value="1+0">1+0</option>
-              <option value="3+0">3+0</option>
-              <option value="3+2">3+2</option>
-              <option value="5+0" selected>5+0</option>
-              <option value="10+0">10+0</option>
-              <option value="15+10">15+10</option>
-            </select>
-
-            <button id="create-game" class="btn-create">创建对局</button>
+          <div class="query-actions" style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+            <button id="open-filters" class="btn-toggle">筛选</button>
+            <button id="open-create" class="btn-create">创建对局</button>
           </div>
-
-          <button id="toggle-secondary" class="btn-toggle">更多筛选</button>
-
-          <div class="filters-secondary hidden">
-            <input id="eloMin" type="number" placeholder="最低 Elo">
-            <input id="eloMax" type="number" placeholder="最高 Elo">
-            <input id="username" type="text" placeholder="用户名">
-            <select id="mode">
-              <option value="">不限</option>
-              <option value="play">对局</option>
-              <option value="watch">观战</option>
-              <option value="finished">已结束</option>
-            </select>
-          </div>
+          <div id="create-status"></div>
 
         </div>
       </div>
       <div class="results">
         <div class="results-flex"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="filters-dialog" class="dialog-backdrop hidden" aria-hidden="true">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="filters-title">
+      <div class="dialog-header">
+        <h2 id="filters-title">大厅筛选</h2>
+        <button type="button" class="dialog-close" data-dialog-close>关闭</button>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-grid">
+          <label for="rated">排位</label>
+          <select id="rated">
+            <option value="">不限</option>
+            <option value="1">排位</option>
+            <option value="0">非排位</option>
+          </select>
+
+          <label for="color">颜色</label>
+          <select id="color">
+            <option value="random">随机</option>
+            <option value="white">白方</option>
+            <option value="black">黑方</option>
+          </select>
+
+          <label for="timeGroup">时间组</label>
+          <select id="timeGroup">
+            <option value="any">不限</option>
+            <option value="fast">快速</option>
+            <option value="slow">慢速</option>
+          </select>
+
+          <label for="time">时间控制</label>
+          <select id="time"></select>
+
+          <label for="eloMin">最低 Elo</label>
+          <input id="eloMin" type="number" placeholder="最低 Elo">
+
+          <label for="eloMax">最高 Elo</label>
+          <input id="eloMax" type="number" placeholder="最高 Elo">
+
+          <label for="username">用户名</label>
+          <input id="username" type="text" placeholder="用户名">
+
+          <label for="mode">模式</label>
+          <select id="mode">
+            <option value="">不限</option>
+            <option value="play">对局</option>
+            <option value="watch">观战</option>
+          </select>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="dialog-secondary" id="filters-reset">重置</button>
+        <button type="button" class="dialog-secondary" data-dialog-close>取消</button>
+        <button type="button" class="dialog-primary" id="filters-apply">应用</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="create-dialog" class="dialog-backdrop hidden" aria-hidden="true">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="create-title">
+      <div class="dialog-header">
+        <h2 id="create-title">创建对局</h2>
+        <button type="button" class="dialog-close" data-dialog-close>关闭</button>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-grid">
+          <label for="create-rated">排位</label>
+          <select id="create-rated">
+            <option value="1">排位</option>
+            <option value="0">非排位</option>
+          </select>
+
+          <label for="create-color">颜色</label>
+          <select id="create-color">
+            <option value="random">随机</option>
+            <option value="white">白方</option>
+            <option value="black">黑方</option>
+          </select>
+
+          <label for="create-time-group">时间组</label>
+          <select id="create-time-group">
+            <option value="fast">快速</option>
+            <option value="slow">慢速</option>
+          </select>
+
+          <label for="create-time">时间控制</label>
+          <select id="create-time"></select>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="dialog-secondary" data-dialog-close>取消</button>
+        <button type="button" class="dialog-primary" id="create-game-confirm">创建</button>
       </div>
     </div>
   </div>
