@@ -58,7 +58,7 @@
 .results {
   padding: 0.5rem;
   grid-column: 1 / -1;
-  grid-row: 4 / -1;
+  grid-row: 4 / span 5;
 }
 
 /* === Filter Styling === */

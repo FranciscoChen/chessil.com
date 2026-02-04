@@ -15,6 +15,9 @@ function collectFilters() {
 var pendingGameId = null;
 var pendingEventSource = null;
 var createStatusEl = null;
+var lobbyGames = [];
+var lobbyPage = 1;
+var lobbyPageSize = 12;
 
 function ensureCreateStatusEl() {
   if (createStatusEl) return createStatusEl;
@@ -58,13 +61,24 @@ function loadLobby() {
   xhr.onreadystatechange = function () {
     if (xhr.readyState === 4 && xhr.status === 200) {
       var games = JSON.parse(xhr.responseText);
-      renderLobby(games);
+      lobbyGames = games.filter(function (row) { return !row.finished; });
+      lobbyPage = 1;
+      renderLobbyPage();
     }
   };
   xhr.send(JSON.stringify(filters));
 }
 
-function renderLobby(games) {
+function renderLobbyPage() {
+  var totalPages = Math.max(1, Math.ceil(lobbyGames.length / lobbyPageSize));
+  if (lobbyPage > totalPages) lobbyPage = totalPages;
+  if (lobbyPage < 1) lobbyPage = 1;
+  var start = (lobbyPage - 1) * lobbyPageSize;
+  var pageGames = lobbyGames.slice(start, start + lobbyPageSize);
+  renderLobby(pageGames, totalPages);
+}
+
+function renderLobby(games, totalPages) {
   var container = document.querySelector('.results-flex');
   container.innerHTML = '';
 
@@ -113,7 +127,6 @@ function renderLobby(games) {
 
     var tbody = document.createElement('tbody');
     games.forEach(function (row) {
-      if (row.finished) return;
       var sides = resolveSides(row);
       var action = actionForRow(row);
       var tr = document.createElement('tr');
@@ -139,7 +152,6 @@ function renderLobby(games) {
   } else {
     // === MOBILE CARDS ===
     games.forEach(function (row) {
-      if (row.finished) return;
       var sides = resolveSides(row);
       var action = actionForRow(row);
       var card = document.createElement('div');
@@ -178,6 +190,35 @@ function renderLobby(games) {
 
       container.appendChild(card);
     });
+  }
+
+  if (totalPages && totalPages > 1) {
+    var pager = document.createElement('div');
+    pager.className = 'results-pagination';
+
+    var prev = document.createElement('button');
+    prev.textContent = 'Prev';
+    prev.disabled = lobbyPage <= 1;
+    prev.onclick = function () {
+      lobbyPage -= 1;
+      renderLobbyPage();
+    };
+
+    var next = document.createElement('button');
+    next.textContent = 'Next';
+    next.disabled = lobbyPage >= totalPages;
+    next.onclick = function () {
+      lobbyPage += 1;
+      renderLobbyPage();
+    };
+
+    var label = document.createElement('span');
+    label.textContent = 'Page ' + lobbyPage + ' of ' + totalPages;
+
+    pager.appendChild(prev);
+    pager.appendChild(label);
+    pager.appendChild(next);
+    container.appendChild(pager);
   }
 }
 
