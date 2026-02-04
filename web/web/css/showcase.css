@@ -48,3 +48,14 @@
   align-items: center;
   justify-content: center;
 }
+
+.showcase-action .action,
+.showcase-alternative .action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 2.6em;
+  line-height: 1.15;
+  padding-block: .6em;
+}
