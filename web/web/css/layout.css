@@ -25,14 +25,14 @@ body {
 
 .main-wrap {
   display: grid;
-  grid-template-areas: ". . main . .";
-  grid-template-columns: 1vw 1fr auto 1fr 1vw;
+  grid-template-areas: "main";
+  grid-template-columns: auto;
   margin-top: 0;
   min-height: calc(100vh - (var(--footer-height) + var(--header-height)));
 }
 @media(min-width: 1400px) {
     .main-wrap {
-       grid-template-columns: 1vw 1fr minmax(auto,var(--main-max-width)) 1fr 1vw;
+       grid-template-columns: auto;
     }
 }
 
