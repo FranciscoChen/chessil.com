@@ -425,6 +425,14 @@ footer{
 .action{
   position: relative;
   border-color: rgba(212,175,55,.55);
+  overflow: hidden;
+}
+
+.action::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   background-image:
     linear-gradient(var(--link), var(--link)),
     linear-gradient(var(--link), var(--link));
