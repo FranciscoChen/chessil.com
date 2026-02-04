@@ -23,6 +23,9 @@ header {
 #clinput {
   display: flex;
   height: var(--header-height);
+  border-radius: 999px;
+  padding: 0 6px;
+  transition: background .25s ease-in-out, box-shadow .25s ease-in-out;
 }
 
 #clinput input:focus {
@@ -40,6 +43,18 @@ body.clinput #clinput input {
   padding: 0;
   border: 0;
   width: 0;
+  transition: color .25s ease-in-out;
+}
+
+#clinput:hover,
+body.clinput #clinput {
+  background: rgba(0,0,0,.15);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+#clinput:hover input,
+body.clinput #clinput input {
+  color: var(--text);
 }
 
 .complete-list {
@@ -116,6 +131,13 @@ header button {
 .dasher {
   display: flex;
   height: var(--header-height);
+  border-radius: 999px;
+  transition: background .25s ease-in-out, box-shadow .25s ease-in-out;
+}
+
+.dasher:hover {
+  background: rgba(0,0,0,.15);
+  box-shadow: inset 0 0 0 1px var(--border);
 }
 
 .icon-settings {
