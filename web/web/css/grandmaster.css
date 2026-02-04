@@ -416,7 +416,7 @@ footer{
 .action::before{
   content: "";
   position: absolute;
-  inset: 0;
+  inset: 2px;
   pointer-events: none;
   background-image:
     linear-gradient(var(--link), var(--link)),
