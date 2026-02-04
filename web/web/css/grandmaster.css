@@ -27,7 +27,7 @@ header, footer{
 }
 
 header{
-  border-bottom: 1px solid rgba(212,175,55,.25);
+  border-bottom: 1px solid var(--border);
 }
 
 footer{
