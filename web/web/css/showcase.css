@@ -56,7 +56,8 @@
   justify-content: center;
   text-align: center;
   min-height: 4em;
-  min-width: 12em;
+  min-width: clamp(8.5em, 40vw, 11em);
+  max-width: 100%;
   line-height: 1.15;
   padding-block: .6em;
 }
