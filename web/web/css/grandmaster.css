@@ -348,6 +348,72 @@ footer{
   color: rgba(212,175,55,.75);
 }
 
+.results-flex table{
+  color: var(--text);
+}
+
+.results-flex th,
+.results-flex td{
+  border-bottom: 1px solid rgba(212,175,55,.2);
+}
+
+.results-flex th{
+  background: rgba(13,13,29,.9);
+}
+
+.results-flex tr:nth-child(even){
+  background: rgba(26,26,26,.7);
+}
+
+.results-flex tr:hover{
+  background: rgba(212,175,55,.08);
+}
+
+.results-flex td button{
+  border: 1px solid rgba(212,175,55,.6);
+  background: transparent;
+  color: var(--link);
+}
+
+.results-flex td button:hover{
+  background: rgba(212,175,55,.2);
+  color: #0d0d1d;
+}
+
+@media (max-width: 767px){
+  .results-flex tr{
+    border: 1px solid rgba(212,175,55,.2);
+    background: rgba(26,26,26,.85);
+  }
+
+  .results-flex td::before{
+    color: rgba(245,241,232,.6);
+  }
+
+  .game-card{
+    border: 1px solid rgba(212,175,55,.2);
+    background: rgba(26,26,26,.85);
+  }
+
+  .gc-players{
+    color: var(--text);
+  }
+
+  .gc-info{
+    color: rgba(245,241,232,.6);
+  }
+
+  .gc-actions button{
+    border: 1px solid rgba(212,175,55,.6);
+    background: transparent;
+    color: var(--link);
+  }
+
+  .gc-actions button:hover{
+    background: rgba(212,175,55,.2);
+    color: #0d0d1d;
+  }
+}
 
 .action{
   position: relative;
