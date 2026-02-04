@@ -84,6 +84,7 @@ footer{
   background: rgba(212,175,55,.8);
   opacity: .7;
   animation: grandmaster-line-glow 11s ease-in-out infinite;
+  transform-origin: left center;
 }
 
 .line.l1{
@@ -91,7 +92,7 @@ footer{
   top: var(--l1-y, 44%);
   width: var(--l1-w, 28%);
   height: var(--l1-h, 2px);
-  clip-path: var(--l1-path, polygon(0% 50%, 100% 0%, 100% 25%, 0% 75%));
+  transform: rotate(var(--l1-rot, 0deg));
 }
 
 .line.l2{
@@ -99,7 +100,7 @@ footer{
   top: var(--l2-y, 48%);
   width: var(--l2-w, 30%);
   height: var(--l2-h, 2px);
-  clip-path: var(--l2-path, polygon(0% 40%, 100% 70%, 100% 85%, 0% 55%));
+  transform: rotate(var(--l2-rot, 0deg));
 }
 
 .line.l3{
@@ -107,7 +108,7 @@ footer{
   top: var(--l3-y, 44%);
   width: var(--l3-w, 28%);
   height: var(--l3-h, 2px);
-  clip-path: var(--l3-path, polygon(0% 20%, 100% 60%, 100% 80%, 0% 40%));
+  transform: rotate(var(--l3-rot, 0deg));
 }
 
 .line.l4{
@@ -115,7 +116,7 @@ footer{
   top: var(--l4-y, 48%);
   width: var(--l4-w, 12%);
   height: 2px;
-  clip-path: var(--l4-path, polygon(0% 50%, 100% 0%, 100% 100%, 0% 50%));
+  transform: rotate(var(--l4-rot, 0deg));
 }
 
 .line.l5{
@@ -123,7 +124,7 @@ footer{
   top: var(--l5-y, 46%);
   width: var(--l5-w, 12%);
   height: 2px;
-  clip-path: var(--l5-path, polygon(0% 0%, 100% 50%, 0% 100%, 0% 0%));
+  transform: rotate(var(--l5-rot, 0deg));
 }
 
 .showcase-border:nth-of-type(3n+1){
@@ -211,6 +212,11 @@ footer{
   --b4-c: 8; --b4-r: 2;
   --b5-c: 3; --b5-r: 6;
   --b6-c: 6; --b6-r: 7;
+  --l1-x: 14%; --l1-y: 26%; --l1-w: 22%; --l1-rot: 10deg;
+  --l2-x: 36%; --l2-y: 34%; --l2-w: 22%; --l2-rot: 8deg;
+  --l3-x: 58%; --l3-y: 30%; --l3-w: 20%; --l3-rot: -12deg;
+  --l4-y: 26%; --l4-w: 12%; --l4-rot: 6deg;
+  --l5-y: 28%; --l5-w: 10%; --l5-rot: -6deg;
 }
 
 .showcase:nth-of-type(4n+2){
@@ -220,6 +226,11 @@ footer{
   --b4-c: 8; --b4-r: 4;
   --b5-c: 2; --b5-r: 7;
   --b6-c: 6; --b6-r: 6;
+  --l1-x: 18%; --l1-y: 36%; --l1-w: 22%; --l1-rot: 14deg;
+  --l2-x: 40%; --l2-y: 40%; --l2-w: 20%; --l2-rot: -6deg;
+  --l3-x: 60%; --l3-y: 30%; --l3-w: 20%; --l3-rot: 18deg;
+  --l4-y: 34%; --l4-w: 12%; --l4-rot: 10deg;
+  --l5-y: 38%; --l5-w: 10%; --l5-rot: 8deg;
 }
 
 .showcase:nth-of-type(4n+3){
@@ -229,6 +240,11 @@ footer{
   --b4-c: 7; --b4-r: 3;
   --b5-c: 3; --b5-r: 8;
   --b6-c: 5; --b6-r: 7;
+  --l1-x: 14%; --l1-y: 44%; --l1-w: 24%; --l1-rot: -12deg;
+  --l2-x: 36%; --l2-y: 36%; --l2-w: 22%; --l2-rot: 18deg;
+  --l3-x: 58%; --l3-y: 40%; --l3-w: 20%; --l3-rot: -6deg;
+  --l4-y: 42%; --l4-w: 12%; --l4-rot: -10deg;
+  --l5-y: 34%; --l5-w: 10%; --l5-rot: -12deg;
 }
 
 .showcase:nth-of-type(4n){
@@ -238,6 +254,11 @@ footer{
   --b4-c: 8; --b4-r: 3;
   --b5-c: 2; --b5-r: 6;
   --b6-c: 7; --b6-r: 8;
+  --l1-x: 10%; --l1-y: 32%; --l1-w: 22%; --l1-rot: -6deg;
+  --l2-x: 32%; --l2-y: 30%; --l2-w: 22%; --l2-rot: 12deg;
+  --l3-x: 54%; --l3-y: 34%; --l3-w: 24%; --l3-rot: -10deg;
+  --l4-y: 32%; --l4-w: 12%; --l4-rot: -6deg;
+  --l5-y: 32%; --l5-w: 10%; --l5-rot: -4deg;
 }
 
 .showcase-grid::before{
