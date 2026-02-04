@@ -73,13 +73,39 @@ function renderLobby(games) {
   // Detect if mobile
   var isMobile = window.innerWidth < 768;
 
+  function resolveSides(row) {
+    var p1 = { name: row.username1 || 'Anon', rating: row.rating1 || '-' };
+    var p2 = { name: row.username2 || 'Open', rating: row.username2 ? (row.rating2 || '-') : '-' };
+
+    if (row.color1 === 'white') return { white: p1, black: p2 };
+    if (row.color1 === 'black') return { white: p2, black: p1 };
+    return { white: p1, black: p2 };
+  }
+
+  function createPlayerCell(player) {
+    var td = document.createElement('td');
+    var name = document.createElement('div');
+    name.textContent = player.name;
+    var rating = document.createElement('div');
+    rating.textContent = player.rating;
+    td.appendChild(name);
+    td.appendChild(rating);
+    return td;
+  }
+
+  function actionForRow(row) {
+    if (row.finished) return null;
+    if (row.started) return { label: 'Watch', action: 'watch' };
+    return { label: 'Join', action: 'join' };
+  }
+
   if (!isMobile) {
     // === DESKTOP TABLE ===
     var table = document.createElement('table');
     var thead = document.createElement('thead');
     var headerRow = document.createElement('tr');
 
-    ['Game ID', 'Players', 'Rated', 'Time', 'Action'].forEach(function (h) {
+    ['White', 'Black', 'Rated', 'Time', 'Action'].forEach(function (h) {
       var th = document.createElement('th');
       th.textContent = h;
       headerRow.appendChild(th);
@@ -89,21 +115,22 @@ function renderLobby(games) {
 
     var tbody = document.createElement('tbody');
     games.forEach(function (row) {
+      if (row.finished) return;
+      var sides = resolveSides(row);
+      var action = actionForRow(row);
       var tr = document.createElement('tr');
-      tr.appendChild(createCell(row.gameid));
-      tr.appendChild(createCell(
-        (row.username1 || 'Anon') + ' (' + (row.rating1 || '-') + ')' +
-        ' vs ' +
-        (row.username2 || 'Anon') + ' (' + (row.rating2 || '-') + ')'
-      ));
+      tr.appendChild(createPlayerCell(sides.white));
+      tr.appendChild(createPlayerCell(sides.black));
       tr.appendChild(createCell(row.rated ? 'Yes' : 'No'));
       tr.appendChild(createCell(row.timecontrol1 || ''));
 
       var actionTd = document.createElement('td');
-      var btn = document.createElement('button');
-      btn.textContent = 'Join';
-      btn.onclick = function () { sendAction(row.id, "join"); };
-      actionTd.appendChild(btn);
+      if (action) {
+        var btn = document.createElement('button');
+        btn.textContent = action.label;
+        btn.onclick = function () { sendAction(row.id, action.action); };
+        actionTd.appendChild(btn);
+      }
       tr.appendChild(actionTd);
 
       tbody.appendChild(tr);
@@ -114,15 +141,26 @@ function renderLobby(games) {
   } else {
     // === MOBILE CARDS ===
     games.forEach(function (row) {
+      if (row.finished) return;
+      var sides = resolveSides(row);
+      var action = actionForRow(row);
       var card = document.createElement('div');
       card.className = 'game-card';
 
       var players = document.createElement('div');
       players.className = 'gc-players';
-      players.textContent =
-        (row.username1 || 'Anon') + ' (' + (row.rating1 || '-') + ')' +
-        ' vs ' +
-        (row.username2 || 'Anon') + ' (' + (row.rating2 || '-') + ')';
+      var whiteLine = document.createElement('div');
+      whiteLine.textContent = 'White: ' + sides.white.name;
+      var whiteElo = document.createElement('div');
+      whiteElo.textContent = sides.white.rating;
+      var blackLine = document.createElement('div');
+      blackLine.textContent = 'Black: ' + sides.black.name;
+      var blackElo = document.createElement('div');
+      blackElo.textContent = sides.black.rating;
+      players.appendChild(whiteLine);
+      players.appendChild(whiteElo);
+      players.appendChild(blackLine);
+      players.appendChild(blackElo);
       card.appendChild(players);
 
       var info = document.createElement('div');
@@ -132,10 +170,12 @@ function renderLobby(games) {
 
       var actions = document.createElement('div');
       actions.className = 'gc-actions';
-      var btn = document.createElement('button');
-      btn.textContent = 'Join';
-      btn.onclick = function () { sendAction(row.id, "join"); };
-      actions.appendChild(btn);
+      if (action) {
+        var btn = document.createElement('button');
+        btn.textContent = action.label;
+        btn.onclick = function () { sendAction(row.id, action.action); };
+        actions.appendChild(btn);
+      }
       card.appendChild(actions);
 
       container.appendChild(card);
