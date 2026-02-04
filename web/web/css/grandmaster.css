@@ -18,8 +18,8 @@
 
 body{
   background:
-    radial-gradient(circle at 20% 10%, rgba(212,175,55,.08), transparent 60%),
-    radial-gradient(circle at 80% 0%, rgba(212,175,55,.05), transparent 55%),
+    radial-gradient(circle at 20% 10%, rgba(212,175,55,.04), transparent 60%),
+    radial-gradient(circle at 80% 0%, rgba(212,175,55,.03), transparent 55%),
     var(--bg);
   color: var(--text);
   background-size: 140% 140%;
