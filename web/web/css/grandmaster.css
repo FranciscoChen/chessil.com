@@ -167,6 +167,116 @@ footer{
   animation: grandmaster-underline 1.6s ease forwards;
 }
 
+.query{
+  background: rgba(13,13,29,.92);
+  border-bottom: 1px solid rgba(212,175,55,.35);
+}
+
+.filters-secondary{
+  background: rgba(26,26,26,.92);
+  border: 1px solid rgba(212,175,55,.2);
+}
+
+.filters-primary select,
+.filters-secondary select,
+.filters-secondary input{
+  background: rgba(13,13,29,.96);
+  color: var(--text);
+  border: 1px solid rgba(212,175,55,.35);
+}
+
+.filters-primary select:focus,
+.filters-secondary select:focus,
+.filters-secondary input:focus{
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(212,175,55,.2);
+}
+
+.btn-create{
+  background-color: var(--link);
+  color: #0d0d1d;
+  border: 1px solid rgba(212,175,55,.55);
+}
+
+.btn-create:hover{
+  background-color: var(--link2);
+}
+
+.btn-create:active{
+  background-color: #9c7e0b;
+}
+
+.btn-toggle{
+  color: rgba(212,175,55,.75);
+}
+
+.results-flex table{
+  color: var(--text);
+}
+
+.results-flex th,
+.results-flex td{
+  border-bottom: 1px solid rgba(212,175,55,.2);
+}
+
+.results-flex th{
+  background: rgba(13,13,29,.9);
+}
+
+.results-flex tr:nth-child(even){
+  background: rgba(26,26,26,.7);
+}
+
+.results-flex tr:hover{
+  background: rgba(212,175,55,.08);
+}
+
+.results-flex td button{
+  border: 1px solid rgba(212,175,55,.6);
+  background: transparent;
+  color: var(--link);
+}
+
+.results-flex td button:hover{
+  background: rgba(212,175,55,.2);
+  color: #0d0d1d;
+}
+
+@media (max-width: 767px){
+  .results-flex tr{
+    border: 1px solid rgba(212,175,55,.2);
+    background: rgba(26,26,26,.85);
+  }
+
+  .results-flex td::before{
+    color: rgba(245,241,232,.6);
+  }
+
+  .game-card{
+    border: 1px solid rgba(212,175,55,.2);
+    background: rgba(26,26,26,.85);
+  }
+
+  .gc-players{
+    color: var(--text);
+  }
+
+  .gc-info{
+    color: rgba(245,241,232,.6);
+  }
+
+  .gc-actions button{
+    border: 1px solid rgba(212,175,55,.6);
+    background: transparent;
+    color: var(--link);
+  }
+
+  .gc-actions button:hover{
+    background: rgba(212,175,55,.2);
+    color: #0d0d1d;
+  }
+}
+
 .action{
   position: relative;
   border-color: rgba(212,175,55,.55);
