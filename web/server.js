@@ -2264,8 +2264,8 @@ function handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata)
     const sql = `
       SELECT g.id, g.gameid, g.rated, g.timecontrol1, g.randomcolor,
              g.color1, g.color2, g.created, g.started, g.finished,
-             u1.id AS userid1, u1.username AS username1, u1.rating AS rating1,
-             u2.id AS userid2, u2.username AS username2, u2.rating AS rating2
+             u1.id AS userid1, u1.username AS username1, ROUND(u1.rating)::int AS rating1,
+             u2.id AS userid2, u2.username AS username2, ROUND(u2.rating)::int AS rating2
       FROM games g
       JOIN users u1 ON g.userid1 = u1.id
       LEFT JOIN users u2 ON g.userid2 = u2.id
