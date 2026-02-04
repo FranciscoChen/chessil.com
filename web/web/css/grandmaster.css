@@ -178,19 +178,28 @@ footer{
   position: relative;
 }
 
-.showcase-grid::before,
-.showcase-grid::after{
-  content: "";
+.showcase-stars{
   position: absolute;
-  top: 18%;
-  left: 16%;
-  width: 6px;
-  height: 6px;
-  background: var(--link);
-  opacity: .9;
+  inset: 0;
   pointer-events: none;
-  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
 }
+
+.bg-star{
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--link);
+  opacity: .7;
+  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+  animation: grandmaster-glitter-a 8s ease-in-out infinite;
+}
+
+.bg-star.b1{ left: 18%; top: 22%; animation-delay: -1s; }
+.bg-star.b2{ left: 34%; top: 18%; opacity: .5; animation-delay: -3s; }
+.bg-star.b3{ left: 58%; top: 26%; opacity: .8; animation-delay: -5s; }
+.bg-star.b4{ left: 72%; top: 20%; opacity: .6; animation-delay: -2s; }
+.bg-star.b5{ left: 26%; top: 60%; opacity: .7; animation-delay: -6s; }
+.bg-star.b6{ left: 64%; top: 64%; opacity: .55; animation-delay: -4s; }
 
 .showcase-grid::before{
   animation: grandmaster-glitter-a 8s ease-in-out infinite;
