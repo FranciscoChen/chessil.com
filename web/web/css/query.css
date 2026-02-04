@@ -9,6 +9,34 @@
   border-bottom: 1px solid #ddd;
 }
 
+.query-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.query-actions button {
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #2d8cff;
+  background: #2d8cff;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.query-actions button:hover {
+  background: #1a6edc;
+  box-shadow: 0 6px 12px rgba(45, 140, 255, 0.2);
+}
+
+.query-actions button:active {
+  transform: translateY(1px);
+}
+
 .results {
   padding: 0.5rem;
 }
