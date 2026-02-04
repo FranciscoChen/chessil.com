@@ -424,6 +424,7 @@ footer{
   background-repeat: no-repeat;
   background-size: 18px 2px, 2px 18px;
   background-position: left top, left top;
+  transition: inset .2s ease-in-out;
 }
 
 .action::after{
@@ -438,6 +439,21 @@ footer{
   background-size: 18px 2px, 2px 18px;
   background-position: right bottom, right bottom;
   opacity: .8;
+  transition: inset .2s ease-in-out;
+}
+
+.action:hover::before{
+  inset: 1px;
+}
+
+.action:hover::after{
+  inset: 1px;
+}
+
+.action:active{
+  box-shadow: 0 6px 16px rgba(42,31,22,.35), inset 0 2px 6px rgba(0,0,0,.25);
+  transform: translateY(1px);
+  transition: box-shadow .2s ease-in-out, transform .2s ease-in-out;
 }
 
 @keyframes grandmaster-underline{
