@@ -177,12 +177,6 @@ footer{
 
 .showcase-grid{
   position: relative;
-}
-
-.showcase-stars{
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
@@ -190,6 +184,8 @@ footer{
 
 .bg-star{
   position: relative;
+  pointer-events: none;
+  place-self: center;
   width: 4px;
   height: 4px;
   background: var(--link);
