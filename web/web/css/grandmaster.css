@@ -90,7 +90,7 @@ footer{
   left: var(--l1-x, 10%);
   top: var(--l1-y, 44%);
   width: var(--l1-w, 28%);
-  height: var(--l1-h, 10%);
+  height: var(--l1-h, 2px);
   clip-path: var(--l1-path, polygon(0% 50%, 100% 0%, 100% 25%, 0% 75%));
 }
 
@@ -98,7 +98,7 @@ footer{
   left: var(--l2-x, 34%);
   top: var(--l2-y, 48%);
   width: var(--l2-w, 30%);
-  height: var(--l2-h, 10%);
+  height: var(--l2-h, 2px);
   clip-path: var(--l2-path, polygon(0% 40%, 100% 70%, 100% 85%, 0% 55%));
 }
 
@@ -106,7 +106,7 @@ footer{
   left: var(--l3-x, 58%);
   top: var(--l3-y, 44%);
   width: var(--l3-w, 28%);
-  height: var(--l3-h, 10%);
+  height: var(--l3-h, 2px);
   clip-path: var(--l3-path, polygon(0% 20%, 100% 60%, 100% 80%, 0% 40%));
 }
 
