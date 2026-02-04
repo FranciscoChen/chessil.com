@@ -47,43 +47,48 @@ footer{
 .showcase{
   background: var(--bg2);
   position: relative;
-  border-bottom: 1px solid rgba(212,175,55,.25);
 }
 
-.showcase::before{
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -6px;
-  height: 1px;
-  background: rgba(212,175,55,.25);
+.showcase-border{
+  background: var(--bg2);
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(2, minmax(10px, 1fr));
+  height: clamp(36px, 4vw, 56px);
+  position: relative;
 }
 
-.showcase::after{
+.showcase-border-grid{
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  position: relative;
+}
+
+.showcase-border-grid::before{
   content: "";
   position: absolute;
-  left: 8%;
-  right: 8%;
-  bottom: -3px;
-  height: 6px;
+  left: 6%;
+  right: 6%;
+  top: 35%;
+  height: 2px;
   background:
-    repeating-linear-gradient(135deg, rgba(212,175,55,.7) 0 6px, transparent 6px 12px),
-    radial-gradient(circle, rgba(212,175,55,.9) 0 .8px, transparent 1.8px),
-    radial-gradient(circle, rgba(212,175,55,.8) 0 .7px, transparent 1.7px);
-  background-size: auto, 120px 6px, 160px 6px;
-  background-position: 0 0, 10px 0, 60px 0;
+    repeating-linear-gradient(135deg, rgba(212,175,55,.7) 0 8px, transparent 8px 16px);
   opacity: .8;
-  pointer-events: none;
 }
 
-.showcase:last-of-type{
-  border-bottom: none;
-}
-
-.showcase:last-of-type::before,
-.showcase:last-of-type::after{
-  display: none;
+.showcase-border-grid::after{
+  content: "";
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 60%;
+  height: 2px;
+  background:
+    radial-gradient(circle, rgba(212,175,55,.95) 0 .8px, transparent 1.8px),
+    radial-gradient(circle, rgba(212,175,55,.75) 0 .7px, transparent 1.7px);
+  background-size: 140px 2px, 220px 2px;
+  background-position: 0 0, 60px 0;
+  opacity: .7;
 }
 
 .showcase-grid{
