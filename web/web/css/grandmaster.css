@@ -51,69 +51,34 @@ footer{
 .showcase{
   background: var(--bg2);
   position: relative;
+  border-bottom: 1px solid var(--border);
 }
 
 .showcase:nth-of-type(2){
   background: linear-gradient(135deg, rgba(54,69,79,.28), rgba(13,13,29,.92));
 }
 
-.showcase-border{
-  background: var(--bg2);
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(2, minmax(10px, 1fr));
-  min-height: 20vh;
-  position: relative;
-}
-
-.showcase-border-grid{
-  grid-column: 1 / -1;
-  grid-row: 1 / -1;
-  position: relative;
-}
-
-.star{
+.showcase::after{
+  content: "";
   position: absolute;
-  width: 12px;
-  height: 12px;
+  left: 50%;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  transform: translateX(-50%);
   background: var(--link);
   clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
-  opacity: .95;
-  animation: grandmaster-star-pulse 9s ease-in-out infinite;
+  opacity: .9;
 }
 
-.star.s1{ left: var(--s1-x, 18%); top: var(--s1-y, 35%); width: 18px; height: 18px; }
-.star.s2{ left: var(--s2-x, 40%); top: var(--s2-y, 30%); width: 14px; height: 14px; opacity: .85; }
-.star.s3{ left: var(--s3-x, 62%); top: var(--s3-y, 40%); width: 12px; height: 12px; opacity: .75; }
-.star.s4{ left: var(--s4-x, 78%); top: var(--s4-y, 28%); width: 16px; height: 16px; opacity: .9; }
-
-.showcase-border:nth-of-type(4n+1){
-  --s1-x: 16%; --s1-y: 30%;
-  --s2-x: 34%; --s2-y: 22%;
-  --s3-x: 58%; --s3-y: 36%;
-  --s4-x: 78%; --s4-y: 26%;
+.showcase:last-of-type{
+  border-bottom: none;
 }
 
-.showcase-border:nth-of-type(4n+2){
-  --s1-x: 20%; --s1-y: 24%;
-  --s2-x: 46%; --s2-y: 34%;
-  --s3-x: 62%; --s3-y: 22%;
-  --s4-x: 82%; --s4-y: 40%;
+.showcase:last-of-type::after{
+  display: none;
 }
 
-.showcase-border:nth-of-type(4n+3){
-  --s1-x: 14%; --s1-y: 38%;
-  --s2-x: 36%; --s2-y: 24%;
-  --s3-x: 58%; --s3-y: 44%;
-  --s4-x: 76%; --s4-y: 30%;
-}
-
-.showcase-border:nth-of-type(4n){
-  --s1-x: 12%; --s1-y: 26%;
-  --s2-x: 30%; --s2-y: 20%;
-  --s3-x: 52%; --s3-y: 32%;
-  --s4-x: 80%; --s4-y: 24%;
-}
 
 @keyframes grandmaster-star-pulse{
   0%{ opacity: .6; transform: translateY(0); }
