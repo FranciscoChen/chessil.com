@@ -10,7 +10,6 @@ header {
   color: var(--text);
   z-index: 7;
   margin: 0 auto;
-  max-width: 1800px;
 }
 
 .icon-search {
