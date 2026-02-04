@@ -12,25 +12,29 @@
   border-bottom: 1px solid #ddd;
   grid-column: 1 / -1;
   grid-row: 1 / span 3;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  align-items: center;
 }
 
 .query-actions {
+  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  grid-template-columns: repeat(8, 1fr);
   align-items: center;
 }
 
 .query-actions button {
-  padding: 0.55rem 1rem;
-  border-radius: 8px;
+  padding: 0.85rem 1.5rem;
+  border-radius: 10px;
   border: 1px solid #2d8cff;
   background: #2d8cff;
   color: #ffffff;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+  min-width: 160px;
 }
 
 .query-actions button:hover {
@@ -42,6 +46,15 @@
   transform: translateY(1px);
 }
 
+.query-actions button:first-child {
+  grid-column: 2 / 3;
+  justify-self: start;
+}
+
+.query-actions button:last-child {
+  grid-column: 7 / 8;
+  justify-self: end;
+}
 .results {
   padding: 0.5rem;
   grid-column: 1 / -1;
