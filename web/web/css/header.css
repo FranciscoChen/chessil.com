@@ -96,12 +96,17 @@ body.clinput #clinput input {
   background: var(--bg);
   z-index: 108;
   box-shadow: -1px 5px 6px var(--shadow);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity .3s ease-in-out, transform .3s ease-in-out;
 }
 
 .shown .dropdown {
   background: none;
   color: var(--text);
   display: block;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 header button {
@@ -252,6 +257,9 @@ header button {
 #dasher_user_app {
   border-radius: 3px 0 0 3px;
   width: 225px;
+  background: var(--bg2);
+  color: var(--text);
+  box-shadow: 0 12px 24px var(--shadow);
 }
 
 #dasher_user_app .links a:hover,
