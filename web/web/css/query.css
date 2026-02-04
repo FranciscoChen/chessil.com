@@ -1,12 +1,17 @@
 /* === Layout Wrappers === */
 .main {
   display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
 .query {
   padding: 0.5rem;
   background: #f9f9f9;
   border-bottom: 1px solid #ddd;
+  grid-column: 1 / -1;
+  grid-row: 1 / span 3;
 }
 
 .query-actions {
@@ -39,6 +44,8 @@
 
 .results {
   padding: 0.5rem;
+  grid-column: 1 / -1;
+  grid-row: 4 / -1;
 }
 
 /* === Filter Styling === */
