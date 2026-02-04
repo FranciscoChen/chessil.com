@@ -45,7 +45,7 @@ footer{
 }
 
 .showcase{
-  background: linear-gradient(135deg, rgba(13,13,29,.96), rgba(26,26,26,.92));
+  background: var(--bg2);
 }
 
 .showcase-grid{
