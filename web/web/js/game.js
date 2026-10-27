@@ -104,7 +104,18 @@ function gamereplay(ply) {
 }
 
 function displayTermination(code) {
-  stat = code
+  const status = document.querySelector('[data-game-field="state"]')
+  const descriptions = {
+    en: ['Playing', 'Checkmate', 'Stalemate', 'Insufficient material', 'Threefold repetition', '50-move rule', 'Time out', 'Resigned', 'Draw agreed', 'Game canceled'],
+    es: ['En curso', 'Jaque mate', 'Ahogado', 'Material insuficiente', 'Triple repetición', 'Regla de 50 movimientos', 'Tiempo agotado', 'Rendición', 'Tablas acordadas', 'Partida cancelada'],
+    zh: ['进行中', '将死', '逼和', '子力不足', '三次重复', '50步规则', '超时', '认输', '协议和棋', '对局已取消']
+  }
+  if (status) {
+    status.dataset.state = String(code)
+    status.textContent = (descriptions[document.documentElement.lang] || descriptions.en)[Number(code)] || 'Finished'
+    status.setAttribute('role', 'status')
+  }
+  stat = Number(code)
   if (code > 0) {
     gamefinished = true;
     clearInterval(clocktick)
