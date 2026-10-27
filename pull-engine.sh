@@ -7,6 +7,9 @@ remote_url="https://github.com/FranciscoChen/chessil.com.git"
 config_file="/home/ubuntu/chessil.com/restart-services.conf"
 
 cd "$repo_dir"
+mkdir -p "$HOME/.cache/chessil"
+exec 9>"$HOME/.cache/chessil/pull.lock"
+flock 9
 
 RESTART_ENGINE=1
 if [ -f "$config_file" ]; then

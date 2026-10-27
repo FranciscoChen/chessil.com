@@ -13,3 +13,6 @@ Setup (one time)
 
 Deployment / restart
 - Run: ./web/restart-web.sh
+
+Push deployment
+- The GitHub webhook receiver and multi-server push deploy are documented in `deploy-hook/README.md`.
