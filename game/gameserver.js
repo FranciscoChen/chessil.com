@@ -258,7 +258,15 @@ function clearBotPending(gameid) {
   });
 }
 
-function requestBotMove(gameid) {
+function releaseBotRequest(gameid, token) {
+  return redis.eval("if redis.call('GET',KEYS[1]) == ARGV[1] then return redis.call('DEL',KEYS[1]) end return 0", 1, botPendingPrefix + gameid, token)
+    .catch(error => console.error('Bot request release failed:', error));
+}
+
+function requestBotMove(gameid, attempt = 0) {
+  const retry = () => {
+    if (attempt < 2) setTimeout(() => requestBotMove(gameid, attempt + 1), 500 * (attempt + 1)).unref();
+  };
   redis.hmget(gameid, 'bw', 'bb', 'f', 't', 'm', 'l', 'n', 'o', 'z', (err, re) => {
     if (err) { console.error(err); return; }
     const botWhiteElo = parseInt(re[0], 10)
@@ -279,7 +287,9 @@ function requestBotMove(gameid) {
 
     const moves = re[4] || ''
     const hm = moves.length ? moves.split(' ').length : 0
-    const uuidhm = gameid + '-' + hm + '-' + botside
+    // Keep the game prefix and trailing side required by the worker, but give
+    // every bot search its own reply listener, separate from background analysis.
+    const uuidhm = gameid + '-bot-' + hm + '-' + crypto.randomBytes(8).toString('hex') + '-' + botside
     const pendingKey = botPendingPrefix + gameid
     redis.set(pendingKey, uuidhm, 'NX', 'PX', botPendingTtlMs, (err2, result) => {
       if (err2) { console.error(err2); return; }
@@ -316,14 +326,16 @@ function requestBotMove(gameid) {
         let response = ''
         res.on('data', (chunk) => { response += chunk })
         res.on('end', () => {
-          clearBotPending(gameid)
+          releaseBotRequest(gameid, uuidhm)
           if (res.statusCode !== 200) {
+            retry();
             return
           }
           let result
           try {
             result = JSON.parse(response)
           } catch (e) {
+            retry();
             return
           }
           if (!result || typeof result.bestmove !== 'string') return
@@ -332,15 +344,15 @@ function requestBotMove(gameid) {
             if (state[2] !== '0') return
             const currentMoves = state[1] || ''
             const currentHm = currentMoves.length ? currentMoves.split(' ').length : 0
-            const currentUuid = gameid + '-' + currentHm + '-' + state[0]
-            if (currentUuid !== result.uuidhm) return
+            if (currentHm !== hm || state[0] !== botside || result.uuidhm !== uuidhm) return
             handleMove(gameid, botside, result.bestmove, { send: function () { }, terminate: function () { } })
           })
         })
       })
       newreq.on('error', (e) => {
-        clearBotPending(gameid)
+        releaseBotRequest(gameid, uuidhm)
         console.log(e)
+        retry();
       })
       newreq.setTimeout(15000, () => newreq.destroy(new Error('Bot engine timed out')))
       newreq.end(payload)
