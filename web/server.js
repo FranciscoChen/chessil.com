@@ -98,7 +98,10 @@ redisSub.subscribe(lobbyChannel, (err) => {
 redisSub.on('message', (channel, message) => {
   if (channel !== lobbyChannel) return;
   if (typeof message !== 'string' || message.length === 0) return;
-  notifyLobbyWatchers(message, false);
+  try {
+    const event = message[0] === '{' ? JSON.parse(message) : { gameid: message, finished: false };
+    if (gameidregex.test(event.gameid)) notifyLobbyWatchers(event.gameid, false, event.finished === true);
+  } catch (error) { console.error('Invalid lobby event:', error); }
 });
 
 // The mime types of files that can be served, and which ones are to be gzipped or cached. It is limited on purpose and can be expanded as needed
@@ -609,6 +612,9 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
     searchuser(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
   }
+  if (req.url === '/lobby/cancel' && req.method === 'POST') {
+    return handleLobbyCancel(filename, mime, ext, res, req, resHeaders, sessiondata);
+  }
   if (req.url === '/lobby/create' && req.method === 'POST') {
     return handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondata);
   }
@@ -828,6 +834,8 @@ function serve(filename, mime, ext, res, req, resHeaders, sessiondata) {
           if (ext === '.html') {
             data = renderPage(data, sessiondata[3], sessiondata[2]);
             resHeaders['Cache-Control'] = 'no-store';
+          } else if (ext === '.css') {
+            data = renderPage.styles(data, '/' + path.relative(dir, filename).split(path.sep).join('/'));
           }
           // gzip compression only to text
           if (typeof req.headers['accept-encoding'] !== 'undefined' && req.headers['accept-encoding'].indexOf('gzip') !== -1 && typeof mime.gzip[ext] !== 'undefined') {
@@ -2009,13 +2017,14 @@ function darkmode(filename, mime, ext, res, req, resHeaders, sessiondata) {
   });
 }
 
-function notifyLobbyWatchers(gameid, publish) {
+function notifyLobbyWatchers(gameid, publish, finished = false) {
+  const event = { started: !finished, finished, gameid };
   if (publish) {
-    redis.publish(lobbyChannel, gameid);
+    redis.publish(lobbyChannel, finished ? JSON.stringify(event) : gameid);
   }
   const watchers = lobbyWatchers.get(gameid);
   if (!watchers || watchers.size === 0) return;
-  const payload = 'data: ' + JSON.stringify({ started: true, gameid: gameid }) + '\n\n';
+  const payload = 'data: ' + JSON.stringify(event) + '\n\n';
   watchers.forEach((entry) => {
     entry.res.write(payload);
     entry.res.end();
@@ -2201,20 +2210,27 @@ function handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata)
       filters.startedTo || null,
       filters.finishedFrom || null,
       filters.finishedTo || null,
-      100
+      100,
+      String(sessiondata[1] || '0'),
+      req.headers.cookie.slice(2),
+      typeof data.gameid === 'string' && gameidregex.test(data.gameid) ? data.gameid : null
     ];
 
     const sql = `
       SELECT g.id, g.gameid, g.rated, g.timecontrol1, g.randomcolor,
              g.color1, g.color2, g.created, g.started, g.finished,
-             u1.id AS userid1, u1.username AS username1, ROUND(u1.rating)::int AS rating1,
-             u2.id AS userid2, u2.username AS username2, ROUND(u2.rating)::int AS rating2
+             (g.sessionid2 IS NOT NULL OR g.userid2 IS NOT NULL) AS "hasOpponent",
+             ((($15::bigint <> 0) AND g.userid1 = $15) OR g.sessionid1 = $16::text) AS "isOwn",
+             g.userid1 AS userid1, u1.username AS username1, ROUND(u1.rating)::int AS rating1,
+             g.userid2 AS userid2, u2.username AS username2, ROUND(u2.rating)::int AS rating2
       FROM games g
-      JOIN users u1 ON g.userid1 = u1.id
+      LEFT JOIN users u1 ON g.userid1 = u1.id
       LEFT JOIN users u2 ON g.userid2 = u2.id
-      WHERE ($1::boolean IS NULL OR g.rated = $1)
-        AND ($2::numeric IS NULL OR u1.rating >= $2)
-        AND ($3::numeric IS NULL OR u1.rating <= $3)
+      WHERE ($17::text IS NULL OR g.gameid = $17)
+        AND ($7 = 'finished' OR (g.finished IS NULL AND (g.state IS NULL OR g.state = 0)))
+        AND ($1::boolean IS NULL OR g.rated = $1)
+        AND ($2::numeric IS NULL OR COALESCE(u1.rating, 1500) >= $2)
+        AND ($3::numeric IS NULL OR COALESCE(u1.rating, 1500) <= $3)
         AND ($4::text IS NULL OR u1.username ILIKE '%' || $4 || '%' OR u2.username ILIKE '%' || $4 || '%')
         AND (
           $5::text IS NULL
@@ -2234,7 +2250,7 @@ function handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata)
         AND ($11::timestamptz IS NULL OR g.started <= $11)
         AND ($12::timestamptz IS NULL OR g.finished >= $12)
         AND ($13::timestamptz IS NULL OR g.finished <= $13)
-      ORDER BY g.created DESC
+      ORDER BY "isOwn" DESC, g.created DESC
       LIMIT $14;
     `;
     const { rows } = await lobbyDb.query(sql, values);
@@ -2327,13 +2343,13 @@ function readLobbyJson(req) {
 async function handleLobbyRequest(req, res, resHeaders, handler) {
   try {
     const result = await handler(await readLobbyJson(req));
-    res.writeHead(200, { ...resHeaders, 'Content-Type': 'application/json' });
+    res.writeHead(200, { ...resHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
     res.end(JSON.stringify(result));
   } catch (err) {
     if (!err.status || err.status >= 500) console.error(req.url + ' error', err);
     if (res.destroyed || res.writableEnded) return;
     res.writeHead(err.status || 500, { ...resHeaders, 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: err.status ? err.message : 'Internal error' }));
+    res.end(JSON.stringify({ error: err.status ? err.message : 'Internal error', ...(err.gameid ? {gameid: err.gameid} : {}) }));
   }
 }
 
@@ -2424,37 +2440,77 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
   });
 }
 
+function handleLobbyCancel(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  return handleLobbyRequest(req, res, resHeaders, async ({ gameid }) => {
+    if (typeof gameid !== 'string' || !gameidregex.test(gameid)) throw lobbyError(400, 'Invalid gameid');
+    const { rowCount } = await lobbyDb.query(`UPDATE games SET finished=NOW(), state=9
+      WHERE gameid=$1 AND started IS NULL AND finished IS NULL
+      AND userid2 IS NULL AND sessionid2 IS NULL
+      AND ((userid1=$2 AND $2::bigint<>0) OR sessionid1=$3)`,
+      [gameid, String(sessiondata[1] || '0'), req.headers.cookie.slice(2)]);
+    if (!rowCount) throw lobbyError(409, 'This challenge cannot be canceled. It may already have started.');
+    notifyLobbyWatchers(gameid, true, true);
+    return { success: true, gameid };
+  });
+}
+
 function handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondata) {
   return handleLobbyRequest(req, res, resHeaders, async data => {
+    if (data.rated != null && ![true, false, '1', '0'].includes(data.rated)) throw lobbyError(400, 'Invalid game mode');
     const rated = data.rated === true || data.rated === '1';
-    if (rated && sessiondata[1] === '0') {
-      throw lobbyError(403, 'Anonymous users cannot create rated games');
-    }
-    const timecontrol = normalizeTimeControl(data.timecontrol);
+    const userId = String(sessiondata[1] || '0');
+    if (rated && userId === '0') throw lobbyError(403, 'Sign in to create a rated game.');
+    const timecontrol = data.timecontrol == null ? '5+0' : data.timecontrol;
+    if (!lobbyTimeControls.includes(timecontrol)) throw lobbyError(400, 'Choose a supported time control.');
+    if (data.color != null && !['random','white','black'].includes(data.color)) throw lobbyError(400, 'Invalid color');
     const color = !rated && ['white', 'black'].includes(data.color) ? data.color : null;
-    let creatorId = sessiondata[1];
-    let creatorSession = req.headers.cookie.slice(2);
-    if (data.easy === true || data.easy === '1') {
+    let creatorId = userId;
+    const sessionId = req.headers.cookie.slice(2);
+    let creatorSession = sessionId;
+    const easy = data.easy === true || data.easy === '1';
+    if (easy) {
       if (!validLobbyId(data.botId)) throw lobbyError(400, 'Invalid bot');
-      const { rowCount } = await lobbyDb.query('SELECT id FROM users WHERE id = $1 AND role = 3', [data.botId]);
+      const { rowCount } = await lobbyDb.query('SELECT id FROM users WHERE id=$1 AND role=3', [data.botId]);
       if (!rowCount) throw lobbyError(404, 'Bot not found');
       creatorId = String(data.botId);
       creatorSession = 'bot:' + creatorId;
     }
-    // Nine alphanumeric characters, without the timestamp collisions under load.
-    const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const gameid = Array.from({ length: 9 }, () => chars[crypto.randomInt(chars.length)]).join('');
-      try {
-        const { rows: [game] } = await lobbyDb.query(
-          `INSERT INTO games (gameid, userid1, sessionid1, rated, timecontrol1, randomcolor, color1, created)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING id, gameid`,
-          [gameid, creatorId, creatorSession, rated, timecontrol, color === null, color]);
-        return { success: true, id: game.id, gameid: game.gameid };
-      } catch (err) {
-        if (err.code !== '23505' || err.constraint !== 'games_gameid_key' || attempt === 2) throw err;
+    const client = await lobbyDb.connect();
+    try {
+      await client.query('BEGIN');
+      // Serialize duplicate submissions across both web instances without a schema change.
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', ['lobby:' + (userId === '0' ? sessionId : userId)]);
+      if (!easy) {
+        const { rows: [pending] } = await client.query(`SELECT id,gameid,rated,timecontrol1,color1,randomcolor FROM games
+          WHERE ((userid1=$1 AND $1::bigint<>0) OR sessionid1=$2)
+          AND started IS NULL AND finished IS NULL AND userid2 IS NULL AND sessionid2 IS NULL
+          ORDER BY created DESC LIMIT 1 FOR UPDATE`, [userId, sessionId]);
+        if (pending) {
+          if (pending.rated === rated && pending.timecontrol1 === timecontrol &&
+              (pending.randomcolor ? color === null : pending.color1 === color)) {
+            await client.query('COMMIT');
+            return { success: true, id: pending.id, gameid: pending.gameid, reused: true };
+          }
+          throw Object.assign(lobbyError(409, 'You already have an open challenge. Cancel it before creating another.'), {gameid: pending.gameid});
+        }
       }
-    }
+      const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      for (let attempt=0; attempt<3; attempt++) {
+        const gameid = Array.from({length:9}, () => chars[crypto.randomInt(chars.length)]).join('');
+        const { rows: [game] } = await client.query(`INSERT INTO games
+          (gameid,userid1,sessionid1,rated,timecontrol1,randomcolor,color1,created)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,NOW()) ON CONFLICT (gameid) DO NOTHING RETURNING id,gameid`,
+          [gameid,creatorId,creatorSession,rated,timecontrol,color === null,color]);
+        if (game) {
+          await client.query('COMMIT');
+          return { success: true, id: game.id, gameid: game.gameid };
+        }
+      }
+      throw lobbyError(503, 'Please try creating the game again.');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally { client.release(); }
   });
 }
 

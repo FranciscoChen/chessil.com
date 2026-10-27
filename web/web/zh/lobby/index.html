@@ -1,141 +1,63 @@
 <!doctype html>
 <html lang="zh">
-
 <head>
-  <title>ChessiL - 大厅</title>
+  <title>ChessiL — 公开挑战</title>
   <meta charset="utf-8">
-  <meta name="viewport" content="initial-scale=1, width=device-width, height=device-height">
-  <meta name="description" content="寻找一局国际象棋对弈">
-  <meta name="keywords" content="国际象棋, 对弈, 在线, 快速, 实时, 超快棋, 子弹, 闪电, 快棋, 大厅">
-  <link rel="stylesheet" href="/css/site.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="寻找对手，选择节奏，享受一局国际象棋。">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/css/lobby.css">
-  <link rel="stylesheet" href="/css/dialog.css">
-  <link rel="stylesheet" href="/css/query.css">
+  <link rel="stylesheet" href="/css/site.css">
   <link rel="stylesheet" href="/css/grandmaster.css">
   <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dialog.css">
+  <link rel="stylesheet" href="/css/query.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
+  <script src="/js/lobby-text.js"></script>
+  <script src="/js/dialogs.js"></script>
   <script src="/js/query.js"></script>
 </head>
-
-<body>
+<body class="lobby-page">
   <!-- component:header -->
-
-  <div class="main-wrap">
-    <div class="main">
-      <div class="query">
-        <div class="query-flex">
-
-          <button id="open-filters" class="query-button">筛选</button>
-          <button id="open-create" class="query-button">创建对局</button>
-          <div id="create-status"></div>
-
-        </div>
+  <main class="lobby-shell">
+    <section class="lobby-intro" aria-labelledby="lobby-title">
+      <div><p class="eyebrow">在线对弈</p><h1 id="lobby-title">下一步，从这里开始。</h1><p class="lobby-description">寻找对手，选择节奏，享受一局国际象棋。</p></div>
+      <div class="lobby-intro-actions"><button id="open-create" class="ui-button ui-primary" type="button">创建对局 <span aria-hidden="true">＋</span></button><a class="ui-button ui-secondary" href="/easy">与电脑对弈</a></div>
+    </section>
+    <section id="pending-challenge" class="pending-challenge" aria-labelledby="pending-title" hidden>
+      <div class="pending-indicator" aria-hidden="true"></div><div class="pending-copy"><h2 id="pending-title">你的挑战已开放</h2><p id="pending-summary"></p><p id="create-status" role="status">正在等待对手…</p></div>
+      <div class="pending-actions"><button id="copy-invite" class="ui-button ui-secondary" type="button">复制邀请链接</button><button id="cancel-game" class="ui-button ui-quiet" type="button">取消挑战</button></div>
+    </section>
+    <section class="lobby-panel" aria-labelledby="games-title">
+      <div class="lobby-toolbar">
+        <div class="lobby-tabs" role="group" aria-label="模式"><button type="button" data-lobby-mode="play" aria-pressed="true">加入对局</button><button type="button" data-lobby-mode="watch" aria-pressed="false">观看直播</button></div>
+        <div class="lobby-tools"><button id="open-filters" class="ui-button ui-secondary" type="button">筛选 <span id="filter-count" hidden></span></button><button id="refresh-lobby" class="ui-button ui-quiet" type="button">刷新</button></div>
       </div>
-      <div class="results">
-        <div class="results-flex"></div>
+      <div class="lobby-list-heading"><h2 id="games-title">公开挑战</h2><p id="lobby-count" role="status">正在加载对局…</p></div>
+      <p id="lobby-error" class="notice notice-error" role="alert" hidden></p>
+      <div id="lobby-results" class="results-flex" aria-busy="true"></div>
+      <div class="lobby-panel-footer"><p id="lobby-updated"></p><nav id="lobby-pagination" class="lobby-pagination" aria-label="页" hidden></nav></div>
+    </section>
+  </main>
+  <dialog id="filters-dialog" class="site-dialog" aria-labelledby="filters-title" aria-describedby="filters-intro">
+    <form id="filters-form">
+      <div class="dialog-header"><div><p class="eyebrow">公开挑战</p><h2 id="filters-title">筛选对局</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="关闭">×</button></div>
+      <div class="dialog-body"><p id="filters-intro" class="dialog-intro">缩小范围，找到下一位对手。</p><details class="filter-section" open><summary>对局偏好</summary><div class="dialog-fields"><label class="dialog-field" for="rated"><span>模式</span><select id="rated" ><option value="">不限</option><option value="0">休闲</option><option value="1">排位</option></select></label><label class="dialog-field" for="color"><span>执棋颜色</span><select id="color" ><option value="">不限</option><option value="random">随机</option><option value="white">白方</option><option value="black">黑方</option></select></label></div></details><details class="filter-section"><summary>用时</summary><div class="dialog-fields"><label class="dialog-field" for="timeGroup"><span>节奏</span><select id="timeGroup" ><option value="any">不限</option><option value="fast">快棋</option><option value="slow">慢棋</option></select></label><label class="dialog-field" for="time"><span>用时</span><select id="time" ></select></label></div></details><details class="filter-section"><summary>棋手</summary><div class="dialog-fields"><label class="dialog-field" for="eloMin"><span>最低等级分</span><input id="eloMin" type="number" min="0" max="4000" inputmode="numeric"></label><label class="dialog-field" for="eloMax"><span>最高等级分</span><input id="eloMax" type="number" min="0" max="4000" inputmode="numeric"></label><label class="dialog-field" for="username"><span>棋手名称</span><input id="username" type="text" maxlength="20" autocomplete="off" pattern="[a-zA-Z0-9_-]*"></label></div></details><p id="filters-error" class="notice notice-error" role="alert" hidden></p></div>
+      <div class="dialog-footer"><button type="button" class="ui-button ui-quiet" id="filters-reset">重置</button><button type="button" class="ui-button ui-secondary" data-dialog-close>取消</button><button type="submit" class="ui-button ui-primary" id="filters-apply">应用筛选</button></div>
+    </form>
+  </dialog>
+  <dialog id="create-dialog" class="site-dialog" aria-labelledby="create-title" aria-describedby="create-intro">
+    <form id="create-form">
+      <div class="dialog-header"><div><p class="eyebrow">在线对弈</p><h2 id="create-title">创建对局</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="关闭">×</button></div>
+      <div class="dialog-body"><p id="create-intro" class="dialog-intro">选择设置后，你的挑战将出现在大厅中。</p><fieldset><legend>对局设置</legend><div class="dialog-fields"><label class="dialog-field" for="create-rated"><span>模式</span><select id="create-rated" ><option value="0">休闲</option><option value="1">排位</option></select></label><label class="dialog-field" for="create-color"><span>执棋颜色</span><select id="create-color" ><option value="random">随机</option><option value="white">白方</option><option value="black">黑方</option></select></label></div></fieldset><fieldset><legend>用时</legend><div class="dialog-fields"><label class="dialog-field" for="create-time-group"><span>节奏</span><select id="create-time-group" ><option value="fast">快棋</option><option value="slow">慢棋</option></select></label><label class="dialog-field" for="create-time"><span>用时</span><select id="create-time" required></select></label></div><p class="field-help">每方分钟数 + 每步增加的秒数。</p></fieldset>
+        <div class="game-summary"><span>你的对局</span><strong id="create-summary"></strong></div>
+        <p id="create-hint" class="field-help">所有人都可以参加休闲对局。 <a id="rated-signin" href="/login" hidden>登录</a></p>
+        <p id="create-error" class="notice notice-error" role="alert" hidden></p>
       </div>
-    </div>
-  </div>
-
-  <div id="filters-dialog" class="dialog-backdrop hidden" aria-hidden="true">
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="filters-title">
-      <div class="dialog-header">
-        <h2 id="filters-title">大厅筛选</h2>
-        <button type="button" class="dialog-close" data-dialog-close>关闭</button>
-      </div>
-      <div class="dialog-body">
-        <div class="dialog-grid">
-          <label for="rated">排位</label>
-          <select id="rated">
-            <option value="">不限</option>
-            <option value="1">排位</option>
-            <option value="0">非排位</option>
-          </select>
-
-          <label for="color">颜色</label>
-          <select id="color">
-            <option value="random">随机</option>
-            <option value="white">白方</option>
-            <option value="black">黑方</option>
-          </select>
-
-          <label for="timeGroup">时间组</label>
-          <select id="timeGroup">
-            <option value="any">不限</option>
-            <option value="fast">快速</option>
-            <option value="slow">慢速</option>
-          </select>
-
-          <label for="time">时间控制</label>
-          <select id="time"></select>
-
-          <label for="eloMin">最低 Elo</label>
-          <input id="eloMin" type="number" placeholder="最低 Elo">
-
-          <label for="eloMax">最高 Elo</label>
-          <input id="eloMax" type="number" placeholder="最高 Elo">
-
-          <label for="username">用户名</label>
-          <input id="username" type="text" placeholder="用户名">
-
-          <label for="mode">模式</label>
-          <select id="mode">
-            <option value="">不限</option>
-            <option value="play">对局</option>
-            <option value="watch">观战</option>
-          </select>
-        </div>
-      </div>
-      <div class="dialog-footer">
-        <button type="button" class="dialog-secondary" id="filters-reset">重置</button>
-        <button type="button" class="dialog-secondary" data-dialog-close>取消</button>
-        <button type="button" class="dialog-primary" id="filters-apply">应用</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="create-dialog" class="dialog-backdrop hidden" aria-hidden="true">
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="create-title">
-      <div class="dialog-header">
-        <h2 id="create-title">创建对局</h2>
-        <button type="button" class="dialog-close" data-dialog-close>关闭</button>
-      </div>
-      <div class="dialog-body">
-        <div class="dialog-grid">
-          <label for="create-rated">排位</label>
-          <select id="create-rated">
-            <option value="1">排位</option>
-            <option value="0">非排位</option>
-          </select>
-
-          <label for="create-color">颜色</label>
-          <select id="create-color">
-            <option value="random">随机</option>
-            <option value="white">白方</option>
-            <option value="black">黑方</option>
-          </select>
-
-          <label for="create-time-group">时间组</label>
-          <select id="create-time-group">
-            <option value="fast">快速</option>
-            <option value="slow">慢速</option>
-          </select>
-
-          <label for="create-time">时间控制</label>
-          <select id="create-time"></select>
-        </div>
-      </div>
-      <div class="dialog-footer">
-        <button type="button" class="dialog-secondary" data-dialog-close>取消</button>
-        <button type="button" class="dialog-primary" id="create-game-confirm">创建</button>
-      </div>
-    </div>
-  </div>
-
+      <div class="dialog-footer"><button type="button" class="ui-button ui-secondary" data-dialog-close>取消</button><button type="submit" class="ui-button ui-primary" id="create-game-confirm">创建挑战</button></div>
+    </form>
+  </dialog>
   <!-- component:footer -->
 </body>
-
 </html>

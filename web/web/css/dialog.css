@@ -1,99 +1,53 @@
-.dialog-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+/* Shared controls and native dialogs: palette comes from the active site theme. */
+.ui-button { display:inline-flex; align-items:center; justify-content:center; gap:.6rem; min-height:2.75rem; padding:.65rem 1.1rem; border:1px solid transparent; border-radius:.45rem; font:600 .9rem/1.3 var(--sans-font); text-decoration:none; cursor:pointer; transition:background-color .15s,border-color .15s; white-space:normal; }
+.ui-primary { background:var(--link); border-color:var(--link); color:var(--bg2); }
+.ui-primary:hover { background:var(--link2); border-color:var(--link2); }
+.ui-secondary { background:var(--bg); border-color:var(--border); color:var(--text); }
+.ui-secondary:hover { background:var(--hover); border-color:var(--link); }
+.ui-quiet { background:transparent; color:var(--text2); }
+.ui-quiet:hover { background:var(--hover); color:var(--text); }
+.ui-button:disabled { opacity:.55; cursor:wait; }
+.ui-button[aria-disabled="true"] { pointer-events:none; opacity:.55; }
+.eyebrow { color:var(--link); font:600 .7rem/1.5 var(--sans-font); letter-spacing:.15em; text-transform:uppercase; margin:0 0 .65rem; }
+.site-dialog { position:fixed; inset:0; margin:auto; padding:0; width:min(calc(100% - 2rem),36rem); max-height:calc(100dvh - 2rem); color:var(--text); background:var(--bg); border:1px solid var(--border); border-radius:.8rem; box-shadow:0 24px 96px rgba(0,0,0,.4); overflow:hidden; }
+.site-dialog::backdrop { background:rgba(5,7,15,.7); backdrop-filter:blur(4px); }
+.site-dialog form { display:flex; flex-direction:column; max-height:inherit; }
+body.site-dialog-open { overflow:hidden; }
+.dialog-header { display:flex; flex-shrink:0; align-items:flex-start; justify-content:space-between; gap:1rem; padding:1.5rem 1.5rem 1rem; border-bottom:1px solid var(--border); }
+.dialog-header .eyebrow { margin-bottom:.35rem; }
+.dialog-header h2 { margin:0; font:600 1.4rem/1.3 var(--sans-font); color:var(--text); }
+.dialog-close { display:flex; align-items:center; justify-content:center; flex:0 0 2.75rem; width:2.75rem; height:2.75rem; border:1px solid var(--border); border-radius:50%; background:transparent; color:var(--text2); font-size:1.6rem; cursor:pointer; }
+.dialog-close:hover { color:var(--text); background:var(--hover); }
+.dialog-body { padding:1.25rem 1.5rem; overflow-y:auto; overscroll-behavior:contain; }
+.dialog-intro { margin:0 0 1.5rem; color:var(--text2); font-size:.9rem; line-height:1.6; }
+.dialog-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.dialog-field { display:flex; flex-direction:column; gap:.5rem; min-width:0; font-size:.85rem; font-weight:600; color:var(--text); }
+.dialog-field input,.dialog-field select { display:block; width:100%; min-width:0; min-height:2.9rem; padding:.7rem .75rem; border:1px solid var(--border); border-radius:.4rem; background:var(--bg2); color:var(--text); font:400 .95rem/1.3 var(--sans-font); }
+.dialog-field input:disabled,.dialog-field select:disabled { opacity:.5; }
+.site-dialog fieldset { min-width:0; border:0; padding:0; margin:0 0 1.5rem; }
+.site-dialog legend { padding:0; margin-bottom:1rem; font-size:.85rem; font-weight:600; color:var(--text2); }
+.field-help { margin:.65rem 0 0; color:var(--text2); font-size:.8rem; line-height:1.6; }
+.field-help a { margin-left:.3rem; text-decoration:underline; }
+.game-summary { padding:1rem; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem; border:1px solid var(--border); border-radius:.4rem; background:var(--bg2); font-size:.85rem; }
+.game-summary span { color:var(--text2); }
+.game-summary strong { color:var(--link); font-weight:600; }
+.dialog-footer { display:flex; flex-shrink:0; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:.6rem; padding:1rem 1.5rem; border-top:1px solid var(--border); background:var(--bg2); }
+.dialog-footer #filters-reset { margin-right:auto; }
+.filter-section { padding:1rem 0; border-top:1px solid var(--border); }
+.filter-section summary { cursor:pointer; color:var(--text); font-size:.9rem; font-weight:600; }
+.filter-section[open] summary { margin-bottom:1rem; }
+.notice { margin:1rem 0 0; padding:.85rem 1rem; border:1px solid var(--border); border-radius:.4rem; font-size:.85rem; line-height:1.6; }
+.notice-error { color:var(--text); background:var(--hover); border-left:3px solid #ca665f; }
+[hidden] { display:none !important; }
+@media(max-width:480px) {
+ .site-dialog { width:calc(100% - 1rem); max-height:calc(100dvh - 1rem); }
+ .dialog-header,.dialog-body { padding:1.1rem; }
+ .dialog-footer { padding:1rem 1.1rem; gap:.4rem; }
+ .dialog-footer .ui-button { flex:1 1 auto; padding-inline:.75rem; }
+ .dialog-fields { gap:.85rem; }
+ .dialog-field { font-size:.8rem; }
+ .dialog-field input,.dialog-field select { font-size:1rem; }
 }
-
-.dialog-backdrop.hidden {
-  display: none;
-}
-
-.dialog {
-  background: #ffffff;
-  color: #111111;
-  width: min(90vw, 520px);
-  border-radius: 10px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-}
-
-.dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid #e6e6e6;
-}
-
-.dialog-header h2 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.dialog-body {
-  padding: 1rem 1.25rem;
-}
-
-.dialog-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem 1rem;
-  align-items: center;
-}
-
-.dialog-grid label {
-  font-size: 0.9rem;
-  color: #333333;
-}
-
-.dialog-grid input,
-.dialog-grid select {
-  width: 100%;
-  padding: 0.5rem 0.6rem;
-  border: 1px solid #cccccc;
-  border-radius: 6px;
-  font-size: 0.95rem;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 0.9rem 1.25rem 1.25rem;
-  border-top: 1px solid #e6e6e6;
-}
-
-.dialog-close,
-.dialog-secondary,
-.dialog-primary {
-  border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 0.45rem 0.9rem;
-  cursor: pointer;
-  font-size: 0.95rem;
-}
-
-.dialog-secondary {
-  background: #f2f2f2;
-  color: #222222;
-}
-
-.dialog-primary {
-  background: #2d8cff;
-  color: #ffffff;
-}
-
-@media (max-width: 640px) {
-  .dialog {
-    width: min(92vw, 420px);
-  }
-
-  .dialog-grid {
-    grid-template-columns: 1fr;
-  }
-}
+@media(prefers-reduced-motion:reduce) { .ui-button { transition:none; } }
+/* Native dialogs form a separate layout root; size controls including their borders. */
+.site-dialog, .site-dialog * { box-sizing:border-box; }

@@ -1,140 +1,63 @@
 <!doctype html>
 <html lang="en">
-
 <head>
-  <title>ChessiL Lobby</title>
+  <title>ChessiL — Open challenges</title>
   <meta charset="utf-8">
-  <meta name="viewport" content="initial-scale=1, width=device-width, height=device-height">
-  <meta name="description" content="Find a chess game to play">
-  <meta name="keywords" content="chess, play, online, fast, live, ultrabullet, bullet, blitz, rapid, lobby">
-  <link rel="stylesheet" href="/css/site.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Find an opponent, set your pace, and enjoy a game of chess.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/css/query.css">
-  <link rel="stylesheet" href="/css/dialog.css">
+  <link rel="stylesheet" href="/css/site.css">
   <link rel="stylesheet" href="/css/grandmaster.css">
   <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dialog.css">
+  <link rel="stylesheet" href="/css/query.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
+  <script src="/js/lobby-text.js"></script>
+  <script src="/js/dialogs.js"></script>
   <script src="/js/query.js"></script>
 </head>
-
-<body>
+<body class="lobby-page">
   <!-- component:header -->
-
-  <div class="main-wrap">
-    <div class="main">
-      <div class="query">
-        <div class="query-flex">
-
-          <button id="open-filters" class="query-button">Filters</button>
-          <button id="open-create" class="query-button">Create Game</button>
-          <div id="create-status"></div>
-
-        </div>
+  <main class="lobby-shell">
+    <section class="lobby-intro" aria-labelledby="lobby-title">
+      <div><p class="eyebrow">PLAY ONLINE</p><h1 id="lobby-title">Your next move starts here.</h1><p class="lobby-description">Find an opponent, set your pace, and enjoy a game of chess.</p></div>
+      <div class="lobby-intro-actions"><button id="open-create" class="ui-button ui-primary" type="button">Create a game <span aria-hidden="true">＋</span></button><a class="ui-button ui-secondary" href="/easy">Play a computer</a></div>
+    </section>
+    <section id="pending-challenge" class="pending-challenge" aria-labelledby="pending-title" hidden>
+      <div class="pending-indicator" aria-hidden="true"></div><div class="pending-copy"><h2 id="pending-title">Your challenge is open</h2><p id="pending-summary"></p><p id="create-status" role="status">Waiting for an opponent…</p></div>
+      <div class="pending-actions"><button id="copy-invite" class="ui-button ui-secondary" type="button">Copy invite link</button><button id="cancel-game" class="ui-button ui-quiet" type="button">Cancel challenge</button></div>
+    </section>
+    <section class="lobby-panel" aria-labelledby="games-title">
+      <div class="lobby-toolbar">
+        <div class="lobby-tabs" role="group" aria-label="Mode"><button type="button" data-lobby-mode="play" aria-pressed="true">Join a game</button><button type="button" data-lobby-mode="watch" aria-pressed="false">Watch live</button></div>
+        <div class="lobby-tools"><button id="open-filters" class="ui-button ui-secondary" type="button">Filters <span id="filter-count" hidden></span></button><button id="refresh-lobby" class="ui-button ui-quiet" type="button">Refresh</button></div>
       </div>
-      <div class="results">
-        <div class="results-flex"></div>
+      <div class="lobby-list-heading"><h2 id="games-title">Open challenges</h2><p id="lobby-count" role="status">Loading games…</p></div>
+      <p id="lobby-error" class="notice notice-error" role="alert" hidden></p>
+      <div id="lobby-results" class="results-flex" aria-busy="true"></div>
+      <div class="lobby-panel-footer"><p id="lobby-updated"></p><nav id="lobby-pagination" class="lobby-pagination" aria-label="Page" hidden></nav></div>
+    </section>
+  </main>
+  <dialog id="filters-dialog" class="site-dialog" aria-labelledby="filters-title" aria-describedby="filters-intro">
+    <form id="filters-form">
+      <div class="dialog-header"><div><p class="eyebrow">Open challenges</p><h2 id="filters-title">Filter games</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="Close">×</button></div>
+      <div class="dialog-body"><p id="filters-intro" class="dialog-intro">Narrow down the lobby to find your next opponent.</p><details class="filter-section" open><summary>Game preferences</summary><div class="dialog-fields"><label class="dialog-field" for="rated"><span>Mode</span><select id="rated" ><option value="">Any</option><option value="0">Casual</option><option value="1">Rated</option></select></label><label class="dialog-field" for="color"><span>Color</span><select id="color" ><option value="">Any</option><option value="random">Random</option><option value="white">White</option><option value="black">Black</option></select></label></div></details><details class="filter-section"><summary>Time control</summary><div class="dialog-fields"><label class="dialog-field" for="timeGroup"><span>Pace</span><select id="timeGroup" ><option value="any">Any</option><option value="fast">Fast</option><option value="slow">Slow</option></select></label><label class="dialog-field" for="time"><span>Time control</span><select id="time" ></select></label></div></details><details class="filter-section"><summary>Players</summary><div class="dialog-fields"><label class="dialog-field" for="eloMin"><span>Minimum rating</span><input id="eloMin" type="number" min="0" max="4000" inputmode="numeric"></label><label class="dialog-field" for="eloMax"><span>Maximum rating</span><input id="eloMax" type="number" min="0" max="4000" inputmode="numeric"></label><label class="dialog-field" for="username"><span>Player name</span><input id="username" type="text" maxlength="20" autocomplete="off" pattern="[a-zA-Z0-9_-]*"></label></div></details><p id="filters-error" class="notice notice-error" role="alert" hidden></p></div>
+      <div class="dialog-footer"><button type="button" class="ui-button ui-quiet" id="filters-reset">Reset</button><button type="button" class="ui-button ui-secondary" data-dialog-close>Cancel</button><button type="submit" class="ui-button ui-primary" id="filters-apply">Apply filters</button></div>
+    </form>
+  </dialog>
+  <dialog id="create-dialog" class="site-dialog" aria-labelledby="create-title" aria-describedby="create-intro">
+    <form id="create-form">
+      <div class="dialog-header"><div><p class="eyebrow">PLAY ONLINE</p><h2 id="create-title">Create a game</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="Close">×</button></div>
+      <div class="dialog-body"><p id="create-intro" class="dialog-intro">Choose your settings. Your challenge will appear in the lobby.</p><fieldset><legend>Game settings</legend><div class="dialog-fields"><label class="dialog-field" for="create-rated"><span>Mode</span><select id="create-rated" ><option value="0">Casual</option><option value="1">Rated</option></select></label><label class="dialog-field" for="create-color"><span>Color</span><select id="create-color" ><option value="random">Random</option><option value="white">White</option><option value="black">Black</option></select></label></div></fieldset><fieldset><legend>Time control</legend><div class="dialog-fields"><label class="dialog-field" for="create-time-group"><span>Pace</span><select id="create-time-group" ><option value="fast">Fast</option><option value="slow">Slow</option></select></label><label class="dialog-field" for="create-time"><span>Time control</span><select id="create-time" required></select></label></div><p class="field-help">Minutes per player + seconds added after each move.</p></fieldset>
+        <div class="game-summary"><span>Your game</span><strong id="create-summary"></strong></div>
+        <p id="create-hint" class="field-help">Casual games are open to everyone. <a id="rated-signin" href="/login" hidden>Sign in</a></p>
+        <p id="create-error" class="notice notice-error" role="alert" hidden></p>
       </div>
-    </div>
-  </div>
-
-  <div id="filters-dialog" class="dialog-backdrop hidden" aria-hidden="true">
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="filters-title">
-      <div class="dialog-header">
-        <h2 id="filters-title">Lobby Filters</h2>
-        <button type="button" class="dialog-close" data-dialog-close>Close</button>
-      </div>
-      <div class="dialog-body">
-        <div class="dialog-grid">
-          <label for="rated">Rated</label>
-          <select id="rated">
-            <option value="">Any</option>
-            <option value="1">Rated</option>
-            <option value="0">Unrated</option>
-          </select>
-
-          <label for="color">Color</label>
-          <select id="color">
-            <option value="random">Random</option>
-            <option value="white">White</option>
-            <option value="black">Black</option>
-          </select>
-
-          <label for="timeGroup">Time Group</label>
-          <select id="timeGroup">
-            <option value="any">Any</option>
-            <option value="fast">Fast</option>
-            <option value="slow">Slow</option>
-          </select>
-
-          <label for="time">Time Control</label>
-          <select id="time"></select>
-
-          <label for="eloMin">Min Elo</label>
-          <input id="eloMin" type="number" placeholder="Min Elo">
-
-          <label for="eloMax">Max Elo</label>
-          <input id="eloMax" type="number" placeholder="Max Elo">
-
-          <label for="username">Username</label>
-          <input id="username" type="text" placeholder="Username">
-
-          <label for="mode">Mode</label>
-          <select id="mode">
-            <option value="">Any</option>
-            <option value="play">Play</option>
-            <option value="watch">Watch</option>
-          </select>
-        </div>
-      </div>
-      <div class="dialog-footer">
-        <button type="button" class="dialog-secondary" id="filters-reset">Reset</button>
-        <button type="button" class="dialog-secondary" data-dialog-close>Cancel</button>
-        <button type="button" class="dialog-primary" id="filters-apply">Apply</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="create-dialog" class="dialog-backdrop hidden" aria-hidden="true">
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="create-title">
-      <div class="dialog-header">
-        <h2 id="create-title">Create Game</h2>
-        <button type="button" class="dialog-close" data-dialog-close>Close</button>
-      </div>
-      <div class="dialog-body">
-        <div class="dialog-grid">
-          <label for="create-rated">Rated</label>
-          <select id="create-rated">
-            <option value="1">Rated</option>
-            <option value="0">Unrated</option>
-          </select>
-
-          <label for="create-color">Color</label>
-          <select id="create-color">
-            <option value="random">Random</option>
-            <option value="white">White</option>
-            <option value="black">Black</option>
-          </select>
-
-          <label for="create-time-group">Time Group</label>
-          <select id="create-time-group">
-            <option value="fast">Fast</option>
-            <option value="slow">Slow</option>
-          </select>
-
-          <label for="create-time">Time Control</label>
-          <select id="create-time"></select>
-        </div>
-      </div>
-      <div class="dialog-footer">
-        <button type="button" class="dialog-secondary" data-dialog-close>Cancel</button>
-        <button type="button" class="dialog-primary" id="create-game-confirm">Create</button>
-      </div>
-    </div>
-  </div>
-
+      <div class="dialog-footer"><button type="button" class="ui-button ui-secondary" data-dialog-close>Cancel</button><button type="submit" class="ui-button ui-primary" id="create-game-confirm">Create challenge</button></div>
+    </form>
+  </dialog>
   <!-- component:footer -->
 </body>
-
 </html>

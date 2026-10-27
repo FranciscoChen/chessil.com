@@ -1,141 +1,63 @@
 <!doctype html>
 <html lang="es">
-
 <head>
-  <title>ChessiL - Lobby</title>
+  <title>ChessiL — Desafíos abiertos</title>
   <meta charset="utf-8">
-  <meta name="viewport" content="initial-scale=1, width=device-width, height=device-height">
-  <meta name="description" content="Encuentra una partida de ajedrez para jugar">
-  <meta name="keywords" content="ajedrez, jugar, en línea, rápido, en vivo, ultrabala, bala, relámpago, rápida, lobby">
-  <link rel="stylesheet" href="/css/site.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Encuentra un rival, elige tu ritmo y disfruta del ajedrez.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/css/lobby.css">
-  <link rel="stylesheet" href="/css/dialog.css">
-  <link rel="stylesheet" href="/css/query.css">
+  <link rel="stylesheet" href="/css/site.css">
   <link rel="stylesheet" href="/css/grandmaster.css">
   <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dialog.css">
+  <link rel="stylesheet" href="/css/query.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
+  <script src="/js/lobby-text.js"></script>
+  <script src="/js/dialogs.js"></script>
   <script src="/js/query.js"></script>
 </head>
-
-<body>
+<body class="lobby-page">
   <!-- component:header -->
-
-  <div class="main-wrap">
-    <div class="main">
-      <div class="query">
-        <div class="query-flex">
-
-          <button id="open-filters" class="query-button">Filtros</button>
-          <button id="open-create" class="query-button">Crear partida</button>
-          <div id="create-status"></div>
-
-        </div>
+  <main class="lobby-shell">
+    <section class="lobby-intro" aria-labelledby="lobby-title">
+      <div><p class="eyebrow">JUGAR EN LÍNEA</p><h1 id="lobby-title">Tu próxima jugada empieza aquí.</h1><p class="lobby-description">Encuentra un rival, elige tu ritmo y disfruta del ajedrez.</p></div>
+      <div class="lobby-intro-actions"><button id="open-create" class="ui-button ui-primary" type="button">Crear partida <span aria-hidden="true">＋</span></button><a class="ui-button ui-secondary" href="/easy">Jugar contra el ordenador</a></div>
+    </section>
+    <section id="pending-challenge" class="pending-challenge" aria-labelledby="pending-title" hidden>
+      <div class="pending-indicator" aria-hidden="true"></div><div class="pending-copy"><h2 id="pending-title">Tu desafío está abierto</h2><p id="pending-summary"></p><p id="create-status" role="status">Esperando un rival…</p></div>
+      <div class="pending-actions"><button id="copy-invite" class="ui-button ui-secondary" type="button">Copiar invitación</button><button id="cancel-game" class="ui-button ui-quiet" type="button">Cancelar desafío</button></div>
+    </section>
+    <section class="lobby-panel" aria-labelledby="games-title">
+      <div class="lobby-toolbar">
+        <div class="lobby-tabs" role="group" aria-label="Modalidad"><button type="button" data-lobby-mode="play" aria-pressed="true">Unirse a una partida</button><button type="button" data-lobby-mode="watch" aria-pressed="false">Ver en directo</button></div>
+        <div class="lobby-tools"><button id="open-filters" class="ui-button ui-secondary" type="button">Filtros <span id="filter-count" hidden></span></button><button id="refresh-lobby" class="ui-button ui-quiet" type="button">Actualizar</button></div>
       </div>
-      <div class="results">
-        <div class="results-flex"></div>
+      <div class="lobby-list-heading"><h2 id="games-title">Desafíos abiertos</h2><p id="lobby-count" role="status">Cargando partidas…</p></div>
+      <p id="lobby-error" class="notice notice-error" role="alert" hidden></p>
+      <div id="lobby-results" class="results-flex" aria-busy="true"></div>
+      <div class="lobby-panel-footer"><p id="lobby-updated"></p><nav id="lobby-pagination" class="lobby-pagination" aria-label="Página" hidden></nav></div>
+    </section>
+  </main>
+  <dialog id="filters-dialog" class="site-dialog" aria-labelledby="filters-title" aria-describedby="filters-intro">
+    <form id="filters-form">
+      <div class="dialog-header"><div><p class="eyebrow">Desafíos abiertos</p><h2 id="filters-title">Filtrar partidas</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="Cerrar">×</button></div>
+      <div class="dialog-body"><p id="filters-intro" class="dialog-intro">Ajusta la búsqueda para encontrar tu próximo rival.</p><details class="filter-section" open><summary>Preferencias</summary><div class="dialog-fields"><label class="dialog-field" for="rated"><span>Modalidad</span><select id="rated" ><option value="">Cualquiera</option><option value="0">Amistosa</option><option value="1">Clasificada</option></select></label><label class="dialog-field" for="color"><span>Color</span><select id="color" ><option value="">Cualquiera</option><option value="random">Aleatorio</option><option value="white">Blancas</option><option value="black">Negras</option></select></label></div></details><details class="filter-section"><summary>Ritmo de juego</summary><div class="dialog-fields"><label class="dialog-field" for="timeGroup"><span>Ritmo</span><select id="timeGroup" ><option value="any">Cualquiera</option><option value="fast">Rápido</option><option value="slow">Lento</option></select></label><label class="dialog-field" for="time"><span>Ritmo de juego</span><select id="time" ></select></label></div></details><details class="filter-section"><summary>Jugadores</summary><div class="dialog-fields"><label class="dialog-field" for="eloMin"><span>Puntuación mínima</span><input id="eloMin" type="number" min="0" max="4000" inputmode="numeric"></label><label class="dialog-field" for="eloMax"><span>Puntuación máxima</span><input id="eloMax" type="number" min="0" max="4000" inputmode="numeric"></label><label class="dialog-field" for="username"><span>Nombre del jugador</span><input id="username" type="text" maxlength="20" autocomplete="off" pattern="[a-zA-Z0-9_-]*"></label></div></details><p id="filters-error" class="notice notice-error" role="alert" hidden></p></div>
+      <div class="dialog-footer"><button type="button" class="ui-button ui-quiet" id="filters-reset">Restablecer</button><button type="button" class="ui-button ui-secondary" data-dialog-close>Cancelar</button><button type="submit" class="ui-button ui-primary" id="filters-apply">Aplicar filtros</button></div>
+    </form>
+  </dialog>
+  <dialog id="create-dialog" class="site-dialog" aria-labelledby="create-title" aria-describedby="create-intro">
+    <form id="create-form">
+      <div class="dialog-header"><div><p class="eyebrow">JUGAR EN LÍNEA</p><h2 id="create-title">Crear partida</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="Cerrar">×</button></div>
+      <div class="dialog-body"><p id="create-intro" class="dialog-intro">Elige los ajustes. Tu desafío aparecerá en la sala.</p><fieldset><legend>Ajustes de la partida</legend><div class="dialog-fields"><label class="dialog-field" for="create-rated"><span>Modalidad</span><select id="create-rated" ><option value="0">Amistosa</option><option value="1">Clasificada</option></select></label><label class="dialog-field" for="create-color"><span>Color</span><select id="create-color" ><option value="random">Aleatorio</option><option value="white">Blancas</option><option value="black">Negras</option></select></label></div></fieldset><fieldset><legend>Ritmo de juego</legend><div class="dialog-fields"><label class="dialog-field" for="create-time-group"><span>Ritmo</span><select id="create-time-group" ><option value="fast">Rápido</option><option value="slow">Lento</option></select></label><label class="dialog-field" for="create-time"><span>Ritmo de juego</span><select id="create-time" required></select></label></div><p class="field-help">Minutos por jugador + segundos añadidos después de cada jugada.</p></fieldset>
+        <div class="game-summary"><span>Tu partida</span><strong id="create-summary"></strong></div>
+        <p id="create-hint" class="field-help">Las partidas amistosas están abiertas a todos. <a id="rated-signin" href="/login" hidden>Iniciar sesión</a></p>
+        <p id="create-error" class="notice notice-error" role="alert" hidden></p>
       </div>
-    </div>
-  </div>
-
-  <div id="filters-dialog" class="dialog-backdrop hidden" aria-hidden="true">
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="filters-title">
-      <div class="dialog-header">
-        <h2 id="filters-title">Filtros del lobby</h2>
-        <button type="button" class="dialog-close" data-dialog-close>Cerrar</button>
-      </div>
-      <div class="dialog-body">
-        <div class="dialog-grid">
-          <label for="rated">Clasificación</label>
-          <select id="rated">
-            <option value="">Cualquiera</option>
-            <option value="1">Clasificada</option>
-            <option value="0">No clasificada</option>
-          </select>
-
-          <label for="color">Color</label>
-          <select id="color">
-            <option value="random">Aleatorio</option>
-            <option value="white">Blancas</option>
-            <option value="black">Negras</option>
-          </select>
-
-          <label for="timeGroup">Grupo de tiempo</label>
-          <select id="timeGroup">
-            <option value="any">Cualquiera</option>
-            <option value="fast">Rápido</option>
-            <option value="slow">Lento</option>
-          </select>
-
-          <label for="time">Control de tiempo</label>
-          <select id="time"></select>
-
-          <label for="eloMin">Elo mínimo</label>
-          <input id="eloMin" type="number" placeholder="Elo mínimo">
-
-          <label for="eloMax">Elo máximo</label>
-          <input id="eloMax" type="number" placeholder="Elo máximo">
-
-          <label for="username">Usuario</label>
-          <input id="username" type="text" placeholder="Usuario">
-
-          <label for="mode">Modo</label>
-          <select id="mode">
-            <option value="">Cualquiera</option>
-            <option value="play">Jugar</option>
-            <option value="watch">Ver</option>
-          </select>
-        </div>
-      </div>
-      <div class="dialog-footer">
-        <button type="button" class="dialog-secondary" id="filters-reset">Restablecer</button>
-        <button type="button" class="dialog-secondary" data-dialog-close>Cancelar</button>
-        <button type="button" class="dialog-primary" id="filters-apply">Aplicar</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="create-dialog" class="dialog-backdrop hidden" aria-hidden="true">
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="create-title">
-      <div class="dialog-header">
-        <h2 id="create-title">Crear partida</h2>
-        <button type="button" class="dialog-close" data-dialog-close>Cerrar</button>
-      </div>
-      <div class="dialog-body">
-        <div class="dialog-grid">
-          <label for="create-rated">Clasificación</label>
-          <select id="create-rated">
-            <option value="1">Clasificada</option>
-            <option value="0">No clasificada</option>
-          </select>
-
-          <label for="create-color">Color</label>
-          <select id="create-color">
-            <option value="random">Aleatorio</option>
-            <option value="white">Blancas</option>
-            <option value="black">Negras</option>
-          </select>
-
-          <label for="create-time-group">Grupo de tiempo</label>
-          <select id="create-time-group">
-            <option value="fast">Rápido</option>
-            <option value="slow">Lento</option>
-          </select>
-
-          <label for="create-time">Control de tiempo</label>
-          <select id="create-time"></select>
-        </div>
-      </div>
-      <div class="dialog-footer">
-        <button type="button" class="dialog-secondary" data-dialog-close>Cancelar</button>
-        <button type="button" class="dialog-primary" id="create-game-confirm">Crear</button>
-      </div>
-    </div>
-  </div>
-
+      <div class="dialog-footer"><button type="button" class="ui-button ui-secondary" data-dialog-close>Cancelar</button><button type="submit" class="ui-button ui-primary" id="create-game-confirm">Crear desafío</button></div>
+    </form>
+  </dialog>
   <!-- component:footer -->
 </body>
-
 </html>

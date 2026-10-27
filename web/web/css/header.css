@@ -353,7 +353,7 @@ body.d .t a {
   color: var(--link2);
 }
 
-nav {
+header nav {
   display: flex;
 }
 
@@ -383,7 +383,7 @@ body.d .m a {
 }
 
 @media (max-width: 960px) {
-  nav {
+  header nav {
     display: flex;
     position: fixed;
     top: 60px;
