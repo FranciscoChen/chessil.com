@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-units=(chessil-deploy-hook@8091 chessil-deploy-hook@8092)
+units=(chessil-deploy-hook@8093 chessil-deploy-hook@8094)
 for unit in "${units[@]}"; do
   sudo systemctl restart "$unit"
   port="${unit##*@}"

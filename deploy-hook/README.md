@@ -22,7 +22,7 @@ The receiver accepts only signed pushes to `FranciscoChen/chessil.com` on `main`
 
 ## Operations
 
-- Health: `curl http://127.0.0.1:8091/health` and port `8092`.
+- Health: `curl http://127.0.0.1:8093/health` and port `8094`.
 - Logs: `tail -f /home/ubuntu/.local/state/chessil-deploy/deploy.log` and `journalctl -u 'chessil-deploy-hook@*'`.
 - Restart the two receiver instances one at a time with `./deploy-hook/restart-deploy-hook.sh`.
 - The Nginx upstream and exact webhook location are included in `web/nginx-web-upstream.conf`.

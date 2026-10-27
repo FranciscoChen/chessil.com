@@ -18,9 +18,9 @@ fi
 
 sudo install -o root -g root -m 0644 "$unit_file" /etc/systemd/system/chessil-deploy-hook@.service
 sudo systemctl daemon-reload
-sudo systemctl enable --now chessil-deploy-hook@8091 chessil-deploy-hook@8092
+sudo systemctl enable --now chessil-deploy-hook@8093 chessil-deploy-hook@8094
 
-for port in 8091 8092; do
+for port in 8093 8094; do
   ready=0
   for _ in $(seq 1 30); do
     if curl --fail --silent "http://127.0.0.1:${port}/health" >/dev/null; then
