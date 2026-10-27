@@ -1174,8 +1174,13 @@ function newsessionwithloginuser(filename, mime, ext, res, req, resHeaders, sess
 }
 
 function login(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  let receivedBody = false
+  req.once('end', () => {
+    if (!receivedBody) serve(filename, mime, ext, res, req, resHeaders, sessiondata)
+  })
   req.on('data', logincheck)
   function logincheck(chunk) {
+    receivedBody = true
     req.removeListener('data', logincheck);
     const postcontent = querystring.parse(chunk.toString())
     if (typeof postcontent === 'object') {
