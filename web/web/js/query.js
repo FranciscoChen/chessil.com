@@ -341,6 +341,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   setFilterDefaults();
   setCreateDefaults();
+  var lobbyParams = new URLSearchParams(window.location.search);
+  if (lobbyParams.get('rated') === '1') document.getElementById('rated').value = '1';
+  if (lobbyParams.get('mode') === 'play') document.getElementById('mode').value = 'play';
 
   document.getElementById('open-filters').addEventListener('click', function () {
     openDialog('filters-dialog');

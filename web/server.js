@@ -22,6 +22,9 @@ const config = require("../config.json");
 
 // const conString = 'postgres://user:password@host:port/db?sslmode=require'
 const conString = config.shared.postgresUrl;
+const lobbyTimeControls = ['1+0', '3+0', '3+2', '5+0', '10+0', '15+10'];
+const lobbyDb = new pg.Pool({ connectionString: conString, max: 10, connectionTimeoutMillis: 5000 });
+lobbyDb.on('error', err => console.error('lobby database error', err));
 
 // Password complexity calculator
 const zxcvbn = require('zxcvbn');
@@ -266,6 +269,7 @@ function shutdown(reason) {
     });
   });
   lobbyWatchers.clear();
+  lobbyDb.end().catch(err => console.error('lobby database shutdown error', err));
 
   redisSub.unsubscribe(lobbyChannel, () => {
     redisSub.quit().catch(() => {});
@@ -1613,23 +1617,6 @@ function wsauth(filename, mime, ext, res, req, resHeaders, sessiondata) {
     }
   }
 }
-// tcs is used for validating seek insertion values
-const tcs = {}
-const validtimes = [0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30, 35, 40, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180]
-const validincrs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30, 35, 40, 45, 60, 90, 120, 150, 180]
-const validmodes = ['r', 'u']
-const validcolours = ['r', 'w', 'b']
-for (var i = validtimes.length; i--;) {
-  for (var j = validincrs.length; j--;) {
-    if (validtimes[i] !== 0 || validincrs[j] !== 0) {
-      for (var k = validmodes.length; k--;) {
-        for (var l = validcolours.length; l--;) {
-          tcs[validtimes[i] + '+' + validincrs[j] + validmodes[k] + validcolours[l]] = 1
-        }
-      }
-    }
-  }
-}
 function usergames(filename, mime, ext, res, req, resHeaders, sessiondata) {
   req.on('data', getusergames)
   function getusergames(chunk) {
@@ -1998,12 +1985,6 @@ function darkmode(filename, mime, ext, res, req, resHeaders, sessiondata) {
   });
 }
 
-function randomString(length, chars) {
-  var result = '';
-  for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
-  return result;
-}
-
 function notifyLobbyWatchers(gameid, publish) {
   if (publish) {
     redis.publish(lobbyChannel, gameid);
@@ -2037,37 +2018,20 @@ function publishGlobalNotification(payload) {
 }
 
 function parseTimeControl(timecontrol) {
-  if (typeof timecontrol !== 'string') {
-    return { minutes: 5, increment: 0, raw: '5+0' };
+  const parts = typeof timecontrol === 'string' && /^(\d+(?:\.\d+)?)\+(\d+)$/.exec(timecontrol);
+  if (parts) {
+    const minutes = Number(parts[1]);
+    const increment = Number(parts[2]);
+    if (minutes <= 180 && increment <= 180 && minutes + increment > 0) {
+      return { minutes, increment, raw: timecontrol };
+    }
   }
-  var parts = timecontrol.split('+');
-  if (parts.length !== 2) {
-    return { minutes: 5, increment: 0, raw: '5+0' };
-  }
-  var minutes = parseInt(parts[0], 10);
-  var increment = parseInt(parts[1], 10);
-  if (!Number.isFinite(minutes) || minutes < 0) {
-    minutes = 5;
-  }
-  if (!Number.isFinite(increment) || increment < 0) {
-    increment = 0;
-  }
-  return { minutes: minutes, increment: increment, raw: timecontrol };
+  return { minutes: 5, increment: 0, raw: '5+0' };
 }
 
 function normalizeTimeControl(timecontrol) {
-  const allowedTimes = ['1+0', '3+0', '3+2', '5+0', '10+0', '15+10'];
-  if (allowedTimes.includes(timecontrol)) return timecontrol;
+  if (lobbyTimeControls.includes(timecontrol)) return timecontrol;
   return '5+0';
-}
-
-function ratingModeForTime(minutes, increment) {
-  var total = minutes * 60 + increment * 40;
-  if (total <= 15) return 'ultrabullet';
-  if (total <= 180) return 'bullet';
-  if (total <= 480) return 'blitz';
-  if (total <= 1500) return 'rapid';
-  return 'classical';
 }
 
 function getPlayerIdentity(userid, sessionid) {
@@ -2090,27 +2054,6 @@ function assignColorsForGame(game) {
     color2 = color1 === 'white' ? 'black' : 'white';
   }
   return { color1: color1, color2: color2, whiteIsPlayer1: color1 === 'white' };
-}
-
-function selectUserRatings(client, userIds, mode, callback) {
-  if (!Array.isArray(userIds) || userIds.length === 0) {
-    callback(null, {});
-    return;
-  }
-  const sql = 'SELECT id, rating AS rating, deviation AS deviation, volatility AS volatility FROM users WHERE id = ANY($1)';
-  client.query(sql, [userIds], (err, result) => {
-    if (err) return callback(err);
-    const map = {};
-    for (var i = 0; i < result.rows.length; i++) {
-      const row = result.rows[i];
-      map[String(row.id)] = {
-        rating: Number(row.rating),
-        deviation: Number(row.deviation),
-        volatility: Number(row.volatility)
-      };
-    }
-    callback(null, map);
-  });
 }
 
 function selectUserDetails(client, userIds, callback) {
@@ -2154,6 +2097,14 @@ function startGameOnServer(payload, callback) {
     'wv': String(payload.whiteRatings.volatility),
     'bv': String(payload.blackRatings.volatility)
   };
+  let settled = false;
+  let timer;
+  function finish(err) {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    callback(err);
+  }
   const req = https.request(
     {
       hostname: gameServerHost,
@@ -2165,89 +2116,55 @@ function startGameOnServer(payload, callback) {
     (re) => {
       re.resume();
       if (re.statusCode === 200) {
-        callback(null);
+        finish(null);
         return;
       }
-      callback(new Error('game server /ng failed: ' + re.statusCode));
+      finish(new Error('game server /ng failed: ' + re.statusCode));
     }
   );
-  req.on('error', (err) => callback(err));
+  req.on('error', finish);
+  timer = setTimeout(() => {
+    const err = new Error('Game server request timed out');
+    finish(err);
+    req.destroy(err);
+  }, 10000);
   req.end();
 }
 
 function validateFilters(filters) {
-  const safe = {};
-
-  // rated: must be boolean or null
-  if (filters.rated === '1' || filters.rated === true) safe.rated = true;
-  else if (filters.rated === '0' || filters.rated === false) safe.rated = false;
-  else safe.rated = null;
-
-  // eloMin/eloMax: must be numbers within reasonable range
-  safe.eloMin = (Number.isFinite(Number(filters.eloMin)) && filters.eloMin >= 0 && filters.eloMin <= 4000)
-    ? Number(filters.eloMin) : null;
-  safe.eloMax = (Number.isFinite(Number(filters.eloMax)) && filters.eloMax >= 0 && filters.eloMax <= 4000)
-    ? Number(filters.eloMax) : null;
-
-  // username: only allow safe characters (letters, numbers, underscores)
-  if (typeof filters.username === 'string' && /^[a-zA-Z0-9_]{1,30}$/.test(filters.username)) {
-    safe.username = filters.username;
-  } else {
-    safe.username = null;
+  function rating(value) {
+    if (value === '' || value == null || !['string', 'number'].includes(typeof value)) return null;
+    const number = Number(value);
+    return Number.isFinite(number) && number >= 0 && number <= 4000 ? number : null;
   }
-
-  // color: must be one of the expected values
-  if (['white', 'black', 'random'].includes(filters.color)) {
-    safe.color = filters.color;
-  } else {
-    safe.color = null;
+  function date(value) {
+    if (typeof value !== 'string' || !value) return null;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
   }
-
-  // time: allow only whitelisted formats
-  const allowedTimes = ['1+0', '3+0', '3+2', '5+0', '10+0', '15+10']; // you decide
-  safe.time = allowedTimes.includes(filters.time) ? filters.time : null;
-
-  // mode: play / watch / finished
-  if (['play', 'watch', 'finished'].includes(filters.mode)) {
-    safe.mode = filters.mode;
-  } else {
-    safe.mode = null;
+  const safe = {
+    rated: filters.rated === true || filters.rated === '1' ? true
+      : filters.rated === false || filters.rated === '0' ? false : null,
+    eloMin: rating(filters.eloMin),
+    eloMax: rating(filters.eloMax),
+    username: typeof filters.username === 'string' && /^[a-zA-Z0-9_-]{1,30}$/.test(filters.username) ? filters.username : null,
+    color: ['white', 'black', 'random'].includes(filters.color) ? filters.color : null,
+    time: lobbyTimeControls.includes(filters.time) ? filters.time : null,
+    mode: ['play', 'watch', 'finished'].includes(filters.mode) ? filters.mode : null
+  };
+  for (const key of ['createdFrom', 'createdTo', 'startedFrom', 'startedTo', 'finishedFrom', 'finishedTo']) {
+    safe[key] = date(filters[key]);
   }
-
-  // timestamps: must be valid ISO dates
-  function parseDate(d) {
-    if (!d) return null;
-    const t = new Date(d);
-    return isNaN(t.getTime()) ? null : t.toISOString();
-  }
-  safe.createdFrom = parseDate(filters.createdFrom);
-  safe.createdTo = parseDate(filters.createdTo);
-  safe.startedFrom = parseDate(filters.startedFrom);
-  safe.startedTo = parseDate(filters.startedTo);
-  safe.finishedFrom = parseDate(filters.finishedFrom);
-  safe.finishedTo = parseDate(filters.finishedTo);
-
   return safe;
 }
 
 function handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  let body = '';
-  req.on('data', chunk => { body += chunk; });
-  req.on('end', () => {
-    let rawFilters;
-    try {
-      rawFilters = JSON.parse(body);
-    } catch (e) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Invalid JSON' }));
-    }
-
-    const filters = validateFilters(rawFilters);
-
+  return handleLobbyRequest(req, res, resHeaders, async data => {
+    const filters = validateFilters(data);
     const values = [
       typeof filters.rated === 'boolean' ? filters.rated : null,
-      filters.eloMin ? Number(filters.eloMin) : null,
-      filters.eloMax ? Number(filters.eloMax) : null,
+      filters.eloMin,
+      filters.eloMax,
       filters.username || null,
       filters.color || null,
       filters.time || null,
@@ -2269,8 +2186,7 @@ function handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata)
       FROM games g
       JOIN users u1 ON g.userid1 = u1.id
       LEFT JOIN users u2 ON g.userid2 = u2.id
-      WHERE 1=1
-        AND ($1::boolean IS NULL OR g.rated = $1)
+      WHERE ($1::boolean IS NULL OR g.rated = $1)
         AND ($2::numeric IS NULL OR u1.rating >= $2)
         AND ($3::numeric IS NULL OR u1.rating <= $3)
         AND ($4::text IS NULL OR u1.username ILIKE '%' || $4 || '%' OR u2.username ILIKE '%' || $4 || '%')
@@ -2295,430 +2211,221 @@ function handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata)
       ORDER BY g.created DESC
       LIMIT $14;
     `;
-    var client = new pg.Client(conString);
-    client.connect();
-    client.query(sql, values, (err, result) => {
-      if (err) {
-        console.error('lobby/list error', err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        client.end()
-        return res.end(JSON.stringify({ error: 'Internal error' }));
-      }
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(result.rows));
-      client.end()
-    });
+    const { rows } = await lobbyDb.query(sql, values);
+    return rows;
   });
 }
 
 function handleLobbyStatus(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  let body = '';
-  req.on('data', chunk => { body += chunk; });
-  req.on('end', () => {
-    let data;
-    try {
-      data = JSON.parse(body);
-    } catch (e) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Invalid JSON' }));
+  return handleLobbyRequest(req, res, resHeaders, async ({ gameid }) => {
+    if (typeof gameid !== 'string' || !gameidregex.test(gameid)) throw lobbyError(400, 'Invalid gameid');
+    const { rows: [game] } = await lobbyDb.query('SELECT started, finished FROM games WHERE gameid = $1', [gameid]);
+    if (!game) throw lobbyError(404, 'Game not found');
+    return { started: !!game.started, finished: !!game.finished, gameid };
+  });
+}
+
+async function handleLobbyWatch(filename, mime, ext, res, req, resHeaders, sessiondata) {
+  const gameid = new URL(req.url, domainname).searchParams.get('gameid') || '';
+  if (!gameidregex.test(gameid)) {
+    res.writeHead(400, { ...resHeaders, 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Invalid gameid' }));
+  }
+  res.writeHead(200, { ...resHeaders, 'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
+
+  // Subscribe before checking the DB so a start notification cannot be missed.
+  const entry = { res, keepalive: setInterval(() => res.write(':\n\n'), 15000) };
+  if (!lobbyWatchers.has(gameid)) lobbyWatchers.set(gameid, new Set());
+  lobbyWatchers.get(gameid).add(entry);
+  res.on('close', () => {
+    clearInterval(entry.keepalive);
+    const watchers = lobbyWatchers.get(gameid);
+    if (watchers) {
+      watchers.delete(entry);
+      if (!watchers.size) lobbyWatchers.delete(gameid);
     }
-    if (!data || typeof data.gameid !== 'string' || gameidregex.test(data.gameid) === false) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Invalid gameid' }));
+  });
+
+  try {
+    const { rows: [game] } = await lobbyDb.query('SELECT started, finished FROM games WHERE gameid = $1', [gameid]);
+    if (res.destroyed || res.writableEnded) return;
+    if (!game || game.started || game.finished) {
+      const data = game ? { started: !!game.started, finished: !!game.finished, gameid } : { error: 'Game not found' };
+      res.end('data: ' + JSON.stringify(data) + '\n\n');
     }
-    var client = new pg.Client(conString);
-    client.connect();
-    client.query('SELECT started, finished FROM games WHERE gameid = $1', [data.gameid], (err, result) => {
-      if (err) {
-        console.error('lobby/status error', err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        client.end()
-        return res.end(JSON.stringify({ error: 'Internal error' }));
+  } catch (err) {
+    console.error('lobby/watch error', err);
+    if (!res.destroyed && !res.writableEnded) res.end('data: ' + JSON.stringify({ error: 'Internal error' }) + '\n\n');
+  }
+}
+
+// Keep parsing, responses and errors in one place for the matchmaking endpoints.
+function lobbyError(status, message) {
+  return Object.assign(new Error(message), { status });
+}
+
+function validLobbyId(id) {
+  return (typeof id === 'string' || Number.isSafeInteger(id))
+    && /^[1-9][0-9]{0,18}$/.test(String(id)) && BigInt(id) <= 9223372036854775807n;
+}
+
+function readLobbyJson(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on('data', chunk => {
+      size += Buffer.byteLength(chunk);
+      if (size > 16384) {
+        chunks.length = 0;
+        reject(lobbyError(413, 'Request body too large'));
+      } else {
+        chunks.push(Buffer.from(chunk));
       }
-      if (result.rows.length === 0) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        client.end()
-        return res.end(JSON.stringify({ error: 'Game not found' }));
+    });
+    req.on('error', reject);
+    req.on('aborted', () => reject(lobbyError(400, 'Request aborted')));
+    req.on('end', () => {
+      if (size > 16384) return;
+      try {
+        const data = JSON.parse(Buffer.concat(chunks).toString());
+        if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error();
+        resolve(data);
+      } catch (err) {
+        reject(lobbyError(400, 'Invalid JSON'));
       }
-      const row = result.rows[0];
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ started: !!row.started, finished: !!row.finished, gameid: data.gameid }));
-      client.end()
     });
   });
 }
 
-function handleLobbyWatch(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  const url = new URL(req.url, domainname);
-  const gameid = url.searchParams.get('gameid') || '';
-  if (gameidregex.test(gameid) === false) {
-    res.writeHead(400, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ error: 'Invalid gameid' }));
+async function handleLobbyRequest(req, res, resHeaders, handler) {
+  try {
+    const result = await handler(await readLobbyJson(req));
+    res.writeHead(200, { ...resHeaders, 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(result));
+  } catch (err) {
+    if (!err.status || err.status >= 500) console.error(req.url + ' error', err);
+    if (res.destroyed || res.writableEnded) return;
+    res.writeHead(err.status || 500, { ...resHeaders, 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: err.status ? err.message : 'Internal error' }));
   }
-
-  resHeaders["Content-Type"] = 'text/event-stream';
-  resHeaders["Cache-Control"] = 'no-cache';
-  resHeaders["Connection"] = 'keep-alive';
-  resHeaders["X-Accel-Buffering"] = 'no';
-  res.writeHead(200, resHeaders);
-
-  var client = new pg.Client(conString);
-  client.connect();
-  client.query('SELECT started, finished FROM games WHERE gameid = $1', [gameid], (err, result) => {
-    if (err) {
-      console.error('lobby/watch error', err);
-      res.write('data: ' + JSON.stringify({ error: 'Internal error' }) + '\n\n');
-      res.end();
-      client.end()
-      return;
-    }
-    if (result.rows.length === 0) {
-      res.write('data: ' + JSON.stringify({ error: 'Game not found' }) + '\n\n');
-      res.end();
-      client.end()
-      return;
-    }
-    const row = result.rows[0];
-    if (row.started || row.finished) {
-      res.write('data: ' + JSON.stringify({ started: !!row.started, finished: !!row.finished, gameid: gameid }) + '\n\n');
-      res.end();
-      client.end()
-      return;
-    }
-
-    const entry = {
-      res: res,
-      keepalive: setInterval(() => {
-        res.write(':\n\n');
-      }, 15000)
-    };
-
-    if (!lobbyWatchers.has(gameid)) {
-      lobbyWatchers.set(gameid, new Set());
-    }
-    lobbyWatchers.get(gameid).add(entry);
-    client.end()
-
-    req.on('close', () => {
-      clearInterval(entry.keepalive);
-      const watchers = lobbyWatchers.get(gameid);
-      if (watchers) {
-        watchers.delete(entry);
-        if (watchers.size === 0) {
-          lobbyWatchers.delete(gameid);
-        }
-      }
-    });
-  });
 }
 
 function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  let body = '';
-  req.on('data', chunk => { body += chunk; });
-  req.on('end', () => {
-    let data;
+  return handleLobbyRequest(req, res, resHeaders, async ({ id, action }) => {
+    if (!validLobbyId(id) || !['join', 'watch'].includes(action)) {
+      throw lobbyError(400, 'Invalid game id or action');
+    }
+    const { rows: [game] } = await lobbyDb.query(
+      `SELECT id, gameid, userid1, userid2, sessionid1, sessionid2, rated, timecontrol1,
+              randomcolor, color1, color2, started, finished, initialtime, increment, gameserver
+       FROM games WHERE id = $1`, [id]);
+    if (!game) throw lobbyError(404, 'Game not found');
+    if (action === 'watch') {
+      if (!game.started || game.finished) throw lobbyError(400, 'Game not available to watch');
+      return { success: true, mode: 'watch', gameid: game.gameid };
+    }
+    if (game.started || game.finished) throw lobbyError(400, 'Game already started or finished');
+    if (game.userid2 != null || game.sessionid2 != null) throw lobbyError(409, 'Game already full');
+
+    const userId = String(sessiondata[1] || '0');
+    const sessionId = req.headers.cookie.slice(2);
+    const creatorId = String(game.userid1 || '0');
+    if (game.sessionid1 === sessionId || (userId !== '0' && creatorId === userId)) {
+      throw lobbyError(403, 'Cannot join your own game');
+    }
+    if (game.rated && (userId === '0' || creatorId === '0')) {
+      throw lobbyError(403, 'Anonymous users cannot join rated games');
+    }
+
+    // Fetch both players together, before claiming the game.
+    const userIds = [...new Set([creatorId, userId].filter(id => id !== '0'))];
+    const { rows } = await lobbyDb.query(
+      'SELECT id, rating, deviation, volatility FROM users WHERE id = ANY($1::bigint[])', [userIds]);
+    const ratings = Object.fromEntries(rows.map(row => [String(row.id), {
+      rating: Number(row.rating), deviation: Number(row.deviation), volatility: Number(row.volatility)
+    }]));
+    if (userIds.some(id => !ratings[id])) throw lobbyError(500, 'Error fetching ratings');
+    const defaults = { rating: 1500, deviation: 200, volatility: 0.06 };
+    const player1Ratings = ratings[creatorId] || defaults;
+    const player2Ratings = ratings[userId] || defaults;
+    if (game.rated && Math.abs(player1Ratings.rating - player2Ratings.rating) > 500) {
+      throw lobbyError(403, 'Rating difference too large');
+    }
+
+    const time = parseTimeControl(game.timecontrol1);
+    const colors = assignColorsForGame(game);
+    // This conditional update is the claim: only one request can fill an open seat,
+    // including across multiple web server instances. Never hold a DB lock over HTTP.
+    const claim = await lobbyDb.query(
+      `UPDATE games SET userid2 = $1, sessionid2 = $2, color1 = $3, color2 = $4,
+                        initialtime = $5, increment = $6, gameserver = $7
+       WHERE id = $8 AND userid2 IS NULL AND sessionid2 IS NULL
+         AND started IS NULL AND finished IS NULL RETURNING id`,
+      [userId, sessionId, colors.color1, colors.color2, time.minutes, time.increment, gameServerName, id]);
+    if (!claim.rowCount) throw lobbyError(409, 'Game already full');
+
     try {
-      data = JSON.parse(body);
-    } catch (e) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      await new Promise((resolve, reject) => startGameOnServer({
+        gameid: game.gameid,
+        whitePlayerId: colors.whiteIsPlayer1 ? getPlayerIdentity(creatorId, game.sessionid1) : getPlayerIdentity(userId, sessionId),
+        blackPlayerId: colors.whiteIsPlayer1 ? getPlayerIdentity(userId, sessionId) : getPlayerIdentity(creatorId, game.sessionid1),
+        time,
+        whiteRatings: colors.whiteIsPlayer1 ? player1Ratings : player2Ratings,
+        blackRatings: colors.whiteIsPlayer1 ? player2Ratings : player1Ratings
+      }, err => err ? reject(err) : resolve()));
+    } catch (err) {
+      // Release only this request's claim and restore all fields changed by it.
+      await lobbyDb.query(
+        `UPDATE games SET userid2 = NULL, sessionid2 = NULL, color1 = $1, color2 = $2,
+                          initialtime = $3, increment = $4, gameserver = $5
+         WHERE id = $6 AND sessionid2 = $7 AND started IS NULL AND finished IS NULL`,
+        [game.color1, game.color2, game.initialtime, game.increment, game.gameserver, id, sessionId]);
+      throw lobbyError(502, 'Game server unavailable');
     }
-
-    const { id, action } = data;
-    if (!id || !action) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Missing parameters' }));
-    }
-
-    var client = new pg.Client(conString);
-    client.connect();
-    client.query('SELECT id, gameid, userid1, userid2, sessionid1, sessionid2, rated, timecontrol1, randomcolor, color1, color2, started, finished FROM games WHERE id = $1', [id], (err, result) => {
-      if (err) {
-        console.error('lobby/action select error', err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        client.end()
-        return res.end(JSON.stringify({ error: 'Internal error' }));
-      }
-
-      if (result.rows.length === 0) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        client.end()
-        return res.end(JSON.stringify({ error: 'Game not found' }));
-      }
-
-      const game = result.rows[0];
-      const defaultRatings = { rating: 1500, deviation: 200, volatility: 0.06 };
-      const originalColors = { color1: game.color1, color2: game.color2 };
-
-      function finalizeJoin() {
-        const time = parseTimeControl(game.timecontrol1);
-        const colors = assignColorsForGame(game);
-        const player1UserId = String(game.userid1 || '0');
-        const player2UserId = String(sessiondata[1] || '0');
-        const player1SessionId = game.sessionid1;
-        const player2SessionId = req.headers['cookie'].slice(2);
-
-        const whitePlayerId = colors.whiteIsPlayer1
-          ? getPlayerIdentity(player1UserId, player1SessionId)
-          : getPlayerIdentity(player2UserId, player2SessionId);
-        const blackPlayerId = colors.whiteIsPlayer1
-          ? getPlayerIdentity(player2UserId, player2SessionId)
-          : getPlayerIdentity(player1UserId, player1SessionId);
-
-        const updateSql = 'UPDATE games SET userid2 = $1, sessionid2 = $2, color1 = $3, color2 = $4, initialtime = $5, increment = $6, gameserver = $7 WHERE id = $8';
-        const updateValues = [player2UserId, player2SessionId, colors.color1, colors.color2, time.minutes, time.increment, gameServerName, id];
-
-        client.query(updateSql, updateValues, (err2) => {
-          if (err2) {
-            console.error('lobby/action update error', err2);
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            client.end()
-            return res.end(JSON.stringify({ error: 'Internal error' }));
-          }
-
-          const userIds = [];
-          if (player1UserId !== '0') userIds.push(Number(player1UserId));
-          if (player2UserId !== '0') userIds.push(Number(player2UserId));
-
-          selectUserDetails(client, userIds, (err3, detailsMap) => {
-            if (err3) {
-              console.error('lobby/action rating error', err3);
-              res.writeHead(500, { 'Content-Type': 'application/json' });
-              client.end()
-              return res.end(JSON.stringify({ error: 'Internal error' }));
-            }
-
-            const defaultUser = { rating: 1500, deviation: 200, volatility: 0.06, role: 1, uci_elo: null };
-            const p1User = player1UserId !== '0' && detailsMap[player1UserId] ? detailsMap[player1UserId] : defaultUser;
-            const p2User = player2UserId !== '0' && detailsMap[player2UserId] ? detailsMap[player2UserId] : defaultUser;
-            const p1Ratings = { rating: p1User.rating, deviation: p1User.deviation, volatility: p1User.volatility };
-            const p2Ratings = { rating: p2User.rating, deviation: p2User.deviation, volatility: p2User.volatility };
-            const whiteRatings = colors.whiteIsPlayer1 ? p1Ratings : p2Ratings;
-            const blackRatings = colors.whiteIsPlayer1 ? p2Ratings : p1Ratings;
-
-            startGameOnServer(
-              {
-                gameid: game.gameid,
-                whitePlayerId: whitePlayerId,
-                blackPlayerId: blackPlayerId,
-                time: time,
-                whiteRatings: whiteRatings,
-                blackRatings: blackRatings
-              },
-              (err4) => {
-                if (err4) {
-                  console.error('lobby/action game server error', err4);
-                  const revertSql = 'UPDATE games SET userid2 = NULL, sessionid2 = NULL, started = NULL, color1 = $1, color2 = $2 WHERE id = $3';
-                  client.query(revertSql, [originalColors.color1, originalColors.color2, id], (err5) => {
-                    if (err5) {
-                      console.error('lobby/action revert error', err5);
-                    }
-                    res.writeHead(502, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: 'Game server unavailable' }));
-                    client.end()
-                  });
-                  return;
-                }
-                client.query('UPDATE games SET started = NOW() WHERE id = $1', [id], (err6) => {
-                  if (err6) {
-                    console.error('lobby/action start update error', err6);
-                    res.writeHead(500, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: 'Internal error' }));
-                    client.end()
-                    return;
-                  }
-                  notifyLobbyWatchers(game.gameid, true);
-                  const whiteUserId = colors.whiteIsPlayer1 ? player1UserId : player2UserId;
-                  const blackUserId = colors.whiteIsPlayer1 ? player2UserId : player1UserId;
-                  const notifyPayload = {
-                    type: 'game_start',
-                    gameid: game.gameid,
-                    server: gameServerName,
-                    rated: Boolean(game.rated),
-                    time: time.minutes,
-                    increment: time.increment
-                  };
-                  publishUserNotification(whiteUserId, Object.assign({ color: 'w' }, notifyPayload));
-                  publishUserNotification(blackUserId, Object.assign({ color: 'b' }, notifyPayload));
-                  res.writeHead(200, { 'Content-Type': 'application/json' });
-                  res.end(JSON.stringify({ success: true, mode: 'join', gameid: game.gameid }));
-                  client.end()
-                });
-              }
-            );
-          });
-        });
-      }
-      if (action === 'join') {
-        if (game.finished || game.started) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          client.end()
-          return res.end(JSON.stringify({ error: 'Game already started or finished' }));
-        }
-        if (game.userid2) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          client.end()
-          return res.end(JSON.stringify({ error: 'Game already full' }));
-        }
-
-
-        // If rated, enforce rating difference restriction
-        if (game.rated) {
-          // First fetch ratings of both users
-          client.query(
-            'SELECT rating FROM users WHERE id = $1',
-            [game.userid1],
-            (err3, result1) => {
-              if (err3 || result1.rows.length === 0) {
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                client.end()
-                return res.end(JSON.stringify({ error: 'Error fetching ratings' }));
-              }
-              const rating1 = result1.rows[0].rating || 1200;
-
-              // Current player (the one joining)
-              if (sessiondata[1] === '0') {
-                res.writeHead(403, { 'Content-Type': 'application/json' });
-                client.end()
-                return res.end(JSON.stringify({ error: 'Anonymous users cannot join rated games' }));
-              }
-
-              client.query(
-                'SELECT rating FROM users WHERE id = $1',
-                [sessiondata[1]],
-                (err4, result2) => {
-                  if (err4 || result2.rows.length === 0) {
-                    res.writeHead(500, { 'Content-Type': 'application/json' });
-                    client.end()
-                    return res.end(JSON.stringify({ error: 'Error fetching rating' }));
-                  }
-                  const rating2 = result2.rows[0].rating || 1200;
-
-                  const diff = Math.abs(rating1 - rating2);
-                  const maxDiff = 500; // configurable
-
-                  if (diff > maxDiff) {
-                    res.writeHead(403, { 'Content-Type': 'application/json' });
-                    client.end()
-                    return res.end(JSON.stringify({ error: 'Rating difference too large' }));
-                  }
-
-                  finalizeJoin();
-                }
-              );
-            }
-          );
-          return; // stop here, don't run default join code
-        }
-
-        finalizeJoin();
-      } else if (action === 'watch') {
-        if (game.started && !game.finished) {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, mode: 'watch', gameid: game.gameid }));
-        } else {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Game not available to watch' }));
-        }
-        client.end()
-      } else {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unknown action' }));
-        client.end()
-      }
-    });
+    await lobbyDb.query('UPDATE games SET started = NOW() WHERE id = $1', [id]);
+    notifyLobbyWatchers(game.gameid, true);
+    const notification = {
+      type: 'game_start', gameid: game.gameid, server: gameServerName,
+      rated: Boolean(game.rated), time: time.minutes, increment: time.increment
+    };
+    publishUserNotification(creatorId, { ...notification, color: colors.whiteIsPlayer1 ? 'w' : 'b' });
+    publishUserNotification(userId, { ...notification, color: colors.whiteIsPlayer1 ? 'b' : 'w' });
+    return { success: true, mode: 'join', gameid: game.gameid };
   });
 }
-// === END LOBBY HANDLERS ===
+
 function handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  let body = '';
-  req.on('data', chunk => { body += chunk; });
-  req.on('end', () => {
-    let data;
-    try {
-      data = JSON.parse(body);
-    } catch (e) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Invalid JSON' }));
-    }
-
+  return handleLobbyRequest(req, res, resHeaders, async data => {
     const rated = data.rated === true || data.rated === '1';
-
     if (rated && sessiondata[1] === '0') {
-      res.writeHead(403, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Anonymous users cannot create rated games' }));
+      throw lobbyError(403, 'Anonymous users cannot create rated games');
     }
-
-    const timecontrol = typeof data.timecontrol === 'string' ? data.timecontrol : '5+0';
-    let color = null, randomcolor = true;
-
-    if (!rated && (data.color === 'white' || data.color === 'black')) {
-      color = data.color;
-      randomcolor = false;
-    }
-
-    const botId = Number(data.botId);
-    const useBot = (data.easy === true || data.easy === '1') && Number.isFinite(botId);
+    const timecontrol = normalizeTimeControl(data.timecontrol);
+    const color = !rated && ['white', 'black'].includes(data.color) ? data.color : null;
     let creatorId = sessiondata[1];
-    let creatorSession = req.headers['cookie'].slice(2);
-
-    // Pick a random lowercase letter (a–z)
-    const prefix = String.fromCharCode(97 + Math.floor(Math.random() * 26));
-    const gameid = prefix + Date.now().toString(36);
-
-    const sql = `
-      INSERT INTO games (gameid, userid1, sessionid1, rated, timecontrol1, randomcolor, color1, created)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-      RETURNING id, gameid
-    `;
-
-    var client = new pg.Client(conString);
-    client.connect();
-
-    function insertGame() {
-      const values = [
-        gameid,
-        creatorId,
-        creatorSession,
-        rated,
-        timecontrol,
-        randomcolor,
-        color
-      ];
-      client.query(sql, values, (err, result) => {
-        if (err) {
-          console.error('lobby/create error', err);
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          client.end()
-          return res.end(JSON.stringify({ error: 'Internal error' }));
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, id: result.rows[0].id, gameid: result.rows[0].gameid }));
-        client.end()
-      });
+    let creatorSession = req.headers.cookie.slice(2);
+    if (data.easy === true || data.easy === '1') {
+      if (!validLobbyId(data.botId)) throw lobbyError(400, 'Invalid bot');
+      const { rowCount } = await lobbyDb.query('SELECT id FROM users WHERE id = $1 AND role = 3', [data.botId]);
+      if (!rowCount) throw lobbyError(404, 'Bot not found');
+      creatorId = String(data.botId);
+      creatorSession = 'bot:' + creatorId;
     }
-
-    if (useBot) {
-      client.query('SELECT id FROM users WHERE id = $1 AND role = 3', [botId], (err, result) => {
-        if (err) {
-          console.error('lobby/create bot error', err);
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          client.end()
-          return res.end(JSON.stringify({ error: 'Internal error' }));
-        }
-        if (result.rows.length === 0) {
-          res.writeHead(404, { 'Content-Type': 'application/json' });
-          client.end()
-          return res.end(JSON.stringify({ error: 'Bot not found' }));
-        }
-        creatorId = String(botId);
-        creatorSession = 'bot:' + botId;
-        insertGame();
-      });
-      return;
+    // Nine alphanumeric characters, without the timestamp collisions under load.
+    const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const gameid = Array.from({ length: 9 }, () => chars[crypto.randomInt(chars.length)]).join('');
+      try {
+        const { rows: [game] } = await lobbyDb.query(
+          `INSERT INTO games (gameid, userid1, sessionid1, rated, timecontrol1, randomcolor, color1, created)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING id, gameid`,
+          [gameid, creatorId, creatorSession, rated, timecontrol, color === null, color]);
+        return { success: true, id: game.id, gameid: game.gameid };
+      } catch (err) {
+        if (err.code !== '23505' || err.constraint !== 'games_gameid_key' || attempt === 2) throw err;
+      }
     }
-
-    insertGame();
   });
 }
 
