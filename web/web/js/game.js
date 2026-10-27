@@ -120,6 +120,7 @@ function displayTermination(code) {
     gamefinished = true;
     clearInterval(clocktick)
   }
+  if (typeof gameUiState === 'function') gameUiState()
   var rw = document.createElement('div')
   rw.setAttribute('class', 'result-wrap')
   var rsl = document.createElement('p')
@@ -149,14 +150,8 @@ function displayTermination(code) {
   }
   if (code == 7) {
     gameresult = { w: '0-1', b: '1-0' }[events[events.length - 1][0]]
-    drawbtn.style.background = ''
-    drawbtn.style.color = ''
-    resignbtn.style.background = '#cdd675'
-    resignbtn.style.color = { w: '#fff', b: '#000' }[events[events.length - 1][0]]
   }
   if (code == 8) {
-    drawbtn.style.background = '#00a2ff'
-    drawbtn.style.color = { w: '#fff', b: '#000' }[events[events.length - 1][0]]
   }
   if (code == 0) gameresult = ''
   if (code == 9) gameresult = '-'
@@ -174,6 +169,7 @@ function displayTermination(code) {
 }
 
 var wsc
+var gameConnectionReady = false
 function sendGameMessage(message) {
   if (!wsc || wsc.readyState !== WebSocket.OPEN) return false
   wsc.send(message)
@@ -181,6 +177,7 @@ function sendGameMessage(message) {
 }
 
 function wsgame(gameid, server = 'ws0') {
+  gameConnectionReady = false
   if (typeof gameid === 'undefined') {
     gameid = location.pathname.split('/')[2]
   }
@@ -290,8 +287,6 @@ function wsgame(gameid, server = 'ws0') {
               displayTermination(rawmove[5])
             }
             // Draw rejected by moving
-            drawbtn.style.background = ''
-            drawbtn.style.color = ''
           } else {
             // Reset board? refresh the page could do the trick
             console.log('Received out of order moves')
@@ -378,8 +373,6 @@ function wsgame(gameid, server = 'ws0') {
           eventstimes.push(aev[2])
           if (aev[0] == 1) {
             // Resign
-            resignbtn.style.background = '#cdd675'
-            resignbtn.style.color = { w: '#fff', b: '#000' }[aev[1]]
             nowtime = msToTime(clock[turn] - (eventstimes[eventstimes.length - 1] - lastmovetime))
             if (displaytime !== nowtime) {
               document.getElementsByClassName('rclock-' + { w: 'white', b: 'black' }[turn])[0].getElementsByClassName('time')[0].innerHTML = nowtime
@@ -391,8 +384,6 @@ function wsgame(gameid, server = 'ws0') {
             // Willing to Draw
             if (aev[3] > 0) {
               // Agreement to draw
-              drawbtn.style.background = '#cdd675'
-              drawbtn.style.color = { w: '#fff', b: '#000' }[aev[1]]
               nowtime = msToTime(clock[turn] - (eventstimes[eventstimes.length - 1] - lastmovetime))
               if (displaytime !== nowtime) {
                 document.getElementsByClassName('rclock-' + { w: 'white', b: 'black' }[turn])[0].getElementsByClassName('time')[0].innerHTML = nowtime
@@ -401,8 +392,6 @@ function wsgame(gameid, server = 'ws0') {
               displayTermination(aev[3])
             } else {
               // One sided offer
-              drawbtn.style.background = '#00a2ff'
-              drawbtn.style.color = { w: '#fff', b: '#000' }[aev[1]]
             }
           }
         } else {
@@ -422,8 +411,6 @@ function wsgame(gameid, server = 'ws0') {
         if (events.length > 0 && events[events.length - 1][1] == 2 && gamefinished === false) {
           // We got a one sided draw offer, see if it is from this turn
           if (eventstimes.length > 0 && eventstimes[eventstimes.length - 1] > lastmovetime) {
-            drawbtn.style.background = '#00a2ff'
-            drawbtn.style.color = { w: '#fff', b: '#000' }[events.slice(-1)[0][0]]
           }
         }
         break;
@@ -505,6 +492,7 @@ function wsgame(gameid, server = 'ws0') {
       }
       case 'z': {
         // Our side
+        gameConnectionReady = true
         if (typeof { w: 1, b: 1 }[event.data.slice(1)] !== 'undefined') {
           playerside = event.data.slice(1)
         } else {
@@ -543,8 +531,11 @@ function wsgame(gameid, server = 'ws0') {
         break;
       }
     }
+    if (typeof gameUiState === 'function' && event.data[0] !== '1' && event.data[0] !== 'a') gameUiState()
   }
   wsc.onclose = (event) => {
+    gameConnectionReady = false
+    if (typeof gameUiState === 'function') gameUiState()
     clearTimeout(wsc.pingTimeout);
     if (gamefinished === true) { location.reload(); return }
     const status = document.querySelector('[data-game-field="state"]')
@@ -999,7 +990,7 @@ function roundstart() {
       document.getElementsByClassName('rclock-' + { w: 'white', b: 'black' }[turn])[0].getElementsByClassName('time')[0].innerHTML = msToTime(allmovetimes[a1ti - 2] || 1000 * 60 * tc.split('+')[0])
       if (a1ti > 0 && a1ti <= uci.length) {
         movesList.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
-        movesList.querySelector("[ply='" + a1ti + "']").scrollIntoView()
+        movesList.querySelector("[ply='" + a1ti + "']").scrollIntoView({block:'nearest',inline:'nearest'})
       }
     }
     if (event.target.getAttribute('id') === 'ff') {
@@ -1018,7 +1009,7 @@ function roundstart() {
       }
       if (a1ti > 0 && a1ti <= uci.length) {
         movesList.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
-        movesList.querySelector("[ply='" + a1ti + "']").scrollIntoView()
+        movesList.querySelector("[ply='" + a1ti + "']").scrollIntoView({block:'nearest',inline:'nearest'})
       }
     }
     if (event.target.getAttribute('id') === 'sb') {
@@ -1031,7 +1022,7 @@ function roundstart() {
       document.getElementsByClassName('rclock-' + { w: 'white', b: 'black' }[turn])[0].getElementsByClassName('time')[0].innerHTML = msToTime(allmovetimes[a1ti - 2] || 1000 * 60 * tc.split('+')[0])
       if (a1ti > 0 && a1ti <= uci.length) {
         movesList.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
-        movesList.querySelector("[ply='" + a1ti + "']").scrollIntoView()
+        movesList.querySelector("[ply='" + a1ti + "']").scrollIntoView({block:'nearest',inline:'nearest'})
       }
     }
     if (event.target.getAttribute('id') === 'fw') {
@@ -1050,7 +1041,7 @@ function roundstart() {
       }
       if (a1ti > 0 && a1ti <= uci.length) {
         movesList.querySelector("[ply='" + a1ti + "']").classList.toggle('a1t');
-        movesList.querySelector("[ply='" + a1ti + "']").scrollIntoView()
+        movesList.querySelector("[ply='" + a1ti + "']").scrollIntoView({block:'nearest',inline:'nearest'})
       }
     }
 

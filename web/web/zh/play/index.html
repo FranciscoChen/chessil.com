@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="/css/game.css">
   <link rel="stylesheet" href="/css/grandmaster.css">
   <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dialog.css">
+  <link rel="stylesheet" href="/css/play.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/game.js"></script>
@@ -19,86 +21,46 @@
   <script src="/js/load.js"></script>
 </head>
 
-<body class="fixed-scroll">
+<body class="game-page">
   <!-- component:header -->
-  <div class="main-wrap">
+  <main class="game-shell">
+    <div class="game-heading">
+      <div><p class="eyebrow">棋盘之上</p><h1>国际象棋对局</h1><p class="setup" data-game-field="setup">正在加载对局…</p></div>
+      <div class="game-heading-actions"><a class="ui-button ui-quiet" href="/lobby">← 大厅</a><button class="ui-button ui-secondary" id="share-game" type="button">分享</button><span id="share-status" class="game-sr-only" role="status"></span></div>
+    </div>
     <div class="round">
       <div class="round__app">
-        <div class="round__app__board board">
-          <div class="cg-wrap manipulable"><cg-container><cg-board></cg-board>
-              <coords class="ranks">
-                <coord>1</coord>
-                <coord>2</coord>
-                <coord>3</coord>
-                <coord>4</coord>
-                <coord>5</coord>
-                <coord>6</coord>
-                <coord>7</coord>
-                <coord>8</coord>
-              </coords>
-              <coords class="files">
-                <coord>a</coord>
-                <coord>b</coord>
-                <coord>c</coord>
-                <coord>d</coord>
-                <coord>e</coord>
-                <coord>f</coord>
-                <coord>g</coord>
-                <coord>h</coord>
-              </coords>
-            </cg-container></div>
-        </div>
-        <div class="material material-top"></div>
-        <div class="round__app__table"></div>
-        <div class="user-link ruser ruser-top online"><i class="line"></i>
-          <name data-game-field="username2">...</name>
-          <rating data-game-field="rating2">-</rating>
-        </div>
-        <moves-panel>
-          <div class="buttons">
-            <div class="noop"></div><button id="rw" title="第一步" aria-label="第一步" class="fbt"></button><button id="sb" title="上一步" aria-label="上一步" class="fbt"></button><button
-              id="fw" title="下一步" aria-label="下一步" class="fbt"></button><button id="ff" title="最后一步" aria-label="最后一步" class="fbt"></button>
-            <div class="noop"></div>
+        <section class="game-player game-player--top" aria-label="黑方">
+          <div class="user-link ruser ruser-top online">
+            <span class="player-mark player-mark--black" aria-hidden="true"></span>
+            <div class="player-details"><name data-game-field="username2">…</name><div class="player-meta"><span>黑方</span><rating data-game-field="rating2">—</rating></div></div>
           </div>
+          <div class="rclock rclock-top"><div class="bar"></div><div class="time hour">—:—</div></div>
+        </section>
+        <div class="round__app__board board" aria-label="国际象棋棋盘">
+          <div class="cg-wrap manipulable"><cg-container><cg-board></cg-board><coords class="ranks"><coord>1</coord><coord>2</coord><coord>3</coord><coord>4</coord><coord>5</coord><coord>6</coord><coord>7</coord><coord>8</coord></coords><coords class="files"><coord>a</coord><coord>b</coord><coord>c</coord><coord>d</coord><coord>e</coord><coord>f</coord><coord>g</coord><coord>h</coord></coords></cg-container></div>
+          <div class="material material-bottom material-no"><button id="prq" type="button" aria-label="后"><mpiece class="queen"></mpiece></button><button id="prr" type="button" aria-label="车"><mpiece class="rook"></mpiece></button><button id="prb" type="button" aria-label="象"><mpiece class="bishop"></mpiece></button><button id="prn" type="button" aria-label="马"><mpiece class="knight"></mpiece></button></div>
+        </div>
+        <section class="game-player game-player--bottom" aria-label="白方">
+          <div class="user-link ruser ruser-bottom online">
+            <span class="player-mark player-mark--white" aria-hidden="true"></span>
+            <div class="player-details"><name data-game-field="username1">…</name><div class="player-meta"><span>白方</span><rating data-game-field="rating1">—</rating></div></div>
+          </div>
+          <div class="rclock rclock-bottom"><div class="bar"></div><div class="time hour">—:—</div></div>
+        </section>
+        <moves-panel aria-label="棋谱">
+          <div class="game-panel-heading"><h2>棋谱</h2><span class="status" data-game-field="state" role="status">正在连接…</span></div>
+          <p class="game-perspective" id="game-perspective">正在连接…</p>
+          <p class="game-empty" id="moves-empty">等待第一步棋。</p>
           <moves-list></moves-list>
+          <div class="buttons"><button id="rw" type="button" class="fbt" title="第一步" aria-label="第一步" disabled>|‹</button><button id="sb" type="button" class="fbt" title="上一步" aria-label="上一步" disabled>‹</button><button id="fw" type="button" class="fbt" title="下一步" aria-label="下一步" disabled>›</button><button id="ff" type="button" class="fbt" title="最后一步" aria-label="最后一步" disabled>›|</button></div>
+          <p class="game-history-hint" id="history-hint">对局结束后可回顾棋谱。</p>
         </moves-panel>
-        <div class="rcontrols">
-          <div class="ricons"><button class="fbt draw-yes"><span></span></button><button
-              class="fbt resign"><span></span></button></div>
-        </div>
-        <div class="user-link ruser ruser-bottom online"><i class="line"></i>
-          <name data-game-field="username1">...</name>
-          <rating data-game-field="rating1">-</rating>
-        </div>
-        <div class="rclock rclock-top">
-          <div class="bar"></div>
-          <div class="time hour"></div>
-        </div>
-        <div class="rclock rclock-bottom">
-          <div class="bar"></div>
-          <div class="time hour"></div>
-        </div>
-        <div class="material material-bottom">
-          <div id="prq">
-            <mpiece class="queen"></mpiece>
-          </div>
-          <div id="prr">
-            <mpiece class="rook"></mpiece>
-          </div>
-          <div id="prb">
-            <mpiece class="bishop"></mpiece>
-          </div>
-          <div id="prn">
-            <mpiece class="knight"></mpiece>
-          </div>
-        </div>
+        <div class="rcontrols game-actions"><div class="ricons"><button type="button" class="fbt draw-yes" disabled><span>提议和棋</span></button><button type="button" class="fbt resign" disabled><span>认输</span></button></div><div class="game-followup" hidden><a class="ui-button ui-primary" href="/lobby">新对局</a><a class="ui-button ui-secondary" href="/easy">对战电脑</a></div></div>
       </div>
-      <div class="round__underboard"></div>
-      <div class="status" data-game-field="state">...</div>
-      <div class="setup" data-game-field="setup">...</div>
+      <p class="round__underboard game-guidance" id="game-guidance">拖动棋子，或依次点击棋子和目标格。</p>
     </div>
-  </div>
+  </main>
   <!-- component:footer -->
 </body>
-
 </html>

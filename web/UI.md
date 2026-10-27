@@ -43,3 +43,18 @@ IDs, behavior and localized message dictionary in `lobby-text.js`.
 CSS imports are versioned along with their dependencies, so changing a shared
 header/layout stylesheet invalidates both the parent CSS URL and the imported
 stylesheet URL after deployment.
+
+## Game layout
+
+`play.css` styles the game shell, player cards, clocks, history and controls;
+`game.css` retains chessboard geometry and piece images. Desktop uses a board
+with an adjacent history/clock column. Tablet and phone layouts place player
+cards above and below the board, with actions and history underneath.
+
+`gameUiState()` updates controls from the numeric game state and authenticated
+socket role. Players see draw/resign actions, spectators and completed games
+see links to start another game, and replay buttons become available after the
+game. Clock highlights follow the turn, independently of player orientation.
+Promotion choices use native buttons and keep their pointer events from
+triggering board moves. Keep the board and clock IDs/classes stable: the move
+code uses their measured geometry and orientation classes.
