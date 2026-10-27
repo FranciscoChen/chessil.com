@@ -166,11 +166,14 @@ var wsc
 
 function wsgame(gameid, server = 'ws0') {
   if (typeof gameid === 'undefined') {
-    gameid = document.location.href.slice(25, 34)
+    gameid = location.pathname.split('/')[2]
   }
   if (document.getElementsByClassName('setup').length > 0) {
-    server = 'ws' + document.querySelector('.setup').dataset.server
+    server = document.querySelector('.setup').dataset.server || server
   }
+  server = String(server)
+  if (/^\d+$/.test(server)) server = 'ws' + server
+  if (!/^ws\d+$/.test(server)) throw new Error('Invalid game server')
   wsc = new WebSocket("wss://" + server + ".chessil.com/game/" + gameid);
   wsc.onopen = (event) => {
     heartbeat(wsc)
@@ -527,7 +530,12 @@ function wsgame(gameid, server = 'ws0') {
   }
   wsc.onclose = (event) => {
     clearTimeout(wsc.pingTimeout);
-    if (gamefinished === true) location.reload();
+    if (gamefinished === true) { location.reload(); return }
+    const status = document.querySelector('[data-game-field="state"]')
+    if (status) {
+      status.setAttribute('role', 'alert')
+      status.textContent = {en: 'Disconnected. Reload to reconnect.', es: 'Desconectado. Recarga para reconectar.', zh: '连接已断开，请刷新重连。'}[document.documentElement.lang] || 'Disconnected. Reload to reconnect.'
+    }
   }
   drawbtn.onclick = function () { wsc.send('e2') }
   resignbtn.onclick = function () { wsc.send('e1') }
@@ -824,7 +832,7 @@ function dragelement(ele) {
 }
 function dbgame(gameid) {
   if (typeof gameid === 'undefined') {
-    gameid = document.location.href.slice(25, 34)
+    gameid = location.pathname.split('/')[2]
   }
   var xhr = new XMLHttpRequest();
   xhr.open("POST", '/gamestate', true);
@@ -1194,7 +1202,7 @@ function roundstart() {
       s.setAttribute('style', 'transform: translate(' + trcol[playerside][square[0]] * dim + 'px, ' + trrow[playerside][square[1]] * dim + 'px);')
     }
   }
-  stat = document.getElementsByClassName('status')[0].innerHTML
+  stat = Number(document.querySelector('[data-game-field="state"]').dataset.state)
   if (stat == 0) {
     movesList.innerHTML = ''
     wsgame();

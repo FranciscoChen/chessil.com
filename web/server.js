@@ -749,7 +749,7 @@ function gamepage(filename, mime, ext, res, req, resHeaders, sessiondata) {
   }
   var client = new pg.Client(conString);
   client.connect();
-  client.query('SELECT g.userid1, g.userid2, u1.username as username1, u2.username as username2, g.gameserver, g.rated, g.state, g.initialtime, g.increment, ROUND(g.rating1) as rating1, ROUND(g.rating2) as rating2, g.created, g.sessionid1, g.sessionid2 FROM games g LEFT JOIN users u1 ON u1.id = g.userid1 LEFT JOIN users u2 ON u2.id = g.userid2 WHERE g.gameid = $1', [req.url.slice(6, 15)], (err, response) => {
+  client.query('SELECT g.userid1, g.userid2, u1.username as username1, u2.username as username2, g.gameserver, g.rated, g.state, g.started, g.initialtime, g.increment, ROUND(g.rating1) as rating1, ROUND(g.rating2) as rating2, g.created, g.sessionid1, g.sessionid2 FROM games g LEFT JOIN users u1 ON u1.id = g.userid1 LEFT JOIN users u2 ON u2.id = g.userid2 WHERE g.gameid = $1', [req.url.slice(6, 15)], (err, response) => {
     if (response.rows.length === 1) {
       const template = '/play/index.html'
       if (ext === '.html') {
@@ -1870,7 +1870,7 @@ function gameinfo(filename, mime, ext, res, req, resHeaders, sessiondata) {
       var client = new pg.Client(conString);
       client.connect();
       client.query(
-        'SELECT g.userid1, g.userid2, u1.username as username1, u2.username as username2, g.gameserver, g.rated, g.state, g.initialtime, g.increment, ROUND(g.rating1) as rating1, ROUND(g.rating2) as rating2, g.sessionid1, g.sessionid2, g.color1, g.color2 FROM games g LEFT JOIN users u1 ON u1.id = g.userid1 LEFT JOIN users u2 ON u2.id = g.userid2 WHERE g.gameid = $1',
+        'SELECT g.userid1, g.userid2, u1.username as username1, u2.username as username2, g.gameserver, g.rated, g.state, g.started, g.initialtime, g.increment, ROUND(g.rating1) as rating1, ROUND(g.rating2) as rating2, g.sessionid1, g.sessionid2, g.color1, g.color2 FROM games g LEFT JOIN users u1 ON u1.id = g.userid1 LEFT JOIN users u2 ON u2.id = g.userid2 WHERE g.gameid = $1',
         [gameid],
         (err, response) => {
           if (err) {
@@ -1903,11 +1903,11 @@ function gameinfo(filename, mime, ext, res, req, resHeaders, sessiondata) {
 
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({
-              username1: username1,
-              username2: username2,
-              rating1: row.rating1,
-              rating2: row.rating2,
-              state: row.state,
+              username1: row.color1 === 'black' ? username2 : username1,
+              username2: row.color1 === 'black' ? username1 : username2,
+              rating1: row.color1 === 'black' ? row.rating2 : row.rating1,
+              rating2: row.color1 === 'black' ? row.rating1 : row.rating2,
+              state: row.state == null ? (row.started ? 0 : -1) : Number(row.state),
               initialtime: row.initialtime,
               increment: row.increment,
               rated: row.rated,
@@ -2407,7 +2407,7 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
         [game.color1, game.color2, game.initialtime, game.increment, game.gameserver, id, sessionId]);
       throw lobbyError(502, 'Game server unavailable');
     }
-    await lobbyDb.query('UPDATE games SET started = NOW() WHERE id = $1', [id]);
+    await lobbyDb.query('UPDATE games SET started = NOW(), state = 0 WHERE id = $1', [id]);
     notifyLobbyWatchers(game.gameid, true);
     const notification = {
       type: 'game_start', gameid: game.gameid, server: gameServerName,
@@ -2627,7 +2627,8 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
                 gameserver = $7,
                 rating1 = $8,
                 rating2 = $9,
-                started = NOW()
+                started = NOW(),
+                state = 0
             WHERE id = $10
           `;
 

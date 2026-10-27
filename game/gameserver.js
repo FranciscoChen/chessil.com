@@ -706,6 +706,12 @@ function authenticate(req, callback) {
 // It is possible to customize the server to react to certain endpoints and requests
 server.on('request', (req, res) => {
 
+  if (req.method === 'GET' && req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
   // Only accepts POST requests authenticated from my own servers
   if (req.method !== 'POST' || typeof req.headers['authorization'] === undefined || req.headers['authorization'] !== config.shared.gameServerAuthToken || typeof myServers[req.headers['x-real-ip']] === 'undefined') {
     res.writeHead(401, { "Content-Type": "text/html" });
@@ -802,6 +808,7 @@ server.on('request', (req, res) => {
           res.writeHead(500, { "Content-Type": "text/html" });
           res.end();
           console.error(err);
+          return;
         }
         subs[r.gn] = { w: {}, b: {}, s: {} }
         scheduleTimeout(timeoutKeyAbort, r.gn, aborttimer)
@@ -900,13 +907,14 @@ wss.on('connection', function connection(ws, req, sessiondata) {
   if (req.url.slice(0, 6) === '/game/') {
     // First question, are you a player or a spectator?
     const sessid = req.headers['cookie'].slice(2)
-    const uid = sessiondata[1]
+    const uid = String(sessiondata[1])
     const gameid = req.url.slice(6)
     var side = 's' // Side s for spectator. w or b for the players
 
     // Check if we have the game loaded in 
-    redis.hmget(gameid, 'w', 'b', (err, uidarr) => {
+    redis.hmget(gameid, 'w', 'b', 'f', (err, uidarr) => {
       if (err) { console.error(err); return ws.terminate(); }
+      if (uidarr[2] === null) { ws.close(4404, 'Game unavailable'); return; }
       if (uidarr[0] === uid) side = 'w'
       if (uidarr[0] === sessid) side = 'w'
       if (uidarr[1] === uid) side = 'b'

@@ -37,7 +37,11 @@ function gamepageload() {
       if (name2) name2.textContent = data.username2 || 'Anon'
       if (rating1) rating1.textContent = data.rating1 == null ? '-' : String(data.rating1)
       if (rating2) rating2.textContent = data.rating2 == null ? '-' : String(data.rating2)
-      if (status) status.textContent = data.state === 0 ? ({en: 'Playing', es: 'En curso', zh: '进行中'}[lang] || 'Playing') : ({en: 'Finished', es: 'Finalizada', zh: '已结束'}[lang] || 'Finished')
+      const state = Number(data.state)
+      if (status) {
+        status.dataset.state = String(state)
+        status.textContent = state === 0 ? ({en: 'Playing', es: 'En curso', zh: '进行中'}[lang] || 'Playing') : state === -1 ? ({en: 'Waiting for an opponent', es: 'Esperando un rival', zh: '等待对手'}[lang] || 'Waiting for an opponent') : ({en: 'Finished', es: 'Finalizada', zh: '已结束'}[lang] || 'Finished')
+      }
 
       const ratedText = data.rated ? ratedLabel : casualLabel
       const separator = ' \u2022 '
@@ -51,11 +55,16 @@ function gamepageload() {
         setup.dataset.side = data.side || 's'
       }
 
-      if (typeof roundstart === 'function') {
+      if (state !== -1 && typeof roundstart === 'function') {
         roundstart()
       }
     })
-    .catch(() => {
-      // Ignore fetch errors; game page can still render without metadata.
+    .catch(error => {
+      console.error('Game initialization failed:', error)
+      const status = document.querySelector('[data-game-field="state"]')
+      if (status) {
+        status.setAttribute('role', 'alert')
+        status.textContent = {en: 'Unable to load the game. Please reload.', es: 'No se pudo cargar la partida. Recarga la página.', zh: '无法加载对局，请刷新页面。'}[document.documentElement.lang] || 'Unable to load the game. Please reload.'
+      }
     })
 }
