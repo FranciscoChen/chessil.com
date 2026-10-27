@@ -340,7 +340,7 @@ coords {
   display: flex;
   pointer-events: none;
   user-select: none;
-  color: #fff;
+  color: var(--bg);
   font-weight: bold;
   font-size: 8px;
 }
@@ -533,7 +533,7 @@ coords coord {
 }
 
 .user-link.online .line {
-  color: #1a73e8;
+  color: var(--link);
   opacity: .9;
 }
 
@@ -571,7 +571,7 @@ coords coord {
 }
 
 .round__app__table {
-  background: #fff;
+  background: var(--bg);
 }
 
 @media (min-width: 799.3px),
@@ -619,7 +619,7 @@ moves-panel .buttons,
 }
 
 .user-link {
-  color: #000;
+  color: var(--text);
 }
 
 .mini-game,
@@ -737,7 +737,7 @@ moves-panel .buttons,
     width: 100%;
     height: 4px;
     background: #00a2ff;
-    background: #1a73e8;
+    background: var(--link);
     transform-origin: left;
   }
 
@@ -779,7 +779,7 @@ moves-panel .buttons,
 }
 
 .rclock .time {
-  background: #fff;
+  background: var(--bg);
   min-width: 3em;
   font-size: 2.8em;
   line-height: 50px;
@@ -839,7 +839,7 @@ moves-panel move-entry.a1t {
   }
 
   moves-panel {
-    background: #fff;
+    background: var(--bg);
   }
 
   moves-panel .fbt,
@@ -885,7 +885,7 @@ moves-panel .buttons {
   flex: 0 0 2.5rem;
   display: flex;
   justify-content: stretch;
-  background: #fff;
+  background: var(--bg);
   font-size: .9em;
   order: 2;
 }
@@ -938,7 +938,7 @@ moves-panel move-entry:hover {
 }
 
 .game__meta {
-  background: #fff;
+  background: var(--bg);
   padding: 1.5em;
 }
 

@@ -36,6 +36,15 @@ function elementOrAncestorHasId(element, idName) {
 
 function headerfunctions() {
   settings = document.getElementsByClassName("dasher")[0];
+  document.querySelectorAll('header [role="button"]').forEach(element => {
+    element.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        element.click()
+      }
+    })
+  })
+
 
   userbutton = document.getElementById("user_button");
   dasher = document.getElementById("dasher_app");
@@ -44,12 +53,12 @@ function headerfunctions() {
   dasherbackground = dasher.getElementsByClassName('sub background')[0];
   lang = dasherlangs.getElementsByClassName('current')[0].value
   document.getElementById('lightmode').onclick = function () {
-    if (document.styleSheets[0].href.indexOf('light.css') === -1) {
+    if (document.documentElement.dataset.theme !== 'light') {
       setlightmode()
     }
   }
   document.getElementById('darkmode').onclick = function () {
-    if (document.styleSheets[0].href.indexOf('dark.css') === -1) {
+    if (document.documentElement.dataset.theme !== 'dark') {
       setdarkmode()
     }
   }
@@ -59,18 +68,6 @@ function headerfunctions() {
   dashermain = subs.parentElement;
   si = document.getElementById('clinput').getElementsByTagName('input')[0]
   sr = document.getElementById('clinput').getElementsByClassName('complete-list')[0]
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    if (document.styleSheets[0].href.indexOf('default.css') > -1) {
-      setdarkmode()
-    }
-  }
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-    if (document.styleSheets[0].href.indexOf('default.css') > -1) {
-      setlightmode()
-    }
-  }
-
-
   si.addEventListener("input", function () {
     clearTimeout(tto);
     tto = setTimeout(searchusers, typingthreshold);
@@ -105,42 +102,14 @@ function headerfunctions() {
   }
 
 
-  function setlightmode() {
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", '/light', true);
+  function setTheme(theme) {
+    document.documentElement.dataset.theme = theme
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', theme === 'light' ? '/light' : '/dark', true)
     xhr.send()
-    const link = document.createElement("link");
-    link.type = "text/css";
-    link.rel = "stylesheet";
-    link.href = "https://chessil.com/light.css";
-    link.onload = function () {
-      const alllinks = document.getElementsByTagName('link')
-      for (var i = alllinks.length; i--;) {
-        if (alllinks[i].href.indexOf('.css') > -1 && alllinks[i].href.indexOf('dark') > -1) {
-          document.head.removeChild(alllinks[i])
-        }
-      }
-    }
-    document.head.appendChild(link);
   }
-  function setdarkmode() {
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", '/dark', true);
-    xhr.send()
-    const link = document.createElement("link");
-    link.type = "text/css";
-    link.rel = "stylesheet";
-    link.href = "https://chessil.com/dark.css";
-    link.onload = function () {
-      const alllinks = document.getElementsByTagName('link')
-      for (var i = alllinks.length; i--;) {
-        if (alllinks[i].href.indexOf('.css') > -1 && alllinks[i].href.indexOf('light') > -1) {
-          document.head.removeChild(alllinks[i])
-        }
-      }
-    }
-    document.head.appendChild(link);
-  }
+  function setlightmode() { setTheme('light') }
+  function setdarkmode() { setTheme('dark') }
 
   document.onclick = (e) => {
     if (elementOrAncestorHasClass(e.target, 'dasher')) {

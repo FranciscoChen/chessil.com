@@ -4,73 +4,28 @@
 <head>
   <title>ChessiL - 登录</title>
   <meta charset="utf-8">
-  <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
+  <meta name="viewport" content="initial-scale=1, width=device-width, height=device-height">
   <meta name="description" content="登录 ChessiL 进行排位对局">
   <meta name="keywords" content="国际象棋, 登录, 对弈, 在线, 排位赛">
+  <link rel="stylesheet" href="/css/site.css">
+  <link rel="stylesheet" href="/css/auth.css">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="/css/layout.css">
-  <link rel="stylesheet" href="/css/colors.css">
-  <link rel="stylesheet" href="/css/header.css">
-  <link rel="stylesheet" href="/css/footer.css">
-    <link rel="stylesheet" href="/css/grandmaster.css">
+  <link rel="stylesheet" href="/css/grandmaster.css">
+  <link rel="stylesheet" href="/css/components.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
 </head>
 
 <body class="fixed-scroll">
-  <header>
-    <div class="z">
-      <input type="checkbox" id="x" class="n" autocomplete="off">
-      <label for="x" class="q"></label>
-      <label for="x" class="r">
-        <span class="u"></span>
-      </label>
-      <div class="t"><a href="/zh">Chess<span>iL</span></a></div>
-      <nav id="n">
-        <div class="m"><a href="/zh/">主页</a></div>
-      </nav>
-    </div>
-    <div class="site-buttons">
-      <div id="clinput"><a class="link"><span></span></a><input spellcheck="false" autocomplete="off" placeholder="搜索"
-          enterkeyhint="search">
-        <div class="complete-list none"></div>
-      </div>
-      <div class="dasher"><button class="toggle link anon"><span></span></button>
-        <div id="dasher_app" class="dropdown">
-          <div class="sub langs"><button class="head text" type="button">语言</button>
-            <form method="post" action="/language"><button type="submit" name="lang" value="en"
-                title="en">English</button><button type="submit" name="lang" value="es"
-                title="es">Español</button><button class="current accepted" type="submit" name="lang" value="zh"
-                title="zh">中文</button></form>
-          </div>
-          <div class="sub background"><button class="head text" type="button">主题</button>
-            <div class="selector"><button id="lightmode" type="button">浅色</button><button id="darkmode"
-                type="button">深色</button></div>
-          </div>
-          <div>
-            <div class="subs"><button class="sub" type="button">语言</button><button class="sub"
-                type="button">主题</button></div>
-          </div>
-        </div>
-      </div>
-      <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count"
-            data-count="0"></span></button>
-        <div id="challenge-app" class="links dropdown rendered">
-          <div class="empty text">没有挑战。</div>
-        </div>
-      </div>
-      <div id="user"></div>
-    </div>
-  </header>
+  <!-- component:header -->
   <div class="main-wrap isauthwrap">
     <main class="auth auth-login box box-pad">
       <h1 class="box__top">登录</h1>
       <form method="post" class="form3" action="/login">
         <div class="one-factor">
           <div class="form-group"><label class="form-label" for="form3-username">用户名</label><input id="form3-username"
-              name="username" value="" class="form-control" minlength="2" maxlength="320" autofocus="autofocus"
+              name="username" value="" class="form-control" minlength="2" maxlength="20" autofocus="autofocus"
               required="required" autocomplete="username"></input></div>
           <div class="form-group"><label class="form-label" for="form3-password">密码</label><input id="form3-password"
               name="password" value="" type="password" class="form-control" required="required"
@@ -80,6 +35,7 @@
       <div class="alternative"><a href="/zh/register">注册</a></div>
     </main>
   </div>
+  <!-- component:footer -->
 </body>
 
 </html>

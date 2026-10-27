@@ -1,0 +1,7 @@
+/* Shared foundations. Page styles follow these; theme and components finish the cascade. */
+@import url('./fonts.css');
+@import url('./layout.css');
+@import url('./colors.css');
+@import url('./buttons.css');
+@import url('./header.css');
+@import url('./footer.css');

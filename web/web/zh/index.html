@@ -4,79 +4,21 @@
 <head>
   <title>ChessiL - 在线国际象棋</title>
   <meta charset="utf-8">
-  <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
+  <meta name="viewport" content="initial-scale=1, width=device-width, height=device-height">
   <meta name="description" content="在 ChessiL.com 下快速国际象棋">
   <meta name="keywords" content="国际象棋, 在线, 对弈, 快速, 实时, 超快棋, 子弹, 闪电, 快棋">
+  <link rel="stylesheet" href="/css/site.css">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="/css/layout.css">
-  <link rel="stylesheet" href="/css/colors.css">
-  <link rel="stylesheet" href="/css/buttons.css">
-  <link rel="stylesheet" href="/css/header.css">
-  <link rel="stylesheet" href="/css/footer.css">
   <link rel="stylesheet" href="/css/showcase.css">
-    <link rel="stylesheet" href="/css/grandmaster.css">
+  <link rel="stylesheet" href="/css/grandmaster.css">
+  <link rel="stylesheet" href="/css/components.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
 </head>
 
 <body>
-  <header>
-    <div class="z">
-      <input type="checkbox" id="x" class="n" autocomplete="off">
-      <label for="x" class="q"></label>
-      <label for="x" class="r">
-        <span class="u"></span>
-      </label>
-      <div class="t"><a href="/zh">Chess<span>iL</span></a></div>
-      <nav id="n">
-        <div class="m"><a href="/zh/">主页</a></div>
-      </nav>
-    </div>
-    <div class="site-buttons">
-      <div id="clinput"><a class="link icon-search"><span></span></a><input spellcheck="false" autocomplete="off"
-          placeholder="搜索" enterkeyhint="search">
-        <div class="complete-list none"></div>
-      </div>
-      <div class="dasher"><button class="toggle link anon icon-settings"><span></span></button>
-        <div id="dasher_app" class="dropdown">
-          <div class="sub langs"><button class="head text">语言</button>
-            <form method="post" action="/language"><button type="submit" name="lang" value="en"
-                title="en">English</button><button type="submit" name="lang" value="es"
-                title="es">Español</button><button class="current accepted" type="submit" name="lang" value="zh"
-                title="zh">中文</button></form>
-          </div>
-          <div class="sub background"><button class="head text">主题</button>
-            <div class="selector"><button id="lightmode">浅色</button><button id="darkmode">深色</button></div>
-          </div>
-          <div>
-            <div class="subs"><button class="sub">语言</button><button class="sub">主题</button></div>
-          </div>
-        </div>
-      </div>
-      <div class="seek"><button id="challenge-toggle" class="toggle link icon-games"><span class="data-count"
-            data-count="0"></span></button>
-        <div id="challenge-app" class="links dropdown rendered">
-          <div class="empty text">没有挑战。</div>
-        </div>
-      </div>
-      <div id="user">
-        <div id="user_button" class="icon-user toggle">
-          <div id="dasher_user_app" class="dropdown">
-            <div>
-              <div class="links">
-                <a id="profile" class="user-link online text is-green none" href="/profile">我的资料</a>
-                <form id="logout" class="none" method="post" action="/logout"><button class="text" type="submit">退出
-                    登录</button></form>
-                <a id="login" class="text" href="/login">登录</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
+  <!-- component:header -->
   <div class="main-wrap">
     <div class="main">
       <div class="showcase">
@@ -166,27 +108,7 @@
       </div>
     </div>
   </div>
-  <footer>
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <a class="footer-logo" href="/zh">Chess<span>iL</span></a>
-        <p>实时对弈、学习与分析国际象棋。</p>
-      </div>
-      <div class="footer-links">
-        <div class="footer-group">
-          <h4>站点</h4>
-          <a href="/zh/">首页</a>
-          <a href="/zh/easy">简单对局</a>
-          <a href="/zh/lobby">大厅</a>
-        </div>
-        <div class="footer-group">
-          <h4>法律</h4>
-          <a href="/zh/terms">条款</a>
-          <a href="/zh/privacy">隐私</a>
-        </div>
-      </div>
-    </div>
-  </footer>
+  <!-- component:footer -->
 </body>
 
 </html>

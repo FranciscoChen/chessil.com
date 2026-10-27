@@ -37,22 +37,19 @@ function gamepageload() {
       if (name2) name2.textContent = data.username2 || 'Anon'
       if (rating1) rating1.textContent = data.rating1 == null ? '-' : String(data.rating1)
       if (rating2) rating2.textContent = data.rating2 == null ? '-' : String(data.rating2)
-      if (status) status.textContent = String(data.state)
+      if (status) status.textContent = data.state === 0 ? ({en: 'Playing', es: 'En curso', zh: '进行中'}[lang] || 'Playing') : ({en: 'Finished', es: 'Finalizada', zh: '已结束'}[lang] || 'Finished')
 
       const ratedText = data.rated ? ratedLabel : casualLabel
       const separator = ' \u2022 '
-      const setupText =
-        String(data.initialtime) +
-        '+' +
-        String(data.increment) +
-        separator +
-        ratedText +
-        separator +
-        String(data.gameserver || '') +
-        separator +
-        String(data.side || 's')
+      const setupText = String(data.initialtime) + '+' + String(data.increment) + separator + ratedText
 
-      if (setup) setup.textContent = setupText
+      if (setup) {
+        setup.textContent = setupText
+        setup.dataset.timeControl = String(data.initialtime) + '+' + String(data.increment)
+        setup.dataset.rated = ratedText
+        setup.dataset.server = data.gameserver || ''
+        setup.dataset.side = data.side || 's'
+      }
 
       if (typeof roundstart === 'function') {
         roundstart()

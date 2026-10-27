@@ -7,6 +7,7 @@ const zlib = require('zlib');
 const crypto = require('crypto');
 const querystring = require('querystring');
 const observability = require('../observability');
+const renderPage = require('./render-page');
 
 // Using Redis as Sessions database
 const Redis = require("ioredis");
@@ -537,12 +538,18 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
     routelanguage(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
   }
+  if (req.url === '/profile' && req.method === 'GET') {
+    resHeaders.Location = String(sessiondata[1]) !== '0' ? '/@/' + encodeURIComponent(sessiondata[5]) : '/login';
+    res.writeHead(303, resHeaders);
+    res.end();
+    return;
+  }
   // User page
   if (req.url.slice(0, 3) === '/@/') {
     userpage(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
   }
-  if (req.url.slice(0, 5) === '/user') {
+  if (req.url === '/user' || req.url.startsWith('/user/')) {
     res.writeHead(404, { "Content-Type": "text/html" });
     res.end();
     return
@@ -698,6 +705,10 @@ function userpage(filename, mime, ext, res, req, resHeaders, sessiondata) {
           resHeaders["Content-Type"] = mime.data[ext];
           fs.readFile(filename, function (err, data) {
             if (!err) {
+              if (ext === '.html') {
+                data = renderPage(data, sessiondata[3], sessiondata[2]);
+                resHeaders['Cache-Control'] = 'no-store';
+              }
               // gzip compression only to text
               if (typeof req.headers['accept-encoding'] !== 'undefined' && req.headers['accept-encoding'].indexOf('gzip') !== -1 && typeof mime.gzip[ext] !== 'undefined') {
                 resHeaders["Content-Encoding"] = "gzip";
@@ -759,6 +770,10 @@ function gamepage(filename, mime, ext, res, req, resHeaders, sessiondata) {
           resHeaders["Content-Type"] = mime.data[ext];
           fs.readFile(filename, function (err, data) {
             if (!err) {
+              if (ext === '.html') {
+                data = renderPage(data, sessiondata[3], sessiondata[2]);
+                resHeaders['Cache-Control'] = 'no-store';
+              }
               // gzip compression only to text
               if (typeof req.headers['accept-encoding'] !== 'undefined' && req.headers['accept-encoding'].indexOf('gzip') !== -1 && typeof mime.gzip[ext] !== 'undefined') {
                 resHeaders["Content-Encoding"] = "gzip";
@@ -810,6 +825,10 @@ function serve(filename, mime, ext, res, req, resHeaders, sessiondata) {
       resHeaders["Content-Type"] = mime.data[ext];
       fs.readFile(filename, function (err, data) {
         if (!err) {
+          if (ext === '.html') {
+            data = renderPage(data, sessiondata[3], sessiondata[2]);
+            resHeaders['Cache-Control'] = 'no-store';
+          }
           // gzip compression only to text
           if (typeof req.headers['accept-encoding'] !== 'undefined' && req.headers['accept-encoding'].indexOf('gzip') !== -1 && typeof mime.gzip[ext] !== 'undefined') {
             resHeaders["Content-Encoding"] = "gzip";

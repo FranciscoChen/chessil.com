@@ -169,7 +169,7 @@ function wsgame(gameid, server = 'ws0') {
     gameid = document.location.href.slice(25, 34)
   }
   if (document.getElementsByClassName('setup').length > 0) {
-    server = 'ws' + document.getElementsByClassName('setup')[0].innerHTML.split(' • ')[2]
+    server = 'ws' + document.querySelector('.setup').dataset.server
   }
   wsc = new WebSocket("wss://" + server + ".chessil.com/game/" + gameid);
   wsc.onopen = (event) => {
@@ -833,8 +833,11 @@ function dbgame(gameid) {
     if (this.readyState != 4) return;
     if (this.status == 200) {
       const gdt = JSON.parse(this.responseText)
+      for (const field of ['m', 'c', 'e', 'd']) {
+        if (typeof gdt[field] !== 'string') gdt[field] = ''
+      }
       // We got all moves so far
-      if (gdt.m.length > 0) {
+      if (typeof gdt.m === 'string' && gdt.m.length > 0) {
         uci = gdt.m.split(' ')
         const ucil = uci.length
         for (var i = 0; i < ucil; ++i) {
@@ -1087,12 +1090,12 @@ function roundstart() {
   rt2 = document.getElementsByTagName('rating')[1].innerHTML
   //rd1 = document.getElementsByTagName('diff')[0].innerHTML
   //rd2 = document.getElementsByTagName('diff')[1].innerHTML
-  rtd = document.getElementsByClassName('setup')[0].innerHTML.split(' • ')[1]
-  tc = document.getElementsByClassName('setup')[0].innerHTML.split(' • ')[0]
+  rtd = document.querySelector('.setup').dataset.rated
+  tc = document.querySelector('.setup').dataset.timeControl
   drawbtn = document.getElementsByClassName('draw-yes')[0]
   resignbtn = document.getElementsByClassName('resign')[0]
   cgboard = document.getElementsByTagName('cg-board')[0]
-  playerside = document.getElementsByClassName('setup')[0].innerHTML.split(' • ')[3]
+  playerside = document.querySelector('.setup').dataset.side
   if (playerside === 's') {
     playerside = new URLSearchParams(window.location.search).get('s')
     if (playerside == null) playerside = 'w'

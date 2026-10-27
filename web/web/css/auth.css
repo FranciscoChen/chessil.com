@@ -13,7 +13,7 @@ main {
 }
 
 .box {
-  background: #fff;
+  background: var(--bg);
 }
 
 .box {
@@ -139,20 +139,20 @@ optgroup,
 select,
 textarea {
   font: inherit;
-  color: #fff;
+  color: var(--bg);
   outline-color: #1a73e8;
 }
 
 input,
 textarea,
 select {
-  background: #fff;
+  background: var(--bg);
   border: 1px solid #404040;
   padding: .6em 1em;
 }
 
 input {
-  color: #000;
+  color: var(--text);
 }
 
 .form-control {
@@ -197,7 +197,7 @@ input {
 }
 
 .button:not(.disabled):hover {
-  color: #fff;
+  color: var(--bg);
   background: #1b66c9;
 }
 

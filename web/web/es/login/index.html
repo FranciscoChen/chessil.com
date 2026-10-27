@@ -4,72 +4,28 @@
 <head>
   <title>ChessiL - Iniciar sesión</title>
   <meta charset="utf-8">
-  <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
+  <meta name="viewport" content="initial-scale=1, width=device-width, height=device-height">
   <meta name="description" content="Inicia sesión en ChessiL para jugar partidas clasificadas">
   <meta name="keywords" content="ajedrez, login, iniciar, sesión, entrar, en línea, online, clasificadas">
+  <link rel="stylesheet" href="/css/site.css">
+  <link rel="stylesheet" href="/css/auth.css">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="/css/layout.css">
-  <link rel="stylesheet" href="/css/colors.css">
-  <link rel="stylesheet" href="/css/header.css">
-  <link rel="stylesheet" href="/css/footer.css">
-    <link rel="stylesheet" href="/css/grandmaster.css">
+  <link rel="stylesheet" href="/css/grandmaster.css">
+  <link rel="stylesheet" href="/css/components.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
 </head>
 
 <body class="fixed-scroll">
-  <header>
-    <div class="z">
-      <input type="checkbox" id="x" class="n" autocomplete="off">
-      <label for="x" class="q"></label>
-      <label for="x" class="r">
-        <span class="u"></span>
-      </label>
-      <div class="t"><a href="/es">Chess<span>iL</span></a></div>
-      <nav id="n">
-        <div class="m"><a href="/es/">Inicio</a></div>
-      </nav>
-    </div>
-    <div class="site-buttons">
-      <div id="clinput"><a class="link"><span></span></a><input spellcheck="false" autocomplete="off"
-          placeholder="Buscar" enterkeyhint="search">
-        <div class="complete-list none"></div>
-      </div>
-      <div class="dasher"><button class="toggle link anon"><span></span></button>
-        <div id="dasher_app" class="dropdown">
-          <div class="sub langs"><button class="head text" type="button">Idioma</button>
-            <form method="post" action="/language"><button type="submit" name="lang" value="en"
-                title="en">English</button><button class="current accepted" type="submit" name="lang" value="es"
-                title="es">Español</button><button type="submit" name="lang" value="zh" title="zh">中文</button></form>
-          </div>
-          <div class="sub background"><button class="head text" type="button">Tema</button>
-            <div class="selector"><button id="lightmode" type="button">Claro</button><button id="darkmode"
-                type="button">Oscuro</button></div>
-          </div>
-          <div>
-            <div class="subs"><button class="sub" type="button">Idioma</button><button class="sub"
-                type="button">Tema</button></div>
-          </div>
-        </div>
-      </div>
-      <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count"
-            data-count="0"></span></button>
-        <div id="challenge-app" class="links dropdown rendered">
-          <div class="empty text">Sin desafíos.</div>
-        </div>
-      </div>
-      <div id="user"></div>
-    </div>
-  </header>
+  <!-- component:header -->
   <div class="main-wrap isauthwrap">
     <main class="auth auth-login box box-pad">
       <h1 class="box__top">Iniciar sesión</h1>
       <form method="post" class="form3" action="/login">
         <div class="one-factor">
           <div class="form-group"><label class="form-label" for="form3-username">Nombre de usuario</label><input
-              id="form3-username" name="username" value="" class="form-control" minlength="2" maxlength="320"
+              id="form3-username" name="username" value="" class="form-control" minlength="2" maxlength="20"
               autofocus="autofocus" required="required" autocomplete="username"></input></div>
           <div class="form-group"><label class="form-label" for="form3-password">Contraseña</label><input
               id="form3-password" name="password" value="" type="password" class="form-control" required="required"
@@ -80,6 +36,7 @@
       <div class="alternative"><a href="/es/register">Registrarse</a></div>
     </main>
   </div>
+  <!-- component:footer -->
 </body>
 
 </html>

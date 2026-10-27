@@ -4,17 +4,14 @@
 <head>
   <title>ChessiL - 对局</title>
   <meta charset="utf-8">
-  <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
+  <meta name="viewport" content="initial-scale=1, width=device-width, height=device-height">
   <meta name="description" content="用户或匿名之间的在线国际象棋对局">
   <meta name="keywords" content="国际象棋, 在线, 实时, 对局, 比赛">
+  <link rel="stylesheet" href="/css/site.css">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="/css/layout.css">
-  <link rel="stylesheet" href="/css/colors.css">
   <link rel="stylesheet" href="/css/game.css">
-  <link rel="stylesheet" href="/css/header.css">
-  <link rel="stylesheet" href="/css/footer.css">
-    <link rel="stylesheet" href="/css/grandmaster.css">
+  <link rel="stylesheet" href="/css/grandmaster.css">
+  <link rel="stylesheet" href="/css/components.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/game.js"></script>
@@ -23,50 +20,7 @@
 </head>
 
 <body class="fixed-scroll">
-  <header>
-    <div class="z">
-      <input type="checkbox" id="x" class="n" autocomplete="off">
-      <label for="x" class="q"></label>
-      <label for="x" class="r">
-        <span class="u"></span>
-      </label>
-      <div class="t"><a href="/zh">Chess<span>iL</span></a></div>
-      <nav id="n">
-        <div class="m"><a href="/zh/">主页</a></div>
-      </nav>
-    </div>
-    <div class="site-buttons">
-      <div id="clinput"><a class="link"><span></span></a><input spellcheck="false" autocomplete="off" placeholder="搜索"
-          enterkeyhint="search">
-        <div class="complete-list none"></div>
-      </div>
-      <div class="dasher"><button class="toggle link anon"><span></span></button>
-        <div id="dasher_app" class="dropdown">
-          <div class="sub langs"><button class="head text" type="button">语言</button>
-            <form method="post" action="/language"><button type="submit" name="lang" value="en"
-                title="en">English</button><button type="submit" name="lang" value="es"
-                title="es">Español</button><button class="current accepted" type="submit" name="lang" value="zh"
-                title="zh">中文</button></form>
-          </div>
-          <div class="sub background"><button class="head text" type="button">主题</button>
-            <div class="selector"><button id="lightmode" type="button">浅色</button><button id="darkmode"
-                type="button">深色</button></div>
-          </div>
-          <div>
-            <div class="subs"><button class="sub" type="button">语言</button><button class="sub"
-                type="button">主题</button></div>
-          </div>
-        </div>
-      </div>
-      <div class="seek"><button id="challenge-toggle" class="toggle link"><span class="data-count"
-            data-count="0"></span></button>
-        <div id="challenge-app" class="links dropdown rendered">
-          <div class="empty text">没有挑战。</div>
-        </div>
-      </div>
-      <div id="user"></div>
-    </div>
-  </header>
+  <!-- component:header -->
   <div class="main-wrap">
     <div class="round">
       <div class="round__app">
@@ -102,8 +56,8 @@
         </div>
         <moves-panel>
           <div class="buttons">
-            <div class="noop"></div><button id="rw" class="fbt"></button><button id="sb" class="fbt"></button><button
-              id="fw" class="fbt"></button><button id="ff" class="fbt"></button>
+            <div class="noop"></div><button id="rw" title="第一步" aria-label="第一步" class="fbt"></button><button id="sb" title="上一步" aria-label="上一步" class="fbt"></button><button
+              id="fw" title="下一步" aria-label="下一步" class="fbt"></button><button id="ff" title="最后一步" aria-label="最后一步" class="fbt"></button>
             <div class="noop"></div>
           </div>
           <moves-list></moves-list>
@@ -144,27 +98,7 @@
       <div class="setup" data-game-field="setup">...</div>
     </div>
   </div>
-  <footer>
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <a class="footer-logo" href="/zh">Chess<span>iL</span></a>
-        <p>实时对弈、学习与分析国际象棋。</p>
-      </div>
-      <div class="footer-links">
-        <div class="footer-group">
-          <h4>站点</h4>
-          <a href="/zh/">首页</a>
-          <a href="/zh/easy">简单对局</a>
-          <a href="/zh/lobby">大厅</a>
-        </div>
-        <div class="footer-group">
-          <h4>法律</h4>
-          <a href="/zh/terms">条款</a>
-          <a href="/zh/privacy">隐私</a>
-        </div>
-      </div>
-    </div>
-  </footer>
+  <!-- component:footer -->
 </body>
 
 </html>

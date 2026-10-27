@@ -1,3 +1,8 @@
+function profileUsername() {
+  const match = location.pathname.match(/^\/@\/([a-zA-Z0-9_-]+)\/?$/)
+  return match ? match[1] : ''
+}
+
 var ratingvalue
 var ratinggames
 var allgamescount, ratedgamescount, allwincount, alllosscount, alldrawcount, livegamecount
@@ -265,7 +270,7 @@ function userpageload() {
 }
 function dblivegamecount(userid) {
   if (typeof userid === 'undefined') {
-    userid = document.location.href.slice(22)
+    userid = profileUsername()
   }
   var xhr = new XMLHttpRequest();
   xhr.open("POST", '/livegamecount', true);
@@ -279,7 +284,7 @@ function dblivegamecount(userid) {
 }
 function dbratings(userid) {
   if (typeof userid === 'undefined') {
-    userid = document.location.href.slice(22)
+    userid = profileUsername()
   }
   var xhr = new XMLHttpRequest();
   xhr.open("POST", '/ratings', true);
@@ -297,7 +302,7 @@ function dbgames(page, query, userid) {
     page = 1
   }
   if (typeof userid === 'undefined') {
-    userid = document.location.href.slice(22)
+    userid = profileUsername()
   }
   if (typeof query === 'undefined') {
     query = 'all'
@@ -311,7 +316,15 @@ function dbgames(page, query, userid) {
       ++currentpage
       const games = JSON.parse(this.responseText)
       const l = games.length
-      if (l === 0) lastpage = true
+      if (l === 0) {
+        lastpage = true
+        if (page === 1) {
+          const empty = document.createElement('p')
+          empty.className = 'empty-state'
+          empty.textContent = {en: 'No games to show.', es: 'No hay partidas para mostrar.', zh: '暂无对局。'}[document.documentElement.lang] || 'No games to show.'
+          infinitescroll.appendChild(empty)
+        }
+      }
       for (var i = 0; i < l; ++i) {
         var side
         var tt, tc
@@ -407,7 +420,7 @@ function dbgamecount(element, tc, wdl, rated, finished, userid) {
     finished = 'all'
   }
   if (typeof userid === 'undefined') {
-    userid = document.location.href.slice(22)
+    userid = profileUsername()
   }
   if (typeof element === 'undefined') {
     element = allgamescount

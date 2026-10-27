@@ -4,20 +4,16 @@
 <head>
   <title>ChessiL - Lobby</title>
   <meta charset="utf-8">
-  <meta name="viewport" content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height">
+  <meta name="viewport" content="initial-scale=1, width=device-width, height=device-height">
   <meta name="description" content="Encuentra una partida de ajedrez para jugar">
   <meta name="keywords" content="ajedrez, jugar, en línea, rápido, en vivo, ultrabala, bala, relámpago, rápida, lobby">
+  <link rel="stylesheet" href="/css/site.css">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="/css/layout.css">
-  <link rel="stylesheet" href="/css/colors.css">
   <link rel="stylesheet" href="/css/lobby.css">
   <link rel="stylesheet" href="/css/dialog.css">
-  <link rel="stylesheet" href="/css/buttons.css">
-  <link rel="stylesheet" href="/css/header.css">
-  <link rel="stylesheet" href="/css/footer.css">
   <link rel="stylesheet" href="/css/query.css">
   <link rel="stylesheet" href="/css/grandmaster.css">
+  <link rel="stylesheet" href="/css/components.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
   <script src="/js/load.js"></script>
@@ -25,63 +21,7 @@
 </head>
 
 <body>
-  <header>
-    <div class="z">
-      <input type="checkbox" id="x" class="n" autocomplete="off">
-      <label for="x" class="q"></label>
-      <label for="x" class="r">
-        <span class="u"></span>
-      </label>
-      <div class="t"><a href="/es">Chess<span>iL</span></a></div>
-      <nav id="n">
-        <div class="m"><a href="/es/">Inicio</a></div>
-      </nav>
-    </div>
-    <div class="site-buttons">
-      <div id="clinput"><a class="link icon-search"><span></span></a><input spellcheck="false" autocomplete="off"
-          placeholder="Buscar" enterkeyhint="search">
-        <div class="complete-list none"></div>
-      </div>
-      <div class="dasher"><button class="toggle link anon icon-settings"><span></span></button>
-        <div id="dasher_app" class="dropdown">
-          <div class="sub langs"><button class="head text">Idioma</button>
-            <form method="post" action="/language">
-              <button type="submit" name="lang" value="en" title="en">English</button>
-              <button class="current accepted" type="submit" name="lang" value="es" title="es">Español</button>
-              <button type="submit" name="lang" value="zh" title="zh">中文</button>
-            </form>
-          </div>
-          <div class="sub background"><button class="head text">Tema</button>
-            <div class="selector"><button id="lightmode">Claro</button><button id="darkmode">Oscuro</button></div>
-          </div>
-          <div>
-            <div class="subs"><button class="sub">Idioma</button><button class="sub">Tema</button></div>
-          </div>
-        </div>
-      </div>
-      <div class="seek"><button id="challenge-toggle" class="toggle link icon-games"><span class="data-count"
-            data-count="0"></span></button>
-        <div id="challenge-app" class="links dropdown rendered">
-          <div class="empty text">Sin desafíos.</div>
-        </div>
-      </div>
-      <div id="user">
-        <div id="user_button" class="icon-user toggle">
-          <div id="dasher_user_app" class="dropdown">
-            <div>
-              <div class="links">
-                <a id="profile" class="user-link online text is-green none" href="/profile">Mi perfil</a>
-                <form id="logout" class="none" method="post" action="/logout"><button class="text" type="submit">Cerrar
-                    sesión</button></form>
-                <a id="login" class="text" href="/login">Iniciar
-                    sesión</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
+  <!-- component:header -->
 
   <div class="main-wrap">
     <div class="main">
@@ -195,27 +135,7 @@
     </div>
   </div>
 
-  <footer>
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <a class="footer-logo" href="/es">Chess<span>iL</span></a>
-        <p>Juega, aprende y analiza ajedrez en tiempo real.</p>
-      </div>
-      <div class="footer-links">
-        <div class="footer-group">
-          <h4>Sitio</h4>
-          <a href="/es/">Inicio</a>
-          <a href="/es/easy">Partida fácil</a>
-          <a href="/es/lobby">Lobby</a>
-        </div>
-        <div class="footer-group">
-          <h4>Legal</h4>
-          <a href="/es/terms">Términos</a>
-          <a href="/es/privacy">Privacidad</a>
-        </div>
-      </div>
-    </div>
-  </footer>
+  <!-- component:footer -->
 </body>
 
 </html>
