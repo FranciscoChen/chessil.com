@@ -473,73 +473,13 @@ function handleMove(gameid, side, clientmove, ws) {
                           // 8 - Draw agreement
                           var gameresult = 0.5
                           if (finished === 1) {
-                            gameresult = { w: 0, b: 1 }[side]
+                            gameresult = { w: 0, b: 1 }[newfenarr[1]]
                           }
-                          redis.hmget(gameid, 'a', 'c', 'd', 'g', 'h', 'x', 'e', 'k', 'w', 'b', 'y', 'o', 'l', 'n', (err, rtn) => {
-                            if (err) { console.error(err); return terminate(); };
-                            var ranking, wpl, bpl, wdiff, bdiff, diffinfo, rated = true
-                            if (rtn[0] == -1) { rated = false }
-                            if (rated === false) {
-                              wdiff = null; bdiff = null
-                            } else {
-                              ranking = new glicko2.Glicko2(settings);
-                              wpl = ranking.makePlayer(rtn[0], rtn[2], rtn[4]);
-                              bpl = ranking.makePlayer(rtn[1], rtn[3], rtn[5]);
-                              ranking.updateRatings([[wpl, bpl, gameresult]]);
-                              wdiff = wpl.getRating() - rtn[0]
-                              bdiff = bpl.getRating() - rtn[1]
-                              diffinfo = 'd:' + Math.floor(wdiff) + ':' + Math.floor(bdiff)
-                            }
-                            const websockets = subs[gameid] // = {userid:ws,userid:ws,userid:ws}
-                            if (typeof websockets !== 'undefined') {
-                              // var diffinfo = 'd:'+wdiff+':'+bdiff
-                              if (rated === true) {
-                                client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [wdiff, wpl.getRd(), wpl.getVol(), rtn[8]], (err, response) => {
-                                  if (err) { console.log(err) }
-                                  client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [bdiff, bpl.getRd(), bpl.getVol(), rtn[9]], (err, response) => {
-                                    if (err) { console.log(err) }
-                                    client.end();
-                                    // Delete this game from Redis and terminate the ws connection
-                                    redis.del(gameid, (err, res) => {
-                                      if (err) { console.error(err); return; };
-                                      return;
-                                    })
-                                  })
-                                })
-                              } else {
-                                broadcastGameUpdate(gameid, {}, { w: true, b: true, s: true });
-                              }
-                              delete subs[gameid] // free memory
-                            }
-                            //Log into the database
-                            var client = new pg.Client(conString);
-                            client.connect();
-                            client.query('UPDATE games SET moves = $1, clock = $2, events = $3, eventsclock = $4, clock1 = $10, clock2 = $11, state = $5, result = $6, ratingdiff1 = $7, ratingdiff2 = $8 WHERE gameid = $9', [newuci, newtime, rtn[6], rtn[7], finished, { 1: true, 0: false, 0.5: null }[gameresult], wdiff, bdiff, gameid, rtn[12], rtn[13]], (err, response) => {
-                              if (err) { console.log(err) }
-                              if (rated === true) {
-                                client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [wdiff, wpl.getRd(), wpl.getVol(), rtn[8]], (err, response) => {
-                                  if (err) { console.log(err) }
-                                  client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [bdiff, bpl.getRd(), bpl.getVol(), rtn[9]], (err, response) => {
-                                    if (err) { console.log(err) }
-                                    client.end();
-                                    // Delete this game from Redis and terminate the ws connection
-                                    redis.del(gameid, (err, res) => {
-                                      if (err) { console.error(err); return; };
-                                      return;
-                                    })
-                                  })
-                                })
-                              } else {
-                                // Unrated game
-                                client.end();
-                                // Delete this game from Redis and terminate the ws connection
-                                redis.del(gameid, (err, res) => {
-                                  if (err) { console.error(err); return; };
-                                  return;
-                                })
-                              }
-                            })
-                          })
+                          redis.hgetall(gameid, (err, snapshot) => {
+                if (err) { console.error(err); return terminate(); }
+                persistFinishedGame(gameid, snapshot, finished, gameresult, null)
+                  .catch(error => console.error('Game result persistence failed:', gameid, error));
+              })
                         }
                       });
                   })
@@ -592,72 +532,13 @@ function handleMove(gameid, side, clientmove, ws) {
                       // 8 - Draw agreement
                       var gameresult = 0.5
                       if (finished === 1) {
-                        gameresult = { w: 0, b: 1 }[side]
+                        gameresult = { w: 0, b: 1 }[newfenarr[1]]
                       }
-                      redis.hmget(gameid, 'a', 'c', 'd', 'g', 'h', 'x', 'e', 'k', 'w', 'b', 'y', 'o', 'l', 'n', (err, rtn) => {
-                        if (err) { console.error(err); return terminate(); };
-                        var ranking, wpl, bpl, wdiff, bdiff, diffinfo, rated = true
-                        if (rtn[0] == -1) { rated = false }
-                        if (rated === false) {
-                          wdiff = null; bdiff = null
-                        } else {
-                          ranking = new glicko2.Glicko2(settings);
-                          wpl = ranking.makePlayer(rtn[0], rtn[2], rtn[4]);
-                          bpl = ranking.makePlayer(rtn[1], rtn[3], rtn[5]);
-                          ranking.updateRatings([[wpl, bpl, gameresult]]);
-                          wdiff = wpl.getRating() - rtn[0]
-                          bdiff = bpl.getRating() - rtn[1]
-                          diffinfo = 'd:' + Math.floor(wdiff) + ':' + Math.floor(bdiff)
-                        }
-                        const websockets = subs[gameid] // = {userid:ws,userid:ws,userid:ws}
-                        if (typeof websockets !== 'undefined') {
-                          if (rated === true) {
-                            client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [wdiff, wpl.getRd(), wpl.getVol(), rtn[8]], (err, response) => {
-                              if (err) { console.log(err) }
-                              client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [bdiff, bpl.getRd(), bpl.getVol(), rtn[9]], (err, response) => {
-                                if (err) { console.log(err) }
-                                client.end();
-                                // Delete this game from Redis and terminate the ws connection
-                                redis.del(gameid, (err, res) => {
-                                  if (err) { console.error(err); return; };
-                                  return;
-                                })
-                              })
-                            })
-                          } else {
-                            broadcastGameUpdate(gameid, {}, { w: true, b: true, s: true });
-                          }
-                          delete subs[gameid] // free memory
-                        }
-                        //Log into the database
-                        var client = new pg.Client(conString);
-                        client.connect();
-                        client.query('UPDATE games SET moves = $1, clock = $2, events = $3, eventsclock = $4, clock1 = $10, clock2 = $11, state = $5, result = $6, ratingdiff1 = $7, ratingdiff2 = $8 WHERE gameid = $9', [newuci, newtime, rtn[6], rtn[7], finished, { 1: true, 0: false, 0.5: null }[gameresult], wdiff, bdiff, gameid, rtn[12], rtn[13]], (err, response) => {
-                          if (err) { console.log(err) }
-                          if (rated === true) {
-                            client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [wdiff, wpl.getRd(), wpl.getVol(), rtn[8]], (err, response) => {
-                              if (err) { console.log(err) }
-                              client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [bdiff, bpl.getRd(), bpl.getVol(), rtn[9]], (err, response) => {
-                                if (err) { console.log(err) }
-                                client.end();
-                                // Delete this game from Redis and terminate the ws connection
-                                redis.del(gameid, (err, res) => {
-                                  if (err) { console.error(err); return; };
-                                  return;
-                                })
-                              })
-                            })
-                          } else {
-                            // Unrated game
-                            client.end();
-                            // Delete this game from Redis and terminate the ws connection
-                            redis.del(gameid, (err, res) => {
-                              if (err) { console.error(err); return; };
-                              return;
-                            })
-                          }
-                        })
-                      })
+                      redis.hgetall(gameid, (err, snapshot) => {
+                if (err) { console.error(err); return terminate(); }
+                persistFinishedGame(gameid, snapshot, finished, gameresult, null)
+                  .catch(error => console.error('Game result persistence failed:', gameid, error));
+              })
                     }
                   }
                 );
@@ -688,72 +569,10 @@ function handleMove(gameid, side, clientmove, ws) {
               if (newfenarr[1] == 'b') {
                 if (wpiececount(newfenarr[0]) > 1) gameresult = 1
               }
-              redis.hmget(gameid, 'a', 'c', 'd', 'g', 'h', 'x', 'e', 'k', 'w', 'b', 'y', 'o', 'i', 'l', 'n', (err, rtn) => {
-                if (err) { console.error(err); return terminate(); };
-                var ranking, wpl, bpl, wdiff, bdiff, diffinfo, rated = true
-                if (rtn[0] == -1) { rated = false }
-                if (rated === false) {
-                  wdiff = null; bdiff = null
-                } else {
-                  ranking = new glicko2.Glicko2(settings);
-                  wpl = ranking.makePlayer(rtn[0], rtn[2], rtn[4]);
-                  bpl = ranking.makePlayer(rtn[1], rtn[3], rtn[5]);
-                  ranking.updateRatings([[wpl, bpl, gameresult]]);
-                  wdiff = wpl.getRating() - rtn[0]
-                  bdiff = bpl.getRating() - rtn[1]
-                  diffinfo = 'd:' + Math.floor(wdiff) + ':' + Math.floor(bdiff)
-                }
-                var moveinfo = 't:' + side + ':' + timeleft + ':' + finished
-                if (typeof subs[gameid] !== 'undefined') {
-                  //var diffinfo = 'd:'+wdiff+':'+bdiff
-                  if (rated === true) {
-                    client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [wdiff, wpl.getRd(), wpl.getVol(), rtn[8]], (err, response) => {
-                      if (err) { console.log(err) }
-                      client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [bdiff, bpl.getRd(), bpl.getVol(), rtn[9]], (err, response) => {
-                        if (err) { console.log(err) }
-                        client.end();
-                        // Delete this game from Redis and terminate the ws connection
-                        redis.del(gameid, (err, res) => {
-                          if (err) { console.error(err); return; };
-                          return;
-                        })
-                      })
-                    })
-                  } else {
-                    broadcastGameUpdate(gameid, { w: [moveinfo], b: [moveinfo], s: [moveinfo] }, { w: true, b: true, s: true });
-                  }
-                  delete subs[gameid] // free memory
-                } else {
-                  subs[gameid] = { w: {}, b: {}, s: {} }  // Initialise after a crash?
-                }
-                //Log into the database
-                var client = new pg.Client(conString);
-                client.connect();
-                client.query('UPDATE games SET moves = $1, clock = $2, events = $3, eventsclock = $4, clock1 = $10, clock2 = $11, state = $5, result = $6, ratingdiff1 = $7, ratingdiff2 = $8 WHERE gameid = $9', [newuci, rtn[12], rtn[6], rtn[7], finished, { 1: true, 0: false, 0.5: null }[gameresult], wdiff, bdiff, gameid, rtn[13], rtn[14]], (err, response) => {
-                  if (err) { console.log(err) }
-                  if (rated === true) {
-                    client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [wdiff, wpl.getRd(), wpl.getVol(), rtn[8]], (err, response) => {
-                      if (err) { console.log(err) }
-                      client.query('UPDATE users SET rating = rating + $1, deviation = $2, volatility = $3 WHERE id = $4', [bdiff, bpl.getRd(), bpl.getVol(), rtn[9]], (err, response) => {
-                        if (err) { console.log(err) }
-                        client.end();
-                        // Delete this game from Redis and terminate the ws connection
-                        redis.del(gameid, (err, res) => {
-                          if (err) { console.error(err); return; };
-                          return;
-                        })
-                      })
-                    })
-                  } else {
-                    // Unrated game
-                    client.end();
-                    // Delete this game from Redis and terminate the ws connection
-                    redis.del(gameid, (err, res) => {
-                      if (err) { console.error(err); return; };
-                      return;
-                    })
-                  }
-                })
+              redis.hgetall(gameid, (err, snapshot) => {
+                if (err) { console.error(err); return terminate(); }
+                persistFinishedGame(gameid, snapshot, finished, gameresult, 't:' + side + ':' + timeleft + ':' + finished)
+                  .catch(error => console.error('Game result persistence failed:', gameid, error));
               })
             })
         }
@@ -965,6 +784,7 @@ return {tostring(finished), now}
 `;
 
 async function persistFinishedGame(gameid, snapshot, finished, score, message) {
+  if (!snapshot || snapshot.f == null) return;
   clearBotPending(gameid);
   clearGameTimeouts(gameid);
     let rated = Number(snapshot.a) !== -1;
@@ -1004,9 +824,9 @@ async function persistFinishedGame(gameid, snapshot, finished, score, message) {
     } finally {
       await client.end().catch(() => {});
     }
-    const messages = [message];
+    const messages = message ? [message] : [];
     if (rated) messages.push('d:' + Math.floor(whiteDiff) + ':' + Math.floor(blackDiff));
-    broadcastGameUpdate(gameid, { w: messages, b: messages, s: messages });
+    if (messages.length) broadcastGameUpdate(gameid, { w: messages, b: messages, s: messages });
     await redis.del(gameid);
 }
 
@@ -1182,6 +1002,7 @@ wss.on('connection', function connection(ws, req, sessiondata) {
                   if (re[6] === '0') {
                     subs[gameid][side][uid + '_' + wsid] = ws
                     wsconnections[ws.id] = { g: gameid, s: side, u: uid }
+                    requestBotMove(gameid);
                   }
                 })
                 break;
