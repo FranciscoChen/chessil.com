@@ -12,10 +12,19 @@ for unit in "${units[@]}"; do
   else
     sudo systemctl start "$unit"
   fi
-done
-
-for unit in "${units[@]}"; do
-  sudo systemctl is-active --quiet "$unit"
+  port="${unit##*@}"
+  ready=0
+  for _ in $(seq 1 30); do
+    if curl --fail --silent --max-time 2 "http://127.0.0.1:${port}/login" >/dev/null; then
+      ready=1
+      break
+    fi
+    sleep 1
+  done
+  if [[ "$ready" -ne 1 ]]; then
+    echo "Web instance $unit did not become healthy" >&2
+    exit 1
+  fi
 done
 
 echo "Web instances restarted."
