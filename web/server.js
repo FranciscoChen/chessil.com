@@ -1937,7 +1937,7 @@ function gamedata(filename, mime, ext, res, req, resHeaders, sessiondata) {
       // User input validated
       var client = new pg.Client(conString);
       client.connect();
-      client.query('SELECT id, gameid, moves, clock, events, eventsclock, result, ROUND(ratingdiff1) as ratingdiff1, ROUND(ratingdiff2) as ratingdiff2, clock1, clock2 FROM games WHERE gameid = $1', [postcontent], (err, response) => {
+      client.query('SELECT id, gameid, color1, moves, clock, events, eventsclock, result, ROUND(ratingdiff1) as ratingdiff1, ROUND(ratingdiff2) as ratingdiff2, clock1, clock2 FROM games WHERE gameid = $1', [postcontent], (err, response) => {
         if (err) {
           res.writeHead(500, { "Content-Type": "text/html" });
           res.end();
@@ -1948,7 +1948,7 @@ function gamedata(filename, mime, ext, res, req, resHeaders, sessiondata) {
         if (response.rows.length === 1) {
           const re = response.rows[0]
           res.writeHead(200, { "Content-Type": "text/javascript" });
-          res.end(JSON.stringify({ m: re.moves, c: re.clock, e: re.events, d: re.eventsclock, r: re.result, w: re.ratingdiff1, b: re.ratingdiff2, t: re.clock1, u: re.clock2 }))
+          res.end(JSON.stringify({ m: re.moves, c: re.clock, e: re.events, d: re.eventsclock, r: re.result, w: re.color1 === 'black' ? re.ratingdiff2 : re.ratingdiff1, b: re.color1 === 'black' ? re.ratingdiff1 : re.ratingdiff2, t: re.clock1, u: re.clock2 }))
         }
         client.end()
       })
@@ -2121,6 +2121,8 @@ function startGameOnServer(payload, callback) {
     'wv': String(payload.whiteRatings.volatility),
     'bv': String(payload.blackRatings.volatility)
   };
+  if (payload.whiteBotElo != null) headers.bw = String(payload.whiteBotElo);
+  if (payload.blackBotElo != null) headers.bb = String(payload.blackBotElo);
   let settled = false;
   let timer;
   function finish(err) {
@@ -2365,9 +2367,10 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
     // Fetch both players together, before claiming the game.
     const userIds = [...new Set([creatorId, userId].filter(id => id !== '0'))];
     const { rows } = await lobbyDb.query(
-      'SELECT id, rating, deviation, volatility FROM users WHERE id = ANY($1::bigint[])', [userIds]);
+      'SELECT id, rating, deviation, volatility, role, uci_elo FROM users WHERE id = ANY($1::bigint[])', [userIds]);
     const ratings = Object.fromEntries(rows.map(row => [String(row.id), {
-      rating: Number(row.rating), deviation: Number(row.deviation), volatility: Number(row.volatility)
+      rating: Number(row.rating), deviation: Number(row.deviation), volatility: Number(row.volatility),
+      botElo: Number(row.role) === 3 ? Number(row.uci_elo || row.rating) : null
     }]));
     if (userIds.some(id => !ratings[id])) throw lobbyError(500, 'Error fetching ratings');
     const defaults = { rating: 1500, deviation: 200, volatility: 0.06 };
@@ -2395,8 +2398,10 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
         whitePlayerId: colors.whiteIsPlayer1 ? getPlayerIdentity(creatorId, game.sessionid1) : getPlayerIdentity(userId, sessionId),
         blackPlayerId: colors.whiteIsPlayer1 ? getPlayerIdentity(userId, sessionId) : getPlayerIdentity(creatorId, game.sessionid1),
         time,
-        whiteRatings: colors.whiteIsPlayer1 ? player1Ratings : player2Ratings,
-        blackRatings: colors.whiteIsPlayer1 ? player2Ratings : player1Ratings
+        whiteRatings: game.rated ? (colors.whiteIsPlayer1 ? player1Ratings : player2Ratings) : { rating: -1, deviation: 0, volatility: 0 },
+        blackRatings: game.rated ? (colors.whiteIsPlayer1 ? player2Ratings : player1Ratings) : { rating: -1, deviation: 0, volatility: 0 },
+        whiteBotElo: colors.whiteIsPlayer1 ? player1Ratings.botElo : player2Ratings.botElo,
+        blackBotElo: colors.whiteIsPlayer1 ? player2Ratings.botElo : player1Ratings.botElo
       }, err => err ? reject(err) : resolve()));
     } catch (err) {
       // Release only this request's claim and restore all fields changed by it.
@@ -2647,7 +2652,9 @@ function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata)
                 blackPlayerId: blackPlayerId,
                 time: time,
                 whiteRatings: rated ? whiteRatings : unratedRatings,
-                blackRatings: rated ? blackRatings : unratedRatings
+                blackRatings: rated ? blackRatings : unratedRatings,
+                whiteBotElo: colors.whiteIsPlayer1 ? botEngineElo : (userIsBot ? userEngineElo : null),
+                blackBotElo: colors.whiteIsPlayer1 ? (userIsBot ? userEngineElo : null) : botEngineElo
               },
               (err4) => {
                 if (err4) {

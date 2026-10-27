@@ -163,6 +163,11 @@ function displayTermination(code) {
 }
 
 var wsc
+function sendGameMessage(message) {
+  if (!wsc || wsc.readyState !== WebSocket.OPEN) return false
+  wsc.send(message)
+  return true
+}
 
 function wsgame(gameid, server = 'ws0') {
   if (typeof gameid === 'undefined') {
@@ -177,17 +182,17 @@ function wsgame(gameid, server = 'ws0') {
   wsc = new WebSocket("wss://" + server + ".chessil.com/game/" + gameid);
   wsc.onopen = (event) => {
     heartbeat(wsc)
-    wsc.send('s')
+    sendGameMessage('s')
   }
   wsc.onmessage = (event) => {
     switch (event.data[0]) {
       case '1': {
-        wsc.send('0')
+        sendGameMessage('0')
         heartbeat(wsc)
         break;
       }
       case 'a': {
-        wsc.send('b')
+        sendGameMessage('b')
         break;
       }
       case 'm': {
@@ -537,8 +542,8 @@ function wsgame(gameid, server = 'ws0') {
       status.textContent = {en: 'Disconnected. Reload to reconnect.', es: 'Desconectado. Recarga para reconectar.', zh: '连接已断开，请刷新重连。'}[document.documentElement.lang] || 'Disconnected. Reload to reconnect.'
     }
   }
-  drawbtn.onclick = function () { wsc.send('e2') }
-  resignbtn.onclick = function () { wsc.send('e1') }
+  drawbtn.onclick = function () { sendGameMessage('e2') }
+  resignbtn.onclick = function () { sendGameMessage('e1') }
 }
 
 var fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
@@ -657,7 +662,7 @@ function dragelement(ele) {
           promoElement.className = 'material material-bottom material-no'
         }
         if ({ w: { w: moves.indexOf(inputmove), b: premoves.indexOf(inputmove) }, b: { w: premoves.indexOf(inputmove), b: moves.indexOf(inputmove) } }[turn][playerside] > -1) {
-          wsc.send({ w: { w: 'm', b: 'p' }, b: { w: 'p', b: 'm' } }[turn][playerside] + inputmove)
+          sendGameMessage({ w: { w: 'm', b: 'p' }, b: { w: 'p', b: 'm' } }[turn][playerside] + inputmove)
         } else {
           const s = pieceElements[selectedSquare]
           s.setAttribute('class', trside[board[selectedSquare].c] + ' ' + trpiece[board[selectedSquare].p])
@@ -722,7 +727,7 @@ function dragelement(ele) {
           promoElement.className = 'material material-bottom material-no'
         }
         if ({ w: { w: moves.indexOf(inputmove), b: premoves.indexOf(inputmove) }, b: { w: premoves.indexOf(inputmove), b: moves.indexOf(inputmove) } }[turn][playerside] > -1) {
-          wsc.send({ w: { w: 'm', b: 'p' }, b: { w: 'p', b: 'm' } }[turn][playerside] + inputmove)
+          sendGameMessage({ w: { w: 'm', b: 'p' }, b: { w: 'p', b: 'm' } }[turn][playerside] + inputmove)
         } else {
           const s = pieceElements[selectedSquare]
           s.setAttribute('class', trside[board[selectedSquare].c] + ' ' + trpiece[board[selectedSquare].p])
@@ -734,7 +739,7 @@ function dragelement(ele) {
         selectedElement = {}
       } else {
         // If no square was selected, cancel premoves
-        wsc.send('p')
+        sendGameMessage('p')
       }
     } else {
       // If there is a piece on square
@@ -782,7 +787,7 @@ function dragelement(ele) {
             draggingPiece = 0
             selectedElement = {}
             if (turn !== playerside && premoves.indexOf(inputmove) > -1) {
-              wsc.send({ w: { w: 'm', b: 'p' }, b: { w: 'p', b: 'm' } }[turn][playerside] + inputmove)
+              sendGameMessage({ w: { w: 'm', b: 'p' }, b: { w: 'p', b: 'm' } }[turn][playerside] + inputmove)
             } else {
               selectedSquare = square
               const s = pieceElements[square]
@@ -814,7 +819,7 @@ function dragelement(ele) {
               promoElement.className = 'material material-bottom material-no'
             }
             if ({ w: { w: moves.indexOf(inputmove), b: premoves.indexOf(inputmove) }, b: { w: premoves.indexOf(inputmove), b: moves.indexOf(inputmove) } }[turn][playerside] > -1) {
-              wsc.send({ w: { w: 'm', b: 'p' }, b: { w: 'p', b: 'm' } }[turn][playerside] + inputmove)
+              sendGameMessage({ w: { w: 'm', b: 'p' }, b: { w: 'p', b: 'm' } }[turn][playerside] + inputmove)
             } else {
               const s = pieceElements[selectedSquare]
               s.setAttribute('class', trside[board[selectedSquare].c] + ' ' + trpiece[board[selectedSquare].p])
