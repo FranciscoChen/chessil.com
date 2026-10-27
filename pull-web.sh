@@ -11,11 +11,6 @@ mkdir -p "$HOME/.cache/chessil"
 exec 9>"$HOME/.cache/chessil/pull.lock"
 flock 9
 
-RESTART_WEB=1
-if [ -f "$config_file" ]; then
-  . "$config_file"
-fi
-
 should_restart() {
   local repo_flag="$1"
   local script_path="$2"
@@ -43,6 +38,11 @@ new_rev="$(git rev-parse HEAD)"
 if [[ "$old_rev" == "$new_rev" ]]; then
   echo "No updates."
   exit 0
+fi
+
+RESTART_WEB=1
+if [ -f "$config_file" ]; then
+  . "$config_file"
 fi
 
 if should_restart "$RESTART_WEB" "web/restart-web.sh"; then
