@@ -100,6 +100,8 @@ function gamepageload() {
       const status = document.querySelector('[data-game-field="state"]')
       const setup = document.querySelector('[data-game-field="setup"]')
 
+      if (name1) name1.title = data.username1 || ''
+      if (name2) name2.title = data.username2 || ''
       if (name1) name1.textContent = data.username1 || (gameUiMessages[lang] || gameUiMessages.en).guest
       if (name2) name2.textContent = data.username2 || (gameUiMessages[lang] || gameUiMessages.en).guest
       if (rating1) rating1.textContent = data.rating1 == null ? '-' : String(data.rating1)
@@ -112,7 +114,9 @@ function gamepageload() {
 
       const ratedText = data.rated ? ratedLabel : casualLabel
       const separator = ' \u2022 '
-      const setupText = String(data.initialtime) + '+' + String(data.increment) + separator + ratedText
+      const levelLabel = {en:'Level',es:'Nivel',zh:'级别'}[lang] || 'Level'
+      const botSummary = data.bot ? separator + 'Swift · ' + levelLabel + ' ' + data.bot.difficulty : ''
+      const setupText = String(data.initialtime) + '+' + String(data.increment) + separator + ratedText + botSummary
 
       if (setup) {
         setup.textContent = setupText

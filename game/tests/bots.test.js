@@ -37,5 +37,16 @@ await t.test('delayed bot moves use normal elapsed game-clock time',async()=>{
  try{await bots.enqueue(id);await bots.tick();await bots.tick();assert.equal(await redis.hget(id,'m'),'e2e4 e7e5 g1f3');assert.ok(Number(await redis.hget(id,'l'))<28000);assert.equal(await redis.hget(id,'pm'),'0');}finally{bots.close();}
 });
 
+await t.test('both bot opening turns consume elapsed clock time',async()=>{
+ for(const side of ['w','b']) {
+  await redis.flushdb();const id='abcdef127';
+  const moves=side==='w'?'':'e2e4',bestmove=side==='w'?'d2d4':'e7e5';
+  await game(id,{botSide:side,t:side,m:moves,j:bestmove,s:Date.now()-2000,l:30000,n:30000,i:moves?'30000':'',q:'',r:''});
+  const move=require('../moves')({redis,movegen:{generate:(_,done)=>done(null,'g1f3')},broadcastGameUpdate(){},requestBotMove(){},checkgame(){},persistFinishedGame:async()=>{},finishgame(){},aborttimer:14000,timeback:2,lagCompensationPercent:.5,lagCompensationLimitMilliseconds:150,timeoutKeyAbort:'abort',timeoutKeyFinish:'finish'});
+  const bots=createBots({redis,pollMs:1000000,request:async p=>({uuidhm:p.uuidhm,bestmove,bot:{thinkTimeMs:2000}}),move});
+  try {await bots.enqueue(id);await bots.tick();await bots.tick();assert.ok(Number(await redis.hget(id,side==='w'?'l':'n'))<29000);}finally{bots.close();}
+ }
+});
+
 } finally {redis?.disconnect();child?.kill('SIGTERM');if(child)await once(child,'exit');}
 });
