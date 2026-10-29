@@ -1,5 +1,5 @@
 const http = require('http');
-const Stockfish = require('./stockfish');
+const Stockfish = require('./stockfish-process');
 const { movePattern } = require('./uci');
 const obs = require('../observability').createObserver('engine-worker');
 

@@ -9,7 +9,7 @@ bot play with `/lpush` and background analysis with `/rpush`.
 | File | Responsibility |
 | --- | --- |
 | `sf.js` | Queue polling, input validation, result delivery, retries and shutdown |
-| `stockfish.js` | Engine process, UCI handshake/options, readiness barriers and search lifecycle |
+| `stockfish-process.js` | Engine process, UCI handshake/options, readiness barriers and search lifecycle |
 | `uci.js` | Pure line parsers and bounded per-search result summaries |
 | `queue.js` | Priority queue and outstanding HTTP listeners |
 
