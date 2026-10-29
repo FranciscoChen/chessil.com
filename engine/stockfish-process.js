@@ -82,6 +82,9 @@ class Stockfish {
     const game = job.uuidhm.split('-')[0];
     if (game !== this.lastGame) { this.write('ucinewgame'); this.lastGame = game; }
     this.setOption('UCI_LimitStrength', job.elo !== 0);
+    // Strength limiting already searches multiple candidates. Ask for their
+    // scores too, so the chosen weaker move gets its own evaluation.
+    this.setOption('MultiPV', job.elo === 0 ? 1 : 4);
     if (job.elo !== 0) this.setOption('UCI_Elo', job.elo);
     this.setOption('SyzygyProbeLimit', job.syzygy);
     await this.waitFor('readyok', 'isready');

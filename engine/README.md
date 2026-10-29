@@ -26,10 +26,12 @@ is no accumulated search transcript and no `execFile` output-buffer limit.
 Stderr retains only its final 4096 characters for process-failure diagnostics.
 
 A search summary keeps the latest useful score for each MultiPV slot, up to 256
-slots and 256 PV plies per slot. Non-score progress and `info string` lines cannot
+slots, 256 root moves, and 256 PV plies per entry. Non-score progress and `info string` lines cannot
 erase the last evaluation. Higher depths take precedence; at equal depth an exact
-score takes precedence over a bound. If the chosen move matches a reported PV,
-that PV supplies the score (useful for limited-strength searches). Otherwise the
+score takes precedence over a bound. For the selected move, its latest completed
+exact score is preferred over a newer bound from an unfinished iteration. If the chosen move matches a reported PV,
+that PV supplies the score. Limited-strength searches request four reported PVs
+so the chosen weaker move has its own score. Otherwise the
 principal line supplies the evaluation; its `pv[0]` identifies the evaluated move.
 
 Results include:
@@ -97,3 +99,18 @@ The queue and HTTP listeners are in memory. Restarting the queue drops pending
 requests, and a worker crash after popping a job has no lease-based recovery.
 Duplicate UUIDs can overwrite an existing listener. Those are queue ownership
 issues; this worker refactor does not make the queue durable.
+
+## Shared consumers and analysis order
+
+| Consumer | Queue/use | Score contract |
+| --- | --- | --- |
+| Bot play | `/play` → priority `/lpush`, limited Elo | Chosen move plus its candidate PV/score when reported |
+| Live cheat analysis | `/check` → `/rpush`, full strength | `cp`/`mate` from the position's side to move; bounds excluded from stored cheat evaluations |
+| Position analysis | `/rpush`, full strength | Structured score, PV and available search statistics |
+| Reverse analysis | Descending positions submitted to `/rpush` | Full move history per position; no assumption that halfmove IDs increase |
+
+The `/analyse` API route is currently commented out and has no handler in this
+repository. The shared worker supports positions in reverse order, but this
+refactor does not create that missing API or a dedicated reverse-analysis queue.
+Results preserve the request's UUID, including unique bot-search suffixes, so
+background evaluations and bot replies remain separate.

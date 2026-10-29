@@ -42,18 +42,30 @@ function parseBestmove(line) {
 }
 
 class SearchSummary {
-  constructor() { this.lines = new Map(); }
+  constructor() { this.lines = new Map(); this.byMove = new Map(); this.exactByMove = new Map(); }
   add(line) {
     const info = parseInfo(line);
     if (!info || info.multipv < 1 || info.multipv > 256) return;
+    const move = info.pv?.[0];
+    const previousMove = this.byMove.get(move);
+    if (move && (this.byMove.has(move) || this.byMove.size < 256) &&
+        (!previousMove || (info.depth || 0) > (previousMove.depth || 0) ||
+        (info.depth === previousMove.depth && (!info.score.bound || previousMove.score.bound)))) {
+      this.byMove.set(move, info);
+    }
+    const previousExact = this.exactByMove.get(move);
+    if (move && !info.score.bound && (this.exactByMove.has(move) || this.exactByMove.size < 256) &&
+        (!previousExact || (info.depth || 0) >= (previousExact.depth || 0))) {
+      this.exactByMove.set(move, info);
+    }
     const previous = this.lines.get(info.multipv);
     if (previous && (previous.depth || 0) > (info.depth || 0)) return;
-    if (previous && previous.depth === info.depth && !previous.score.bound && info.score.bound) return;
+    if (previous && previous.depth === info.depth && previous.pv?.[0] === info.pv?.[0] && !previous.score.bound && info.score.bound) return;
     this.lines.set(info.multipv, info);
   }
   finish(best) {
     // Limited-strength searches may choose a secondary PV. Prefer its score.
-    const analysis = [...this.lines.values()].find(info => info.pv?.[0] === best.bestmove)
+    const analysis = this.exactByMove.get(best.bestmove) || this.byMove.get(best.bestmove)
       || this.lines.get(1) || null;
     return { ...best, eval: analysis ? `${analysis.score.type} ${analysis.score.value}` : null, analysis };
   }
