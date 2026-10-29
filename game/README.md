@@ -134,3 +134,20 @@ at every position (including the initial 20), and `pm`, one `0`/`1` per committe
 ply marking executed premoves. These fields are committed with each move. The
 engine receives a compact snapshot of these fields, clocks, moves and identities;
 repetition keys and old numeric engine records are not transmitted on each move.
+
+## Built-in bot scheduling
+
+`bots.js` owns durable `game:bot:requests` and `game:bot:ready` sorted sets.
+Searches are leased across Node instances; at most eight requests per instance
+are in flight. An independent delivery loop checks ready moves every 100 ms,
+so a slow search cannot block an already-computed move. Redis game fields
+`botProgram`, `botDifficulty`, `botSide`, `botReadyMove`, `botReadyExpected` and
+`botReadySide` retain the program and pending response across restarts. Before
+scheduling and before committing, the game result, turn and complete move
+history are checked. Resignation, flagging and stale replies cannot play a move.
+
+Bot delays consume the bot clock, including its first move once a turn-start
+timestamp exists. They are ordinary moves, never premoves. Practice bots skip
+fair-play sampling so they do not create unnecessary background engine work.
+Apply `database/built-in-bots.sql` (or the idempotent cumulative updates) before
+starting the new web code; deploy engine API/workers, game, then web.

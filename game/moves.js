@@ -76,6 +76,7 @@ module.exports = function createMoveHandler({
       const state = Object.fromEntries(fields.map((field, i) => [field, values[i]]));
       if (state.f !== '0' || state.t !== side || !(state.j || '').split(' ').includes(move)) return;
       if (premoveContext && state.m !== premoveContext.moves) return;
+      if (ws && ws.expectedMoves !== undefined && state.m !== ws.expectedMoves) return;
       const other = opposite(side);
       const ply = state.m ? state.m.split(' ').length : 0;
       let compensation = 0;
@@ -91,7 +92,7 @@ module.exports = function createMoveHandler({
             Math.max(0, Math.floor(lagCompensationPercent * ws.roundTripTime)));
         }
       }
-      const elapsed = !premoveContext && ply >= 2 && Number(state.s) > 0
+      const elapsed = !premoveContext && (ply >= 2 || (ws && ws.expectedMoves !== undefined)) && Number(state.s) > 0
         ? Math.max(0, received - Number(state.s) - compensation - timeback) : 0;
       const remaining = Number(state[clockField(side)]) - elapsed;
       // Keep the deadline intact if preparation fails. The timeout handler owns flagging.

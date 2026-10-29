@@ -80,11 +80,12 @@ class Stockfish {
   async analyse(job) {
     if (this.search) throw new Error('Stockfish already searching');
     const game = job.uuidhm.split('-')[0];
-    if (game !== this.lastGame) { this.write('ucinewgame'); this.lastGame = game; }
-    this.setOption('UCI_LimitStrength', job.elo !== 0);
+    if (game !== this.lastGame) { if (!job.bot) this.write('ucinewgame'); this.lastGame = game; }
+    this.setOption('UCI_LimitStrength', !job.bot && job.elo !== 0);
+    this.setOption('Skill Level', job.bot ? job.skill : 20);
     // Strength limiting already searches multiple candidates. Ask for their
     // scores too, so the chosen weaker move gets its own evaluation.
-    this.setOption('MultiPV', job.elo === 0 ? 1 : 4);
+    this.setOption('MultiPV', job.bot ? (job.skill < 20 ? 4 : 1) : job.elo === 0 ? 1 : 4);
     if (job.elo !== 0) this.setOption('UCI_Elo', job.elo);
     this.setOption('SyzygyProbeLimit', job.syzygy);
     await this.waitFor('readyok', 'isready');
@@ -101,7 +102,7 @@ class Stockfish {
         clearTimeout(timer); clearTimeout(killTimer); this.search = null; callback(result);
       };
       this.search = { summary: new SearchSummary(), resolve: value => finish(resolve, value), reject: error => finish(reject, error) };
-      try { this.write(`go wtime ${job.wtime} btime ${job.btime} winc ${job.winc} binc ${job.binc} movetime ${budget}`); }
+      try { this.write(`go wtime ${job.wtime} btime ${job.btime} winc ${job.winc} binc ${job.binc} movetime ${budget}${job.nodes ? ' nodes ' + job.nodes : ''}`); }
       catch (error) { this.search.reject(error); }
     });
   }

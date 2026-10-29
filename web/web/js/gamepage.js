@@ -76,7 +76,11 @@ function gamepageload() {
       if (!resp.ok) throw new Error('gameinfo failed')
       return resp.json()
     })
-    .then((data) => {
+    .then(async (data) => {
+      if (data.state === -1 && window.chessilWaitForGame) {
+        await window.chessilWaitForGame(match[1]);
+        return gamepageload();
+      }
       const lang = document.documentElement.lang || 'en'
       const ratedLabel = {
         en: 'Rated',

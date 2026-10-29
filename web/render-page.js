@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const versions = new Map();
+const ui = require('./ui/pages');
 const importPattern = /@import\s+url\(['"]?([^'"\)]+)['"]?\)/g;
 function localImport(url, reference) {
   if (/^(?:[a-z]+:|\/\/)/i.test(reference)) return null;
@@ -36,6 +37,8 @@ for (const language of ['en', 'es', 'zh']) {
 module.exports = function renderPage(data, language, theme) {
   const parts = components[language] || components.en;
   const html = data.toString('utf8')
+    .replace(/<!-- ui:([a-z-]+) -->/g, (_, name) => ui.render(name, language))
+    .replace('</head>', '<link rel="stylesheet" href="/css/design-system.css"><script defer src="/js/ui.js"></script></head>')
     .replace(/<!-- component:(header|footer) -->/g, (_, name) => parts[name])
     .replace(/(href|src)="(\/(?:css|js)\/[^"?]+)"/g, (_, attribute, url) => `${attribute}="${assetVersion(url)}"`)
     .replace('<html ', `<html data-theme="${theme === 'l' ? 'light' : 'dark'}" `);

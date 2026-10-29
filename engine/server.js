@@ -5,6 +5,7 @@ const Redis = require('ioredis');
 const { Pool } = require('pg');
 const config = require('../config.json');
 const queueRequest = require('./queue-client');
+const swift = require('./bots/swift');
 const { parseJob } = require('./sf');
 const obs = require('../observability').createObserver('engine');
 obs.installProcessHandlers();
@@ -45,13 +46,20 @@ async function play(payload) {
   const turn = plies % 2 ? 'b' : 'w';
   if (payload.turn != null && payload.turn !== turn) throw Object.assign(new Error('Invalid turn'), { status: 400 });
   const uuidhm = payload.uuidhm || `${payload.gameid}-${plies}-${turn}`;
-  const sf = [uuidhm, payload.wtime, payload.btime, payload.winc, payload.binc, 256, payload.elo, 7, moves].join(' ');
+  if (payload.bot != null && payload.bot !== 'swift') throw Object.assign(new Error('Unknown bot program'),{status:400});
+  const profile = payload.bot === 'swift' ? swift.settings(payload.difficulty) : null;
+  const sf = [uuidhm, payload.wtime, payload.btime, payload.winc, payload.binc,
+    profile ? profile.mtime : 256, profile ? 0 : payload.elo, profile ? 0 : 7,
+    ...(profile ? ['bot:swift:' + profile.difficulty] : []), moves].join(' ');
   try { parseJob(sf); } catch (error) { throw Object.assign(error, { status: 400 }); }
   const response = await queueRequest('/lpush', { sf });
   if (response.status !== 200) throw Object.assign(new Error('Engine queue busy'), { status: 503 });
   let result;
   try { result = JSON.parse(response.body); } catch (error) { throw new Error('Invalid engine response'); }
   if (result.error || result.uuidhm !== uuidhm) throw new Error(result.error || 'Mismatched engine result');
+  if (profile) result.bot = { program:'swift', difficulty:profile.difficulty,
+    thinkTimeMs:swift.thinkTime({remaining:Number(turn==='w'?payload.wtime:payload.btime),
+      increment:Number(turn==='w'?payload.winc:payload.binc),plies}), searchLimitMs:profile.mtime };
   return result;
 }
 

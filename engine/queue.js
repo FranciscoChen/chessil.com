@@ -1,291 +1,74 @@
-// This program is a queue of stockfish analysis requests.
-// It should not be exposed to the outside internet, it's for intranet or localhost usage
-// Enables popping with multiple node instances, each with a sf process attached
-// It holds off the request until a stockfish produces the result, and then responds
-// The stockfish analysis requests can be for different purposes, eg. to check for cheating, or for a human to spar against, or for post game analysis
-// Depending on the purpose, different settings should be specified, eg. elo
-// settings are 
-// uuidhm: id of the game plus '-' plus halfmoves plus '-' plus side to move w or b
-// ms: 128-512 max time (in ms) to calculate a move. As a reference with 12 threads at 4400MHz 120 ms is enough to keep up with the best machines in 2022. 
-// We run 1 thread at 2200 MHz, but we don't need so much precision, just good enough
-// elo: elo setting 
-// szg: 0-7. 0 disables syzygy
-// The value val contains the following values separated by a space, in order:
-// uuidhm wtime btime winc binc mtime elo szg
-
-const http = require('http');
-const url = require('url');
-const envPort = parseInt(process.env.PORT || '', 10);
-const port = Number.isFinite(envPort) ? envPort : 8092;
-const observability = require('../observability');
-const obs = observability.createObserver('engine-queue');
+// Bounded FIFO foreground/background queues, with one result owner per UUID.
+const http=require('http');
+const {parseJob}=require('./sf');
+const obs=require('../observability').createObserver('engine-queue');
 obs.installProcessHandlers();
-
-const MAX_QUEUE_LENGTH = 5000;
-const ANSWER_TTL_MS = 2 * 60 * 1000;
-const LISTENER_TTL_MS = 2 * 60 * 1000;
-const CLEANUP_INTERVAL_MS = 30 * 1000;
-
-var path;
-
-var queue = {
-  
-  line: [],
-  
-  // skip games that have ended already
-  skip: [],
-  
-  rpush(val) {
-    this.line.push (val);
-  },
-  
-  lpush(val) {
-    this.line.unshift (val);
-  },
-  
-  lpop() {
-    if ( this.line.length ) return this.line.shift();
-  },
-
-  spush(val) {
-    if ( this.skip.length > 65536 ) this.skip.shift();
-    this.skip.push(val);
-  },
-  scheck(val) {
-    if ( this.skip.indexOf(val) === -1 ) return false
-    return true
-  },
-
-  
-};
-
-var answers = {
-  ts: {},
-  lts: {},
-  
-  set(uuidhm,val) {
-    this[uuidhm] = val
-    this.ts[uuidhm] = Date.now()
-    try {
-      
-      this['listener'+uuidhm](); //call the listener when uuidhm was set
-    
-    } catch (error) {
-    
-      //console.log(o.uuidhm);
-      //console.log(error);
-    
-    }
-    
-  },
-  forget(uuidhm) {
-    this[uuidhm] = ''
-    this.ts[uuidhm] = Date.now()
-    try {
-      
-      this['listener'+uuidhm](); //call the listener when uuidhm was set
-    
-    } catch (error) {
-    
-      //console.log(o.uuidhm);
-      //console.log(error);
-    
-    }
-    
-  },
-  lset(uuidhm) {
-    this.lts[uuidhm] = Date.now()
-  },
-  cleanup() {
-    const now = Date.now()
-    for (const key in this.ts) {
-      if (now - this.ts[key] > ANSWER_TTL_MS) {
-        delete this[key]
-        delete this.ts[key]
-      }
-    }
-    for (const key in this.lts) {
-      if (now - this.lts[key] > LISTENER_TTL_MS) {
-        this[key] = ''
-        try {
-          this['listener'+key]();
-        } catch (error) {
-          // ignore
-        }
-        delete this[key]
-        delete this.ts[key]
-        delete this['listener'+key]
-        delete this.lts[key]
-      }
-    }
-  },
-  
-};
-
-const server = http.createServer(function(req, res) {
-  
-  path= url.parse(req.url).pathname
-  
-  switch (path) {
-    
-    case '/set': {
-    // Set content for original request, call the set function, which will call the listener
-      const uuidhm = req.headers.uuidhm;
-      if (!/^[a-zA-Z0-9-]{1,128}$/.test(uuidhm || '')) {
-        res.writeHead(400); res.end(); return;
-      }
-      let result;
-      if (req.headers.error) {
-        result = { uuidhm, error: req.headers.error };
-      } else {
-        const bestmove = req.headers.bm;
-        const evaluation = req.headers.eval || '';
-        if (!/^(?:[a-h][1-8][a-h][1-8][qrbn]?|0000)$/.test(bestmove || '') ||
-            (evaluation !== '' && !/^(?:cp|mate) -?\d+$/.test(evaluation))) {
-          res.writeHead(400); res.end(); return;
-        }
-        result = { uuidhm, bestmove: bestmove === '0000' ? null : bestmove, eval: evaluation || null };
-        if (req.headers.ponder && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(req.headers.ponder)) result.ponder = req.headers.ponder;
-        if (req.headers.analysis) {
-          try { result.analysis = JSON.parse(req.headers.analysis); }
-          catch (error) { res.writeHead(400); res.end(); return; }
-        }
-      }
-      answers.set(uuidhm, JSON.stringify(result));
-      // Response to worker set request 
-      res.end()
-      return
-      
-      break;
-      
-    }
-    
-    case '/lpush': {
-      // Priority request goes to the front of line
-      if (queue.line.length >= MAX_QUEUE_LENGTH) {
-        res.writeHead(429, {"Content-Type": "text/plain"});
-        res.end()
-        return
-      }
-      let uuidhm = req.headers['sf'].split(' ')[0]
-      
-      answers['listener'+uuidhm]=function () {
-        // Response to original request 
-        res.end(answers[uuidhm])
-        delete answers[uuidhm]; // free memory
-        delete answers.ts[uuidhm];
-        delete answers['listener'+uuidhm];  // free memory
-        delete answers.lts[uuidhm];
-        return
-      }
-      answers.lset(uuidhm)
-      
-      queue.lpush(req.headers['sf'])
-      
-      break;
-      
-    }
-    
-    case '/lpop': {
-      // The front of the line is processed
-      let lollipop = queue.lpop()
-      if ( typeof lollipop !== 'undefined' ) {
-        let uuidhm = lollipop.split(' ')[0]
-        if (queue.scheck(uuidhm.split('-')[0])){
-          answers.forget(uuidhm)
-          res.writeHead(404, {"Content-Type": "text/plain"});
-          res.end()
-          return
-        } else {
-          res.end(lollipop)
-          return
-	}
-      } else {
-        res.writeHead(404, {"Content-Type": "text/plain"});
-        res.end()
-        return
-      }
-      
-      break;
-      
-    }
-    
-    case '/rpush': {
-      // Normal request goes to the back of the line
-      if (queue.line.length >= MAX_QUEUE_LENGTH) {
-        res.writeHead(429, {"Content-Type": "text/plain"});
-        res.end()
-        return
-      }
-      let uuidhm = req.headers['sf'].split(' ')[0]
-      
-      answers['listener'+uuidhm]=function () {
-        // Response to original request 
-        res.end(answers[uuidhm])
-        delete answers[uuidhm]; // free memory
-        delete answers.ts[uuidhm];
-        delete answers['listener'+uuidhm];  // free memory
-        delete answers.lts[uuidhm];
-        return 
-      }
-      answers.lset(uuidhm)
-      
-      queue.rpush(req.headers['sf'])
-      
-      break;
-      
-    }
-    case '/spush': {
-      // Skip fg finished games. The gameid is pushed to skip array which can't exceed a certain length
-      queue.spush(req.headers['fg'])
-      res.writeHead(200, {"Content-Type": "text/plain"});
-      res.end()
-      break;
-      
-    }
-    case '/health': {
-      res.writeHead(200, {"Content-Type": "application/json"});
-      res.end(JSON.stringify({
-        status: 'ok',
-        queue: queue.line.length,
-        skip: queue.skip.length,
-      }));
-      break;
-    }
-  
-  }
-  
-});
-
-server.listen(port);
-obs.log('info', 'server_listen', { port: port });
-
-server.on('error', (err) => {
-  obs.count('server_error');
-  obs.log('error', 'server_error', { error: err && err.stack ? err.stack : String(err) });
-});
-
-let shuttingDown = false;
-const cleanupInterval = setInterval(function () {
-  answers.cleanup()
-}, CLEANUP_INTERVAL_MS);
-
-function shutdown(reason) {
-  if (shuttingDown) return;
-  shuttingDown = true;
-  obs.log('info', 'shutdown_start', { reason: reason });
-
-  server.close(() => {
-    obs.log('info', 'shutdown_server_closed', {});
-  });
-
-  clearInterval(cleanupInterval);
-
-  setTimeout(() => {
-    obs.log('info', 'shutdown_forced_exit', {});
-    process.exit(0);
-  }, 30000);
+const maxJobs=5000,jobs=new Map(),foreground=[],background=[],workers=new Set(),skipped=new Map();
+let foregroundRun=0,stopping=false;
+function send(res,status,data) {if(res.destroyed || res.writableEnded)return;res.writeHead(status,{'Content-Type':typeof data==='object'?'application/json':'text/plain'});res.end(typeof data==='object'?JSON.stringify(data):data || '');}
+function finish(id,status,value) {const job=jobs.get(id);if(!job)return;jobs.delete(id);clearTimeout(job.timer);send(job.res,status,value);}
+function next() {
+ while(foreground.length || background.length) {
+  const list=foreground.length && (foregroundRun<8 || !background.length)?foreground:background;
+  if(list===foreground)foregroundRun++;else foregroundRun=0;
+  const id=list.shift(),job=jobs.get(id);
+  if(!job || job.dispatched)continue;
+  if(skipped.has(id.split('-')[0])) {finish(id,410,{uuidhm:id,error:'Game ended'});continue;}
+  job.dispatched=true;return job;
+ }
 }
-
-process.on('SIGTERM', () => shutdown('sigterm'));
-process.on('SIGINT', () => shutdown('sigint'));
+function dispatch() {
+ for(const worker of workers) {
+  const job=next();if(!job)break;
+  workers.delete(worker);clearTimeout(worker.timer);send(worker.res,200,job.sf);
+ }
+}
+const server=http.createServer((req,res)=>{
+ const route=new URL(req.url,'http://localhost').pathname;
+ if(route==='/health')return send(res,200,{status:'ok',queue:foreground.length+background.length,outstanding:jobs.size});
+ if(stopping)return send(res,503,{error:'Queue restarting'});
+ if(route==='/lpush' || route==='/rpush') {
+  let job;
+  try {job=parseJob(req.headers.sf || '');}catch(error){return send(res,400,{error:error.message});}
+  if(jobs.has(job.uuidhm))return send(res,409,{error:'Duplicate engine request'});
+  if(jobs.size>=maxJobs)return send(res,429,{error:'Engine queue is full'});
+  const entry={sf:req.headers.sf,res,dispatched:false};
+  entry.timer=setTimeout(()=>finish(job.uuidhm,504,{uuidhm:job.uuidhm,error:'Engine request expired'}),route==='/lpush'?11000:100000);
+  jobs.set(job.uuidhm,entry);
+  res.on('close',()=>{if(jobs.get(job.uuidhm)===entry){clearTimeout(entry.timer);jobs.delete(job.uuidhm);}});
+  (route==='/lpush'?foreground:background).push(job.uuidhm);dispatch();return;
+ }
+ if(route==='/lpop') {
+  const job=next();if(job)return send(res,200,job.sf);
+  if(workers.size>=128)return send(res,429,'Too many engine workers');
+  const worker={res};worker.timer=setTimeout(()=>{workers.delete(worker);send(res,404,'');},1000);
+  workers.add(worker);res.on('close',()=>{clearTimeout(worker.timer);workers.delete(worker);});return;
+ }
+ if(route==='/set') {
+  const id=req.headers.uuidhm;
+  if(!/^[a-zA-Z0-9-]{1,128}$/.test(id || ''))return send(res,400,'Invalid identifier');
+  if(!jobs.has(id))return send(res,200,''); // Expired results are acknowledged and discarded.
+  let result;
+  try {
+   if(req.headers.error)result={uuidhm:id,error:req.headers.error};
+   else {
+    const best=req.headers.bm,evaluation=req.headers.eval || '';
+    if(!/^(?:[a-h][1-8][a-h][1-8][qrbn]?|0000)$/.test(best || '') || (evaluation && !/^(?:cp|mate) -?\d+$/.test(evaluation)))throw new Error('Invalid result');
+    result={uuidhm:id,bestmove:best==='0000'?null:best,eval:evaluation || null};
+    if(req.headers.analysis)result.analysis=JSON.parse(req.headers.analysis);
+    if(req.headers.ponder && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(req.headers.ponder))result.ponder=req.headers.ponder;
+   }
+  }catch(error){return send(res,400,{error:error.message});}
+  finish(id,result.error?502:200,result);return send(res,200,'');
+ }
+ if(route==='/spush') {skipped.set(req.headers.fg,Date.now());return send(res,200,'');}
+ send(res,404,'Not found');
+});
+const cleanup=setInterval(()=>{
+ for(const [id,time] of skipped)if(Date.now()-time>120000)skipped.delete(id);
+ // Compact expired/cancelled IDs, even when no worker is connected.
+ for(const list of [foreground,background])for(let i=list.length-1;i>=0;i--)if(!jobs.has(list[i]))list.splice(i,1);
+},1000);cleanup.unref();
+server.listen(Number(process.env.PORT || 8092),process.env.QUEUE_BIND || '127.0.0.1');
+function shutdown(){if(stopping)return;stopping=true;clearInterval(cleanup);for(const id of jobs.keys())finish(id,503,{uuidhm:id,error:'Queue restarting'});for(const worker of workers){clearTimeout(worker.timer);send(worker.res,503,'');}workers.clear();server.close(()=>process.exit(0));}
+process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);

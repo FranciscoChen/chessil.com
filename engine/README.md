@@ -117,3 +117,37 @@ background evaluations and bot replies remain separate.
 Live fair-play sampling, report semantics and public account indicators are
 documented in [FAIR_PLAY.md](FAIR_PLAY.md). The `/check` path now uses that bounded
 sampler; it does not send every position to Stockfish or automatically abort games.
+
+## Built-in practice bots
+
+Easy Game uses the `swift` program (`bots/catalog.js`, `engine/bots/swift.js`),
+not a user account or external bot client. Difficulty 1–8 maps to Stockfish Skill
+Level 0, 2, 5, 8, 11, 14, 17 and 20. These are difficulty levels, not calibrated
+Elo ratings. Practice games are unrated. Their program, version, level and side
+are saved in PostgreSQL and included in the immutable game-start job.
+
+Swift uses one persistent Stockfish thread, at most approximately 2048 nodes and
+`movetime 6`, and disables tablebase I/O. Lower skill levels expose four PVs;
+level 8 uses one. Reusing a worker across practice games does not clear its hash
+between every move; the full position history is still supplied on each search.
+A valid bot move does not require an evaluation if a very short search did not
+produce one. Background analysis retains the stricter score requirement.
+
+Bot jobs add `bot:swift:<difficulty>` between the seven numeric queue fields and
+move history. Other jobs retain their existing format. Foreground requests are
+FIFO, with one background job admitted after eight foreground jobs. Workers
+long-poll while idle; cancelled and expired requests are discarded. Capacity is
+bounded, and load beyond capacity is retried by the regional game scheduler.
+
+Search time and response pacing are independent. Swift's policy estimates a
+move allocation using the remaining clock, increment and game phase, capped at
+eight seconds and reduced under time pressure. UCI's `info time` reports elapsed
+search time, not a stable promise of planned thinking time; see the official
+[time manager](https://github.com/official-stockfish/Stockfish/blob/master/src/timeman.cpp).
+The engine returns immediately. Regional Redis holds the selected move until
+its due time; the bot's normal clock is charged when the move is committed.
+The UI does not claim that the engine searched during that delay.
+
+Tests: `STOCKFISH_BIN=/path/to/stockfish node --test engine/tests/*.test.js
+ game/tests/*.test.js web/tests/*.test.js` (one shell command). Tests use temporary
+Redis instances and real Stockfish; no production games are needed.

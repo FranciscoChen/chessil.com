@@ -10,9 +10,9 @@ Styles load in this order:
 
 1. `css/site.css`: fonts, layout, base colors, buttons, header and footer.
 2. Page styles such as `auth.css`, `game.css`, `user.css`, `query.css`.
-3. `grandmaster.css`: the site's existing gold theme.
-4. `components.css`: shared surfaces, form controls, responsive adjustments and
-   light theme variables.
+3. `components.css`: compatibility styles for existing components.
+4. `design-system.css`: the canonical theme tokens and shared component styles,
+   appended by the renderer to every page. The old `grandmaster.css` is retired.
 
 Use the palette variables instead of fixed white panels and black text. The
 server sets `html[data-theme]` from the session; the header switches that attribute
@@ -65,3 +65,37 @@ An unavailable warning is displayed as a dash with sample coverage, never zero.
 The copy distinguishes automated flags from confirmed cheating and translates
 into English, Spanish and Chinese. Internal detector reasons/session IDs are not
 part of the public `/userinfo` response.
+
+## UI system (2026 redesign)
+
+`render-page.js` appends `design-system.css` and `ui.js` to every rendered HTML
+page. `design-system.css` owns the two themes: light = Ivory Study, dark =
+Midnight Observatory. Theme switching uses the existing `/light` and `/dark`
+session endpoints. `ui.js` provides the single theme behavior used by the header
+and settings page. No font files or external font requests are used; language
+selectors choose installed Latin and Chinese font stacks.
+
+The old `grandmaster.css` is retired from page loading. Legacy page CSS retains
+layout and chess behavior; shared token/component rules finish the cascade.
+Existing classes are compatibility aliases during migration, not new component
+variants. Add reusable UI in the shared layer, and keep geometry in page CSS.
+
+New page markup lives in `ui/pages.js`; `ui/components.js` provides shared
+markup, and `ui/copy.js` holds English, Spanish and Chinese copy as data. Localized route files use `<!-- ui:name -->` markers. New layouts:
+landing, database, training, drills, puzzles, analysis, research, report,
+settings, account and ongoing. Existing game, profile, lobby, authentication,
+terms and privacy layouts retain their behavior and receive shared themes.
+
+Reusable primitives: `.ui-button` with primary/secondary/quiet/danger variants,
+`.ui-panel`, `.ui-field`, `.ui-filters`, `.ui-tabs`, `.ui-table-wrap`,
+`.ui-empty`, `.ui-actions`, `.ui-sidebar`, and `.ui-board` (static diagram).
+The live board remains `cg-board`; shared board colors also apply there.
+Layout primitives: `.ui-grid`, `.ui-grid-two`, `.ui-workbench`,
+`.ui-sidebar-layout`, `.ui-report`. Z layers are named variables; dialogs use
+native browser top-layer behavior. Reduced-motion preferences disable motion.
+
+Study, puzzle, archive and research routes currently provide UI and honest
+empty states. They do not implement analysis engines, generated content,
+archive queries or training sessions. Account and ongoing routes are entry
+layouts awaiting authenticated data integration. Do not present sample data
+as a user's real record or as engine research.

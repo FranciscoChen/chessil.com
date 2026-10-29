@@ -7,7 +7,6 @@
   <meta name="description" content="Encuentra un rival, elige tu ritmo y disfruta del ajedrez.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/site.css">
-  <link rel="stylesheet" href="/css/grandmaster.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/dialog.css">
   <link rel="stylesheet" href="/css/query.css">
@@ -23,7 +22,7 @@
   <main class="lobby-shell">
     <section class="lobby-intro" aria-labelledby="lobby-title">
       <div><p class="eyebrow">JUGAR EN LÍNEA</p><h1 id="lobby-title">Tu próxima jugada empieza aquí.</h1><p class="lobby-description">Encuentra un rival, elige tu ritmo y disfruta del ajedrez.</p></div>
-      <div class="lobby-intro-actions"><button id="open-create" class="ui-button ui-primary" type="button">Crear partida <span aria-hidden="true">＋</span></button><a class="ui-button ui-secondary" href="/easy">Jugar contra el ordenador</a></div>
+      <div class="lobby-intro-actions"><label class="ui-field">Ritmo de partida clasificada<select id="ranked-time"><option value="1+0">1+0</option><option value="3+0">3+0</option><option value="3+2">3+2</option><option value="5+0" selected>5+0</option><option value="10+0">10+0</option><option value="15+10">15+10</option></select></label><button id="find-ranked" type="button" class="ui-button ui-primary" data-searching="Buscando rival…">Buscar partida clasificada</button><button id="open-create" class="ui-button ui-primary" type="button">Crear partida <span aria-hidden="true">＋</span></button><a class="ui-button ui-secondary" href="/easy">Jugar contra el ordenador</a></div>
     </section>
     <section id="pending-challenge" class="pending-challenge" aria-labelledby="pending-title" hidden>
       <div class="pending-indicator" aria-hidden="true"></div><div class="pending-copy"><h2 id="pending-title">Tu desafío está abierto</h2><p id="pending-summary"></p><p id="create-status" role="status">Esperando un rival…</p></div>

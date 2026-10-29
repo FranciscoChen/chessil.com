@@ -177,7 +177,7 @@ function sendGameMessage(message) {
   return true
 }
 
-function wsgame(gameid, server = 'ws0') {
+async function wsgame(gameid, server = 'ws0') {
   gameConnectionReady = false
   if (typeof gameid === 'undefined') {
     gameid = location.pathname.split('/')[2]
@@ -188,7 +188,15 @@ function wsgame(gameid, server = 'ws0') {
   server = String(server)
   if (/^\d+$/.test(server)) server = 'ws' + server
   if (!/^ws\d+$/.test(server)) throw new Error('Invalid game server')
-  wsc = new WebSocket("wss://" + server + ".chessil.com/game/" + gameid);
+  let socketBase = 'wss://' + server + '.chessil.com';
+  if (window.chessilGameServers) {
+    try {
+      const regions = await window.chessilGameServers();
+      const region = regions.find(region => region.id === server);
+      if (region) socketBase = new URL(region.url).origin.replace('https:', 'wss:');
+    } catch (_) { /* Existing standard region names remain usable during discovery outages. */ }
+  }
+  wsc = new WebSocket(socketBase + '/game/' + gameid);
   wsc.onopen = (event) => {
     heartbeat(wsc)
     sendGameMessage('s')

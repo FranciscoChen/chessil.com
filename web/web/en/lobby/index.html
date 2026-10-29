@@ -7,7 +7,6 @@
   <meta name="description" content="Find an opponent, set your pace, and enjoy a game of chess.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/site.css">
-  <link rel="stylesheet" href="/css/grandmaster.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/dialog.css">
   <link rel="stylesheet" href="/css/query.css">
@@ -23,7 +22,7 @@
   <main class="lobby-shell">
     <section class="lobby-intro" aria-labelledby="lobby-title">
       <div><p class="eyebrow">PLAY ONLINE</p><h1 id="lobby-title">Your next move starts here.</h1><p class="lobby-description">Find an opponent, set your pace, and enjoy a game of chess.</p></div>
-      <div class="lobby-intro-actions"><button id="open-create" class="ui-button ui-primary" type="button">Create a game <span aria-hidden="true">＋</span></button><a class="ui-button ui-secondary" href="/easy">Play a computer</a></div>
+      <div class="lobby-intro-actions"><label class="ui-field">Ranked time control<select id="ranked-time"><option value="1+0">1+0</option><option value="3+0">3+0</option><option value="3+2">3+2</option><option value="5+0" selected>5+0</option><option value="10+0">10+0</option><option value="15+10">15+10</option></select></label><button id="find-ranked" type="button" class="ui-button ui-primary" data-searching="Searching for an opponent…">Find a ranked game</button><button id="open-create" class="ui-button ui-primary" type="button">Create a game <span aria-hidden="true">＋</span></button><a class="ui-button ui-secondary" href="/easy">Play a computer</a></div>
     </section>
     <section id="pending-challenge" class="pending-challenge" aria-labelledby="pending-title" hidden>
       <div class="pending-indicator" aria-hidden="true"></div><div class="pending-copy"><h2 id="pending-title">Your challenge is open</h2><p id="pending-summary"></p><p id="create-status" role="status">Waiting for an opponent…</p></div>

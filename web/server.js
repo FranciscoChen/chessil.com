@@ -8,6 +8,8 @@ const crypto = require('crypto');
 const querystring = require('querystring');
 const observability = require('../observability');
 const renderPage = require('./render-page');
+const botCatalog = require('../bots/catalog');
+const { configuredRegions, chooseRegion } = require('./game-regions');
 
 // Using Redis as Sessions database
 const Redis = require("ioredis");
@@ -24,7 +26,7 @@ const config = require("../config.json");
 // const conString = 'postgres://user:password@host:port/db?sslmode=require'
 const conString = config.shared.postgresUrl;
 const lobbyTimeControls = ['1+0', '3+0', '3+2', '5+0', '10+0', '15+10'];
-const lobbyDb = new pg.Pool({ connectionString: conString, max: 10, connectionTimeoutMillis: 5000 });
+const lobbyDb = new pg.Pool({ connectionString: conString, max: 10, connectionTimeoutMillis: 5000, statement_timeout: 5000 });
 lobbyDb.on('error', err => console.error('lobby database error', err));
 
 // Password complexity calculator
@@ -47,10 +49,11 @@ const websocketpassword = config.shared.websocketPassword;
 
 const domainname = config.web.domainName;
 const authRateLimits = config.web.authRateLimits;
+const gameRegions = configuredRegions(config);
 const gameServerHost = config.engine.gameHost;
-const gameServerName = config.game.serverName;
 const gameServerAuthToken = config.shared.gameServerAuthToken;
 const lobbyWatchers = new Map();
+const gameStarts = require('./game-starts')({db:lobbyDb,start:startGameOnServer,notify:notifyLobbyWatchers,publish:publishUserNotification});
 
 function getGameServerAuthIp() {
   const entries = Object.entries(config.game.myServers || {});
@@ -273,6 +276,7 @@ function shutdown(reason) {
     });
   });
   lobbyWatchers.clear();
+  gameStarts.stop();
   lobbyDb.end().catch(err => console.error('lobby database shutdown error', err));
 
   redisSub.unsubscribe(lobbyChannel, () => {
@@ -611,6 +615,14 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
   if (req.url === '/search' && req.method === 'POST') {
     searchuser(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
+  }
+  if (req.url === '/game-servers' && req.method === 'GET') {
+    res.writeHead(200, { ...resHeaders, 'Content-Type':'application/json', 'Cache-Control':'no-store' });
+    res.end(JSON.stringify(gameRegions.map(region => ({ id:region.id, enabled:region.enabled, url:'wss://' + region.host + '/ping' }))));
+    return;
+  }
+  if (req.url === '/matchmaking/find' && req.method === 'POST') {
+    return handleRankedMatch(req, res, resHeaders, sessiondata);
   }
   if (req.url === '/lobby/cancel' && req.method === 'POST') {
     return handleLobbyCancel(filename, mime, ext, res, req, resHeaders, sessiondata);
@@ -1894,7 +1906,7 @@ function gameinfo(filename, mime, ext, res, req, resHeaders, sessiondata) {
       var client = new pg.Client(conString);
       client.connect();
       client.query(
-        'SELECT g.userid1, g.userid2, u1.username as username1, u2.username as username2, g.gameserver, g.rated, g.state, g.started, g.initialtime, g.increment, ROUND(g.rating1) as rating1, ROUND(g.rating2) as rating2, g.sessionid1, g.sessionid2, g.color1, g.color2 FROM games g LEFT JOIN users u1 ON u1.id = g.userid1 LEFT JOIN users u2 ON u2.id = g.userid2 WHERE g.gameid = $1',
+        'SELECT g.userid1, g.userid2, u1.username as username1, u2.username as username2, g.gameserver, g.rated, g.state, g.started, g.initialtime, g.increment, ROUND(g.rating1) as rating1, ROUND(g.rating2) as rating2, g.sessionid1, g.sessionid2, g.color1, g.color2, g.bot_program, g.bot_difficulty, g.bot_side FROM games g LEFT JOIN users u1 ON u1.id = g.userid1 LEFT JOIN users u2 ON u2.id = g.userid2 WHERE g.gameid = $1',
         [gameid],
         (err, response) => {
           if (err) {
@@ -1907,7 +1919,7 @@ function gameinfo(filename, mime, ext, res, req, resHeaders, sessiondata) {
           if (response.rows.length === 1) {
             const row = response.rows[0]
             const botLabel = { en: 'Bot', es: 'Bot', zh: '\u673a\u5668\u4eba' }[sessiondata[3]] || 'Bot'
-            const username1 = row.username1
+            const username1 = row.bot_program === 'swift' ? 'Swift · ' + ({en:'Level',es:'Nivel',zh:'级别'}[sessiondata[3]] || 'Level') + ' ' + row.bot_difficulty : row.username1
             const username2 = (row.sessionid2 && row.sessionid2.indexOf('bot:') === 0) ? botLabel : row.username2
             const sessionId = req.headers['cookie'] ? req.headers['cookie'].slice(2) : ''
             const userId = String(sessiondata[1] || '0')
@@ -1936,6 +1948,7 @@ function gameinfo(filename, mime, ext, res, req, resHeaders, sessiondata) {
               increment: row.increment,
               rated: row.rated,
               gameserver: row.gameserver,
+              bot:row.bot_program?{program:row.bot_program,difficulty:Number(row.bot_difficulty),side:row.bot_side}:null,
               side: side
             }))
           } else {
@@ -2105,29 +2118,6 @@ function assignColorsForGame(game) {
   return { color1: color1, color2: color2, whiteIsPlayer1: color1 === 'white' };
 }
 
-function selectUserDetails(client, userIds, callback) {
-  if (!Array.isArray(userIds) || userIds.length === 0) {
-    callback(null, {});
-    return;
-  }
-  const sql = 'SELECT id, rating, deviation, volatility, role, uci_elo FROM users WHERE id = ANY($1)';
-  client.query(sql, [userIds], (err, result) => {
-    if (err) return callback(err);
-    const map = {};
-    for (var i = 0; i < result.rows.length; i++) {
-      const row = result.rows[i];
-      map[String(row.id)] = {
-        rating: Number(row.rating),
-        deviation: Number(row.deviation),
-        volatility: Number(row.volatility),
-        role: Number(row.role) || 1,
-        uci_elo: row.uci_elo
-      };
-    }
-    callback(null, map);
-  });
-}
-
 function startGameOnServer(payload, callback) {
   const headers = {
     'authorization': gameServerAuthToken,
@@ -2146,6 +2136,11 @@ function startGameOnServer(payload, callback) {
     'wv': String(payload.whiteRatings.volatility),
     'bv': String(payload.blackRatings.volatility)
   };
+  if (payload.bot) {
+    headers['bot-program']=payload.bot.program;
+    headers['bot-difficulty']=String(payload.bot.difficulty);
+    headers['bot-side']=payload.bot.side;
+  }
   if (payload.whiteBotElo != null) headers.bw = String(payload.whiteBotElo);
   if (payload.blackBotElo != null) headers.bb = String(payload.blackBotElo);
   let settled = false;
@@ -2154,11 +2149,14 @@ function startGameOnServer(payload, callback) {
     if (settled) return;
     settled = true;
     clearTimeout(timer);
+    if (err && !payload.retried) {
+      return startGameOnServer({...payload,retried:true},callback);
+    }
     callback(err);
   }
   const req = https.request(
     {
-      hostname: gameServerHost,
+      hostname: payload.region ? payload.region.host : gameServerHost,
       path: '/ng',
       method: 'POST',
       port: 443,
@@ -2236,13 +2234,14 @@ function handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata)
       SELECT g.id, g.gameid, g.rated, g.timecontrol1, g.randomcolor,
              g.color1, g.color2, g.created, g.started, g.finished,
              (g.sessionid2 IS NOT NULL OR g.userid2 IS NOT NULL) AS "hasOpponent",
-             ((($15::bigint <> 0) AND g.userid1 = $15) OR g.sessionid1 = $16::text) AS "isOwn",
+             ((($15::bigint <> 0) AND (g.userid1 = $15 OR g.userid2=$15)) OR g.sessionid1 = $16::text OR g.sessionid2=$16::text) AS "isOwn",
              g.userid1 AS userid1, u1.username AS username1, ROUND(u1.rating)::int AS rating1,
              g.userid2 AS userid2, u2.username AS username2, ROUND(u2.rating)::int AS rating2
       FROM games g
       LEFT JOIN users u1 ON g.userid1 = u1.id
       LEFT JOIN users u2 ON g.userid2 = u2.id
       WHERE ($17::text IS NULL OR g.gameid = $17)
+        AND (g.started IS NOT NULL OR g.sessionid2 IS NULL OR g.sessionid1=$16 OR g.sessionid2=$16 OR ($15::bigint<>0 AND (g.userid1=$15 OR g.userid2=$15)))
         AND ($7 = 'finished' OR (g.finished IS NULL AND (g.state IS NULL OR g.state = 0)))
         AND ($1::boolean IS NULL OR g.rated = $1)
         AND ($2::numeric IS NULL OR COALESCE(u1.rating, 1500) >= $2)
@@ -2370,7 +2369,10 @@ async function handleLobbyRequest(req, res, resHeaders, handler) {
 }
 
 function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  return handleLobbyRequest(req, res, resHeaders, async ({ id, action }) => {
+  return handleLobbyRequest(req, res, resHeaders, data => joinLobbyGame(data, req, sessiondata));
+}
+
+async function joinLobbyGame({ id, action }, req, sessiondata) {
     if (!validLobbyId(id) || !['join', 'watch'].includes(action)) {
       throw lobbyError(400, 'Invalid game id or action');
     }
@@ -2382,6 +2384,11 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
     if (action === 'watch') {
       if (!game.started || game.finished) throw lobbyError(400, 'Game not available to watch');
       return { success: true, mode: 'watch', gameid: game.gameid };
+    }
+    const joiningSession = req.headers.cookie.slice(2);
+    if (!game.finished && game.sessionid2 === joiningSession) {
+      const ready = game.started || await gameStarts.run(game.gameid);
+      return { success:true, mode:'join', gameid:game.gameid, initializing:!ready };
     }
     if (game.started || game.finished) throw lobbyError(400, 'Game already started or finished');
     if (game.userid2 != null || game.sessionid2 != null) throw lobbyError(409, 'Game already full');
@@ -2414,19 +2421,11 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
 
     const time = parseTimeControl(game.timecontrol1);
     const colors = assignColorsForGame(game);
-    // This conditional update is the claim: only one request can fill an open seat,
-    // including across multiple web server instances. Never hold a DB lock over HTTP.
-    const claim = await lobbyDb.query(
-      `UPDATE games SET userid2 = $1, sessionid2 = $2, color1 = $3, color2 = $4,
-                        initialtime = $5, increment = $6, gameserver = $7
-       WHERE id = $8 AND userid2 IS NULL AND sessionid2 IS NULL
-         AND started IS NULL AND finished IS NULL RETURNING id`,
-      [userId, sessionId, colors.color1, colors.color2, time.minutes, time.increment, gameServerName, id]);
-    if (!claim.rowCount) throw lobbyError(409, 'Game already full');
-
-    try {
-      await new Promise((resolve, reject) => startGameOnServer({
-        gameid: game.gameid,
+    const isBot = player1Ratings.botElo != null || player2Ratings.botElo != null;
+    const region = await chooseRegion(gameRegions, lobbyDb,
+      player1Ratings.botElo != null ? sessionId : game.sessionid1, sessionId, isBot);
+    const payload = {
+        gameid: game.gameid, region,
         whitePlayerId: colors.whiteIsPlayer1 ? getPlayerIdentity(creatorId, game.sessionid1) : getPlayerIdentity(userId, sessionId),
         blackPlayerId: colors.whiteIsPlayer1 ? getPlayerIdentity(userId, sessionId) : getPlayerIdentity(creatorId, game.sessionid1),
         time,
@@ -2434,26 +2433,24 @@ function handleLobbyAction(filename, mime, ext, res, req, resHeaders, sessiondat
         blackRatings: game.rated ? (colors.whiteIsPlayer1 ? player2Ratings : player1Ratings) : { rating: -1, deviation: 0, volatility: 0 },
         whiteBotElo: colors.whiteIsPlayer1 ? player1Ratings.botElo : player2Ratings.botElo,
         blackBotElo: colors.whiteIsPlayer1 ? player2Ratings.botElo : player1Ratings.botElo
-      }, err => err ? reject(err) : resolve()));
-    } catch (err) {
-      // Release only this request's claim and restore all fields changed by it.
-      await lobbyDb.query(
-        `UPDATE games SET userid2 = NULL, sessionid2 = NULL, color1 = $1, color2 = $2,
-                          initialtime = $3, increment = $4, gameserver = $5
-         WHERE id = $6 AND sessionid2 = $7 AND started IS NULL AND finished IS NULL`,
-        [game.color1, game.color2, game.initialtime, game.increment, game.gameserver, id, sessionId]);
-      throw lobbyError(502, 'Game server unavailable');
-    }
-    await lobbyDb.query('UPDATE games SET started = NOW(), state = 0 WHERE id = $1', [id]);
-    notifyLobbyWatchers(game.gameid, true);
-    const notification = {
-      type: 'game_start', gameid: game.gameid, server: gameServerName,
-      rated: Boolean(game.rated), time: time.minutes, increment: time.increment
     };
-    publishUserNotification(creatorId, { ...notification, color: colors.whiteIsPlayer1 ? 'w' : 'b' });
-    publishUserNotification(userId, { ...notification, color: colors.whiteIsPlayer1 ? 'b' : 'w' });
-    return { success: true, mode: 'join', gameid: game.gameid };
-  });
+    const client = await lobbyDb.connect();
+    try {
+      await client.query('BEGIN');
+      const claim = await client.query(`UPDATE games SET userid2=$1,sessionid2=$2,color1=$3,color2=$4,
+        initialtime=$5,increment=$6,gameserver=$7 WHERE id=$8 AND userid2 IS NULL AND sessionid2 IS NULL
+        AND started IS NULL AND finished IS NULL RETURNING id`,
+        [userId,sessionId,colors.color1,colors.color2,time.minutes,time.increment,region.id,id]);
+      if (!claim.rowCount) throw lobbyError(409,'Game already full');
+      await client.query('INSERT INTO game_start_jobs (gameid,payload) VALUES ($1,$2::jsonb)',[game.gameid,JSON.stringify({
+        payload,creatorId,userId,rated:Boolean(game.rated),whiteIsPlayer1:colors.whiteIsPlayer1,
+        rating1:game.rated?player1Ratings.rating:null,rating2:game.rated?player2Ratings.rating:null
+      })]);
+      await client.query('COMMIT');
+    } catch(error) { await client.query('ROLLBACK'); throw error; }
+    finally { client.release(); }
+    const ready = await gameStarts.run(game.gameid);
+    return { success: true, mode: 'join', gameid: game.gameid, initializing:!ready };
 }
 
 function handleLobbyCancel(filename, mime, ext, res, req, resHeaders, sessiondata) {
@@ -2471,7 +2468,10 @@ function handleLobbyCancel(filename, mime, ext, res, req, resHeaders, sessiondat
 }
 
 function handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  return handleLobbyRequest(req, res, resHeaders, async data => {
+  return handleLobbyRequest(req, res, resHeaders, data => createLobbyGame(data, req, sessiondata));
+}
+
+async function createLobbyGame(data, req, sessiondata) {
     if (data.rated != null && ![true, false, '1', '0'].includes(data.rated)) throw lobbyError(400, 'Invalid game mode');
     const rated = data.rated === true || data.rated === '1';
     const userId = String(sessiondata[1] || '0');
@@ -2489,13 +2489,19 @@ function handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondat
       const { rowCount } = await lobbyDb.query('SELECT id FROM users WHERE id=$1 AND role=3', [data.botId]);
       if (!rowCount) throw lobbyError(404, 'Bot not found');
       creatorId = String(data.botId);
-      creatorSession = 'bot:' + creatorId;
+      creatorSession = 'bot:' + creatorId + ':' + sessionId;
     }
     const client = await lobbyDb.connect();
     try {
       await client.query('BEGIN');
       // Serialize duplicate submissions across both web instances without a schema change.
       await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', ['lobby:' + (userId === '0' ? sessionId : userId)]);
+      if (easy) {
+        const { rows:[existing] } = await client.query(`SELECT id,gameid FROM games
+          WHERE sessionid1=$1 AND rated=$2 AND timecontrol1=$3 AND finished IS NULL
+          ORDER BY created DESC LIMIT 1`,[creatorSession,rated,timecontrol]);
+        if (existing) { await client.query('COMMIT'); return {success:true,...existing,reused:true}; }
+      }
       if (!easy) {
         const { rows: [pending] } = await client.query(`SELECT id,gameid,rated,timecontrol1,color1,randomcolor FROM games
           WHERE ((userid1=$1 AND $1::bigint<>0) OR sessionid1=$2)
@@ -2527,7 +2533,6 @@ function handleLobbyCreate(filename, mime, ext, res, req, resHeaders, sessiondat
       await client.query('ROLLBACK');
       throw error;
     } finally { client.release(); }
-  });
 }
 
 function handleEasyBots(filename, mime, ext, res, req, resHeaders, sessiondata) {
@@ -2544,8 +2549,8 @@ function handleEasyBots(filename, mime, ext, res, req, resHeaders, sessiondata) 
 
     const timecontrol = normalizeTimeControl(data.timecontrol);
 
-    const rawMin = Number(data.eloMin);
-    const rawMax = Number(data.eloMax);
+    const rawMin = data.eloMin == null || data.eloMin === '' ? NaN : Number(data.eloMin);
+    const rawMax = data.eloMax == null || data.eloMax === '' ? NaN : Number(data.eloMax);
     const eloMin = Number.isFinite(rawMin) && rawMin >= 0 && rawMin <= 4000 ? rawMin : null;
     const eloMax = Number.isFinite(rawMax) && rawMax >= 0 && rawMax <= 4000 ? rawMax : null;
     const filterBy = data.filterBy === 'uci_elo' ? 'uci_elo' : 'rating';
@@ -2578,201 +2583,89 @@ function handleEasyBots(filename, mime, ext, res, req, resHeaders, sessiondata) 
 }
 
 function handleEasyStart(filename, mime, ext, res, req, resHeaders, sessiondata) {
-  let body = '';
-  req.on('data', chunk => { body += chunk; });
-  req.on('end', () => {
-    let data;
+  return handleLobbyRequest(req,res,resHeaders,async data => {
+    const level=botCatalog.difficulty(data.difficulty);
+    if (data.bot != null && data.bot !== 'swift') throw lobbyError(400,'Unknown bot program');
+    if (data.rated === true || data.rated === '1') throw lobbyError(400,'Built-in bot games are practice games.');
+    const timecontrol=data.timecontrol || '5+0';
+    if (!lobbyTimeControls.includes(timecontrol)) throw lobbyError(400,'Choose a supported time control.');
+    if (data.color != null && !['random','white','black'].includes(data.color)) throw lobbyError(400,'Invalid color');
+    const session=req.headers.cookie.slice(2),userId=String(sessiondata[1] || '0');
+    const region=await chooseRegion(gameRegions,lobbyDb,session,session,true);
+    const time=parseTimeControl(timecontrol);
+    const colors=assignColorsForGame({randomcolor:!data.color || data.color==='random',
+      color1:data.color==='white'?'black':data.color==='black'?'white':null});
+    const side=colors.whiteIsPlayer1?'w':'b';
+    const client=await lobbyDb.connect();
+    let game;
     try {
-      data = JSON.parse(body);
-    } catch (e) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Invalid JSON' }));
-    }
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',['easy:'+session]);
+      const existing=await client.query(`SELECT gameid,started FROM games WHERE sessionid2=$1
+        AND bot_program='swift' AND bot_difficulty=$2 AND timecontrol1=$3 AND finished IS NULL
+        AND ($4::text IS NULL OR color2=$4) ORDER BY created DESC LIMIT 1`,
+        [session,level,timecontrol,['white','black'].includes(data.color)?data.color:null]);
+      if (existing.rows.length) { game=existing.rows[0]; await client.query('COMMIT'); }
+      else {
+        const chars='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const gameid=Array.from({length:9},()=>chars[crypto.randomInt(chars.length)]).join('');
+        const botIdentity='bot:swift:'+level;
+        const unrated={rating:-1,deviation:0,volatility:0};
+        const payload={gameid,region,time,whiteRatings:unrated,blackRatings:unrated,
+          whitePlayerId:colors.whiteIsPlayer1?botIdentity:getPlayerIdentity(userId,session),
+          blackPlayerId:colors.whiteIsPlayer1?getPlayerIdentity(userId,session):botIdentity,
+          bot:{program:'swift',difficulty:level,side}};
+        await client.query(`INSERT INTO games (gameid,userid1,sessionid1,userid2,sessionid2,rated,timecontrol1,
+          randomcolor,color1,color2,initialtime,increment,gameserver,bot_program,bot_version,bot_difficulty,bot_side,created)
+          VALUES ($1,0,$2,$3,$4,false,$5,$6,$7,$8,$9,$10,$11,'swift',1,$12,$13,NOW())`,
+          [gameid,botIdentity,userId,session,timecontrol,!data.color||data.color==='random',colors.color1,colors.color2,
+            time.minutes,time.increment,region.id,level,side]);
+        await client.query('INSERT INTO game_start_jobs (gameid,payload) VALUES ($1,$2::jsonb)',[gameid,JSON.stringify({
+          payload,creatorId:'0',userId,rated:false,whiteIsPlayer1:colors.whiteIsPlayer1,rating1:null,rating2:null
+        })]);
+        await client.query('COMMIT'); game={gameid,started:null};
+      }
+    } catch(error) { await client.query('ROLLBACK'); throw error; }
+    finally {client.release();}
+    const ready=game.started || await gameStarts.run(game.gameid);
+    return {success:true,gameid:game.gameid,initializing:!ready,bot:{program:'swift',difficulty:level}};
+  });
+}
 
-    const botId = Number(data.botId);
-    if (!Number.isFinite(botId)) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Invalid bot' }));
-    }
-
-    const rated = data.rated === true || data.rated === '1';
-    if (rated && sessiondata[1] === '0') {
-      res.writeHead(403, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Anonymous users cannot play rated games' }));
-    }
-
-    const timecontrol = normalizeTimeControl(data.timecontrol);
-    const time = parseTimeControl(timecontrol);
-
-    let randomcolor = true;
-    let color1 = null;
-    if (!rated && (data.color === 'white' || data.color === 'black')) {
-      randomcolor = false;
-      color1 = data.color === 'white' ? 'black' : 'white';
-    }
-    const colors = assignColorsForGame({ randomcolor: randomcolor, color1: color1, color2: null });
-
-    const prefix = String.fromCharCode(97 + Math.floor(Math.random() * 26));
-    const gameid = prefix + Date.now().toString(36);
-    const sessionId = req.headers['cookie'].slice(2);
-    const botSessionId = 'bot:' + botId;
+function handleRankedMatch(req, res, resHeaders, sessiondata) {
+  return handleLobbyRequest(req, res, resHeaders, async data => {
     const userId = String(sessiondata[1] || '0');
-    const botUserId = String(botId);
-
-    const whitePlayerId = colors.whiteIsPlayer1
-      ? getPlayerIdentity(botUserId, botSessionId)
-      : getPlayerIdentity(userId, sessionId);
-    const blackPlayerId = colors.whiteIsPlayer1
-      ? getPlayerIdentity(userId, sessionId)
-      : getPlayerIdentity(botUserId, botSessionId);
-    const botSide = colors.whiteIsPlayer1 ? 'w' : 'b';
-
-    var client = new pg.Client(conString);
-    client.connect();
-    client.query('SELECT id, rating, deviation, volatility, uci_elo FROM users WHERE id = $1 AND role = 3', [botId], (err, botResult) => {
-      if (err) {
-        console.error('easy/start bot check error', err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        client.end();
-        return res.end(JSON.stringify({ error: 'Internal error' }));
+    if (userId === '0') throw lobbyError(403, 'Sign in to create a rated game.');
+    const timecontrol = data.timecontrol || '5+0';
+    if (!lobbyTimeControls.includes(timecontrol)) throw lobbyError(400, 'Choose a supported time control.');
+    // One allocator per time control across web instances. No SQL transaction spans network I/O.
+    const key = 'matchmaking:' + timecontrol, token = crypto.randomBytes(16).toString('hex');
+    if (await redis.set(key, token, 'NX', 'PX', 120000) !== 'OK') throw lobbyError(409, 'Matchmaking is busy. Please retry.');
+    try {
+      const session = req.headers.cookie.slice(2);
+      const { rows:[active] } = await lobbyDb.query(`SELECT gameid,started FROM games WHERE rated=true
+        AND finished IS NULL AND (state=0 OR state IS NULL) AND (userid1=$1 OR userid2=$1) AND userid2 IS NOT NULL ORDER BY started DESC LIMIT 1`, [userId]);
+      if (active) return { success:true, started:true, initializing:!active.started, gameid:active.gameid };
+      const { rows:candidates } = await lobbyDb.query(`SELECT g.id FROM games g JOIN users u ON u.id=g.userid1
+        JOIN users me ON me.id=$1 WHERE g.rated=true AND g.timecontrol1=$2
+        AND g.started IS NULL AND g.finished IS NULL AND g.userid2 IS NULL AND g.sessionid2 IS NULL
+        AND g.userid1<>$1 AND g.sessionid1<>$3 AND u.role<>3 AND ABS(u.rating-me.rating)<=500
+        ORDER BY ABS(u.rating-me.rating),g.created LIMIT 5`, [userId,timecontrol,session]);
+      for (const candidate of candidates) {
+        try {
+          const result = await joinLobbyGame({ id:candidate.id, action:'join' }, req, sessiondata);
+          // Close this player's unclaimed challenge after successfully joining another.
+          const closed = await lobbyDb.query(`UPDATE games SET finished=NOW(),state=9
+            WHERE userid1=$1 AND gameid<>$2 AND started IS NULL AND finished IS NULL
+            AND userid2 IS NULL AND sessionid2 IS NULL RETURNING gameid`,[userId,result.gameid]);
+          for (const row of closed.rows) notifyLobbyWatchers(row.gameid,true,true);
+          return { ...result, started:true };
+        } catch(error) { if (![400,409].includes(error.status)) throw error; }
       }
-      if (botResult.rows.length === 0) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        client.end();
-        return res.end(JSON.stringify({ error: 'Bot not found' }));
-      }
-
-      const insertSql = `
-        INSERT INTO games (gameid, userid1, sessionid1, rated, timecontrol1, randomcolor, color1, created)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-        RETURNING id, gameid
-      `;
-      const insertValues = [gameid, botUserId, botSessionId, rated, time.raw, randomcolor, colors.color1];
-
-      client.query(insertSql, insertValues, (err2, insertResult) => {
-        if (err2) {
-          console.error('easy/start insert error', err2);
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          client.end();
-          return res.end(JSON.stringify({ error: 'Internal error' }));
-        }
-
-        const defaultRatings = { rating: 1500, deviation: 200, volatility: 0.06 };
-        const unratedRatings = { rating: -1, deviation: 0, volatility: 0 };
-        const botRow = botResult.rows[0];
-        const botRatings = {
-          rating: Number(botRow.rating) || defaultRatings.rating,
-          deviation: Number(botRow.deviation) || defaultRatings.deviation,
-          volatility: Number(botRow.volatility) || defaultRatings.volatility
-        };
-        const botEngineElo = Number.isFinite(Number(botRow.uci_elo)) ? Math.round(Number(botRow.uci_elo)) : Math.round(botRatings.rating);
-        const userIds = [];
-        if (userId !== '0') userIds.push(Number(userId));
-
-        const finalizeStart = (userDetails) => {
-          const userInfo = userDetails[userId] || { rating: defaultRatings.rating, deviation: defaultRatings.deviation, volatility: defaultRatings.volatility, role: 1, uci_elo: null };
-          const userRatings = rated ? { rating: userInfo.rating, deviation: userInfo.deviation, volatility: userInfo.volatility } : unratedRatings;
-          const userIsBot = userInfo.role === 3;
-          const userEngineElo = Number.isFinite(Number(userInfo.uci_elo)) ? Math.round(Number(userInfo.uci_elo)) : Math.round(userRatings.rating);
-          const whiteRatings = colors.whiteIsPlayer1 ? botRatings : userRatings;
-          const blackRatings = colors.whiteIsPlayer1 ? userRatings : botRatings;
-
-          const rating1 = rated ? botRatings.rating : null;
-          const rating2 = rated ? userRatings.rating : null;
-
-          const updateValues = [
-            userId,
-            sessionId,
-            colors.color1,
-            colors.color2,
-            time.minutes,
-            time.increment,
-            gameServerName,
-            rating1,
-            rating2,
-            insertResult.rows[0].id
-          ];
-
-          const updateSql = `
-            UPDATE games
-            SET userid2 = $1,
-                sessionid2 = $2,
-                color1 = $3,
-                color2 = $4,
-                initialtime = $5,
-                increment = $6,
-                gameserver = $7,
-                rating1 = $8,
-                rating2 = $9,
-                started = NOW(),
-                state = 0
-            WHERE id = $10
-          `;
-
-          client.query(updateSql, updateValues, (err3) => {
-            if (err3) {
-              console.error('easy/start update error', err3);
-              res.writeHead(500, { 'Content-Type': 'application/json' });
-              client.end();
-              return res.end(JSON.stringify({ error: 'Internal error' }));
-            }
-
-            startGameOnServer(
-              {
-                gameid: gameid,
-                whitePlayerId: whitePlayerId,
-                blackPlayerId: blackPlayerId,
-                time: time,
-                whiteRatings: rated ? whiteRatings : unratedRatings,
-                blackRatings: rated ? blackRatings : unratedRatings,
-                whiteBotElo: colors.whiteIsPlayer1 ? botEngineElo : (userIsBot ? userEngineElo : null),
-                blackBotElo: colors.whiteIsPlayer1 ? (userIsBot ? userEngineElo : null) : botEngineElo
-              },
-              (err4) => {
-                if (err4) {
-                  console.error('easy/start game server error', err4);
-                  client.query('DELETE FROM games WHERE id = $1', [insertResult.rows[0].id], (err5) => {
-                    if (err5) {
-                      console.error('easy/start cleanup error', err5);
-                    }
-                    res.writeHead(502, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: 'Game server unavailable' }));
-                    client.end();
-                  });
-                  return;
-                }
-
-                const whiteUserId = colors.whiteIsPlayer1 ? botUserId : userId;
-                const blackUserId = colors.whiteIsPlayer1 ? userId : botUserId;
-                const notifyPayload = {
-                  type: 'game_start',
-                  gameid: gameid,
-                  server: gameServerName,
-                  rated: Boolean(rated),
-                  time: time.minutes,
-                  increment: time.increment
-                };
-                publishUserNotification(whiteUserId, Object.assign({ color: 'w' }, notifyPayload));
-                publishUserNotification(blackUserId, Object.assign({ color: 'b' }, notifyPayload));
-
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, gameid: gameid }));
-                client.end();
-              }
-            );
-          });
-        };
-
-        selectUserDetails(client, userIds, (err4, detailsMap) => {
-          if (err4) {
-            console.error('easy/start ratings error', err4);
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            client.end();
-            return res.end(JSON.stringify({ error: 'Internal error' }));
-          }
-          finalizeStart(detailsMap);
-        });
-      });
-    });
+      const game = await createLobbyGame({ rated:true, timecontrol }, req, sessiondata);
+      return { ...game, started:false };
+    } finally {
+      await redis.eval("if redis.call('GET',KEYS[1])==ARGV[1] then return redis.call('DEL',KEYS[1]) end return 0",1,key,token);
+    }
   });
 }

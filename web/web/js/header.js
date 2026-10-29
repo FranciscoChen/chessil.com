@@ -103,10 +103,7 @@ function headerfunctions() {
 
 
   function setTheme(theme) {
-    document.documentElement.dataset.theme = theme
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', theme === 'light' ? '/light' : '/dark', true)
-    xhr.send()
+    window.chessilTheme(theme)
   }
   function setlightmode() { setTheme('light') }
   function setdarkmode() { setTheme('dark') }

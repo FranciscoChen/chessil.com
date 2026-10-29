@@ -10,9 +10,16 @@ function parseJob(reply) {
   if (numbers.some(n => !Number.isFinite(n) || n < 0 || n > 2147483647)) throw new Error('Invalid engine limits');
   const [wtime, btime, winc, binc, mtime, elo, syzygy] = numbers.map(Math.round);
   if (mtime < 1 || mtime > 60000 || syzygy > 7 || elo > 10000) throw new Error('Invalid search settings');
-  const moves = parts.slice(7);
+  let botSettings = {};
+  let moveOffset=7;
+  if (parts[7]?.startsWith('bot:')) {
+    const match=/^bot:swift:([1-8])$/.exec(parts[7]);
+    if (!match) throw new Error('Invalid bot profile');
+    botSettings=require('./bots/swift').settings(Number(match[1])); moveOffset=8;
+  }
+  const moves = parts.slice(moveOffset);
   if (!moves.every(move => movePattern.test(move))) throw new Error('Invalid UCI move history');
-  return { uuidhm, wtime, btime, winc, binc, mtime, elo, syzygy, moves: moves.join(' ') };
+  return { uuidhm, wtime, btime, winc, binc, mtime, elo, syzygy, ...botSettings, moves: moves.join(' ') };
 }
 
 function queueRequest(path, headers = {}) {
@@ -88,7 +95,7 @@ async function run() {
         try {
           job = parseJob(response.body);
           result = await engine.analyse(job);
-          if (result.bestmove && !result.eval) throw new Error('Stockfish returned a move without a score');
+          if (result.bestmove && !result.eval && !job.bot) throw new Error('Stockfish returned a move without a score');
           obs.log('info', 'analysis_result', { uuidhm: job.uuidhm, bm: result.bestmove,
             eval: result.eval, depth: result.analysis?.depth, nodes: result.analysis?.nodes });
         } catch (error) {

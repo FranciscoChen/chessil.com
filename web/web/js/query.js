@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let invitation = /^[a-zA-Z0-9]{9}$/.test(params.get('game') || '') ? params.get('game') : null
   let filters = {rated: params.get('rated') === '1' ? '1' : '', color:'', timeGroup:'any', time:'', eloMin:'', eloMax:'', username:''}
   let games = [], page = 1, loadSequence = 0, pending = null, events = null, pendingPoll = null, signedIn = null
+  let rankedSearching = false, rankedBusy = false, rankedTimer = null
   let lastFocusAction = null
 
   function node(tag, className, value) {
@@ -23,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   async function api(url, data) {
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 12000)
+    const timer = setTimeout(() => controller.abort(), 28000)
     try {
       const response = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data), signal:controller.signal})
       let result
@@ -211,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     busy(control,true,text.loading)
     errorAt('lobby-error','')
     try {
+      if (window.chessilMeasureLatency) await window.chessilMeasureLatency()
       const result = await api('/lobby/action',{id:game.id,action:game.started?'watch':'join'})
       if (!result.success || !/^[a-zA-Z0-9]{9}$/.test(result.gameid)) throw new Error(text.failed)
       location.assign('/game/'+result.gameid)
@@ -222,6 +224,37 @@ document.addEventListener('DOMContentLoaded', () => {
     clockOptions('timeGroup','time',values.time)
     errorAt('filters-error','')
   }
+  const rankedButton = $('find-ranked'), rankedTime = $('ranked-time')
+  const rankedLabel = rankedButton.textContent
+  function stopRanked() {
+    rankedSearching = false; clearTimeout(rankedTimer)
+    rankedButton.disabled = false; rankedTime.disabled = false
+    rankedButton.textContent = rankedLabel
+  }
+  async function findRanked() {
+    if (rankedBusy || !rankedSearching) return
+    rankedBusy = true
+    errorAt('lobby-error','')
+    try {
+      if (window.chessilMeasureLatency) await window.chessilMeasureLatency()
+      const result = await api('/matchmaking/find',{timecontrol:rankedTime.value})
+      if (!rankedSearching) return
+      if (result.started) { stopRanked(); location.assign('/game/'+result.gameid); return }
+      watchPending({...result,timecontrol1:rankedTime.value,rated:true,randomcolor:true})
+      loadLobby()
+    } catch (error) {
+      errorAt('lobby-error',error.message)
+      if (![409,502,503].includes(error.status)) stopRanked()
+    } finally {
+      rankedBusy = false
+      if (rankedSearching) rankedTimer = setTimeout(findRanked,5000)
+    }
+  }
+  rankedButton.addEventListener('click',()=>{
+    rankedSearching = true; rankedButton.disabled = true; rankedTime.disabled = true
+    rankedButton.textContent = rankedButton.dataset.searching
+    findRanked()
+  })
   $('open-create').addEventListener('click',openCreate)
   $('open-filters').addEventListener('click',()=>{restoreFilters(filters);window.ChessilDialogs.open('filters-dialog')})
   $('refresh-lobby').addEventListener('click',loadLobby)
@@ -255,6 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const settings={rated,timecontrol:$('create-time').value,color:rated?null:$('create-color').value}
     busy(control,true,text.creating)
     try {
+      if (window.chessilMeasureLatency) await window.chessilMeasureLatency()
       const result=await api('/lobby/create',settings)
       if (!result.success || !/^[a-zA-Z0-9]{9}$/.test(result.gameid)) throw new Error(text.failed)
       watchPending({...result,timecontrol1:settings.timecontrol,rated,randomcolor:!settings.color||settings.color==='random',color1:settings.color})
@@ -270,6 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!pending) return
     const control=$('cancel-game');busy(control,true,text.canceling)
     try {
+      stopRanked()
       await api('/lobby/cancel',{gameid:pending.gameid});stopPending();loadLobby()
     } catch (error) {errorAt('lobby-error',error.message)}
     finally {busy(control,false)}
@@ -285,6 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const refreshTimer=setInterval(()=>{
     if (!document.hidden && !document.querySelector('dialog[open]') && $('lobby-results').getAttribute('aria-busy')!=='true') loadLobby()
   },15000)
-  window.addEventListener('pagehide',()=>{clearInterval(refreshTimer);if(events)events.close();if(pendingPoll)clearInterval(pendingPoll)})
+  window.addEventListener('pagehide',()=>{stopRanked();clearInterval(refreshTimer);if(events)events.close();if(pendingPoll)clearInterval(pendingPoll)})
   loadLobby()
+  if (params.get('match') === '1') rankedButton.click()
 })

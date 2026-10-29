@@ -281,3 +281,25 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
+
+-- Apply before enabling multiple regions. No fixed column per game server.
+CREATE TABLE IF NOT EXISTS game_server_latency (
+  sessionid text NOT NULL,
+  server text NOT NULL CHECK (server ~ '^ws[0-9]+$'),
+  rtt double precision NOT NULL CHECK (rtt >= 0 AND rtt <= 30000),
+  measured_at timestamptz NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (sessionid, server)
+);
+CREATE INDEX IF NOT EXISTS game_server_latency_measured_at ON game_server_latency (measured_at);
+
+CREATE TABLE IF NOT EXISTS game_start_jobs (
+  gameid text PRIMARY KEY REFERENCES games(gameid) ON DELETE CASCADE,
+  payload jsonb NOT NULL,
+  next_attempt timestamptz NOT NULL DEFAULT NOW(),
+  lease_until timestamptz
+);
+
+ALTER TABLE games ADD COLUMN IF NOT EXISTS bot_program text;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS bot_version smallint;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS bot_difficulty smallint CHECK (bot_difficulty BETWEEN 1 AND 8);
+ALTER TABLE games ADD COLUMN IF NOT EXISTS bot_side text CHECK (bot_side IN ('w','b'));

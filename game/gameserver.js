@@ -238,101 +238,12 @@ function releaseBotRequest(gameid, token) {
     .catch(error => console.error('Bot request release failed:', error));
 }
 
-function requestBotMove(gameid, attempt = 0) {
-  const retry = () => {
-    if (attempt < 2) setTimeout(() => requestBotMove(gameid, attempt + 1), 500 * (attempt + 1)).unref();
-  };
-  redis.hmget(gameid, 'bw', 'bb', 'f', 't', 'm', 'l', 'n', 'o', 'z', (err, re) => {
-    if (err) { console.error(err); return; }
-    const botWhiteElo = parseInt(re[0], 10)
-    const botBlackElo = parseInt(re[1], 10)
-    if (re[2] !== '0') return
-    const turn = re[3]
-    let botside = null
-    let botelo = null
-    if (turn === 'w' && Number.isFinite(botWhiteElo)) {
-      botside = 'w'
-      botelo = botWhiteElo
-    } else if (turn === 'b' && Number.isFinite(botBlackElo)) {
-      botside = 'b'
-      botelo = botBlackElo
-    } else {
-      return
-    }
-
-    const moves = re[4] || ''
-    const hm = moves.length ? moves.split(' ').length : 0
-    // Keep the game prefix and trailing side required by the worker, but give
-    // every bot search its own reply listener, separate from background analysis.
-    const uuidhm = gameid + '-bot-' + hm + '-' + crypto.randomBytes(8).toString('hex') + '-' + botside
-    const pendingKey = botPendingPrefix + gameid
-    redis.set(pendingKey, uuidhm, 'NX', 'PX', botPendingTtlMs, (err2, result) => {
-      if (err2) { console.error(err2); return; }
-      if (result !== 'OK') {
-        return
-      }
-
-      const payload = JSON.stringify({
-        gameid: gameid,
-        uuidhm: uuidhm,
-        moves: moves,
-        wtime: Number(re[5] || 0),
-        btime: Number(re[6] || 0),
-        winc: Number(re[7] || 0),
-        binc: Number(re[8] || 0),
-        elo: botelo,
-        turn: botside
-      })
-      const myURL = new URL('https://' + config.game.engineHost + '/play')
-      const options = {
-        hostname: myURL.hostname,
-        port: 443,
-        path: myURL.pathname,
-        method: 'POST',
-        headers: {
-          'authorization': config.shared.engineAuthToken,
-          'x-real-ip': engineAuthIp,
-          'content-type': 'application/json',
-          'content-length': Buffer.byteLength(payload)
-        }
-      }
-
-      const newreq = https.request(options, (res) => {
-        let response = ''
-        res.on('data', (chunk) => { response += chunk })
-        res.on('end', () => {
-          releaseBotRequest(gameid, uuidhm)
-          if (res.statusCode !== 200) {
-            retry();
-            return
-          }
-          let result
-          try {
-            result = JSON.parse(response)
-          } catch (e) {
-            retry();
-            return
-          }
-          if (!result || typeof result.bestmove !== 'string') return
-          redis.hmget(gameid, 't', 'm', 'f', (err3, state) => {
-            if (err3) { console.error(err3); return }
-            if (state[2] !== '0') return
-            const currentMoves = state[1] || ''
-            const currentHm = currentMoves.length ? currentMoves.split(' ').length : 0
-            if (currentHm !== hm || state[0] !== botside || result.uuidhm !== uuidhm) return
-            handleMove(gameid, botside, result.bestmove, { send: function () { }, terminate: function () { } })
-          })
-        })
-      })
-      newreq.on('error', (e) => {
-        releaseBotRequest(gameid, uuidhm)
-        console.log(e)
-        retry();
-      })
-      newreq.setTimeout(15000, () => newreq.destroy(new Error('Bot engine timed out')))
-      newreq.end(payload)
-    })
-  })
+const bots = require('./bots')({redis,
+  request:require('./engine-client')({host:config.game.engineHost,token:config.shared.engineAuthToken,peerIp:engineAuthIp}),
+  move:(...args)=>handleMove(...args)
+});
+function requestBotMove(gameid) {
+  bots.enqueue(gameid).catch(error=>console.error('Bot enqueue:',error.message));
 }
 
 // Move preparation happens outside Redis; the Lua commit verifies the snapshot.
@@ -481,9 +392,14 @@ server.on('request', (req, res) => {
         Number(r.wt) <= 0 || Number(r.bt) <= 0) {
       res.writeHead(400); res.end(); return;
     }
+    if (r['bot-program'] != null && (r['bot-program'] !== 'swift' ||
+        !/^[1-8]$/.test(r['bot-difficulty'] || '') || !['w','b'].includes(r['bot-side']))) {
+      res.writeHead(400);res.end();return;
+    }
     // r.gn - gamename, r.w - whiteplayer (playerid or sessionid), r.b blackplayer, r.t time, r.i increment
     // Start a new game in redis. u for uci moves with clock time left {move:timeleft}, t for time left, x for increment, e for events with their event times {event:eventtimeclockleft}
     const gameData = {
+      'creationKey': crypto.createHash('sha256').update(JSON.stringify(['gn','w','b','wt','bt','wi','bi','wr','br','wd','bd','wv','bv','bw','bb','bot-program','bot-difficulty','bot-side'].map(key=>r[key] || ''))).digest('hex'),
       'm': '', // Moves
       'lc': '20', // Legal choice count at each position, starting with the initial 20
       'pm': '', // One flag per committed ply: 1 for a server-executed premove
@@ -500,7 +416,7 @@ server.on('request', (req, res) => {
       'z': r.bi * 1000, // blackincrement seconds to milliseconds
       'q': '', // White premove wp -> q
       'r': '', // Black premove bp -> r
-      's': 0, // Last move time lmt -> s
+      's': r['bot-side'] === 'w' ? Date.now() : 0, // Last move time lmt -> s
       'f': 0, // Finished code
       'u': 0, // White draw agreement wd -> u
       'v': 0, // Black draw agreement bd -> v
@@ -513,11 +429,17 @@ server.on('request', (req, res) => {
       'position:rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -': 1,
       'y': r.wt // initial time
     };
+    if (r['bot-program']) {
+      gameData.botProgram=r['bot-program'];gameData.botDifficulty=r['bot-difficulty'];gameData.botSide=r['bot-side'];
+    }
     if (r.bw !== undefined) gameData.bw = r.bw;
     if (r.bb !== undefined) gameData.bb = r.bb;
     const entries = Object.entries(gameData).flat();
     redis.eval(`
-      if redis.call('EXISTS', KEYS[1]) == 1 then return 0 end
+      if redis.call('EXISTS', KEYS[1]) == 1 then
+        if redis.call('HGET',KEYS[1],'creationKey') == ARGV[2] then return 2 end
+        return 0
+      end
       redis.call('HSET', KEYS[1], unpack(ARGV))
       return 1`, 1, r.gn, ...entries, (err, result) => {
         if (err) {
@@ -527,6 +449,7 @@ server.on('request', (req, res) => {
           return;
         }
         if (!result) { res.writeHead(409); res.end(); return; }
+        if (Number(result) === 2) { requestBotMove(r.gn); res.writeHead(200); res.end(); return; }
         subs[r.gn] = { w: {}, b: {}, s: {} }
         scheduleTimeout(timeoutKeyAbort, r.gn, aborttimer)
         res.writeHead(200, { "Content-Type": "text/html" });
@@ -675,10 +598,22 @@ wss.on('connection', function connection(ws, req, sessiondata) {
       if (message === 'b') {
         ws.roundTripTime = Date.now() - ws.sentTime;
         //Log into the database
-        database.query('INSERT INTO connections (id,sessionid,userid,ws0,updated) VALUES (DEFAULT,$1,$2,$3,NOW()) ON CONFLICT (sessionid) DO UPDATE SET ws0 = EXCLUDED.ws0, updated = EXCLUDED.updated', [req.headers['cookie'].slice(2), sessiondata[1], ws.roundTripTime], (err, response) => {
-          if (err) { console.log(err) }
-          return ws.terminate();
-        })
+        if (ws.measured) return;
+        ws.measured = true;
+        const session = req.headers.cookie.slice(2);
+        // RTT is measured by this server, never accepted from a browser JSON body.
+        database.query(`INSERT INTO game_server_latency (sessionid,server,rtt,measured_at)
+          VALUES ($1,$2,$3,NOW()) ON CONFLICT (sessionid,server)
+          DO UPDATE SET rtt=EXCLUDED.rtt,measured_at=EXCLUDED.measured_at`,
+          [session,servername,ws.roundTripTime], err => {
+            if (err) console.error('Regional latency storage failed', err.message);
+            // Keep the legacy connection table for current operations tooling.
+            if (servername === 'ws0') database.query(`INSERT INTO connections (sessionid,userid,ws0,updated)
+              VALUES ($1,$2,$3,NOW()) ON CONFLICT (sessionid)
+              DO UPDATE SET ws0=EXCLUDED.ws0,updated=EXCLUDED.updated`,
+              [session,sessiondata[1],ws.roundTripTime], error => { if(error) console.error(error); });
+            ws.terminate();
+          });
       }
     });
   }
@@ -820,12 +755,13 @@ wss.on('close', () => clearInterval(interval));
 function checkgame(gameid) {
   // Send game data to cheat detector to check for cheating
   // Send compact telemetry, not the growing repetition/analysis hash.
-  const fields = ['m', 'i', 't', 'l', 'n', 'o', 'z', 'w', 'b', 'a', 'c', 'bw', 'bb', 'lc', 'pm', 'f'];
+  const fields = ['m', 'i', 't', 'l', 'n', 'o', 'z', 'w', 'b', 'a', 'c', 'bw', 'bb', 'lc', 'pm', 'f', 'botProgram'];
   redis.hmget(gameid, ...fields, (err, values) => {
     if (err) {
       console.error(err);
       return;
     }
+    if (values[fields.indexOf('botProgram')]) return; // Practice bots do not need fair-play searches.
     const myURL = new URL('https://' + config.game.engineHost + '/check')
     const options = {
       hostname: myURL.hostname,

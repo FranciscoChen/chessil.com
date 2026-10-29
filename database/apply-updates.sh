@@ -47,7 +47,7 @@ if [[ -f "$executed_path" ]] && cmp -s "$updates_path" "$executed_path"; then
   exit 0
 fi
 
-psql "$postgres_url" -v ON_ERROR_STOP=1 -f "$updates_path"
+psql "$postgres_url" -v ON_ERROR_STOP=1 --single-transaction -f "$updates_path"
 
 cp "$updates_path" "$executed_path"
 echo "updates.sql executed and recorded."
