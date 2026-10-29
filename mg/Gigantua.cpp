@@ -228,14 +228,16 @@ static void PerfT(std::string_view def, Board& brd, int depth)
 PositionToTemplate(PerfT);
 
 int main(int argc, char** argv)
-//int main()
 {
-//	std::string buffer;
-//	while (std::getline(std::cin, buffer)) {
-	//	_PerfT(buffer, 1);
-//    	}
-	std::vector<std::string> args(argv, argv + argc);
-	std::string_view def(argv[1]);
-	_PerfT(def, 1);
+	if (argc == 2) {
+		_PerfT(std::string_view(argv[1]), 1);
+		return 0;
+	}
+	// One FEN request and one space-separated move list per line.
+	std::string fen;
+	while (std::getline(std::cin, fen)) {
+		_PerfT(std::string_view(fen), 1);
+		std::cout << std::endl;
+	}
 	return 0;
 }

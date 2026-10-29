@@ -40,7 +40,7 @@ const myServers = config.game.myServers
 const envPort = parseInt(process.env.PORT || '', 10);
 const port = Number.isFinite(envPort) ? envPort : 8080;
 
-const childprocess = require('child_process');
+const movegen = require('./movegen-pool')();
 
 // Glicko 2 rating calculation
 var glicko2 = require('glicko2');
@@ -240,15 +240,7 @@ const lagCompensationPercent = 0.5
 
 // A fair limit is to compensate up to 300ms, since higher lag is not due to server distance
 const lagCompensationLimitMilliseconds = 300 * lagCompensationPercent
-/*
-// For the encoder to the final database
-const exec = require('child_process').exec;
-exec('./mg '+fenstr, function(error, stdout, stderr) {
-  if(error){
-  }
-  console.log (stdout.split('\n'))
-});
-*/
+
 
 function onSocketError(err) { console.error(err); }
 
@@ -415,9 +407,8 @@ function handleMove(gameid, side, clientmove, ws) {
           }
           newfen = ucifen(newuci)
           newfenarr = newfen.split(' ')
-          childprocess.exec("./mg '" + newfen + "'", (error, legalmoves, stderr) => {
+          movegen.generate(newfen, (error, legalmoves) => {
             if (error) { console.error(error); return terminate(); };
-            legalmoves = legalmoves.slice(0, -1)
             redis.hincrby(gameid, (newfenarr[0] + newfenarr[1] + legalmoves).replace(/\\s/g, ""), 1, (err, nthfold) => {
               if (err) { console.error(err); return terminate(); };
               var finished = 0
@@ -431,8 +422,7 @@ function handleMove(gameid, side, clientmove, ws) {
                 newuci = newuci + ' ' + premov
                 newfen = ucifen(newuci)
                 newfenarr = newfen.split(' ')
-                childprocess.exec("./mg '" + newfen + "'", (error, legalmoves, stderr) => {
-                  legalmoves = legalmoves.slice(0, -1)
+                movegen.generate(newfen, (error, legalmoves) => {
                   if (error) { console.error(error); return terminate(); };
                   redis.hincrby(gameid, (newfenarr[0] + newfenarr[1] + legalmoves).replace(/\\s/g, ""), 1, (err, nthfold) => {
                     if (err) { console.error(err); return terminate(); };
@@ -3379,6 +3369,7 @@ function shutdown(reason) {
   });
 
   clearInterval(timeoutPoller);
+  movegen.close();
 
   Object.keys(subs).forEach((gameid) => {
     const websockets = subs[gameid];
