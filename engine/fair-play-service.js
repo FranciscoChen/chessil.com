@@ -73,6 +73,8 @@ module.exports = function createFairPlayService({ redis, database, obs }) {
     }
     if (!report.excluded) {
       for (const [side, p] of [['w', report.white], ['b', report.black]]) {
+        // Unanalysed/very short games must not evict established evidence.
+        if (p.metrics.comparedMoves < 6 && p.metrics.lossSamples < 4) continue;
         if (!/^[1-9]\d{0,18}$/.test(p.id) || BigInt(p.id) > 9223372036854775807n || p.bot) continue;
         const accountKey = key('account-games', p.id);
         const indexKey = key('account-index', p.id);

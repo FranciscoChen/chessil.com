@@ -91,7 +91,7 @@ Both API instances share Redis admission gates:
   full strength and a 256 ms search budget. No global MultiPV expansion is added.
 - At most 2,000 active game snapshots with two-hour TTLs; active requests refresh
   their analysis TTL. At most 10,000 retained detailed reports.
-- At most 5,000 cached registered accounts, up to 32 distinct games per account,
+- At most 5,000 cached registered accounts, up to 32 distinct games with usable evidence per account,
   over the last 30 days. Anonymous sessions do not create public account rows.
 - Public SQL writes coalesce in Redis and retry after database failure. Each API
   flushes up to 16 dirty accounts per poll through a two-connection pool. Source
@@ -118,7 +118,7 @@ Profiles show:
 Account evidence can combine partial samples from short games. A numeric warning
 requires three usable games, two distinct opponents, and either 40 compared moves
 or 30 paired estimates. A usable game supplies at least six compared moves or
-four pairs. Cross-game timing support needs three games with eight timing samples
+four pairs. Short/unanalysed games cannot evict previously analysed evidence. Cross-game timing support needs three games with eight timing samples
 each. The index combines pooled quality/timing and repeated per-game review flags;
 see `fair-play-account.js` for the complete formula. A flagged-game rate additionally
 requires three individually classifiable games. Thus an account-level warning
