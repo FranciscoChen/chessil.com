@@ -34,6 +34,9 @@ if redis.call('HGET', KEYS[1], 'f') ~= '0' or
 redis.call('HDEL', KEYS[1], 'pendingMove', 'pendingUntil')
 local premove = redis.call('HGET', KEYS[1], ARGV[14]) or ''
 local finished = tonumber(ARGV[9])
+local counts = redis.call('HGET', KEYS[1], 'lc') or ''
+local premoves = redis.call('HGET', KEYS[1], 'pm') or ''
+redis.call('HSET', KEYS[1], 'lc', counts .. ' ' .. ARGV[16], 'pm', premoves .. ARGV[17])
 local repetitions = redis.call('HINCRBY', KEYS[1], ARGV[8], 1)
 if finished == 0 and repetitions >= 3 then finished = 4 end
 redis.call('HSET', KEYS[1], 'm', ARGV[3], 'i', ARGV[4], 't', ARGV[5],
@@ -115,13 +118,14 @@ module.exports = function createMoveHandler({
       const clock = state.i ? state.i + ' ' + timeleft : String(timeleft);
       const result = await redis.eval(commitLua, 4, gameid, timeoutKeyAbort, timeoutKeyFinish, resultQueue,
         state.m, side, moves, clock, other, legal, clockField(side), positionKey,
-        finished, timeleft, received, aborttimer, clockField(other), other === 'w' ? 'q' : 'r', token);
+        finished, timeleft, received, aborttimer, clockField(other), other === 'w' ? 'q' : 'r', token, legal ? legal.split(' ').length : 0, premoveContext ? '1' : '0');
       if (!result) return; // Another instance already committed a move or ended the game.
       const finalState = Number(result[0]);
       let message = `m:${move}:${side}:${timeleft}:${ply + 1}:${received}`;
       if (finalState) message += ':' + finalState;
       broadcastGameUpdate(gameid, { w: [message], b: [message], s: [message] });
       if (finalState) {
+        checkgame(gameid);
         await persistFinishedGame(gameid);
         return;
       }

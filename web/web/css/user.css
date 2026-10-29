@@ -583,3 +583,17 @@ time {
 }
 
 /* User page end */
+
+/* Public evidence summaries: two metrics with explicit sample coverage. */
+.fair-play-panel { margin: 0 clamp(1rem, 3vw, 2rem) 1.5rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--bg2); }
+.fair-play-panel__heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.fair-play-panel h2 { font-size: 1rem; margin: 0; }
+.fair-play-status { font-size: .8rem; color: var(--text2); }
+.fair-play-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 1.25rem 0 .75rem; }
+.fair-play-metrics dt { font-size: .85rem; color: var(--text2); }
+.fair-play-metrics dd { margin: .25rem 0 0; font-size: 1.1rem; }
+.fair-play-metrics strong { font-size: 1.8rem; font-variant-numeric: tabular-nums; }
+.fair-play-panel meter { width: 100%; height: .6rem; accent-color: var(--link); }
+.fair-play-panel [hidden] { display: none; }
+.fair-play-coverage, .fair-play-note { font-size: .8rem; line-height: 1.5; color: var(--text2); margin: .75rem 0 0; }
+.fair-play-panel[data-status="flagged"] { border-color: #d7914b; }

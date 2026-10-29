@@ -1788,7 +1788,11 @@ function userinfo(filename, mime, ext, res, req, resHeaders, sessiondata) {
     if (usernameregex.test(postcontent) !== false) {
       var client = new pg.Client(conString);
       client.connect();
-      client.query('SELECT username FROM users WHERE canonical = $1', [postcontent.toLowerCase()], (err, response) => {
+      client.query(`SELECT u.username, u.role, f.warning, f.status AS fair_play_status,
+        f.flagged_games, f.analysed_games, f.observed_games, f.flagged_rate,
+        f.compared_moves, f.updated_at
+        FROM users u LEFT JOIN fair_play_accounts f ON f.userid=u.id
+        WHERE u.canonical = $1`, [postcontent.toLowerCase()], (err, response) => {
         if (err) {
           res.writeHead(500, { "Content-Type": "text/html" });
           res.end();
@@ -1798,7 +1802,19 @@ function userinfo(filename, mime, ext, res, req, resHeaders, sessiondata) {
         }
         if (response.rows.length === 1) {
           res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ username: response.rows[0].username }))
+          const row = response.rows[0];
+          const current = row.updated_at && Date.now() - new Date(row.updated_at).getTime() < 30 * 86400000;
+          const fairPlay = {
+            warning: current && row.warning != null ? Number(row.warning) : null,
+            status: Number(row.role) === 3 ? 'bot' : current ? row.fair_play_status : 'insufficient-data',
+            flaggedGames: current ? row.flagged_games : 0,
+            analysedGames: current ? row.analysed_games : 0,
+            observedGames: current ? row.observed_games : 0,
+            comparedMoves: current ? row.compared_moves : 0,
+            flaggedRate: current && row.flagged_rate != null ? Number(row.flagged_rate) : null,
+            updated: current ? row.updated_at : null
+          };
+          res.end(JSON.stringify({ username: row.username, fairPlay }))
         } else {
           res.writeHead(404, { "Content-Type": "text/html" });
           res.end();

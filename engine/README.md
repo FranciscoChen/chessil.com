@@ -105,12 +105,15 @@ issues; this worker refactor does not make the queue durable.
 | Consumer | Queue/use | Score contract |
 | --- | --- | --- |
 | Bot play | `/play` → priority `/lpush`, limited Elo | Chosen move plus its candidate PV/score when reported |
-| Live cheat analysis | `/check` → `/rpush`, full strength | `cp`/`mate` from the position's side to move; bounds excluded from stored cheat evaluations |
+| Live cheat analysis | `/check` → bounded `/rpush` sampling, full strength | `cp`/`mate` from the position's side to move; bounds excluded from stored cheat evaluations |
 | Position analysis | `/rpush`, full strength | Structured score, PV and available search statistics |
 | Reverse analysis | Descending positions submitted to `/rpush` | Full move history per position; no assumption that halfmove IDs increase |
 
-The `/analyse` API route is currently commented out and has no handler in this
-repository. The shared worker supports positions in reverse order, but this
+The `/analyse` API route has no implementation in this repository. The shared worker supports positions in reverse order, but this
 refactor does not create that missing API or a dedicated reverse-analysis queue.
 Results preserve the request's UUID, including unique bot-search suffixes, so
 background evaluations and bot replies remain separate.
+
+Live fair-play sampling, report semantics and public account indicators are
+documented in [FAIR_PLAY.md](FAIR_PLAY.md). The `/check` path now uses that bounded
+sampler; it does not send every position to Stockfish or automatically abort games.

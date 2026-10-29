@@ -485,6 +485,8 @@ server.on('request', (req, res) => {
     // Start a new game in redis. u for uci moves with clock time left {move:timeleft}, t for time left, x for increment, e for events with their event times {event:eventtimeclockleft}
     const gameData = {
       'm': '', // Moves
+      'lc': '20', // Legal choice count at each position, starting with the initial 20
+      'pm': '', // One flag per committed ply: 1 for a server-executed premove
       'i': '', // Moves times mt -> i
       't': 'w', // Turn
       'j': 'h2h3 g2g3 f2f3 e2e3 d2d3 c2c3 b2b3 a2a3 h2h4 g2g4 f2f4 e2e4 d2d4 c2c4 b2b4 a2a4 g1h3 g1f3 b1c3 b1a3', // Legal moves lm -> j
@@ -817,7 +819,9 @@ wss.on('close', () => clearInterval(interval));
 
 function checkgame(gameid) {
   // Send game data to cheat detector to check for cheating
-  redis.hgetall(gameid, (err, re) => {
+  // Send compact telemetry, not the growing repetition/analysis hash.
+  const fields = ['m', 'i', 't', 'l', 'n', 'o', 'z', 'w', 'b', 'a', 'c', 'bw', 'bb', 'lc', 'pm', 'f'];
+  redis.hmget(gameid, ...fields, (err, values) => {
     if (err) {
       console.error(err);
       return;
@@ -846,7 +850,9 @@ function checkgame(gameid) {
       return
     });
     newreq.setTimeout(5000, () => newreq.destroy(new Error('Cheat analysis request timed out')));
-    newreq.end(JSON.stringify(re));
+    const snapshot = Object.fromEntries(fields.flatMap((field, i) => values[i] == null ? [] : [[field, values[i]]]));
+    if (snapshot.m == null) return newreq.destroy();
+    newreq.end(JSON.stringify(snapshot));
   })
 }
 

@@ -36,6 +36,16 @@
                 data-user-field="username">...</span></span></h1>
           <div class="btn-rack__btn"></div>
         </div>
+        <section class="fair-play-panel" aria-labelledby="fair-play-heading">
+          <div class="fair-play-panel__heading"><h2 id="fair-play-heading">Fair-play warning</h2><span class="fair-play-status" data-fair-play="status">Automated checks</span></div>
+          <dl class="fair-play-metrics">
+            <div><dt>Suspicion</dt><dd><strong data-fair-play="warning">—</strong><span> / 100</span></dd></div>
+            <div><dt>Flagged-game rate</dt><dd><strong data-fair-play="rate">—</strong></dd></div>
+          </dl>
+          <meter data-fair-play="meter" min="0" max="100" low="20" high="60" optimum="0" value="0" hidden aria-label="Suspicion"></meter>
+          <p class="fair-play-coverage" data-fair-play="coverage" aria-live="polite">Loading analysis status…</p>
+          <p class="fair-play-note">Automated warning, not a verdict. The rate counts flagged games, not proven cheating. Based on up to 32 human games from the last 30 days.</p>
+        </section>
         <div class="angle-content">
           <div class="number-menu number-menu--tabs menu-box-pop" id="games"><button type="button" class="nm-item to-all active"><strong>0</strong><br>Games</button><button type="button" class="nm-item to-rated"><strong>0</strong><br>Rated</button><button type="button" class="nm-item to-win"><strong>0</strong><br>Wins</button><button type="button" class="nm-item to-loss"><strong>0</strong><br>Losses</button><button type="button" class="nm-item to-draw"><strong>0</strong><br>Draws</button><button type="button" class="nm-item to-playing"><strong>0</strong><br>Playing</button></div>
           <div class="search__result">

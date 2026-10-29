@@ -19,9 +19,11 @@ function loaduserheader() {
   xhr.send(match[1])
   xhr.onreadystatechange = function () {
     if (this.readyState != 4) return;
+    if (this.status !== 200) { renderFairPlay({ status: 'unavailable' }); return }
     if (this.status == 200) {
       const info = JSON.parse(this.responseText)
       if (!info || typeof info.username !== 'string') return
+      renderFairPlay(info.fairPlay)
       const username = info.username
       const nameTargets = document.querySelectorAll('[data-user-field="username"]')
       for (var i = 0; i < nameTargets.length; ++i) {
@@ -638,4 +640,28 @@ function seekfunctions() {
       lobby.removeChild(dialog)
     }
   }
+}
+
+// Public account indicators expose summaries, not internal detector fingerprints.
+function renderFairPlay(report) {
+  const panel = document.querySelector('.fair-play-panel')
+  if (!panel) return
+  const text = {
+    en: { unavailable: 'Analysis unavailable', insufficient: 'Not enough data', flagged: 'Flagged by automated checks', watch: 'Warning signals', clear: 'No flag in analysed games', bot: 'Computer account', coverage: 'Account: {observed} games, {moves} evaluated moves. Game flags: {flagged}/{games} with sufficient analysis.', pending: '{games} human games observed; more analysis is needed.' },
+    es: { unavailable: 'Análisis no disponible', insufficient: 'Datos insuficientes', flagged: 'Señalado por controles automáticos', watch: 'Señales de alerta', clear: 'Sin señales en las partidas analizadas', bot: 'Cuenta de ordenador', coverage: 'Cuenta: {observed} partidas, {moves} jugadas evaluadas. Señaladas: {flagged}/{games} con análisis suficiente.', pending: '{games} partidas humanas observadas; se necesita más análisis.' },
+    zh: { unavailable: '分析暂不可用', insufficient: '数据不足', flagged: '已被自动检测标记', watch: '存在提示信号', clear: '已分析对局中未发现标记', bot: '电脑账号', coverage: '账号：已观察 {observed} 盘，评估 {moves} 步。充分分析的 {games} 盘中有 {flagged} 盘被标记。', pending: '已观察 {games} 盘人类对局，仍需更多分析。' }
+  }[document.documentElement.lang] || null
+  const labels = text || { insufficient: 'Not enough data', flagged: 'Flagged by automated checks', watch: 'Warning signals', clear: 'No flag in analysed games', bot: 'Computer account', coverage: '{flagged} of {games} analysed games flagged · {moves} evaluated moves', pending: '{games} games observed; more analysis is needed.' }
+  const status = report?.status || 'insufficient-data'
+  const known = Number.isFinite(report?.warning) && status !== 'bot'
+  panel.dataset.status = status
+  panel.querySelector('[data-fair-play="status"]').textContent = labels[{ 'insufficient-data': 'insufficient', flagged: 'flagged', watch: 'watch', 'no-flag': 'clear', bot: 'bot', unavailable: 'unavailable' }[status] || 'insufficient']
+  panel.querySelector('[data-fair-play="warning"]').textContent = known ? String(report.warning) : '—'
+  panel.querySelector('[data-fair-play="rate"]').textContent = Number.isFinite(report?.flaggedRate) ? report.flaggedRate.toLocaleString(document.documentElement.lang, { maximumFractionDigits: 1 }) + '%' : '—'
+  const meter = panel.querySelector('meter')
+  meter.hidden = !known
+  meter.value = known ? report.warning : 0
+  const coverage = known ? labels.coverage : labels.pending
+  panel.querySelector('[data-fair-play="coverage"]').textContent = status === 'bot' ? labels.bot : coverage
+    .replace('{observed}', report?.observedGames || 0).replace('{flagged}', report?.flaggedGames || 0).replace('{games}', (known ? report?.analysedGames : report?.observedGames) || 0).replace('{moves}', report?.comparedMoves || 0)
 }

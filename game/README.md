@@ -128,3 +128,9 @@ configured persistence, as does the active game state.
 Inspect backlog with `redis-cli ZCARD game:results:pending` and due jobs with
 `ZRANGEBYSCORE game:results:pending -inf <current-ms>`. Do not delete queue entries
 or terminal hashes to clear a database error: fix the database and allow retries.
+
+Fair-play telemetry: new games store `lc`, a space-separated count of legal moves
+at every position (including the initial 20), and `pm`, one `0`/`1` per committed
+ply marking executed premoves. These fields are committed with each move. The
+engine receives a compact snapshot of these fields, clocks, moves and identities;
+repetition keys and old numeric engine records are not transmitted on each move.

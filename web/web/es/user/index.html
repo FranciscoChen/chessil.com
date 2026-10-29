@@ -36,6 +36,16 @@
                 data-user-field="username">...</span></span></h1>
           <div class="btn-rack__btn"></div>
         </div>
+        <section class="fair-play-panel" aria-labelledby="fair-play-heading">
+          <div class="fair-play-panel__heading"><h2 id="fair-play-heading">Aviso de juego limpio</h2><span class="fair-play-status" data-fair-play="status">Controles automáticos</span></div>
+          <dl class="fair-play-metrics">
+            <div><dt>Sospecha</dt><dd><strong data-fair-play="warning">—</strong><span> / 100</span></dd></div>
+            <div><dt>Partidas señaladas</dt><dd><strong data-fair-play="rate">—</strong></dd></div>
+          </dl>
+          <meter data-fair-play="meter" min="0" max="100" low="20" high="60" optimum="0" value="0" hidden aria-label="Sospecha"></meter>
+          <p class="fair-play-coverage" data-fair-play="coverage" aria-live="polite">Cargando el estado del análisis…</p>
+          <p class="fair-play-note">Aviso automático, no un veredicto. La tasa cuenta partidas señaladas, no trampas demostradas. Basado en hasta 32 partidas humanas de los últimos 30 días.</p>
+        </section>
         <div class="angle-content">
           <div class="number-menu number-menu--tabs menu-box-pop" id="games"><button type="button" class="nm-item to-all active"><strong>0</strong><br>Partidas</button><button type="button" class="nm-item to-rated"><strong>0</strong><br>Clasificadas</button><button type="button" class="nm-item to-win"><strong>0</strong><br>Victorias</button><button type="button" class="nm-item to-loss"><strong>0</strong><br>Derrotas</button><button type="button" class="nm-item to-draw"><strong>0</strong><br>Tablas</button><button type="button" class="nm-item to-playing"><strong>0</strong><br>Jugando</button></div>
           <div class="search__result">

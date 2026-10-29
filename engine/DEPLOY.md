@@ -22,3 +22,16 @@ Setup (one time)
 
 Deployment / restart
 - Run: ./engine/restart-engine.sh
+
+Public fair-play summaries
+- Apply `database/fair-play.sql` to the shared database before deploying the new API/web code.
+- On the database host, run `database/allow-engine.sh <engine IPv4> chessil postgres`
+  if the engine's shared PostgreSQL connection is not already allowed. The script
+  backs up pg_hba.conf and installs a database/role/IP-specific SSL-only rule.
+- Restart API instances one at a time. Stockfish workers and the in-memory queue
+  do not need restarting for detector-only changes.
+- `RESTART_ENGINE=0` currently disables automatic engine restarts in this repository;
+  run the API restarts explicitly when deploying detector changes.
+- Inspect private `fairplay:report:<gameid>` and `fairplay:account:<userid>` keys or
+  use the authenticated `/fair-play/report` endpoint. Public profiles read only
+  the bounded summary in `fair_play_accounts`.

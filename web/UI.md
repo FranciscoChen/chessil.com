@@ -58,3 +58,10 @@ game. Clock highlights follow the turn, independently of player orientation.
 Promotion choices use native buttons and keep their pointer events from
 triggering board moves. Keep the board and clock IDs/classes stable: the move
 code uses their measured geometry and orientation classes.
+
+Public user profiles include a fair-play summary with two values: an automated
+0–100 suspicion warning and the fraction of sufficiently analysed games flagged.
+An unavailable warning is displayed as a dash with sample coverage, never zero.
+The copy distinguishes automated flags from confirmed cheating and translates
+into English, Spanish and Chinese. Internal detector reasons/session IDs are not
+part of the public `/userinfo` response.
