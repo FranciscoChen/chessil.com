@@ -348,7 +348,7 @@ function dbgames(page, query, userid) {
           var whitescore = game.v || ''
           var blackscore = game.x || ''
           var result = ''
-          if (game.f != 0) {
+          if (Number(game.f) > 0) {
             if (game.y > 0) {
               whitescore = game.v + ' <good>+' + game.y + '</good>'
             }
@@ -398,7 +398,7 @@ function dbgames(page, query, userid) {
           ih += '>'
           ih += game.b || 'NN'
           ih += '</a><br>' + blackscore + '</div></div><div class="result">'
-          ih += { 0: { en: 'Playing right now', es: 'Partida en curso', zh: '正在对局' }, 1: { en: 'Checkmate', es: 'Jaque mate', zh: '将死' }, 2: { en: 'Stalemate', es: 'Ahogado', zh: '逼和' }, 3: { en: 'Insufficient material', es: 'Material insuficiente', zh: '棋子不足', }, 4: { en: 'Threefold repetition', es: 'Triple repetición', zh: '三次重复' }, 5: { en: '50 move rule', es: 'Regla de los 50 movimientos', zh: '50步规则' }, 6: { en: 'Time out', es: 'Tiempo agotado', zh: '超时' }, 7: { en: 'Resigned', es: 'Rendición', zh: '认输' }, 8: { en: 'Draw agreement', es: 'Tablas aceptadas', zh: '和棋' }, 9: { en: 'Canceled', es: 'Cancelado', zh: '被取消' } }[game.f][lang]
+          ih += { null: { en: 'Status unavailable', es: 'Estado no disponible', zh: '状态未知' }, '-1': { en: 'Waiting for opponent', es: 'Esperando rival', zh: '等待对手' }, 0: { en: 'Playing right now', es: 'Partida en curso', zh: '正在对局' }, 1: { en: 'Checkmate', es: 'Jaque mate', zh: '将死' }, 2: { en: 'Stalemate', es: 'Ahogado', zh: '逼和' }, 3: { en: 'Insufficient material', es: 'Material insuficiente', zh: '棋子不足', }, 4: { en: 'Threefold repetition', es: 'Triple repetición', zh: '三次重复' }, 5: { en: '50 move rule', es: 'Regla de los 50 movimientos', zh: '50步规则' }, 6: { en: 'Time out', es: 'Tiempo agotado', zh: '超时' }, 7: { en: 'Resigned', es: 'Rendición', zh: '认输' }, 8: { en: 'Draw agreement', es: 'Tablas aceptadas', zh: '和棋' }, 9: { en: 'Canceled', es: 'Cancelado', zh: '被取消' } }[game.f][lang]
           ih += result + '</div></div>'
           selected.innerHTML = ih
           infinitescroll.appendChild(selected)
