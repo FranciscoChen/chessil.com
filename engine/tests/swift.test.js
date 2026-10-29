@@ -6,10 +6,10 @@ const {parseJob}=require('../sf');
 const Stockfish=require('../stockfish-process');
 test('eight levels are distinct, bounded profiles; invalid inputs fail',()=>{
  assert.equal(new Set(Array.from({length:8},(_,i)=>settings(i+1).skill)).size,8);
- for(let level=1;level<=8;level++){const p=settings(level);assert.equal(p.mtime,6);assert.equal(p.nodes,2048);assert.equal(p.syzygy,0);}
+ for(let level=1;level<=8;level++){const p=settings(level);assert.equal(p.mtime,1);assert.equal(p.nodes,2048);assert.equal(p.syzygy,0);}
  assert.throws(()=>settings(0));assert.throws(()=>settings(9));assert.throws(()=>settings(1.5));
- assert.equal(parseJob('abcdef123-bot-0-w 300000 300000 0 0 6 0 0 bot:swift:3 e2e4 e7e5').difficulty,3);
- assert.throws(()=>parseJob('abcdef123-bot-0-w 300000 300000 0 0 6 0 0 bot:swift:9'));
+ assert.equal(parseJob('abcdef123-bot-0-w 300000 300000 0 0 1 0 0 bot:swift:3 e2e4 e7e5').difficulty,3);
+ assert.throws(()=>parseJob('abcdef123-bot-0-w 300000 300000 0 0 1 0 0 bot:swift:9'));
 });
 test('pacing fits the clock and does not consume the entire game budget',()=>{
  assert.equal(thinkTime({remaining:300000,increment:0,plies:0}),7500);
@@ -34,7 +34,7 @@ test('real queue and persistent worker serve simultaneous bot requests',async()=
   for(let i=0;i<100;i++){try{if((await request(port,'/health')).status===200)break;}catch{}await new Promise(r=>setTimeout(r,20));}
   worker=spawn(process.execPath,[require.resolve('../sf')],{env,stdio:'ignore'});
   const started=Date.now();
-  const results=await Promise.all(Array.from({length:30},(_,i)=>request(port,'/lpush',{sf:`test${String(i).padStart(5,'0')}-bot-0-w 300000 300000 0 0 6 0 0 bot:swift:${i%8+1}`})));
+  const results=await Promise.all(Array.from({length:30},(_,i)=>request(port,'/lpush',{sf:`test${String(i).padStart(5,'0')}-bot-0-w 300000 300000 0 0 1 0 0 bot:swift:${i%8+1}`})));
   for(const result of results){assert.equal(result.status,200,result.body);assert.match(JSON.parse(result.body).bestmove,/^[a-h][1-8][a-h][1-8][qrbn]?$/);}
   console.log('Thirty queued bot moves, including engine startup:',Date.now()-started,'ms');
  }finally {

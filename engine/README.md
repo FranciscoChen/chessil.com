@@ -127,7 +127,7 @@ Elo ratings. Practice games are unrated. Their program, version, level and side
 are saved in PostgreSQL and included in the immutable game-start job.
 
 Swift uses one persistent Stockfish thread, at most approximately 2048 nodes and
-`movetime 6`, and disables tablebase I/O. Lower skill levels expose four PVs;
+`movetime 1`, and disables tablebase I/O. Lower skill levels expose four PVs;
 level 8 uses one. Reusing a worker across practice games does not clear its hash
 between every move; the full position history is still supplied on each search.
 A valid bot move does not require an evaluation if a very short search did not

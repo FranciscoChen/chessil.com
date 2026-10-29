@@ -1,7 +1,7 @@
 const {difficulty}=require('../../bots/catalog');
 const skills=[0,2,5,8,11,14,17,20];
 function settings(level) {
-  return { bot:'swift', difficulty:difficulty(level), skill:skills[difficulty(level)-1], nodes:2048, mtime:6, syzygy:0, elo:0 };
+  return { bot:'swift', difficulty:difficulty(level), skill:skills[difficulty(level)-1], nodes:2048, mtime:1, syzygy:0, elo:0 };
 }
 // An explicit pacing policy, not Stockfish's hidden or adaptive search allocation.
 function thinkTime({remaining,increment,plies}) {
