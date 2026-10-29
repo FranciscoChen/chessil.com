@@ -1,187 +1,118 @@
 const http = require('http');
-const fs = require('fs');
-const cp = require('child_process');
-var os = require("os");
-const observability = require('../observability');
-const obs = observability.createObserver('engine-worker');
-obs.installProcessHandlers();
+const Stockfish = require('./stockfish');
+const { movePattern } = require('./uci');
+const obs = require('../observability').createObserver('engine-worker');
 
-const queueHost = process.env.QUEUE_HOST || '127.0.0.1';
-const envQueuePort = parseInt(process.env.QUEUE_PORT || '', 10);
-const queuePort = Number.isFinite(envQueuePort) ? envQueuePort : 8092;
-
-var bestmoveregexp=/bestmove\s\w{4,5}/;
-var uciregexp=/uciok/;
-var sfregexp=/Stockfish/;
-var sfname
-var stockfish
-var retry=0
-var sfstdout = ''
-var restarting = false
-var analysing = false
-var shuttingDown = false
-
-var dirfiles = fs.readdirSync('.')
-var files = dirfiles.filter(fn => fn.startsWith('stockfish'));
-sfname = files[files.length-1]
-
-function restartStockfish() {
-  if (shuttingDown) return
-  if (restarting) return
-  restarting = true
-  analysing = false
-  retry = 0
-  obs.count('stockfish_restart');
-  obs.log('warn', 'stockfish_restart', { stockfish: sfname });
-  setTimeout(function () {
-    restarting = false
-    sfstdout = ''
-    startStockfish()
-  }, 1000)
+function parseJob(reply) {
+  const [uuidhm, ...parts] = reply.trim().split(/\s+/);
+  if (!/^[a-zA-Z0-9-]{1,127}[wb]$/.test(uuidhm || '') || parts.length < 7) throw new Error('Invalid queue job');
+  const numbers = parts.slice(0, 7).map(Number);
+  if (numbers.some(n => !Number.isFinite(n) || n < 0 || n > 2147483647)) throw new Error('Invalid engine limits');
+  const [wtime, btime, winc, binc, mtime, elo, syzygy] = numbers.map(Math.round);
+  if (mtime < 1 || mtime > 60000 || syzygy > 7 || elo > 10000) throw new Error('Invalid search settings');
+  const moves = parts.slice(7);
+  if (!moves.every(move => movePattern.test(move))) throw new Error('Invalid UCI move history');
+  return { uuidhm, wtime, btime, winc, binc, mtime, elo, syzygy, moves: moves.join(' ') };
 }
 
-function startStockfish() {
-  if (shuttingDown) return
-  stockfish = cp.execFile('./'+sfname);
-  stockfish.stdout.on('data', (data) => {
-    var da = `${data}`;
-    if (sfregexp.exec(da) !== null){
-      stockfish.stdin.write('uci')
-      stockfish.stdin.write(os.EOL)
-    }
-    if (uciregexp.exec(da) !== null){
-      stockfish.stdin.write('setoption name SyzygyPath value syzygy')
-      stockfish.stdin.write(os.EOL)
-      stockfish.stdin.write('setoption name Threads value 1')
-      stockfish.stdin.write(os.EOL)
-      stockfish.stdin.write('setoption name Hash value 64') //HT[KB] = 2.0 * PFreq[MHz] * t[s]
-      stockfish.stdin.write(os.EOL)
-      stockfish.stdin.write('setoption name Move Overhead value 20') //HT[KB] = 2.0 * PFreq[MHz] * t[s]
-      stockfish.stdin.write(os.EOL)
-      stockfish.stdout.removeAllListeners('data');
-      analyse()
-    }
+function queueRequest(path, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const request = http.request({ hostname: process.env.QUEUE_HOST || '127.0.0.1',
+      port: Number(process.env.QUEUE_PORT || 8092), path, headers }, response => {
+      let body = '';
+      response.setEncoding('utf8');
+      response.on('data', chunk => {
+        body += chunk;
+        if (body.length > 65536) request.destroy(new Error('Queue response too large'));
+      });
+      response.on('error', reject);
+      response.on('end', () => resolve({ status: response.statusCode, body }));
+    });
+    request.setTimeout(3000, () => request.destroy(new Error('Queue request timed out')));
+    request.on('error', reject);
+    request.end();
   });
-  stockfish.on('error', restartStockfish);
-  stockfish.on('exit', restartStockfish);
 }
 
-startStockfish()
-obs.log('info', 'worker_start', { stockfish: sfname });
+async function run() {
+  obs.installProcessHandlers();
+  let engine, stopping = false, idle = 0, shutdownTimer;
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const stop = signal => {
+    if (stopping) return;
+    stopping = true;
+    obs.log('info', 'shutdown_start', { signal });
+    // Finish the current search and publish its result before exiting.
+    shutdownTimer = setTimeout(() => { engine?.close(); process.exit(0); }, 10000);
+  };
+  process.on('SIGTERM', stop);
+  process.on('SIGINT', stop);
 
-function analyse(){
-  if (shuttingDown) return
-  if (analysing) return
-  analysing = true
-  
-  const req = http.request({hostname: queueHost, path:'/lpop', port: queuePort}, (res) => {
-    if (res.statusCode == 404) {
-      analysing = false
-      if (retry < 32) retry++
-      setTimeout(function() {analyse()}, retry*32);
+  async function publish(uuidhm, result) {
+    let attempts = 0;
+    while (!stopping || attempts < 3) {
+      try {
+        const response = await queueRequest('/set', {
+          uuidhm, bm: result.bestmove || '0000', eval: result.eval || '',
+          ...(result.analysis ? { analysis: JSON.stringify(result.analysis) } : {}),
+          ...(result.ponder ? { ponder: result.ponder } : {}),
+          ...(result.error ? { error: result.error.replace(/[^\x20-\x7e]/g, ' ').slice(0, 256) } : {})
+        });
+        if (response.status !== 200) throw new Error('Queue rejected result: ' + response.status);
+        return;
+      } catch (error) {
+        attempts++;
+        obs.count('queue_set_error');
+        obs.log('error', 'queue_set_error', { uuidhm, error: error.message });
+        await sleep(Math.min(1000, attempts * 100));
+      }
     }
-    if (res.statusCode == 200) {
-      retry=0
-      res.setEncoding('utf8');
-      var reply = '';
-      res.on('data', (chunk) => { reply += chunk; });
-      res.on('end', () => {
-        
-        //Code start
-        var input = reply.split(' ')
-        const uuidhm = input.shift()
-        var wtime = input.shift()
-        var btime = input.shift()
-        const winc = input.shift()
-        const binc = input.shift()
-        const mtime = input.shift()
-	  if (uuidhm[uuidhm.length-1] === 'w') {
-	    if (wtime*1 > mtime*1) {
-              wtime = mtime
-            }
-	  } else {
-            if (btime*1 > mtime*1) {
-              btime = mtime
-            }
-	  }
-        const elo = input.shift()
-        if ( elo === '0' ) {
-          stockfish.stdin.write('setoption name UCI_LimitStrength value false')
-          stockfish.stdin.write(os.EOL)
-	} else {
-          stockfish.stdin.write('setoption name UCI_LimitStrength value true')
-          stockfish.stdin.write(os.EOL)
-          stockfish.stdin.write('setoption name UCI_Elo value '+elo)
-          stockfish.stdin.write(os.EOL)
-	}
-        const syzygy = input.shift()
-        stockfish.stdin.write('setoption name SyzygyProbeLimit value '+syzygy)
-        stockfish.stdin.write(os.EOL)
-        const moves = input.join(' ')
-        if (moves === '') {
-          stockfish.stdin.write('position startpos')
-        } else {
-          stockfish.stdin.write('position startpos moves '+moves)
-        }
-        stockfish.stdin.write(os.EOL)
+  }
 
-        stockfish.stdout.on('data', (data) => {
-          sfstdout += data;
-          var bm = bestmoveregexp.exec(data)
-          //We got bestmove
-          if (bm !== null) {
-            const bestmove = /bestmove ([a-h][1-8][a-h][1-8][qrbn]?)/g.exec(sfstdout)[1];
-            let score = /score (.*) nodes/g.exec(sfstdout.substring(sfstdout.lastIndexOf('info ')))[1];
-            sfstdout = '';
-            score = score.split(' ');
-            score = [score[0],score[1]].join(' ');
-            obs.log('info', 'analysis_result', { uuidhm: uuidhm, bm: bestmove, eval: score });
-            const setReq = http.request({hostname: queueHost, path:'/set', port: queuePort, headers:{'uuidhm': uuidhm, 'bm': bestmove, 'eval': score}}, (resp) => {});
-            setReq.on('error', (err) => {
-              obs.count('queue_set_error');
-              obs.log('error', 'queue_set_error', { error: err && err.stack ? err.stack : String(err) });
-            });
-            setReq.end();
-
-            stockfish.stdout.removeAllListeners('data');
-            analysing = false
-            analyse();
-            
-            return true
-            
-          }
-        })
-        
-        stockfish.stdin.write('go wtime '+wtime+' btime '+btime+' winc '+winc+' binc '+binc)
-        sfstdout=''
-        stockfish.stdin.write(os.EOL)
-
-      })
-    } else {
-      analysing = false
-    }
-  });
-  req.on('error', (err) => {
-    analysing = false
-    obs.count('queue_request_error');
-    obs.log('error', 'queue_request_error', { error: err && err.stack ? err.stack : String(err) });
-    setTimeout(function() { analyse() }, 1000);
-  });
-  req.end();
-}
-
-function shutdown(reason) {
-  if (shuttingDown) return
-  shuttingDown = true
-  obs.log('info', 'shutdown_start', { reason: reason });
+  obs.log('info', 'worker_start');
   try {
-    if (stockfish) stockfish.kill();
-  } catch (e) {}
-  setTimeout(function () {
-    obs.log('info', 'shutdown_forced_exit', {});
-    process.exit(0);
-  }, 30000);
+    while (!stopping) {
+      try {
+        if (!engine || engine.failure) {
+          engine?.close();
+          engine = new Stockfish();
+          await engine.initialize();
+          obs.log('info', 'stockfish_ready');
+        }
+        if (stopping) break;
+        const response = await queueRequest('/lpop');
+        if (response.status === 404) { await sleep(Math.min(1000, ++idle * 32)); continue; }
+        if (response.status !== 200) throw new Error('Queue pop failed: ' + response.status);
+        idle = 0;
+        let job, result;
+        try {
+          job = parseJob(response.body);
+          result = await engine.analyse(job);
+          if (result.bestmove && !result.eval) throw new Error('Stockfish returned a move without a score');
+          obs.log('info', 'analysis_result', { uuidhm: job.uuidhm, bm: result.bestmove,
+            eval: result.eval, depth: result.analysis?.depth, nodes: result.analysis?.nodes });
+        } catch (error) {
+          obs.count('analysis_error');
+          obs.log('error', 'analysis_error', { error: error.message });
+          const uuidhm = response.body.split(/\s+/)[0];
+          if (!/^[a-zA-Z0-9-]{1,128}$/.test(uuidhm)) continue;
+          job = { uuidhm };
+          result = { error: error.message };
+        }
+        await publish(job.uuidhm, result);
+      } catch (error) {
+        obs.count('worker_retry');
+        obs.log('error', 'worker_retry', { error: error.message });
+        await sleep(1000);
+      }
+    }
+  } finally {
+    clearTimeout(shutdownTimer);
+    engine?.close();
+    process.removeListener('SIGTERM', stop);
+    process.removeListener('SIGINT', stop);
+  }
 }
 
-process.on('SIGTERM', () => shutdown('sigterm'));
-process.on('SIGINT', () => shutdown('sigint'));
+if (require.main === module) run().catch(error => { console.error(error); process.exitCode = 1; });
+module.exports = { parseJob, run };

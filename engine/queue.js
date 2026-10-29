@@ -130,11 +130,28 @@ const server = http.createServer(function(req, res) {
     
     case '/set': {
     // Set content for original request, call the set function, which will call the listener
-      answers.set(req.headers['uuidhm'],
-	      '{"uuidhm":"'+req.headers['uuidhm']+
-	      '","bestmove":"'+req.headers['bm']+
-	      '","eval":"'+req.headers['eval']+
-	      '"}')
+      const uuidhm = req.headers.uuidhm;
+      if (!/^[a-zA-Z0-9-]{1,128}$/.test(uuidhm || '')) {
+        res.writeHead(400); res.end(); return;
+      }
+      let result;
+      if (req.headers.error) {
+        result = { uuidhm, error: req.headers.error };
+      } else {
+        const bestmove = req.headers.bm;
+        const evaluation = req.headers.eval || '';
+        if (!/^(?:[a-h][1-8][a-h][1-8][qrbn]?|0000)$/.test(bestmove || '') ||
+            (evaluation !== '' && !/^(?:cp|mate) -?\d+$/.test(evaluation))) {
+          res.writeHead(400); res.end(); return;
+        }
+        result = { uuidhm, bestmove: bestmove === '0000' ? null : bestmove, eval: evaluation || null };
+        if (req.headers.ponder && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(req.headers.ponder)) result.ponder = req.headers.ponder;
+        if (req.headers.analysis) {
+          try { result.analysis = JSON.parse(req.headers.analysis); }
+          catch (error) { res.writeHead(400); res.end(); return; }
+        }
+      }
+      answers.set(uuidhm, JSON.stringify(result));
       // Response to worker set request 
       res.end()
       return

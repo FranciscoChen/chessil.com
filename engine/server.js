@@ -481,7 +481,7 @@ function check(req,res){
               // result is in format {bestmove: 'e2e4', eval: 'cp -22'}
               // result is in format {bestmove: 'e2e4', eval: 'mate 5'}
               // result is in format {bestmove: 'e2e4', eval: 'mate -3'}
-              updategame(req.headers['id'],hm,result)
+              if (!result.error && result.bestmove && result.eval && !result.analysis?.score?.bound) updategame(req.headers['id'],hm,result)
             }
           })
         }
@@ -639,11 +639,17 @@ function play(req,res){
             res.writeHead(502, { "Content-Type": "application/json" });
             return res.end(JSON.stringify({ error: 'Invalid engine response' }));
           }
+          if (result.error) {
+            res.writeHead(502, { "Content-Type": "application/json" });
+            return res.end(JSON.stringify({ error: result.error }));
+          }
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({
             uuidhm: result.uuidhm,
             bestmove: result.bestmove,
-            eval: result.eval
+            eval: result.eval,
+            analysis: result.analysis,
+            ponder: result.ponder
           }));
         });
       }
