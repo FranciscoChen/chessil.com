@@ -19,7 +19,7 @@ const config = require('../config.json');
 // 'postgres://user:password@host:port/db?sslmode=require'
 const conString = config.shared.postgresUrl
 const database = new pg.Pool({ connectionString: conString, max: 4,
-  connectionTimeoutMillis: 5000, idleTimeoutMillis: 30000 });
+  connectionTimeoutMillis: 5000, idleTimeoutMillis: 30000, statement_timeout: 5000 });
 database.on('error', error => console.error('Database pool error:', error));
 
 const domainname = config.game.domainName
@@ -44,22 +44,6 @@ const envPort = parseInt(process.env.PORT || '', 10);
 const port = Number.isFinite(envPort) ? envPort : 8080;
 
 const movegen = require('./movegen-pool')();
-const { ucifen, bpiececount, wpiececount } = require('./chess');
-
-// Glicko 2 rating calculation
-var glicko2 = require('glicko2');
-var settings = {
-  // tau : "Reasonable choices are between 0.3 and 1.2, though the system should
-  //      be tested to decide which value results in greatest predictive accuracy."
-  tau: 0.5,
-  // rating : default rating
-  rating: 1500,
-  //rd : Default rating deviation 
-  //     small number = good confidence on the rating accuracy
-  rd: 200,
-  //vol : Default volatility (expected fluctation on the player rating)
-  vol: 0.06
-};
 
 // Local socket subscriptions; Redis Pub/Sub forwards updates between instances.
 const subs = {}
@@ -215,6 +199,7 @@ function parseSessionData(raw) {
 // Timeout system (stored in Redis)
 const timeoutKeyAbort = 'game:timeouts:abort'
 const timeoutKeyFinish = 'game:timeouts:finish'
+const resultQueue = 'game:results:pending'
 const timeoutBatchSize = 100
 const popDueTimeoutsLua = [
   "local key=KEYS[1]",
@@ -355,7 +340,7 @@ const handleMove = require('./moves')({
   redis, movegen, broadcastGameUpdate, requestBotMove, checkgame,
   persistFinishedGame, finishgame, aborttimer, timeback,
   lagCompensationPercent, lagCompensationLimitMilliseconds,
-  timeoutKeyAbort, timeoutKeyFinish
+  timeoutKeyAbort, timeoutKeyFinish, resultQueue
 });
 
 function authenticate(req, callback) {
@@ -438,6 +423,14 @@ server.on('request', (req, res) => {
     res.writeHead(401, { "Content-Type": "text/html" });
     res.end();
     return;
+  }
+
+  const requestedGame = req.url === '/game' ? req.headers.gn : req.headers.gameid;
+  if (['/game', '/cg', '/ag'].includes(req.url) && !/^[a-zA-Z0-9]{9}$/.test(requestedGame || '')) {
+    res.writeHead(400); res.end(); return;
+  }
+  if (req.url === '/ag' && !['w', 'b'].includes(req.headers.side)) {
+    res.writeHead(400); res.end(); return;
   }
 
   // To check if the game is up and ready to be started
@@ -566,60 +559,27 @@ local events = (redis.call('HGET', KEYS[1], 'e') or '') .. side .. action
 local times = redis.call('HGET', KEYS[1], 'k') or ''
 if times ~= '' then times = times .. ' ' end
 redis.call('HSET', KEYS[1], 'e', events, 'k', times .. now, 'f', finished)
+if finished > 0 then
+  local last = tonumber(redis.call('HGET', KEYS[1], 's') or '0')
+  local moves = redis.call('HGET', KEYS[1], 'm') or ''
+  if last > 0 and string.find(moves, ' ') then
+    local field = redis.call('HGET', KEYS[1], 't') == 'w' and 'l' or 'n'
+    local remaining = tonumber(redis.call('HGET', KEYS[1], field)) - (tonumber(now) - last)
+    redis.call('HSET', KEYS[1], field, math.max(0, remaining))
+  end
+  redis.call('ZADD', KEYS[2], now, KEYS[1])
+end
 return {tostring(finished), now}
 `;
 
-async function persistFinishedGame(gameid, snapshot, finished, score, message) {
-  if (!snapshot || snapshot.f == null) return;
-  clearBotPending(gameid);
-  clearGameTimeouts(gameid);
-    let rated = Number(snapshot.a) !== -1;
-    let didSave = false;
-    let white, black, whiteDiff = null, blackDiff = null;
-    if (rated) {
-      const ranking = new glicko2.Glicko2(settings);
-      white = ranking.makePlayer(Number(snapshot.a), Number(snapshot.d), Number(snapshot.h));
-      black = ranking.makePlayer(Number(snapshot.c), Number(snapshot.g), Number(snapshot.x));
-      ranking.updateRatings([[white, black, score]]);
-      whiteDiff = white.getRating() - Number(snapshot.a);
-      blackDiff = black.getRating() - Number(snapshot.c);
-    }
-    // Commit the result and both ratings together. A conditional update ensures
-    // that a duplicate control message cannot rate a game twice.
-    const client = await database.connect();
-    try {
-      await client.query('BEGIN');
-      const saved = await client.query(`UPDATE games SET moves=$2, clock=$3,
-        events=$4, eventsclock=$5, clock1=$6, clock2=$7, state=$8, result=$9,
-        ratingdiff1=CASE WHEN NOT rated THEN NULL WHEN color1='black' THEN $11::float8 ELSE $10::float8 END,
-        ratingdiff2=CASE WHEN NOT rated THEN NULL WHEN color1='black' THEN $10::float8 ELSE $11::float8 END,
-        finished=NOW() WHERE gameid=$1 AND (state=0 OR state IS NULL) RETURNING id, rated`,
-        [gameid, snapshot.m || '', snapshot.i || '', snapshot.e || '', snapshot.k || '',
-          snapshot.l, snapshot.n, finished, score === 0.5 ? null : score === 1, whiteDiff, blackDiff]);
-      didSave = saved.rowCount > 0;
-      if (saved.rowCount && !saved.rows[0].rated) rated = false;
-      if (saved.rowCount && rated) {
-        await client.query('UPDATE users SET rating=rating+$1, deviation=$2, volatility=$3 WHERE id=$4',
-          [whiteDiff, white.getRd(), white.getVol(), snapshot.w]);
-        await client.query('UPDATE users SET rating=rating+$1, deviation=$2, volatility=$3 WHERE id=$4',
-          [blackDiff, black.getRd(), black.getVol(), snapshot.b]);
-      }
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK').catch(() => {});
-      throw error; // Retain the Redis snapshot if persistence fails.
-    } finally {
-      client.release();
-    }
-    const messages = message ? [message] : [];
-    if (didSave && rated) messages.push('d:' + Math.floor(whiteDiff) + ':' + Math.floor(blackDiff));
-    if (messages.length) broadcastGameUpdate(gameid, { w: messages, b: messages, s: messages });
-    await redis.del(gameid);
-}
+// Terminal transitions enqueue atomically in Redis. The result worker owns SQL,
+// retries and notifications, including recovery after a Node restart.
+const results = require('./results')({ redis, database, broadcastGameUpdate });
+function persistFinishedGame(gameid) { return results.process(gameid); }
 
 async function handleGameAction(gameid, side, action) {
   try {
-    const result = await redis.eval(gameActionLua, 1, gameid, side, action, Date.now());
+    const result = await redis.eval(gameActionLua, 2, gameid, resultQueue, side, action, Date.now());
     if (!result) return;
     const finished = Number(result[0]);
     const message = 'e:' + action + ':' + side + ':' + result[1] + ':' + finished;
@@ -629,13 +589,7 @@ async function handleGameAction(gameid, side, action) {
     }
     clearBotPending(gameid);
     clearGameTimeouts(gameid);
-    const snapshot = await redis.hgetall(gameid);
-    if (Number(snapshot.s) > 0 && (snapshot.m || '').split(' ').length > 1) {
-      const clockField = snapshot.t === 'w' ? 'l' : 'n';
-      snapshot[clockField] = Math.max(0, Number(snapshot[clockField]) - (Number(result[1]) - Number(snapshot.s)));
-    }
-    const score = finished === 8 ? 0.5 : (side === 'w' ? 0 : 1);
-    await persistFinishedGame(gameid, snapshot, finished, score, message);
+    await results.process(gameid);
   } catch (error) {
     console.error('game action failed:', gameid, error);
   }
@@ -737,6 +691,7 @@ wss.on('connection', function connection(ws, req, sessiondata) {
 
     // Check if we have the game loaded in 
     redis.hmget(gameid, 'w', 'b', 'f', (err, uidarr) => {
+      if (ws.readyState !== 1) return;
       if (err) { console.error(err); return ws.terminate(); }
       if (uidarr[2] === null) { ws.close(4404, 'Game unavailable'); return; }
       if (uidarr[0] === uid) side = 'w'
@@ -755,6 +710,7 @@ wss.on('connection', function connection(ws, req, sessiondata) {
               case 's': {
                 // Starting to watch, get all game info so far and subscribe
                 redis.hmget(gameid, 'm', 'i', 'e', 'k', 'l', 'n', 'f', 's', (err, re) => {
+                  if (ws.readyState !== 1) return;
                   if (err) { console.error(err); return ws.terminate(); };
                   ws.send('z' + side);
                   ws.send('s' + re[7]);
@@ -817,6 +773,7 @@ wss.on('connection', function connection(ws, req, sessiondata) {
               case 's': {
                 // Starting to play, get all game info so far and subscribe
                 redis.hmget(gameid, 'm', 'i', 'e', 'k', 'l', 'n', 'f', 's', { w: 'q', b: 'r' }[side], (err, re) => {
+                  if (ws.readyState !== 1) return;
                   if (err) { console.error(err); return ws.terminate(); };
                   ws.send('z' + side);
                   ws.send('s' + re[7]);
@@ -897,45 +854,41 @@ async function abortgamecheater(gameid, side) {
   try {
     const claimed = await redis.eval(`
       if redis.call('HGET', KEYS[1], 'f') ~= '0' then return 0 end
-      redis.call('HSET', KEYS[1], 'f', 9)
-      return 1`, 1, gameid);
-    if (!claimed) return;
-    clearBotPending(gameid);
-    clearGameTimeouts(gameid);
-    await database.query('UPDATE games SET state=9, finished=NOW() WHERE gameid=$1 AND (state=0 OR state IS NULL)', [gameid]);
-    // Publish even when this Node instance has no local viewers.
-    broadcastGameUpdate(gameid, {
-      w: [side === 'w' ? '9c' : '9'], b: [side === 'b' ? '9c' : '9'], s: ['9']
-    }, { w: true, b: true, s: true });
-    delete subs[gameid];
-    await redis.del(gameid);
+      redis.call('HSET', KEYS[1], 'f', 9, 'cheatSide', ARGV[1])
+      redis.call('ZADD', KEYS[2], ARGV[2], KEYS[1])
+      return 1`, 2, gameid, resultQueue, side, Date.now());
+    if (claimed) await results.process(gameid);
   } catch (error) { console.error('cheater abort failed:', gameid, error); }
 }
+
 async function abortgame(gameid) {
   try {
     const claimed = await redis.eval(`
       if redis.call('HGET', KEYS[1], 'f') ~= '0' then return 0 end
       local deadline = tonumber(redis.call('ZSCORE', KEYS[2], KEYS[1]) or '0')
       if deadline > tonumber(ARGV[1]) then return 0 end
+      local pending = tonumber(redis.call('HGET', KEYS[1], 'pendingUntil') or '0')
+      if pending > tonumber(ARGV[1]) then
+        redis.call('ZADD', KEYS[2], pending + 100, KEYS[1])
+        return 0
+      end
       if string.len(redis.call('HGET', KEYS[1], 'm') or '') > 8 then return 0 end
       redis.call('HSET', KEYS[1], 'f', 9)
-      return 1`, 2, gameid, timeoutKeyAbort, Date.now());
-    if (!claimed) return;
-    clearBotPending(gameid);
-    clearGameTimeouts(gameid);
-    const client = await database.connect();
-    try {
-      await client.query('UPDATE games SET state=9, finished=NOW() WHERE gameid=$1 AND (state=0 OR state IS NULL)', [gameid]);
-    } finally { client.release(); }
-    broadcastGameUpdate(gameid, {w:['9'], b:['9'], s:['9']}, {w:true,b:true,s:true});
-    delete subs[gameid];
-    await redis.del(gameid);
+      redis.call('ZADD', KEYS[3], ARGV[1], KEYS[1])
+      return 1`, 3, gameid, timeoutKeyAbort, resultQueue, Date.now());
+    if (claimed) await results.process(gameid);
   } catch (error) { console.error('game abort failed:', gameid, error); }
 }
+
 async function finishgame(gameid) {
   try {
     const result = await redis.eval(`
       if redis.call('HGET', KEYS[1], 'f') ~= '0' then return nil end
+      local pending = tonumber(redis.call('HGET', KEYS[1], 'pendingUntil') or '0')
+      if pending > tonumber(ARGV[1]) then
+        redis.call('ZADD', KEYS[3], pending + 100, KEYS[1])
+        return nil
+      end
       local side = redis.call('HGET', KEYS[1], 't')
       local field = side == 'w' and 'l' or 'n'
       local last = tonumber(redis.call('HGET', KEYS[1], 's') or '0')
@@ -943,16 +896,14 @@ async function finishgame(gameid) {
       local remaining = tonumber(redis.call('HGET', KEYS[1], field) or '0') - (tonumber(ARGV[1]) - last)
       if remaining > 0 then return {side, tostring(remaining)} end
       redis.call('HSET', KEYS[1], 'f', 6, field, 0)
-      return {side, '0'}`, 1, gameid, Date.now());
+      redis.call('ZADD', KEYS[2], ARGV[1], KEYS[1])
+      return {side, '0'}`, 3, gameid, resultQueue, timeoutKeyFinish, Date.now());
     if (!result) return;
     if (Number(result[1]) > 0) {
       scheduleTimeout(timeoutKeyFinish, gameid, Number(result[1]) + 400);
       return;
     }
-    const snapshot = await redis.hgetall(gameid);
-    const position = ucifen(snapshot.m || '').split(' ')[0];
-    const score = result[0] === 'w' ? (bpiececount(position) > 1 ? 0 : 0.5) : (wpiececount(position) > 1 ? 1 : 0.5);
-    await persistFinishedGame(gameid, snapshot, 6, score, 't:' + result[0] + ':0:6');
+    await results.process(gameid);
   } catch (error) { console.error('game timeout failed:', gameid, error); }
 }
 let shuttingDown = false;
@@ -972,6 +923,7 @@ function shutdown(reason) {
 
   clearInterval(timeoutPoller);
   movegen.close();
+  results.close();
 
   Object.keys(subs).forEach((gameid) => {
     const websockets = subs[gameid];

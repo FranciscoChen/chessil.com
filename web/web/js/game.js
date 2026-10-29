@@ -104,6 +104,7 @@ function gamereplay(ply) {
 }
 
 function displayTermination(code) {
+  if (gamefinished && stat === Number(code)) return;
   const status = document.querySelector('[data-game-field="state"]')
   const descriptions = {
     en: ['Playing', 'Checkmate', 'Stalemate', 'Insufficient material', 'Threefold repetition', '50-move rule', 'Time out', 'Resigned', 'Draw agreed', 'Game canceled'],
@@ -369,6 +370,7 @@ function wsgame(gameid, server = 'ws0') {
         if (event.data[1] === ':') {
           // We got a new event var eventinfo = 'e:'+clientevent+':'+side+':'+eventtime+':'+finished
           var aev = event.data.slice(2).split(':')
+          if (Number(aev[3]) > 0 && gamefinished) break;
           events.push(aev[1] + aev[0])
           eventstimes.push(aev[2])
           if (aev[0] == 1) {

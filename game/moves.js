@@ -1,3 +1,4 @@
+const { randomBytes } = require('crypto');
 const { ucifen, mate, piececount } = require('./chess');
 
 const fields = ['m', 'i', 't', 'j', 'l', 'n', 'o', 'z', 'q', 'r', 's', 'f'];
@@ -5,12 +6,32 @@ const opposite = side => side === 'w' ? 'b' : 'w';
 const clockField = side => side === 'w' ? 'l' : 'n';
 const incrementField = side => side === 'w' ? 'o' : 'z';
 
+// Reserve preparation across instances. A finite claim protects timely moves
+// from flagging during worker queuing, while a crashed process cannot freeze play.
+const claimLua = `
+if redis.call('HGET', KEYS[1], 'f') ~= '0' or
+   redis.call('HGET', KEYS[1], 'm') ~= ARGV[1] or
+   redis.call('HGET', KEYS[1], 't') ~= ARGV[2] then return 0 end
+local pending = tonumber(redis.call('HGET', KEYS[1], 'pendingUntil') or '0')
+if pending > tonumber(ARGV[4]) then return 0 end
+redis.call('HSET', KEYS[1], 'pendingMove', ARGV[3], 'pendingUntil', tonumber(ARGV[4]) + 3000)
+return 1
+`;
+const releaseLua = `
+if redis.call('HGET', KEYS[1], 'pendingMove') == ARGV[1] then
+  redis.call('HDEL', KEYS[1], 'pendingMove', 'pendingUntil')
+end
+return 1
+`;
+
 // Compare and commit in one Redis operation across all Node instances. A stale
 // worker response must never overwrite a newer move or a terminal game state.
 const commitLua = `
 if redis.call('HGET', KEYS[1], 'f') ~= '0' or
    redis.call('HGET', KEYS[1], 'm') ~= ARGV[1] or
-   redis.call('HGET', KEYS[1], 't') ~= ARGV[2] then return nil end
+   redis.call('HGET', KEYS[1], 't') ~= ARGV[2] or
+   redis.call('HGET', KEYS[1], 'pendingMove') ~= ARGV[15] then return nil end
+redis.call('HDEL', KEYS[1], 'pendingMove', 'pendingUntil')
 local premove = redis.call('HGET', KEYS[1], ARGV[14]) or ''
 local finished = tonumber(ARGV[9])
 local repetitions = redis.call('HINCRBY', KEYS[1], ARGV[8], 1)
@@ -27,6 +48,8 @@ if finished == 0 then
     local remaining = tonumber(redis.call('HGET', KEYS[1], ARGV[13]))
     redis.call('ZADD', KEYS[3], tonumber(ARGV[11]) + remaining + 400, KEYS[1])
   end
+else
+  redis.call('ZADD', KEYS[4], ARGV[11], KEYS[1])
 end
 return {tostring(finished), premove}
 `;
@@ -34,7 +57,7 @@ return {tostring(finished), premove}
 module.exports = function createMoveHandler({
   redis, movegen, broadcastGameUpdate, requestBotMove, checkgame,
   persistFinishedGame, finishgame, aborttimer, timeback, lagCompensationPercent,
-  lagCompensationLimitMilliseconds, timeoutKeyAbort, timeoutKeyFinish
+  lagCompensationLimitMilliseconds, timeoutKeyAbort, timeoutKeyFinish, resultQueue = 'game:results:pending'
 }) {
   const generate = fen => new Promise((resolve, reject) => {
     movegen.generate(fen, (error, moves) => error ? reject(error) : resolve(moves));
@@ -44,6 +67,7 @@ module.exports = function createMoveHandler({
     if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(move) || !['w', 'b'].includes(side)) return;
     // Capture arrival time before Redis/worker queuing; server load is not player think time.
     const received = premoveContext ? premoveContext.received : Date.now();
+    let token;
     try {
       const values = await redis.hmget(gameid, ...fields);
       const state = Object.fromEntries(fields.map((field, i) => [field, values[i]]));
@@ -69,6 +93,8 @@ module.exports = function createMoveHandler({
       const remaining = Number(state[clockField(side)]) - elapsed;
       // Keep the deadline intact if preparation fails. The timeout handler owns flagging.
       if (remaining <= 0) return finishgame(gameid);
+      token = randomBytes(16).toString('hex');
+      if (!await redis.eval(claimLua, 1, gameid, state.m, side, token, Date.now())) return;
       const timeleft = remaining + Number(state[incrementField(side)]) + compensation;
       const moves = state.m ? state.m + ' ' + move : move;
       const fen = ucifen(moves);
@@ -87,18 +113,16 @@ module.exports = function createMoveHandler({
         candidate[1] === (other === 'w' ? '5' : '4'));
       const positionKey = 'position:' + fenFields.slice(0, 3).join(' ') + ' ' + (epLegal ? target : '-');
       const clock = state.i ? state.i + ' ' + timeleft : String(timeleft);
-      const result = await redis.eval(commitLua, 3, gameid, timeoutKeyAbort, timeoutKeyFinish,
+      const result = await redis.eval(commitLua, 4, gameid, timeoutKeyAbort, timeoutKeyFinish, resultQueue,
         state.m, side, moves, clock, other, legal, clockField(side), positionKey,
-        finished, timeleft, received, aborttimer, clockField(other), other === 'w' ? 'q' : 'r');
+        finished, timeleft, received, aborttimer, clockField(other), other === 'w' ? 'q' : 'r', token);
       if (!result) return; // Another instance already committed a move or ended the game.
       const finalState = Number(result[0]);
       let message = `m:${move}:${side}:${timeleft}:${ply + 1}:${received}`;
       if (finalState) message += ':' + finalState;
       broadcastGameUpdate(gameid, { w: [message], b: [message], s: [message] });
       if (finalState) {
-        const snapshot = await redis.hgetall(gameid);
-        const score = finalState === 1 ? (other === 'w' ? 0 : 1) : 0.5;
-        await persistFinishedGame(gameid, snapshot, finalState, score, null);
+        await persistFinishedGame(gameid);
         return;
       }
       const premove = result[1];
@@ -113,6 +137,8 @@ module.exports = function createMoveHandler({
     } catch (error) {
       console.error('move failed:', gameid, error);
       if (ws) ws.terminate();
+    } finally {
+      if (token) await redis.eval(releaseLua, 1, gameid, token).catch(error => console.error('Move claim release failed:', error));
     }
   }
   return handleMove;

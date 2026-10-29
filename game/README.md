@@ -1,7 +1,7 @@
 # Game service
 
 `gameserver.js` owns HTTP/WebSocket wiring, session authentication, bot requests,
-Redis broadcasts, timers, and result persistence. It runs as two Node instances
+Redis broadcasts, timers, and the result worker. It runs as two Node instances
 behind Nginx. Both instances share Redis; local memory contains sockets only.
 
 ## Code map
@@ -10,6 +10,7 @@ behind Nginx. Both instances share Redis; local memory contains sockets only.
 | --- | --- |
 | `gameserver.js` | Service wiring, player controls, bots, deadlines and PostgreSQL results |
 | `moves.js` | Validate a move, calculate its clock and position, atomically commit it, process one consumed premove |
+| `results.js` | Durable terminal-result queue, PostgreSQL transactions, ratings and recovery |
 | `chess.js` | Replay UCI history to FEN, distinguish checkmate/stalemate, count material |
 | `movegen-pool.js` | Bounded persistent native workers; see `MOVEGEN.md` |
 | `restart-game.sh` | Restart instances sequentially and check `/health` |
@@ -20,7 +21,10 @@ behind Nginx. Both instances share Redis; local memory contains sockets only.
    Redis player IDs/session IDs determine White, Black or spectator permissions.
 2. `moves.js` reads a fixed list of Redis fields. The arrival timestamp is captured
    before this read, so queue time is not added to the player's think time.
-3. It validates against the stored legal moves, computes the new FEN and asks an
+3. It validates against the stored legal moves and reserves preparation with a
+   three-second token in Redis. Other instances ignore duplicate preparations;
+   abort/flag handlers defer while the claim is live. A crash cannot freeze the
+   clock indefinitely because the claim expires. It computes the FEN and asks an
    `mg` worker for the next legal moves. No Redis state changes during preparation.
 4. One Lua operation compares the original move history, turn and active state,
    then updates moves, clocks, repetition counts, legal moves and sorted deadlines.
@@ -30,11 +34,15 @@ behind Nginx. Both instances share Redis; local memory contains sockets only.
    Its expected history prevents it being applied after an intervening move.
 6. The server broadcasts through `game:<gameid>`. An origin token avoids delivering
    the local publication twice. Local sockets are removed on close.
-7. A terminal state is saved to PostgreSQL with both ratings in one transaction.
-   The conditional game update makes rating changes idempotent. Redis is deleted
-   only after a successful transaction.
+7. Each terminal transition also adds the game ID to `game:results:pending` in
+   the same Lua operation. The result worker leases the entry for 30 seconds,
+   notifies viewers, then saves PostgreSQL results and ratings in one transaction.
+   A failed attempt keeps its snapshot and queue entry; either instance retries
+   when the lease expires. The conditional SQL update prevents duplicate ratings.
+   Successful persistence deletes the snapshot and queue entry together.
 
-Each Node instance has a PostgreSQL pool capped at four connections. The native
+Each Node instance has a PostgreSQL pool capped at four connections with five-second
+connection and statement timeouts. The native
 worker pool defaults to one worker per Node instance. WebSocket payloads are
 limited to 256 bytes because clients send short control/move messages.
 
@@ -60,6 +68,7 @@ these names requires coordinated changes across those services.
 | `bw`, `bb` | Optional bot strength for White/Black |
 | `y` | Initial White clock in minutes |
 | `position:<placement> <turn> <rights> <ep>` | Repetition count; EP included only if a legal EP capture exists |
+| `pendingMove`, `pendingUntil` | Token and expiry of move preparation |
 | Numeric fields | Halfmove-indexed engine analysis |
 
 Result codes: `0` active, `1` checkmate, `2` stalemate, `3` bare kings,
@@ -93,18 +102,13 @@ Terminal controls use `e:<action>:<side>:<timestamp>:<result>`, flags use
 
 ## Remaining work found during review
 
-- **Durable result retries:** PostgreSQL failures retain the terminal Redis hash,
-  but there is no durable retry queue/scanner. Results need an outbox so a database
-  outage or a crash after claiming a result cannot strand a finished game.
 - **Material rules:** automatic material draws currently cover bare kings only;
   flag adjudication uses the opponent's piece count. Full dead-position and mating
   possibility rules need a separately reviewed chess-rules change.
-- **Overload near a deadline:** a timeout can claim a flag while a timely move is
-  waiting for a worker longer than the 400 ms grace period. Arrival timestamps
-  alone do not solve this; pending-move claims need coordination with flagging.
 - **Concurrent rating periods:** separate finished games involving the same users
-  may update deviations from older starting snapshots. Rating-period policy and
-  consistent user-row locking need a dedicated review.
+  may update deviations from older starting snapshots. Rating-period policy
+  needs a dedicated review. User rows are locked in ID order
+  to avoid reversed-color deadlocks.
 - **Long histories:** FEN replay still scales with the number of moves. Persisting
   the current position would allow incremental updates, but requires coordinated
   initialization/recovery changes.
@@ -112,3 +116,15 @@ Terminal controls use `e:<action>:<side>:<timestamp>:<result>`, flags use
 Repetition counters use the corrected keys for newly created games. Games already
 running during this deployment retain their old counters; earlier occurrences
 under the old format are not migrated.
+
+## Result queue operations
+
+The worker polls once per second, up to four due jobs per instance per poll.
+Immediate terminal handlers attempt the same lease so the common path does not
+wait for polling. A Redis lease survives Node crashes; retries require no new
+systemd service or schema migration. Redis durability still depends on its
+configured persistence, as does the active game state.
+
+Inspect backlog with `redis-cli ZCARD game:results:pending` and due jobs with
+`ZRANGEBYSCORE game:results:pending -inf <current-ms>`. Do not delete queue entries
+or terminal hashes to clear a database error: fix the database and allow retries.
