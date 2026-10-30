@@ -9,13 +9,13 @@
   <meta name="keywords" content="ajedrez, online, en vivo, partida, realtime, encuentro">
   <link rel="stylesheet" href="/css/site.css">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="stylesheet" href="/css/game.css">
+  <link rel="stylesheet" href="/css/board.min.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/dialog.css">
   <link rel="stylesheet" href="/css/play.css">
   <script src="/js/connections.js"></script>
   <script src="/js/header.js"></script>
-  <script src="/js/game.js"></script>
+  <script src="/js/game.min.js"></script>
   <script src="/js/gamepage.js"></script>
   <script src="/js/load.js"></script>
 </head>
@@ -25,7 +25,7 @@
   <main class="game-shell">
     <div class="game-heading">
       <div><p class="eyebrow">EN EL TABLERO</p><h1>Partida de ajedrez</h1><p class="setup" data-game-field="setup">Cargando partida…</p></div>
-      <div class="game-heading-actions"><a class="ui-button ui-quiet" href="/lobby">← Sala</a><button class="ui-button ui-secondary" id="share-game" type="button">Compartir</button><span id="share-status" class="game-sr-only" role="status"></span></div>
+      <div class="game-heading-actions"><button id="open-board-settings" class="ui-button ui-secondary" type="button" aria-haspopup="dialog">Tablero y sonido</button><a class="ui-button ui-quiet" href="/lobby">← Sala</a><button class="ui-button ui-secondary" id="share-game" type="button">Compartir</button><span id="share-status" class="game-sr-only" role="status"></span></div>
     </div>
     <div class="round">
       <div class="round__app">
@@ -38,7 +38,7 @@
         </section>
         <div class="round__app__board board" aria-label="Tablero de ajedrez">
           <div class="cg-wrap manipulable"><cg-container><cg-board></cg-board><coords class="ranks"><coord>1</coord><coord>2</coord><coord>3</coord><coord>4</coord><coord>5</coord><coord>6</coord><coord>7</coord><coord>8</coord></coords><coords class="files"><coord>a</coord><coord>b</coord><coord>c</coord><coord>d</coord><coord>e</coord><coord>f</coord><coord>g</coord><coord>h</coord></coords></cg-container></div>
-          <div class="material material-bottom material-no"><button id="prq" type="button" aria-label="Dama"><mpiece class="queen"></mpiece></button><button id="prr" type="button" aria-label="Torre"><mpiece class="rook"></mpiece></button><button id="prb" type="button" aria-label="Alfil"><mpiece class="bishop"></mpiece></button><button id="prn" type="button" aria-label="Caballo"><mpiece class="knight"></mpiece></button></div>
+
         </div>
         <section class="game-player game-player--bottom" aria-label="Blancas">
           <div class="user-link ruser ruser-bottom online">
@@ -60,6 +60,7 @@
       <p class="round__underboard game-guidance" id="game-guidance">Arrastra una pieza o toca la pieza y su destino.</p>
     </div>
   </main>
+  <dialog id="board-settings-dialog" class="board-settings-dialog"><button type="button" class="dialog-close" data-close-board-settings aria-label="Close">×</button><div data-board-settings></div></dialog>
   <!-- component:footer -->
 </body>
 </html>

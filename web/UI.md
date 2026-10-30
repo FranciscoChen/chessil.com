@@ -9,7 +9,7 @@ web instances to publish component changes.
 Styles load in this order:
 
 1. `css/site.css`: fonts, layout, base colors, buttons, header and footer.
-2. Page styles such as `auth.css`, `game.css`, `user.css`, `query.css`.
+2. Page styles such as `auth.css`, `board.min.css`, `user.css`, `query.css`.
 3. `components.css`: compatibility styles for existing components.
 4. `design-system.css`: the canonical theme tokens and shared component styles,
    appended by the renderer to every page. The old `grandmaster.css` is retired.
@@ -19,7 +19,7 @@ server sets `html[data-theme]` from the session; the header switches that attrib
 and saves the preference with the existing endpoints. It no longer adds the old
 monolithic light/dark stylesheets.
 
-Keep page IDs and chess DOM elements stable: `game.js` and `u.js` use them to
+Keep page IDs and chess DOM elements stable: `game.min.js` and `u.js` use them to
 attach controls. Navigation uses anchors; POST forms perform actions. The user
 menu's `/profile` route redirects signed-in users to their public `/@/username`
 page and anonymous users to `/login`.
@@ -47,7 +47,7 @@ stylesheet URL after deployment.
 ## Game layout
 
 `play.css` styles the game shell, player cards, clocks, history and controls;
-`game.css` retains chessboard geometry and piece images. Desktop uses a board
+`board.min.css` retains chessboard geometry and piece images. Desktop uses a board
 with an adjacent history/clock column. Tablet and phone layouts place player
 cards above and below the board, with actions and history underneath.
 
@@ -99,3 +99,6 @@ empty states. They do not implement analysis engines, generated content,
 archive queries or training sessions. Account and ongoing routes are entry
 layouts awaiting authenticated data integration. Do not present sample data
 as a user's real record or as engine research.
+
+Board source, production builds, themes, movement and personal sound settings are
+documented in [BOARD.md](BOARD.md).

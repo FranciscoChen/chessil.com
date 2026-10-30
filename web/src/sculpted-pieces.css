@@ -1,0 +1,13 @@
+/* Sculpted set: same assets as the landing page. */
+html[data-pieces="sculpted"] cg-board piece.white.pawn{background-image:url("/img/pieces/wp.svg");}
+html[data-pieces="sculpted"] cg-board piece.white.knight{background-image:url("/img/pieces/wn.svg");}
+html[data-pieces="sculpted"] cg-board piece.white.bishop{background-image:url("/img/pieces/wb.svg");}
+html[data-pieces="sculpted"] cg-board piece.white.rook{background-image:url("/img/pieces/wr.svg");}
+html[data-pieces="sculpted"] cg-board piece.white.queen{background-image:url("/img/pieces/wq.svg");}
+html[data-pieces="sculpted"] cg-board piece.white.king{background-image:url("/img/pieces/wk.svg");}
+html[data-pieces="sculpted"] cg-board piece.black.pawn{background-image:url("/img/pieces/bp.svg");}
+html[data-pieces="sculpted"] cg-board piece.black.knight{background-image:url("/img/pieces/bn.svg");}
+html[data-pieces="sculpted"] cg-board piece.black.bishop{background-image:url("/img/pieces/bb.svg");}
+html[data-pieces="sculpted"] cg-board piece.black.rook{background-image:url("/img/pieces/br.svg");}
+html[data-pieces="sculpted"] cg-board piece.black.queen{background-image:url("/img/pieces/bq.svg");}
+html[data-pieces="sculpted"] cg-board piece.black.king{background-image:url("/img/pieces/bk.svg");}

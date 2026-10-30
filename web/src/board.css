@@ -1,0 +1,28 @@
+/* Board geometry has one owner. Positions are percentage transforms; changing
+ * viewport size needs no JavaScript layout or cached square measurements. */
+.game-page .round__app__board { position:relative; isolation:isolate; overflow:hidden; }
+.game-page .cg-wrap,.game-page cg-container { display:block;position:absolute;inset:0;width:100%;height:100%; }
+.game-page cg-container { left:0;top:0;transform:none; }
+.game-page cg-board { display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none;outline:none;cursor:default; }
+.game-page cg-board:focus-visible { outline:3px solid var(--link);outline-offset:-3px; }
+cg-board piece,cg-board square { position:absolute;left:0;top:0;width:12.5%;height:12.5%;pointer-events:none; }
+cg-board piece { z-index:2;background-size:contain;background-repeat:no-repeat;background-position:center; }
+cg-board piece.dragging { z-index:5;filter:drop-shadow(0 .2rem .25rem #0005);cursor:grabbing; }
+cg-board square { z-index:1; }
+cg-board square.last-move { background:var(--last-square,#e9b45b55);box-shadow:inset 0 0 0 1px #ffffff14; }
+cg-board square.selected { background:var(--selected-square,#86c5e566); }
+cg-board square.move-dest { z-index:3;background:radial-gradient(circle,var(--hint-square,#183d4877) 0 16%,transparent 18%); }
+cg-board square.capture-dest { background:radial-gradient(circle,transparent 0 59%,var(--hint-square,#183d4877) 61% 69%,transparent 71%); }
+cg-board square.current-premove { background:#788ce766;box-shadow:inset 0 0 0 2px #788ce7; }
+cg-board square.keyboard-square { display:none;z-index:4;box-shadow:inset 0 0 0 3px var(--link); }
+cg-board:focus-visible square.keyboard-square { display:block; }
+coords { position:absolute;inset:0;pointer-events:none;z-index:6;font:600 .65rem/1 var(--sans-font);color:#173d32; }
+coords.ranks { display:flex;flex-direction:column;align-items:flex-end; }
+coords.files { display:flex;flex-direction:row;align-items:flex-end; }
+coords.ranks coord { flex:1;width:1rem;text-align:right;padding:.3rem .25rem; }
+coords.files coord { flex:1;padding:.3rem; }
+coords coord { text-shadow:0 1px 2px #ffffff90; }
+html[data-board="ivory"],html[data-board="auto"][data-theme="light"] { --board-light:#eee6ce;--board-dark:#7a937c;--last-square:#e9b45b66;--hint-square:#174d4077; }
+html[data-board="midnight"],html[data-board="auto"][data-theme="dark"] { --board-light:#c3c8bb;--board-dark:#617e80;--last-square:#f1bd6966;--hint-square:#102f4377; }
+html[data-board="walnut"] { --board-light:#eddbc1;--board-dark:#9d7255;--last-square:#ecbf3f88;--hint-square:#57382088; }
+html[data-board] cg-board { background-image:conic-gradient(var(--board-dark) 25%,var(--board-light) 0 50%,var(--board-dark) 0 75%,var(--board-light) 0);background-size:25% 25%; }

@@ -616,6 +616,9 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
     searchuser(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
   }
+  if (req.url === '/preferences' && ['GET','POST'].includes(req.method)) {
+    return handleUiPreferences(req,res,resHeaders,sessiondata);
+  }
   if (req.url === '/game-servers' && req.method === 'GET') {
     res.writeHead(200, { ...resHeaders, 'Content-Type':'application/json', 'Cache-Control':'no-store' });
     res.end(JSON.stringify(gameRegions.map(region => ({ id:region.id, enabled:region.enabled, url:'wss://' + region.host + '/ping' }))));
@@ -1985,7 +1988,7 @@ function gamedata(filename, mime, ext, res, req, resHeaders, sessiondata) {
         if (response.rows.length === 1) {
           const re = response.rows[0]
           res.writeHead(200, { "Content-Type": "text/javascript" });
-          res.end(JSON.stringify({ m: re.moves, c: re.clock, e: re.events, d: re.eventsclock, r: re.result, w: re.color1 === 'black' ? re.ratingdiff2 : re.ratingdiff1, b: re.color1 === 'black' ? re.ratingdiff1 : re.ratingdiff2, t: re.clock1, u: re.clock2 }))
+          res.end(JSON.stringify({ m: re.moves, c: re.clock, e: re.events, d: re.eventsclock, r: re.result, w: re.color1 === 'black' ? re.ratingdiff2 : re.ratingdiff1, b: re.color1 === 'black' ? re.ratingdiff1 : re.ratingdiff2, t: re.color1 === 'black' ? re.clock2 : re.clock1, u: re.color1 === 'black' ? re.clock1 : re.clock2 }))
         }
         client.end()
       })
@@ -2668,4 +2671,29 @@ function handleRankedMatch(req, res, resHeaders, sessiondata) {
       await redis.eval("if redis.call('GET',KEYS[1])==ARGV[1] then return redis.call('DEL',KEYS[1]) end return 0",1,key,token);
     }
   });
+}
+
+// Account preferences sync across devices; anonymous preferences belong to this session.
+async function handleUiPreferences(req,res,headers,session) {
+  const {normalize}=require('../shared/ui-preferences');
+  const user=String(session[1] || '0'),key='ui:preferences:'+req.headers.cookie.slice(2);
+  try {
+    let preferences;
+    if(req.method==='POST') {
+      preferences=normalize(await readLobbyJson(req));
+      if(user!=='0') await lobbyDb.query('UPDATE users SET ui_preferences=$1::jsonb WHERE id=$2',[JSON.stringify(preferences),user]);
+      else await redis.set(key,JSON.stringify(preferences),'EX',31536000);
+    } else if(user!=='0') {
+      const {rows:[row]}=await lobbyDb.query('SELECT ui_preferences FROM users WHERE id=$1',[user]);
+      preferences=normalize(row?.ui_preferences);
+    } else {
+      const saved=await redis.get(key);preferences=normalize(saved?JSON.parse(saved):{});
+    }
+    res.writeHead(200,{...headers,'Content-Type':'application/json','Cache-Control':'no-store'});
+    res.end(JSON.stringify({preferences,account:user!=='0'}));
+  } catch(error) {
+    console.error('UI preferences:',error.message);
+    res.writeHead(error.status || 500,{'Content-Type':'application/json','Cache-Control':'no-store'});
+    res.end(JSON.stringify({error:'Could not save preferences'}));
+  }
 }

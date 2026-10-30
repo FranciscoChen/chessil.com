@@ -30,7 +30,7 @@ function gameUiState() {
   const guidance = document.getElementById('game-guidance')
   if (guidance) guidance.textContent = !live ? text.history : watcher ? text.watchingHelp : text.guidance
   document.querySelectorAll('.game-player .rclock').forEach(element => {
-    const running = !!(live && connected && uci.length > 1 && element.classList.contains('rclock-'+(turn === 'w' ? 'white' : 'black')))
+    const running = !!(live && connected && (uci.length > 1 || document.querySelector('.setup').dataset.botSide===turn) && element.classList.contains('rclock-'+(turn === 'w' ? 'white' : 'black')))
     element.classList.toggle('running', running)
     const player = element.closest('.game-player')
     player?.classList.toggle('is-turn', running)
@@ -124,10 +124,11 @@ function gamepageload() {
         setup.dataset.rated = ratedText
         setup.dataset.server = data.gameserver || ''
         setup.dataset.side = data.side || 's'
+        setup.dataset.botSide = data.bot?.side || ''
       }
 
       if (state !== -1 && typeof roundstart === 'function') {
-        roundstart()
+        await roundstart()
       }
       const list = document.querySelector('moves-list')
       const empty = document.getElementById('moves-empty')

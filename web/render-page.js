@@ -38,7 +38,7 @@ module.exports = function renderPage(data, language, theme) {
   const parts = components[language] || components.en;
   const html = data.toString('utf8')
     .replace(/<!-- ui:([a-z-]+) -->/g, (_, name) => ui.render(name, language))
-    .replace('</head>', '<link rel="stylesheet" href="/css/design-system.css"><script defer src="/js/ui.js"></script></head>')
+    .replace('</head>', '<link rel="stylesheet" href="/css/design-system.css"><link rel="stylesheet" href="/css/preferences.min.css"><script defer src="/js/ui.js"></script><script defer src="/js/preferences.min.js"></script></head>')
     .replace(/<!-- component:(header|footer) -->/g, (_, name) => parts[name])
     .replace(/(href|src)="(\/(?:css|js)\/[^"?]+)"/g, (_, attribute, url) => `${attribute}="${assetVersion(url)}"`)
     .replace('<html ', `<html data-theme="${theme === 'l' ? 'light' : 'dark'}" `);
