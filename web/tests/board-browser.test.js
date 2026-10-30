@@ -49,6 +49,7 @@ await t.test('production page: click, drag, illegal drop, last move, premove, ke
  await page.click('#open-board-settings');await page.waitForSelector('#board-settings-dialog[open]');
  await page.select('#board-settings-dialog [data-preference="pieces"]','sculpted');
  await page.select('#board-settings-dialog [data-preference="board"]','walnut');
+ assert.ok(await page.$eval('cg-board',el=>getComputedStyle(el).backgroundImage.includes('157, 114, 85')));
  await page.select('#board-settings-dialog [data-preference="slide"]','0');
  await page.select('#board-settings-dialog [data-preference="sound"]','midnight');
  await page.click('#board-settings-dialog summary');
