@@ -1,1 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000" x="0px" y="0px"><defs><style>.cls-1{fill:none;}.cls-2{clip-path:url(#a);}</style><clipPath id="a"><rect class="cls-1" x="-2217.87" y="-868.09" width="937.5" height="937.5"/></clipPath></defs><path d="M781.25,808.81v66.25H218.75v-66.25c0-49.7,40.29-90,90-90h3.75V431.21l-37.22-.12,44.62-11,55.1-13.78h-65c-33.14,0-60-26.86-60-60V188.74c.32-.2,.45-.56,.35-.83-.08-.22-.29-.32-.35-.35,35.16-8.95,77.18-17.63,125-23.57v117.32h62.5v-123.1c20.07-1.23,40.92-1.91,62.5-1.9s42.44,.72,62.5,1.97v123.03h62.5v-117.17c47.32,5.93,88.93,14.54,123.82,23.42,.07,0,.49,.01,.83,.35,.22,.21,.35,.51,.35,.83v157.57c0,33.14-26.86,60-60,60h-2.5v286.98l39.6,.11-39.6,9.79-62.5,15.62h66.25c49.71,0,90,40.3,90,90Z"/></svg><!-- Rook created by Benjamin Kinard from the Noun Project (CC BY 3.0) https://thenounproject.com/icon/rook-4923352/ -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" role="img" aria-labelledby="sculpted-br-title sculpted-br-desc">
+  <title id="sculpted-br-title">Obsidian rook</title>
+  <desc id="sculpted-br-desc">Sculpted chess piece with polished surfaces and ivory carved inlays.</desc>
+  <defs>
+    <linearGradient id="sculpted-br-body" x1="0" y1="0" x2="1" y2="0.65">
+      <stop offset="0" stop-color="#61747c"/><stop offset=".3" stop-color="#334650"/>
+      <stop offset=".68" stop-color="#182830"/><stop offset="1" stop-color="#0e1720"/>
+    </linearGradient>
+    <radialGradient id="sculpted-br-light" cx=".28" cy=".18" r=".8">
+      <stop stop-color="#c3d9d9" stop-opacity=".25"/><stop offset="1" stop-color="#c3d9d9" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sculpted-br-groove" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#e4dfcb" stop-opacity=".95"/><stop offset="1" stop-color="#e4dfcb" stop-opacity=".7"/>
+    </linearGradient>
+    <clipPath id="sculpted-br-clip"><path d="M218.75 875V808.81C218.75 759.1 259.04 718.81 308.75 718.81H312.5V406.25H310C276.86 406.25 250 379.39 250 346.25V188.74Q309 173 375 163.99V281.31H437.5V158.21Q500 154.4 562.5 158.28V281.31H625V164.14Q690 173 750 188.74V346.25C750 379.39 723.14 406.25 690 406.25H687.5V718.81H691.25C740.96 718.81 781.25 759.11 781.25 808.81V875Z"/></clipPath>
+  </defs>
+  <path d="M218.75 875V808.81C218.75 759.1 259.04 718.81 308.75 718.81H312.5V406.25H310C276.86 406.25 250 379.39 250 346.25V188.74Q309 173 375 163.99V281.31H437.5V158.21Q500 154.4 562.5 158.28V281.31H625V164.14Q690 173 750 188.74V346.25C750 379.39 723.14 406.25 690 406.25H687.5V718.81H691.25C740.96 718.81 781.25 759.11 781.25 808.81V875Z" fill="url(#sculpted-br-body)" stroke="#15232b" stroke-width="18" stroke-linejoin="round"/>
+  <g clip-path="url(#sculpted-br-clip)">
+    <path d="M218.75 875V808.81C218.75 759.1 259.04 718.81 308.75 718.81H312.5V406.25H310C276.86 406.25 250 379.39 250 346.25V188.74Q309 173 375 163.99V281.31H437.5V158.21Q500 154.4 562.5 158.28V281.31H625V164.14Q690 173 750 188.74V346.25C750 379.39 723.14 406.25 690 406.25H687.5V718.81H691.25C740.96 718.81 781.25 759.11 781.25 808.81V875Z" fill="url(#sculpted-br-light)"/>
+    <path d="M218.75 875V808.81C218.75 759.1 259.04 718.81 308.75 718.81H312.5V406.25H310C276.86 406.25 250 379.39 250 346.25V188.74Q309 173 375 163.99V281.31H437.5V158.21Q500 154.4 562.5 158.28V281.31H625V164.14Q690 173 750 188.74V346.25C750 379.39 723.14 406.25 690 406.25H687.5V718.81H691.25C740.96 718.81 781.25 759.11 781.25 808.81V875Z" fill="none" stroke="#aebebf" stroke-width="7" stroke-linejoin="round" opacity=".58"/>
+    <path d="M248 832Q500 846 752 832V882H248Z" fill="#050b11" opacity=".17"/>
+    <g fill="none" stroke="#aebebf" stroke-width="17" stroke-linecap="round" stroke-linejoin="round" opacity=".32" transform="translate(0 4)">
+      <path d="M291 357Q500 382 709 357"/><path d="M351 450H649"/><path d="M361 488V660"/><path d="M639 488V660"/><path d="M255 813Q500 826 745 813"/>
+    </g>
+    <g fill="none" stroke="url(#sculpted-br-groove)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M291 357Q500 382 709 357"/><path d="M351 450H649"/><path d="M361 488V660"/><path d="M639 488V660"/><path d="M255 813Q500 826 745 813"/>
+    </g>
+    <path d="M321 205V255M468 191V245M656 205V255" fill="none" stroke="#c3d9d9" stroke-width="13" stroke-linecap="round" opacity=".45"/>
+
+
+  </g>
+</svg>
+<!-- Adapted from rook by Benjamin Kinard, The Noun Project. CC BY 3.0: https://creativecommons.org/licenses/by/3.0/
+     https://thenounproject.com/icon/rook-4923352/
+     Sculpted edition: matched silhouettes, smoothed incisions, shading and inlays. -->
