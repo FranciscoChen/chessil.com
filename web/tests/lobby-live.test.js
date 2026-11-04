@@ -17,3 +17,9 @@ test('watch action rejects historical SQL-active games without a live snapshot',
  vm.runInContext(source.slice(source.indexOf('async function joinLobbyGame('),source.indexOf('function handleLobbyCreate(')),c);
  await assert.rejects(c.joinLobbyGame({id:1,action:'watch'},{},[]),{status:410});
 });
+
+test('joining again cannot resume a lost game through a stale invitation',async()=>{
+ const c=context({validLobbyId:()=>true,lobbyDb:{query:async()=>({rows:[{gameid:'abcdef123',started:new Date(),finished:null,state:0,sessionid2:'joining'}]})},lobbyIndex:{read:async()=>new Map()},lobbyError:(status,message)=>Object.assign(new Error(message),{status})});
+ vm.runInContext(source.slice(source.indexOf('async function joinLobbyGame('),source.indexOf('function handleLobbyCreate(')),c);
+ await assert.rejects(c.joinLobbyGame({id:1,action:'join'},{headers:{cookie:'s=joining'}},[]),{status:410});
+});

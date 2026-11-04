@@ -2392,6 +2392,7 @@ async function joinLobbyGame({ id, action }, req, sessiondata) {
     }
     const joiningSession = req.headers.cookie.slice(2);
     if (!game.finished && game.sessionid2 === joiningSession) {
+      if(game.started && !(await lobbyIndex.read([game.gameid])).has(game.gameid))throw lobbyError(410,'This game is no longer live.');
       const ready = game.started || await gameStarts.run(game.gameid);
       return { success:true, mode:'join', gameid:game.gameid, initializing:!ready };
     }
@@ -2534,6 +2535,7 @@ async function createLobbyGame(data, req, sessiondata) {
         if (game) {
           await lobbyIndex.open(game.gameid,userId,sessionId);
           await client.query('COMMIT');
+          await lobbyIndex.changed('challenge');
           return { success: true, id: game.id, gameid: game.gameid };
         }
       }

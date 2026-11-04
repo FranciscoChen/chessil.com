@@ -41,6 +41,7 @@ if [[ "$old_rev" == "$new_rev" ]]; then
 fi
 
 RESTART_WEB=1
+RESTART_NOTIFY=0
 if [ -f "$config_file" ]; then
   . "$config_file"
 fi
@@ -49,5 +50,10 @@ if should_restart "$RESTART_WEB" "web/restart-web.sh"; then
   ./web/restart-web.sh
 else
   echo "Restart disabled for web/restart-web.sh."
+fi
+if should_restart "$RESTART_NOTIFY" "notify/restart-notify.sh"; then
+  ./notify/restart-notify.sh
+else
+  echo "Restart disabled for notify/restart-notify.sh."
 fi
 echo "Web updated."
