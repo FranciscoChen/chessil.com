@@ -3,7 +3,17 @@
     "postgresUrl": "postgres://username:password@db.domain.com:5432/databasename?sslmode=require",
     "websocketPassword": "replace-with-strong-random-string",
     "gameServerAuthToken": "replace-with-strong-random-string",
-    "engineAuthToken": "replace-with-strong-random-string"
+    "engineAuthToken": "replace-with-strong-random-string",
+    "liveRedis": {
+      "host": "db.domain.com",
+      "port": 6380,
+      "username": "lobby",
+      "password": "replace-with-strong-random-string",
+      "tls": {
+        "ca": "replace-with-the-public-CA-PEM",
+        "servername": "lobby-redis.chessil.internal"
+      }
+    }
   },
   "web": {
     "domainName": "https://chessil.com",

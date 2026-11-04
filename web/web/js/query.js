@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let filters = {rated: params.get('rated') === '1' ? '1' : '', color:'', timeGroup:'any', time:'', eloMin:'', eloMax:'', username:''}
   let games = [], page = 1, loadSequence = 0, pending = null, events = null, pendingPoll = null, signedIn = null
   let rankedSearching = false, rankedBusy = false, rankedTimer = null
+  let feed=null,feedRefresh=null
   let lastFocusAction = null
 
   function node(tag, className, value) {
@@ -30,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let result
       try { result = await response.json() } catch (_) { throw new Error(text.failed) }
       if (!response.ok) {
-        const known = {'Sign in to create a rated game.':text.loginError, 'Anonymous users cannot join rated games':text.loginError, 'You already have an open challenge. Cancel it before creating another.':text.pendingError}
+        const known = {'Sign in to create a rated game.':text.loginError, 'Anonymous users cannot join rated games':text.loginError, 'This challenge has expired.':text.expired, 'This game is no longer live.':text.notLive, 'You already have an open challenge. Cancel it before creating another.':text.pendingError}
         throw Object.assign(new Error(known[result.error] || result.error || text.failed), {status:response.status, gameid:result.gameid})
       }
       return result
@@ -140,10 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
     page = Math.min(Math.max(page,1),total)
     $('lobby-count').textContent = String(games.length)
     const pager = $('lobby-pagination'); pager.replaceChildren(); pager.hidden = total <= 1
-    if (!games.length) { emptyState(invitation ? text.inviteUnavailable : text.empty, text.emptyHelp); return }
+    if (!games.length) { emptyState(invitation ? text.inviteUnavailable : mode==='watch'?text.emptyLive:text.empty,mode==='watch'?text.emptyLiveHelp:text.emptyHelp); return }
     const table = node('table','lobby-table')
     const head = node('thead'), heading = node('tr')
-    for (const label of [text.players,text.clock,text.mode,text.action]) {
+    for (const label of [text.players,text.clock,text.mode,...(mode==='watch'?[text.liveDetails]:[]),text.action]) {
       const th = node('th','',label); th.scope='col'; heading.append(th)
     }
     head.append(heading); table.append(head)
@@ -159,6 +160,12 @@ document.addEventListener('DOMContentLoaded', () => {
       player.append(avatar,info); cell.append(player); row.append(cell)
       row.append(node('td','lobby-time',game.timecontrol1))
       const modeCell = node('td','mode-cell'); modeCell.append(node('span','lobby-badge'+(game.rated?' is-rated':''),game.rated?text.rated:text.casual)); row.append(modeCell)
+      if(mode==='watch') {
+        const liveCell=node('td','live-game-cell');
+        const live=node('span','lobby-live-clock');live.dataset.liveGame=game.gameid;
+        liveCell.append(live,node('small','',String(game.live?.plies || 0)+' '+text.movesPlayed+(game.live?.lastMove?' · '+game.live.lastMove:'')));
+        row.append(liveCell);
+      }
       const actionCell = node('td','action-cell')
       const label = game.started ? (game.isOwn ? text.resume : text.watchAction) : game.isOwn ? text.ownAction : text.joinAction
       const actionButton = button(label, game.started ? 'ui-secondary' : 'ui-primary', () => sendAction(game,actionButton))
@@ -166,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
       actionButton.disabled = !!game.isOwn && !game.started
       actionCell.append(actionButton); row.append(actionCell); body.append(row)
     }
-    table.append(body); container.replaceChildren(table)
+    table.append(body); container.replaceChildren(table);paintLiveClocks()
     if (total > 1) {
       const previous = button(text.previous,'ui-secondary',()=>{page--;render()}); previous.disabled=page===1
       const next = button(text.next,'ui-secondary',()=>{page++;render()}); next.disabled=page===total
@@ -187,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
       errorAt('lobby-error','')
       const own = games.find(game=>game.isOwn && !game.started && !game.finished)
       if (own) watchPending(own)
+      else if(pending)api('/lobby/status',{gameid:pending.gameid}).then(acceptPendingStatus).catch(()=>{})
       render()
       if (lastFocusAction) {
         const target = [...$('lobby-results').querySelectorAll('[data-gameid]')].find(button=>button.dataset.gameid===lastFocusAction)
@@ -196,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       if (sequence !== loadSequence) return
       errorAt('lobby-error',error.message)
-      if (!games.length) emptyState(text.failed,text.network,true)
+      games=[];emptyState(text.failed,text.network,true)
     } finally {
       if (sequence === loadSequence) {
         $('lobby-results').setAttribute('aria-busy','false')
@@ -317,10 +325,40 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(()=>{$('copy-invite').textContent=text.copyInvite},2000)
     } catch (_) {errorAt('lobby-error',text.failed)}
   })
+  async function heartbeatChallenge() {
+    if(!pending)return;
+    const id=pending.gameid;
+    try {
+      const result=await api('/lobby/heartbeat',{gameid:id});
+      if(result.started)acceptPendingStatus({started:true,gameid:id});
+    } catch(error) {
+      if(error.status===410) {
+        try {acceptPendingStatus(await api('/lobby/status',{gameid:id}));}catch(_){stopPending();}
+        errorAt('lobby-error',text.expired);
+      }
+    }
+  }
+  function paintLiveClocks() {
+    const format=value=>{const seconds=Math.max(0,Math.ceil(value/1000));return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');};
+    document.querySelectorAll('[data-live-game]').forEach(element=>{
+      const game=games.find(game=>game.gameid===element.dataset.liveGame),live=game?.live;if(!live)return;
+      const elapsed=live.clockRunning?Math.max(0,Date.now()-live.lastMoveAt):0;
+      element.textContent='♔ '+format(live.whiteMs-(live.turn==='w'?elapsed:0))+'  ·  ♚ '+format(live.blackMs-(live.turn==='b'?elapsed:0));
+      element.setAttribute('aria-label',text.whiteClock+' '+format(live.whiteMs-(live.turn==='w'?elapsed:0))+', '+text.blackClock+' '+format(live.blackMs-(live.turn==='b'?elapsed:0)));
+    });
+  }
+  if(window.EventSource) {
+    feed=new EventSource('/lobby/events');
+    feed.onmessage=()=>{if(!feedRefresh)feedRefresh=setTimeout(()=>{feedRefresh=null;if(!document.hidden)loadLobby();},300);};
+    feed.onopen=()=>loadLobby();
+  }
+  const heartbeatTimer=setInterval(heartbeatChallenge,20000);
+  const clockTimer=setInterval(paintLiveClocks,1000);
   const refreshTimer=setInterval(()=>{
     if (!document.hidden && !document.querySelector('dialog[open]') && $('lobby-results').getAttribute('aria-busy')!=='true') loadLobby()
-  },15000)
-  window.addEventListener('pagehide',()=>{stopRanked();clearInterval(refreshTimer);if(events)events.close();if(pendingPoll)clearInterval(pendingPoll)})
+  },10000)
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){loadLobby();heartbeatChallenge();}});
+  window.addEventListener('pagehide',()=>{stopRanked();clearInterval(refreshTimer);clearInterval(heartbeatTimer);clearInterval(clockTimer);clearTimeout(feedRefresh);feed?.close();if(events)events.close();if(pendingPoll)clearInterval(pendingPoll)})
   loadLobby()
   if (params.get('match') === '1') rankedButton.click()
 })

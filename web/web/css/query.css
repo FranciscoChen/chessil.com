@@ -84,3 +84,7 @@
  .pending-actions .ui-button { flex:1; font-size:.8rem; }
  .lobby-intro-actions .ui-button { padding-inline:.65rem; font-size:.8rem; }
 }
+
+.live-game-cell {min-width:12rem;}
+.lobby-live-clock {display:block;font:500 .85rem var(--monospace-font);font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;}
+.live-game-cell small {display:block;margin-top:.3rem;color:var(--text2);font-size:.7rem;}

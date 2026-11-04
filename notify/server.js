@@ -5,6 +5,8 @@ const Redis = require('ioredis');
 const pg = require('pg');
 const observability = require('../observability');
 const config = require('../config.json');
+const centralLobby=require('../shared/lobby-redis')(config);
+const liveGames=require('../shared/live-games');
 
 const notifyConfig = config.notify || {};
 const domainName = notifyConfig.domainName || config.web.domainName;
@@ -189,9 +191,10 @@ async function sendActiveGames(userid, ws) {
   let client;
   try {
     client = await pool.connect();
+    const live=await liveGames.read(centralLobby);
     const result = await client.query(
-      'SELECT gameid, gameserver, rated, state, initialtime, increment, started FROM games WHERE state = 0 AND (userid1 = $1 OR userid2 = $1) ORDER BY started DESC NULLS LAST LIMIT $2',
-      [Number(userid), activeGamesLimit]
+      'SELECT gameid, gameserver, rated, state, initialtime, increment, started FROM games WHERE gameid=ANY($3::text[]) AND finished IS NULL AND (userid1 = $1 OR userid2 = $1) ORDER BY started DESC NULLS LAST LIMIT $2',
+      [Number(userid), activeGamesLimit,[...live.keys()]]
     );
     if (result.rows.length > 0 && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: 'active_games', games: result.rows }));

@@ -36,13 +36,15 @@ function terminalMessage(snapshot) {
   return 'f' + code;
 }
 
-module.exports = function createResultWorker({ redis, database, broadcastGameUpdate }) {
+module.exports = function createResultWorker({ redis, database, broadcastGameUpdate, central }) {
   let closed = false;
   let polling = false;
   const inFlight = new Set();
 
   async function save(gameid, snapshot) {
     const finished = Number(snapshot.f);
+    if(central) await central.multi().del('lobby:game:'+gameid).zrem('lobby:live',gameid).publish('lobby:changed','end').exec().catch(error=>console.error('Live-game removal:',error.message));
+    await redis.srem('game:active',gameid);
     const score = outcome(snapshot);
     // Notify before SQL: a database outage must not leave the board playing.
     if (finished === 9) {

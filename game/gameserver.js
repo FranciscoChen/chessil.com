@@ -16,6 +16,7 @@ const gameChannelPrefix = 'game:';
 // Users, seeks and games database
 const pg = require("pg");
 const config = require('../config.json');
+const centralLobby = require('../shared/lobby-redis')(config);
 // 'postgres://user:password@host:port/db?sslmode=require'
 const conString = config.shared.postgresUrl
 const database = new pg.Pool({ connectionString: conString, max: 4,
@@ -43,6 +44,7 @@ const myServers = config.game.myServers
 const envPort = parseInt(process.env.PORT || '', 10);
 const port = Number.isFinite(envPort) ? envPort : 8080;
 
+const liveGames = require('./live-games')({redis,central:centralLobby,region:servername});
 const movegen = require('./movegen-pool')();
 
 // Local socket subscriptions; Redis Pub/Sub forwards updates between instances.
@@ -400,6 +402,7 @@ server.on('request', (req, res) => {
     // Start a new game in redis. u for uci moves with clock time left {move:timeleft}, t for time left, x for increment, e for events with their event times {event:eventtimeclockleft}
     const gameData = {
       'creationKey': crypto.createHash('sha256').update(JSON.stringify(['gn','w','b','wt','bt','wi','bi','wr','br','wd','bd','wv','bv','bw','bb','bot-program','bot-difficulty','bot-side'].map(key=>r[key] || ''))).digest('hex'),
+      'createdAt': Date.now(),
       'm': '', // Moves
       'lc': '20', // Legal choice count at each position, starting with the initial 20
       'pm': '', // One flag per committed ply: 1 for a server-executed premove
@@ -437,10 +440,14 @@ server.on('request', (req, res) => {
     const entries = Object.entries(gameData).flat();
     redis.eval(`
       if redis.call('EXISTS', KEYS[1]) == 1 then
-        if redis.call('HGET',KEYS[1],'creationKey') == ARGV[2] then return 2 end
+        if redis.call('HGET',KEYS[1],'creationKey') == ARGV[2] then
+          if redis.call('HGET',KEYS[1],'f') == '0' then redis.call('SADD','game:active',KEYS[1]) end
+          return 2
+        end
         return 0
       end
       redis.call('HSET', KEYS[1], unpack(ARGV))
+      redis.call('SADD','game:active',KEYS[1])
       return 1`, 1, r.gn, ...entries, (err, result) => {
         if (err) {
           res.writeHead(500, { "Content-Type": "text/html" });
@@ -455,6 +462,7 @@ server.on('request', (req, res) => {
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end();
         requestBotMove(r.gn);
+        liveGames.tick();
       });
     return;
   }
@@ -499,7 +507,7 @@ return {tostring(finished), now}
 
 // Terminal transitions enqueue atomically in Redis. The result worker owns SQL,
 // retries and notifications, including recovery after a Node restart.
-const results = require('./results')({ redis, database, broadcastGameUpdate });
+const results = require('./results')({ redis, database, broadcastGameUpdate, central:centralLobby });
 function persistFinishedGame(gameid) { return results.process(gameid); }
 
 async function handleGameAction(gameid, side, action) {
@@ -863,6 +871,9 @@ function shutdown(reason) {
     obs.log('info', 'shutdown_ws_closed', {});
   });
 
+  liveGames.close();
+  bots.close();
+  centralLobby.disconnect();
   clearInterval(timeoutPoller);
   movegen.close();
   results.close();

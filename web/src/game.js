@@ -8,9 +8,9 @@ var fen=INITIAL_FEN,board=boardgen(INITIAL_FEN),moves=mg(INITIAL_FEN),turn='w',u
 var clock={w:0,b:0},lastmovetime=0,clocktick,a1ti=0,allmovetimes=[];
 var boardView,movesList,gameId,initialClock=0,snapshotReady=false,startSoundPlayed=false,lowClockPlayed=false,reconnectTimer,reconnectAttempts=0,disposed=false;
 const gameDescriptions={
- en:['Playing','Checkmate','Stalemate','Insufficient material','Threefold repetition','50-move rule','Time out','Resigned','Draw agreed','Game canceled'],
- es:['En curso','Jaque mate','Ahogado','Material insuficiente','Triple repetición','Regla de 50 movimientos','Tiempo agotado','Rendición','Tablas acordadas','Partida cancelada'],
- zh:['进行中','将死','逼和','子力不足','三次重复','50步规则','超时','认输','协议和棋','对局已取消']
+ en:['Playing','Checkmate','Stalemate','Insufficient material','Threefold repetition','50-move rule','Time out','Resigned','Draw agreed','Game canceled','Game no longer available'],
+ es:['En curso','Jaque mate','Ahogado','Material insuficiente','Triple repetición','Regla de 50 movimientos','Tiempo agotado','Rendición','Tablas acordadas','Partida cancelada','Partida no disponible'],
+ zh:['进行中','将死','逼和','子力不足','三次重复','50步规则','超时','认输','协议和棋','对局已取消','对局已不可用']
 };
 function msToTime(value) {
  const ms=Math.max(0,Number(value)||0),seconds=Math.floor(ms/1000),minutes=Math.floor(seconds/60);
@@ -65,7 +65,7 @@ function receiveMove(raw) {
 function showResult(code) {
  movesList.querySelector('.result-wrap')?.remove();
  let result='½–½';
- if(code===9)result='—';
+ if(code===9 || code===10)result='—';
  if(code===1)result=turn==='w'?'0–1':'1–0';
  if(code===7){const resigned=events.at(-1)?.[0];result=resigned==='w'?'0–1':'1–0';}
  if(code===6){const material=turn==='w'?bpiececount(fen.split(' ')[0]):wpiececount(fen.split(' ')[0]);if(material>1)result=turn==='w'?'0–1':'1–0';}
@@ -95,7 +95,7 @@ async function dbgame() {
  const response=await fetch('/gamestate',{method:'POST',body:gameId});if(!response.ok)throw new Error('History unavailable');
  const data=await response.json();loadHistory(data.m || '');allmovetimes=(data.c || '').split(' ').filter(Boolean).map(Number);
  events=(data.e || '').match(/.{2}/g) || [];eventstimes=(data.d || '').split(' ').filter(Boolean).map(Number);
- clock.w=Number(data.t)||0;clock.b=Number(data.u)||0;paintClocks();displayTermination(stat,false);
+ clock.w=data.t==null?initialClock:Number(data.t);clock.b=data.u==null?initialClock:Number(data.u);paintClocks();displayTermination(stat,false);
 }
 async function wsgame() {
  if(disposed)return;

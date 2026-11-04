@@ -73,7 +73,16 @@ window.chessilLobbyMessages = {
     "inviteUnavailable": "This invitation is no longer available.",
     "joinAction": "Join",
     "watchAction": "Watch",
-    "ownAction": "Waiting"
+    "ownAction": "Waiting",
+    "emptyLive": "No live games right now.",
+    "emptyLiveHelp": "Games appear here while their game server confirms they are running.",
+    "expired": "This challenge has expired. Create a new one to keep playing.",
+    "notLive": "This game has ended or is no longer live.",
+    "liveDetails": "Live position",
+    "whiteClock": "White clock",
+    "blackClock": "Black clock",
+    "movesPlayed": "plies",
+    "creatorHere": "Challenges expire when their creator stops waiting."
   },
   "es": {
     "eyebrow": "JUGAR EN LÍNEA",
@@ -149,7 +158,16 @@ window.chessilLobbyMessages = {
     "inviteUnavailable": "Esta invitación ya no está disponible.",
     "joinAction": "Unirse",
     "watchAction": "Ver",
-    "ownAction": "En espera"
+    "ownAction": "En espera",
+    "emptyLive": "No hay partidas en directo.",
+    "emptyLiveHelp": "Aquí aparecen las partidas que el servidor confirma que siguen en juego.",
+    "expired": "El desafío ha caducado. Crea otro para jugar.",
+    "notLive": "La partida ha terminado o ya no está en directo.",
+    "liveDetails": "Posición en directo",
+    "whiteClock": "Reloj de blancas",
+    "blackClock": "Reloj de negras",
+    "movesPlayed": "jugadas",
+    "creatorHere": "Los desafíos caducan cuando su creador deja de esperar."
   },
   "zh": {
     "eyebrow": "在线对弈",
@@ -225,6 +243,15 @@ window.chessilLobbyMessages = {
     "inviteUnavailable": "此邀请已不可用。",
     "joinAction": "加入",
     "watchAction": "观看",
-    "ownAction": "等待中"
+    "ownAction": "等待中",
+    "emptyLive": "目前没有正在进行的对局。",
+    "emptyLiveHelp": "这里只显示经服务器确认仍在进行的对局。",
+    "expired": "挑战已过期，请创建新挑战。",
+    "notLive": "对局已结束或不再在线。",
+    "liveDetails": "实时局面",
+    "whiteClock": "白方时钟",
+    "blackClock": "黑方时钟",
+    "movesPlayed": "步",
+    "creatorHere": "创建者停止等待后，挑战会自动过期。"
   }
 };
