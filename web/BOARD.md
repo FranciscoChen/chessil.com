@@ -3,7 +3,7 @@
 ## Source and production files
 
 The readable, commented source is in `web/src/`. Browsers receive generated,
-comment-free `game.min.js`, `preferences.min.js`, `board.min.css` and
+comment-free `board.min.js`, `game.min.js`, `preferences.min.js`, `board.min.css` and
 `preferences.min.css`. The previous `web/js/game.js` and `web/css/game.css` were
 removed so there is one implementation to maintain.
 
@@ -18,7 +18,7 @@ content hashes invalidate browser caches after deployment.
 | --- | --- |
 | `src/chess-rules.js` | Pure browser legal moves, FEN transitions and notation |
 | `src/game.js` | WebSocket protocol, history, clocks, replay, server-confirmed moves |
-| `src/board.js` | Piece elements, overlays, pointer/keyboard gestures and promotion UI |
+| `src/board.js` | Shared piece elements, overlays, pointer/keyboard gestures and promotion UI |
 | `src/board.css` | Geometry, square overlays, board palettes and board-only layers |
 | `src/classic-pieces.css` | Existing game SVGs, retained as Classic |
 | `src/sculpted-pieces.css` | Landing-page vector set, retained as Sculpted |
@@ -130,3 +130,34 @@ spectators, reduced motion, replay, theme persistence and distinct sound cues.
 Preference tests verify user isolation and validation. Start-position legal move
 counts include depth 3 (8902). These checks do not prove every chess position or
 browser bug-free; server-side move validation remains the final authority.
+
+## Shared component and performance contract
+
+Any page can load `board.min.css`, `preferences.min.js`, and `board.min.js`, then
+create `new ChessilBoard(root, {state, submit, cancelPremove})`. Supply a positioned,
+square parent; `cg-board` owns its geometry and layers without `.game-page`.
+`game.min.js` is only the game controller and is not needed by a training or
+analysis board. The controller supplies authoritative snapshots, legal moves and
+connection/turn permissions; the view proposes moves without altering those
+snapshots. Piece images, themes, preferences, coordinate mapping and input stay
+in their shared modules. Page CSS owns surrounding layout, never board geometry.
+
+Unchanged pieces and overlays retain their DOM nodes and attributes. Normal slides
+use known transforms without computed style reads; only interruption of an active
+slide samples its current visual position. Pointer movement is coalesced into one
+transform write per animation frame, using bounds measured at gesture start.
+Scroll, resize, pointer cancellation and teardown cancel the gesture and scheduled
+frame. Only the dragged piece gets `will-change`; whole-board layer promotion and
+per-frame filters are avoided. Destroy removes this instance's nodes, listeners,
+animations and timers. No parallel mobile implementation or device heuristics.
+
+Clocks cache their elements, write only changed labels, and skip hidden documents.
+The real time source remains the server timestamp; visibility changes repaint
+immediately. Reduced motion and each user's slide duration remain authoritative.
+
+Browser regressions exercise a board outside the game-page shell, 6x CPU
+throttling, zero DOM mutations/computed-style reads for unchanged snapshots,
+1,000 pointer updates sharing one queued frame and one bounds read, cancellation
+and teardown, in addition to actual click/drag, touch, castling, promotion,
+premoves and history navigation. Throttling is a development approximation, not
+a guarantee of frame rate on every low-end device.

@@ -105,6 +105,33 @@ await t.test('auto queen persists and recapture premoves can target an owned pie
  await click('f3');await click('e5');assert.deepEqual(await page.evaluate(()=>submissions),[]);
  await Promise.all([page.waitForResponse(r=>r.url().endsWith('/preferences') && r.request().method()==='POST'),page.evaluate(()=>ChessilPreferences.update({autoQueen:false}))]);
 });
+await t.test('shared board has stable DOM and coalesces pointer work under 6x CPU throttling',async()=>{
+ await page.goto(fixture.url+'/board-harness',{waitUntil:'networkidle0'});
+ const cdp=await page.target().createCDPSession();await cdp.send('Emulation.setCPUThrottlingRate',{rate:6});
+ try {
+ const result=await page.evaluate(async()=>{
+  await ChessilPreferences.ready;document.querySelector('.game-page').classList.remove('game-page');
+  const fen='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',position=boardgen(fen),root=document.querySelector('cg-board');
+  const view=new ChessilBoard(root,{state:()=>({fen,moves:mg(fen),turn:'w',side:'w',connected:true}),submit:()=>true,cancelPremove(){}});view.render(position);
+  const boardRect=root.getBoundingClientRect(),pieceRect=view.pieces.get('e2').getBoundingClientRect();
+  const observer=new MutationObserver(()=>{});observer.observe(root,{subtree:true,attributes:true,childList:true});
+  const originalStyle=window.getComputedStyle;let styleReads=0;window.getComputedStyle=(...args)=>{styleReads++;return originalStyle(...args);};
+  for(let i=0;i<60;i++)view.render(position);
+  const mutations=observer.takeRecords().length;observer.disconnect();window.getComputedStyle=originalStyle;
+  let rectReads=0;const rect=root.getBoundingClientRect.bind(root);root.getBoundingClientRect=()=>{rectReads++;return rect();};
+  const x=boardRect.left+boardRect.width*4.5/8,y=boardRect.top+boardRect.width*6.5/8;
+  // Synthetic pointers have no browser capture; real capture is covered by the drag tests.
+  root.setPointerCapture=()=>{};
+  root.dispatchEvent(new PointerEvent('pointerdown',{button:0,isPrimary:true,pointerId:1,clientX:x,clientY:y}));
+  for(let i=0;i<1000;i++)view.drag({pointerId:1,clientX:x+55,clientY:y-55});
+  const frame=view.dragFrame;await new Promise(requestAnimationFrame);
+  const painted=view.pieces.get('e2').style.transform;
+  view.cancel();await new Promise(requestAnimationFrame);const cancelled=view.dragFrame===0 && !root.querySelector('.dragging');view.destroy();
+  return {mutations,styleReads,rectReads,frame:!!frame,painted,cancelled,empty:root.childElementCount===0,squareRatio:pieceRect.width/boardRect.width};
+ });
+ assert.equal(result.mutations,0);assert.equal(result.styleReads,0);assert.equal(result.rectReads,1);assert.equal(result.frame,true);assert.equal(result.cancelled,true);assert.equal(result.empty,true);assert.equal(result.squareRatio,.125);assert.ok(result.painted.includes('translate('));
+ }finally{await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});await cdp.detach();}
+});
 await t.test('board renderer special moves and promotion chooser use the same mapping',async()=>{
  await page.setViewport({width:700,height:800});
  await page.goto(fixture.url+'/board-harness',{waitUntil:'networkidle0'});

@@ -1,13 +1,13 @@
 /* Board geometry has one owner. Positions are percentage transforms; changing
  * viewport size needs no JavaScript layout or cached square measurements. */
-.game-page .round__app__board { position:relative; isolation:isolate; overflow:hidden; }
-.game-page .cg-wrap,.game-page cg-container { display:block;position:absolute;inset:0;width:100%;height:100%; }
-.game-page cg-container { left:0;top:0;transform:none; }
-.game-page cg-board { display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none;outline:none;cursor:default; }
-.game-page cg-board:focus-visible { outline:3px solid var(--link);outline-offset:-3px; }
+.cg-wrap,cg-container { display:block;position:absolute;inset:0;width:100%;height:100%; }
+cg-container { left:0;top:0;transform:none; }
+cg-board { display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none;outline:none;cursor:default;contain:layout paint;isolation:isolate; }
+cg-board:focus-visible { outline:3px solid var(--link);outline-offset:-3px; }
 cg-board piece,cg-board square { position:absolute;left:0;top:0;width:12.5%;height:12.5%;pointer-events:none; }
 cg-board piece { z-index:2;background-size:contain;background-repeat:no-repeat;background-position:center; }
-cg-board piece.dragging { z-index:5;filter:drop-shadow(0 .2rem .25rem #0005);cursor:grabbing; }
+cg-board piece.dragging { z-index:5;will-change:transform; }
+cg-board.is-dragging { cursor:grabbing; }
 cg-board square { z-index:1; }
 cg-board square.last-move { background:var(--last-square,#e9b45b55);box-shadow:inset 0 0 0 1px #ffffff14; }
 cg-board square.selected { background:var(--selected-square,#86c5e566); }

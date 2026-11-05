@@ -23,13 +23,15 @@ function sendGameMessage(message) {
 }
 function updateGameUi(){if(typeof gameUiState==='function')gameUiState();}
 function statusMessage(text) {const status=document.querySelector('[data-game-field="state"]');if(status)status.textContent=text;}
+const clockElements={};let botClockSide='';
 function paintClocks() {
+ if(document.hidden)return;
+ const now=Date.now(),clockRuns=uci.length>=2 || botClockSide===turn;
  for(const side of ['w','b']) {
-  const clockRuns=uci.length>=2 || document.querySelector('.setup').dataset.botSide===turn;
   const active=stat===0 && snapshotReady && clockRuns && side===turn && lastmovetime>0;
-  const value=clock[side]-(active?Math.max(0,Date.now()-lastmovetime):0);
-  const element=document.querySelector('.rclock-'+(side==='w'?'white':'black')+' .time');
-  if(element)element.textContent=msToTime(value);
+  const value=clock[side]-(active?Math.max(0,now-lastmovetime):0);
+  const element=clockElements[side],label=msToTime(value);
+  if(element && element.textContent!==label)element.textContent=label;
   if(active && side===playerside && !watcher && value>0 && value<=10000 && !lowClockPlayed){lowClockPlayed=true;ChessilSound.play('clock');}
  }
 }
@@ -173,6 +175,9 @@ async function roundstart() {
  document.querySelector('.rclock-bottom').classList.add('rclock-'+(orientation==='w'?'white':'black'));
  document.querySelectorAll('coords.ranks coord').forEach((el,i)=>el.textContent=orientation==='w'?8-i:i+1);
  document.querySelectorAll('coords.files coord').forEach((el,i)=>el.textContent=String.fromCharCode(orientation==='w'?97+i:104-i));
+ for(const side of ['w','b'])clockElements[side]=document.querySelector('.rclock-'+(side==='w'?'white':'black')+' .time');
+ botClockSide=setup.dataset.botSide || '';
+ document.addEventListener('visibilitychange',paintClocks,{signal:boardView.abort.signal});
  boardView.render(board);paintClocks();
  document.querySelector('.draw-yes').addEventListener('click',()=>sendGameMessage('e2'));
  document.querySelector('.resign').addEventListener('click',()=>sendGameMessage('e1'));

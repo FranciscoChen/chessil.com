@@ -4,7 +4,8 @@ const fs=require('fs'),path=require('path'),{minify}=require('terser');
 const root=path.resolve(__dirname,'..');
 async function build(){
  for(const [output,inputs] of Object.entries({
-  'game.min.js':['chess-rules.js','board.js','game.js'],
+  'board.min.js':['chess-rules.js','board.js'],
+  'game.min.js':['game.js'],
   'preferences.min.js':['sounds.js','preferences.js']
  })) {
   const files=Object.fromEntries(inputs.map(file=>[file,fs.readFileSync(path.join(root,'src',file),'utf8')]));
