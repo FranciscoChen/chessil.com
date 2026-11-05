@@ -44,7 +44,12 @@ this existing repository continues using its own hosting and push deployment.
    piece and clears the gesture. A second tap on the same piece deselects it.
 5. Clicking/tapping a destination and releasing a drag call the same proposal
    function. A legal local candidate is sent as `m<UCI>` or `p<UCI>`. Pending
-   squares are shown, but the position is not changed before server confirmation.
+   squares are shown. A legal normal drag previews the destination immediately,
+   hiding a captured piece (including en passant) and placing the castling rook.
+   This changes presentation only; the model and square map await the server.
+   Confirmation reconciles in one render without replaying the dropped move.
+   A rejected snapshot, disconnect or five-second timeout restores the model.
+   Premoves do not preview placement. Click moves retain their slide animation.
 6. Promotion opens a native modal with explicit Queen/Rook/Bishop/Knight buttons;
    Escape cancels. The saved “Automatically promote to queen” option bypasses
    the chooser for normal moves and premoves; it defaults to off.
@@ -78,7 +83,9 @@ check whether the game has already finished before opening a new socket.
 
 Animation uses the Web Animations API on the actual moved element, with an
 explicit final CSS transform. New moves cancel an old transition before starting
-another. Dragged pieces follow the pointer directly. Replay/snapshots snap to
+another. Dragged pieces follow the pointer directly. Legal drops stay at their destination
+while awaiting confirmation, including when sliding is disabled. Confirmation
+never slides an already dropped piece back from its origin. Replay/snapshots snap to
 position and stay silent. User speeds are off, 100, 180 or 320 ms. The server
 accepts a validated 0–600 ms value. `prefers-reduced-motion` always takes priority
 and cancels active animations. Animation never changes protocol timing or clocks.
@@ -181,3 +188,9 @@ outline. A browser compositor trace reproduced a board-sized repaint for every
 drag sample with the native outline. Removing the keyboard square did not fix
 it; removing the outline did. The replacement retains the visible keyboard cue
 without an outline whose bounds track transformed descendants.
+
+Drop regression tests hold server confirmation across eight rendered frames for
+normal moves, captures, en passant, castling, promotion and Black orientation,
+with sliding off and at 320 ms. They check destination alignment before and
+after confirmation, DOM identity, and rollback on rejection, timeout and send
+failure. The shared board is our own implementation, with no Chessground dependency.

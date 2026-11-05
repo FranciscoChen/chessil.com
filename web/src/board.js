@@ -101,29 +101,49 @@ window.ChessilBoard = class ChessilBoard {
   const gesture=this.gesture;if(!gesture || gesture.pointer!==event.pointerId)return;
   this.root.classList.remove('is-dragging');
   const to=this.at(event);this.gesture=null;
-  const piece=this.pieces.get(gesture.from);if(piece){piece.classList.remove('dragging');piece.style.transform=this.transform(gesture.from);}
+  const piece=this.pieces.get(gesture.from);if(piece)piece.classList.remove('dragging');
   if(this.root.hasPointerCapture(event.pointerId))this.root.releasePointerCapture(event.pointerId);
-  if(gesture.moved){if(!to || !this.tryMove(gesture.from,to))this.clear();}
+  if(gesture.moved){if(!to || !this.tryMove(gesture.from,to,true))this.clear();}
   else if(gesture.same)this.clear();
+  if(piece && !this.preview)piece.style.transform=this.transform(gesture.from);
  }
- tryMove(from,to) {
+ tryMove(from,to,preview=false) {
   const candidates=this.candidates(from).filter(move=>move.slice(2,4)===to);
   if(!candidates.length)return false;
   const promote=this.position[from]?.p==='p' && (to[1]==='1'||to[1]==='8');
   this.clear();
-  if(promote && !ChessilPreferences.get().autoQueen)this.choosePromotion(from,to);else this.propose(from+to+(promote?'q':''));
+  if(promote && !ChessilPreferences.get().autoQueen)this.choosePromotion(from,to,preview);else this.propose(from+to+(promote?'q':''),preview);
   return true;
  }
- propose(move) {
+ propose(move,preview=false) {
   if(!this.canInput())return;
   const candidates=this.candidates(move.slice(0,2));
   if(!candidates.some(candidate=>this.state().turn===this.state().side?candidate===move:candidate.slice(0,4)===move.slice(0,4)))return;
   if(this.submit(move)) {
-   this.pending=move;this.drawOverlays();
-   clearTimeout(this.pendingTimer);this.pendingTimer=setTimeout(()=>{this.pending=null;this.drawOverlays();},5000);
+   this.pending=move;if(preview && this.state().turn===this.state().side)this.previewDrop(move);this.drawOverlays();
+   clearTimeout(this.pendingTimer);this.pendingTimer=setTimeout(()=>this.acknowledge(),5000);
   }
  }
- choosePromotion(from,to) {
+ // A drop preview changes only presentation, never the authoritative position
+ // or square-to-element mapping. Premoves remain at their original squares.
+ previewDrop(move) {
+  const from=move.slice(0,2),to=move.slice(2,4),piece=this.position[from];
+  const changes=[];this.preview={move,changes};
+  const change=(square,target)=>{const element=this.pieces.get(square);if(!element)return;
+   changes.push({element,transform:this.transform(square),visibility:element.style.visibility});
+   element.getAnimations().forEach(animation=>animation.cancel());
+   if(target)element.style.transform=this.transform(target);else element.style.visibility='hidden';
+  };
+  change(to);change(from,to);
+  if(piece.p==='p' && from[0]!==to[0] && !this.position[to])change(to[0]+from[1]);
+  if(piece.p==='k' && Math.abs(from.charCodeAt(0)-to.charCodeAt(0))===2)change((to[0]==='g'?'h':'a')+from[1],(to[0]==='g'?'f':'d')+from[1]);
+ }
+ restorePreview() {
+  if(!this.preview)return;
+  for(const {element,transform,visibility} of this.preview.changes){element.style.transform=transform;element.style.visibility=visibility;}
+  this.preview=null;
+ }
+ choosePromotion(from,to,preview=false) {
   if(this.promotion)return;
   const dialog=document.createElement('dialog');dialog.className='promotion-dialog';this.promotion=dialog;
   const titles={en:'Promote pawn',es:'Promocionar peón',zh:'兵升变'};
@@ -131,7 +151,7 @@ window.ChessilBoard = class ChessilBoard {
   const names={en:['Queen','Rook','Bishop','Knight'],es:['Dama','Torre','Alfil','Caballo'],zh:['后','车','象','马']};
   ['q','r','b','n'].forEach((piece,i)=>{
    const button=document.createElement('button');button.type='button';button.textContent=(names[document.documentElement.lang] || names.en)[i];button.className='ui-button ui-secondary';
-   button.addEventListener('click',()=>{dialog.close();this.propose(from+to+piece);});dialog.append(button);
+   button.addEventListener('click',()=>{dialog.close();this.propose(from+to+piece,preview);});dialog.append(button);
   });
   dialog.addEventListener('close',()=>{dialog.remove();this.promotion=null;this.root.focus({preventScroll:true});},{once:true});
   document.body.append(dialog);dialog.showModal();
@@ -166,8 +186,9 @@ window.ChessilBoard = class ChessilBoard {
   for(const [key,node] of this.overlay)if(!wanted.has(key)){node.remove();this.overlay.delete(key);}
   if(fragment.childNodes.length)this.root.append(fragment);
  }
- acknowledge(move=''){clearTimeout(this.pendingTimer);this.pending=null;this.premove=move;this.drawOverlays();}
+ acknowledge(move=''){this.restorePreview();clearTimeout(this.pendingTimer);this.pending=null;this.premove=move;this.drawOverlays();}
  render(board,move='',animate=false) {
+  const dropped=this.preview?.move===move;this.restorePreview();
   this.cancel(false);clearTimeout(this.pendingTimer);this.pending=null;this.premove='';this.promotion?.close();
   const next=Object.fromEntries(Object.entries(board).filter(([,p])=>p.p!==' ').map(([s,p])=>[s,{...p}]));
   const previous=this.position,relocated=new Map(),origins=new Map();
@@ -186,7 +207,7 @@ window.ChessilBoard = class ChessilBoard {
     }
    }
   }
-  const duration=animate?ChessilPreferences.duration():0;
+  const duration=animate && !dropped?ChessilPreferences.duration():0;
   for(const [square,element] of this.pieces)if(!next[square] || relocated.has(square) || previous[square]?.p!==next[square].p || previous[square]?.c!==next[square].c){element.remove();this.pieces.delete(square);}
   for(const [square,piece] of Object.entries(next)) {
    let element=relocated.get(square) || this.pieces.get(square),created=!element;
@@ -201,5 +222,5 @@ window.ChessilBoard = class ChessilBoard {
   this.position=next;this.lastMove=move || '';this.drawOverlays();
   if(move)this.announcement.textContent=move.slice(0,2)+' → '+move.slice(2,4);
  }
- destroy(){this.abort.abort();this.cancel(false);clearTimeout(this.pendingTimer);this.promotion?.close();this.announcement.remove();for(const element of this.pieces.values()){element.getAnimations().forEach(animation=>animation.cancel());element.remove();}for(const element of this.overlay.values())element.remove();this.pieces.clear();this.overlay.clear();}
+ destroy(){this.restorePreview();this.abort.abort();this.cancel(false);clearTimeout(this.pendingTimer);this.promotion?.close();this.announcement.remove();for(const element of this.pieces.values()){element.getAnimations().forEach(animation=>animation.cancel());element.remove();}for(const element of this.overlay.values())element.remove();this.pieces.clear();this.overlay.clear();}
 };

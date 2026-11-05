@@ -144,7 +144,7 @@ async function wsgame() {
  };
  socket.onclose=()=>{
   clearTimeout(heartbeatTimer);if(wsc!==socket)return;
-  gameConnectionReady=false;boardView.cancel();updateGameUi();
+  gameConnectionReady=false;boardView.cancel();boardView.acknowledge();updateGameUi();
   if(disposed || gamefinished)return;
   // Results can be saved between reconnects. Recheck metadata before opening another socket.
   if(reconnectAttempts++<4)reconnectTimer=setTimeout(async()=>{

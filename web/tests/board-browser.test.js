@@ -137,6 +137,51 @@ await t.test('shared board has stable DOM and follows the pointer synchronously 
  assert.equal(result.mutations,0);assert.equal(result.styleReads,0);assert.equal(result.rectReads,1);assert.equal(result.frames,0);assert.ok(result.error<.1);assert.equal(result.transition,'0s');assert.equal(result.focusBorder,true);assert.equal(result.pixelDrag,true);assert.equal(result.composited,true);assert.equal(result.cancelled,true);assert.equal(result.empty,true);assert.equal(result.squareRatio,.125);
  }finally{await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});await cdp.detach();}
 });
+await t.test('legal drops stay at destination through delayed confirmation, with sliding off or on',async()=>{
+ await page.setViewport({width:700,height:800});
+ await page.goto(fixture.url+'/board-harness',{waitUntil:'networkidle0'});
+ const cases=[
+  ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1','e2e4','w'],
+  ['4k3/8/3p4/4P3/8/8/8/4K3 w - - 0 1','e5d6','w'],
+  ['4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1','e5d6','w'],
+  ['r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1','e1g1','w'],
+  ['4k3/P7/8/8/8/8/8/4K3 w - - 0 1','a7a8q','w'],
+  ['4k3/7p/8/8/8/8/8/4K3 b - - 0 1','h7h5','b']
+ ];
+ for(const slide of [0,320])for(const [fen,move,side] of cases){
+  const points=await page.evaluate(async({fen,move,side,slide})=>{
+   await ChessilPreferences.ready;ChessilPreferences.update({slide,autoQueen:true});window.view?.destroy();
+   window.model={fen,moves:mg(fen),turn:side,side,connected:true};window.submissions=[];
+   window.view=new ChessilBoard(document.querySelector('cg-board'),{state:()=>model,submit:m=>{submissions.push(m);return true;},cancelPremove(){}});
+   view.orientation=side;view.render(boardgen(fen));window.moving=view.pieces.get(move.slice(0,2));
+   const rect=view.root.getBoundingClientRect();return [move.slice(0,2),move.slice(2,4)].map(s=>{const [x,y]=view.point(s);return {x:rect.left+(x+.5)*rect.width/8,y:rect.top+(y+.5)*rect.height/8};});
+  },{fen,move,side,slide});
+  await page.mouse.move(points[0].x,points[0].y);await page.mouse.down();await page.mouse.move(points[1].x,points[1].y,{steps:5});await page.mouse.up();
+  const result=await page.evaluate(async({move,target})=>{
+   const samples=[];const sample=()=>{const r=moving.getBoundingClientRect();samples.push(Math.hypot(r.x+r.width/2-target.x,r.y+r.height/2-target.y));};
+   sample();for(let i=0;i<8;i++){await new Promise(requestAnimationFrame);sample();}
+   const unchanged=!!view.position[move.slice(0,2)],hidden=view.preview.changes.filter(c=>c.element.style.visibility==='hidden').length;
+   const next=ucifen(move,model.fen,boardgen(model.fen),{});view.render(next.b,move,true);sample();
+   await new Promise(requestAnimationFrame);sample();
+   return {samples,unchanged,hidden,same:moving===view.pieces.get(move.slice(2,4)),animations:moving.getAnimations().length,submissions};
+  },{move,target:points[1]});
+  assert.ok(result.samples.every(n=>n<.1),move+' must never flash back');assert.equal(result.unchanged,true);assert.equal(result.same,true);assert.equal(result.animations,0);assert.deepEqual(result.submissions,[move]);
+  if(move==='e5d6')assert.equal(result.hidden,1);
+ }
+ // Rejection/snapshot, timeout and failed submission restore the original view.
+ const rollback=await page.evaluate(async()=>{
+  view.destroy();const fen='4k3/8/3p4/4P3/8/8/8/4K3 w - - 0 1';model={fen,moves:mg(fen),turn:'w',side:'w',connected:true};
+  view=new ChessilBoard(document.querySelector('cg-board'),{state:()=>model,submit:()=>true,cancelPremove(){}});view.render(boardgen(fen));
+  const restored=()=>view.pieces.get('e5').style.transform.replaceAll(' ','')===view.transform('e5').replaceAll(' ','') && view.pieces.get('d6').style.visibility!== 'hidden' && !view.preview;
+  view.propose('e5d6',true);view.render(boardgen(fen));const snapshot=restored();
+  view.propose('e5d6',true);view.acknowledge();const rejected=restored();
+  view.propose('e5d6',true);await new Promise(resolve=>setTimeout(resolve,5100));const timeout=restored() && !view.pending;
+  view.submit=()=>false;view.propose('e5d6',true);return {snapshot,rejected,timeout,failed:restored() && !view.pending};
+ });
+ assert.deepEqual(rollback,{snapshot:true,rejected:true,timeout:true,failed:true});
+ await page.screenshot({path:'/tmp/board-drop-verified.png'});
+ await Promise.all([page.waitForResponse(r=>r.url().endsWith('/preferences') && r.request().method()==='POST'),page.evaluate(()=>ChessilPreferences.update({autoQueen:false}))]);
+});
 await t.test('dragging a focused board does not repaint the board on every pointer sample',async()=>{
  await page.goto(fixture.url+'/board-harness',{waitUntil:'networkidle0'});
  await page.evaluate(async()=>{await ChessilPreferences.ready;const fen='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';window.view=new ChessilBoard(document.querySelector('cg-board'),{state:()=>({fen,moves:mg(fen),turn:'w',side:'w',connected:true}),submit:()=>true,cancelPremove(){}});view.render(boardgen(fen));});
