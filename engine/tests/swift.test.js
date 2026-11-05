@@ -5,7 +5,7 @@ const {settings,thinkTime}=require('../bots/swift');
 const {parseJob}=require('../sf');
 const Stockfish=require('../stockfish-process');
 test('eight levels are distinct, bounded profiles; invalid inputs fail',()=>{
- assert.equal(new Set(Array.from({length:8},(_,i)=>settings(i+1).skill)).size,8);
+ assert.equal(new Set(Array.from({length:8},(_,i)=>settings(i+1).multiPV)).size,8);
  for(let level=1;level<=8;level++){const p=settings(level);assert.equal(p.mtime,1);assert.equal(p.nodes,2048);assert.equal(p.syzygy,0);}
  assert.throws(()=>settings(0));assert.throws(()=>settings(9));assert.throws(()=>settings(1.5));
  assert.equal(parseJob('abcdef123-bot-0-w 300000 300000 0 0 1 0 0 bot:swift:3 e2e4 e7e5').difficulty,3);
@@ -40,4 +40,33 @@ test('real queue and persistent worker serve simultaneous bot requests',async()=
  }finally {
   if(worker){worker.kill('SIGTERM');await once(worker,'exit');}queue.kill('SIGTERM');await once(queue,'exit');
  }
+});
+test('parsed MultiPV selection weakens both mistake frequency and severity by level',()=>{
+ const {SearchSummary}=require('../uci'),{choose}=require('../bots/swift');const summary=new SearchSummary();
+ for(let i=0;i<20;i++)summary.add(`info depth 1 multipv ${i+1} score cp ${100-i*100} pv ${String.fromCharCode(97+i%8)}${i<8?2:i<16?3:4}${String.fromCharCode(97+i%8)}5`);
+ // A partial deeper iteration must not discard the wide set of weaker moves.
+ summary.add('info depth 2 multipv 1 score cp 120 pv a2a5');
+ assert.equal(summary.candidates().length,20);
+ let previous=-Infinity;
+ for(let level=1;level<=8;level++){
+  let sum=0,errors=0;
+  for(let i=0;i<10000;i++){
+   let n=0;const result=choose(summary,{bestmove:'a2a5',ponder:'h7h5'},level,()=>n++===0?i/10000:((i*7919)%10000)/10000);
+   sum+=result.analysis.score.value;if(result.bestmove!=='a2a5')errors++;
+   assert.equal(result.bestmove,result.analysis.pv[0]);assert.equal(result.ponder,undefined);
+  }
+  assert.ok(sum>=previous);previous=sum;
+  if(level===1)assert.equal(errors,9800);if(level===8)assert.equal(errors,0);
+ }
+});
+test('mate ordering, single legal move, empty output and bound scores are handled safely',()=>{
+ const {SearchSummary}=require('../uci'),{choose}=require('../bots/swift');let s=new SearchSummary();
+ assert.equal(choose(s,{bestmove:'e2e4'},1).bestmove,'e2e4');
+ s.add('info depth 1 multipv 1 score mate 2 pv e2e4 e7e5');
+ assert.equal(choose(s,{bestmove:'e2e4'},1).bestmove,'e2e4');
+ s.add('info depth 1 multipv 2 score cp 200 pv d2d4');s.add('info depth 1 multipv 3 score mate -1 pv g1f3');
+ assert.equal(choose(s,{bestmove:'e2e4'},8).bestmove,'e2e4');
+ assert.equal(choose(s,{bestmove:'e2e4'},1,()=>0).bestmove,'g1f3');
+ s=new SearchSummary();s.add('info depth 1 multipv 1 score cp 30 lowerbound pv e2e4');assert.equal(s.candidates().length,0);
+ assert.equal(choose(s,{bestmove:null},1).bestmove,null);
 });

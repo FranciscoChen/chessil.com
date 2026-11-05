@@ -56,7 +56,7 @@ class Stockfish {
     try {
       if (line.startsWith('bestmove')) {
         const best = parseBestmove(line);
-        this.search.resolve(this.search.summary.finish(best));
+        this.search.resolve(this.search.job.bot ? require('./bots/swift').choose(this.search.summary,best,this.search.job.difficulty) : this.search.summary.finish(best));
       } else this.search.summary.add(line);
     } catch (error) { this.fail(error); }
   }
@@ -85,7 +85,7 @@ class Stockfish {
     this.setOption('Skill Level', job.bot ? job.skill : 20);
     // Strength limiting already searches multiple candidates. Ask for their
     // scores too, so the chosen weaker move gets its own evaluation.
-    this.setOption('MultiPV', job.bot ? (job.skill < 20 ? 4 : 1) : job.elo === 0 ? 1 : 4);
+    this.setOption('MultiPV', job.bot ? job.multiPV : job.elo === 0 ? 1 : 4);
     if (job.elo !== 0) this.setOption('UCI_Elo', job.elo);
     this.setOption('SyzygyProbeLimit', job.syzygy);
     await this.waitFor('readyok', 'isready');
@@ -101,7 +101,7 @@ class Stockfish {
       const finish = (callback, result) => {
         clearTimeout(timer); clearTimeout(killTimer); this.search = null; callback(result);
       };
-      this.search = { summary: new SearchSummary(), resolve: value => finish(resolve, value), reject: error => finish(reject, error) };
+      this.search = { job, summary: new SearchSummary(), resolve: value => finish(resolve, value), reject: error => finish(reject, error) };
       try { this.write(`go wtime ${job.wtime} btime ${job.btime} winc ${job.winc} binc ${job.binc} movetime ${budget}${job.nodes ? ' nodes ' + job.nodes : ''}`); }
       catch (error) { this.search.reject(error); }
     });

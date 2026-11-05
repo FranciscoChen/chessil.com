@@ -42,11 +42,18 @@ function parseBestmove(line) {
 }
 
 class SearchSummary {
-  constructor() { this.lines = new Map(); this.byMove = new Map(); this.exactByMove = new Map(); }
+  constructor() { this.iterations = new Map(); this.lines = new Map(); this.byMove = new Map(); this.exactByMove = new Map(); }
   add(line) {
     const info = parseInfo(line);
     if (!info || info.multipv < 1 || info.multipv > 256) return;
     const move = info.pv?.[0];
+    if(move && !info.score.bound) {
+      const depth=info.depth || 0;
+      if(!this.iterations.has(depth))this.iterations.set(depth,new Map());
+      this.iterations.get(depth).set(move,info);
+      // Keep a broad completed iteration when the final one is cut short.
+      if(this.iterations.size>2)this.iterations.delete(Math.min(...this.iterations.keys()));
+    }
     const previousMove = this.byMove.get(move);
     if (move && (this.byMove.has(move) || this.byMove.size < 256) &&
         (!previousMove || (info.depth || 0) > (previousMove.depth || 0) ||
@@ -62,6 +69,10 @@ class SearchSummary {
     if (previous && (previous.depth || 0) > (info.depth || 0)) return;
     if (previous && previous.depth === info.depth && previous.pv?.[0] === info.pv?.[0] && !previous.score.bound && info.score.bound) return;
     this.lines.set(info.multipv, info);
+  }
+  candidates() {
+    const iteration=[...this.iterations.entries()].sort((a,b)=>b[1].size-a[1].size || b[0]-a[0])[0];
+    return iteration?[...iteration[1].values()]:[];
   }
   finish(best) {
     // Limited-strength searches may choose a secondary PV. Prefer its score.

@@ -121,14 +121,38 @@ sampler; it does not send every position to Stockfish or automatically abort gam
 ## Built-in practice bots
 
 Easy Game uses the `swift` program (`bots/catalog.js`, `engine/bots/swift.js`),
-not a user account or external bot client. Difficulty 1–8 maps to Stockfish Skill
-Level 0, 2, 5, 8, 11, 14, 17 and 20. These are difficulty levels, not calibrated
+not a user account or external bot client. Swift version 2 searches at Skill
+Level 20 and applies its own scored MultiPV move-selection policy. These are difficulty levels, not calibrated
 Elo ratings. Practice games are unrated. Their program, version, level and side
 are saved in PostgreSQL and included in the immutable game-start job.
 
 Swift uses one persistent Stockfish thread, at most approximately 2048 nodes and
-`movetime 1`, and disables tablebase I/O. Lower skill levels expose four PVs;
-level 8 uses one. Reusing a worker across practice games does not clear its hash
+`movetime 1`, and disables tablebase I/O. Difficulty controls root coverage and
+how often it deliberately selects a weaker scored move:
+
+| Level | Requested PVs | Weaker-move probability | Candidate rank percentile band |
+| --- | --- | --- | --- |
+| 1 | 256 | 98% | 65–100% |
+| 2 | 128 | 92% | 45–100% |
+| 3 | 64 | 82% | 30–90% |
+| 4 | 32 | 68% | 15–75% |
+| 5 | 16 | 50% | 5–60% |
+| 6 | 8 | 32% | 0–40% |
+| 7 | 4 | 15% | 0–25% |
+| 8 | 1 | 0% | Best available |
+
+The actual candidate count is limited by legal moves and the unchanged search
+budget. Percentiles describe rank within that set, not calibrated centipawn loss.
+Non-error choices select the best scored candidate. Error choices exclude rank
+one, with uniform selection within the level's band. Scores are side-to-move
+relative; forced wins/losses sort above/below centipawn evaluations. Bounded
+scores are excluded. The widest of the last two depth iterations is used (deeper
+wins ties), avoiding a partial final iteration erasing weaker candidates. Shallow
+scores can miss tactical mistakes; these levels are not calibrated human ratings.
+If no scored candidates arrive, Stockfish's legal bestmove remains the fallback.
+The returned evaluation and ponder belong to the selected move.
+
+Reusing a worker across practice games does not clear its hash
 between every move; the full position history is still supplied on each search.
 A valid bot move does not require an evaluation if a very short search did not
 produce one. Background analysis retains the stricter score requirement.
