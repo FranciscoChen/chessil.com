@@ -47,6 +47,7 @@ await t.test('production page: click, drag, illegal drop, last move, premove, ke
  await page.keyboard.press('Enter');await page.keyboard.press('ArrowUp');await page.keyboard.press('ArrowUp');await page.keyboard.press('Enter');await waitMoves(7);
  await page.evaluate(()=>window.scrollTo(0,0));
  await page.click('#open-board-settings');await page.waitForSelector('#board-settings-dialog[open]');
+ await page.click('#board-settings-dialog [data-preference="autoQueen"]');
  await page.select('#board-settings-dialog [data-preference="pieces"]','sculpted');
  await page.select('#board-settings-dialog [data-preference="board"]','walnut');
  assert.ok(await page.$eval('cg-board',el=>getComputedStyle(el).backgroundImage.includes('157, 114, 85')));
@@ -60,14 +61,49 @@ await t.test('production page: click, drag, illegal drop, last move, premove, ke
  assert.ok(await page.evaluate(n=>audioNotes.length>n,prior));
  await page.keyboard.press('Escape');
  await page.waitForFunction(()=>document.querySelector('[data-preference-status]')?.textContent==='Saved to your account.');
- assert.equal(fixture.preferences.pieces,'sculpted');assert.equal(fixture.preferences.slide,0);assert.equal(fixture.preferences.events.capture,'ivory');
+ assert.equal(fixture.preferences.autoQueen,true);assert.equal(fixture.preferences.pieces,'sculpted');assert.equal(fixture.preferences.slide,0);assert.equal(fixture.preferences.events.capture,'ivory');
  fixture.move('e5d4');await waitMoves(8);
  await page.click('.resign');await page.waitForFunction(()=>gamefinished);
  await page.click('#rw');assert.equal(await page.evaluate(()=>a1ti),0);assert.equal(await page.$$eval('cg-board piece',nodes=>nodes.length),32);
  await page.click('#ff');assert.equal(await page.evaluate(()=>a1ti),8);assert.equal(await page.$$eval('cg-board piece',nodes=>nodes.length),31);
  await page.reload({waitUntil:'networkidle0'});await page.waitForFunction(()=>gamefinished);
- assert.equal(await page.evaluate(()=>ChessilPreferences.get().sound),'midnight');
+ assert.equal(await page.evaluate(()=>ChessilPreferences.get().autoQueen),true);assert.equal(await page.evaluate(()=>ChessilPreferences.get().sound),'midnight');
  assert.deepEqual(errors,[]);
+});
+await t.test('arrows review live and finished games without changing authoritative play',async()=>{
+ fixture.game.history=[];fixture.game.times=[];fixture.game.state=0;fixture.game.events='';fixture.game.side='w';
+ await page.goto(fixture.url+'/game/verify001',{waitUntil:'networkidle0'});await page.waitForFunction(()=>gameConnectionReady);
+ await click('e2');await click('e4');await waitMoves(1);fixture.move('e7e5');await waitMoves(2);
+ await page.keyboard.press('ArrowLeft');assert.equal(await page.evaluate(()=>a1ti),1);
+ assert.equal(await page.evaluate(()=>turn),'w');assert.equal(await page.evaluate(()=>board.e5.p),'p');
+ assert.ok(await page.$('piece[data-square="e7"]'));assert.equal(await page.$('piece[data-square="e5"]'),null);
+ await click('g1');await click('f3');assert.equal(await page.evaluate(()=>uci.length),2);
+ fixture.move('g1f3');await waitMoves(3);assert.equal(await page.evaluate(()=>a1ti),1);
+ await page.keyboard.press('ArrowDown');assert.equal(await page.evaluate(()=>a1ti),3);assert.ok(await page.$('piece[data-square="f3"]'));
+ await page.click('#open-board-settings');await page.keyboard.press('ArrowLeft');assert.equal(await page.evaluate(()=>a1ti),3);await page.keyboard.press('Escape');
+ await page.evaluate(()=>{const input=document.createElement('input');input.id='navigation-input';document.body.append(input);input.focus();});
+ await page.keyboard.press('ArrowLeft');assert.equal(await page.evaluate(()=>a1ti),3);await page.evaluate(()=>document.querySelector('#navigation-input').remove());
+ await page.click('.resign');await page.waitForFunction(()=>gamefinished);await page.keyboard.press('Home');assert.equal(await page.evaluate(()=>a1ti),0);
+ await page.keyboard.press('ArrowRight');assert.equal(await page.evaluate(()=>a1ti),1);await page.keyboard.press('End');assert.equal(await page.evaluate(()=>a1ti),3);
+});
+await t.test('auto queen persists and recapture premoves can target an owned piece',async()=>{
+ await page.goto(fixture.url+'/board-harness',{waitUntil:'networkidle0'});
+ await page.evaluate(async()=>{
+  await ChessilPreferences.ready;ChessilPreferences.update({autoQueen:true});
+  window.model={fen:'4k3/P7/8/8/8/8/8/4K3 w - - 0 1',turn:'w',side:'w',watcher:false,finished:false,connected:true};model.moves=mg(model.fen);window.submissions=[];
+  window.view=new ChessilBoard(document.querySelector('cg-board'),{state:()=>model,submit:m=>{submissions.push(m);return true;},cancelPremove(){}});view.render(boardgen(model.fen));
+ });
+ await click('a7');await click('a8');assert.deepEqual(await page.evaluate(()=>submissions),['a7a8q']);assert.equal(await page.$('.promotion-dialog'),null);
+ await page.waitForFunction(()=>ChessilPreferences.get().autoQueen && document.querySelector('[data-preference-status]')===null);await new Promise(r=>setTimeout(r,350));assert.equal(fixture.preferences.autoQueen,true);
+ await page.evaluate(()=>{view.acknowledge();model.fen='4k3/8/8/8/8/8/p7/4K3 w - - 0 1';model.side='b';model.turn='w';model.moves=mg(model.fen);submissions=[];view.render(boardgen(model.fen));});
+ await click('a2');await click('a1');assert.deepEqual(await page.evaluate(()=>submissions),['a2a1q']);
+ await page.evaluate(()=>{ChessilPreferences.update({autoQueen:false});model.side='w';model.fen='4k3/8/3p4/4P3/8/5N2/8/4K3 b - - 0 1';model.turn='b';model.moves=mg(model.fen);submissions=[];view.render(boardgen(model.fen));});
+ await click('f3');await click('e5');assert.deepEqual(await page.evaluate(()=>submissions),['f3e5']);assert.ok(await page.$('piece.white.pawn[data-square="e5"]'));
+ await page.evaluate(()=>{view.acknowledge();submissions=[];});
+ const from=await square('f3'),to=await square('e5');await page.mouse.move(from.x,from.y);await page.mouse.down();await page.mouse.move(to.x,to.y,{steps:8});await page.mouse.up();assert.deepEqual(await page.evaluate(()=>submissions),['f3e5']);
+ await page.evaluate(()=>{view.acknowledge();model.turn='w';model.fen='4k3/8/3p4/4P3/8/5N2/8/4K3 w - - 0 1';model.moves=mg(model.fen);submissions=[];view.render(boardgen(model.fen));});
+ await click('f3');await click('e5');assert.deepEqual(await page.evaluate(()=>submissions),[]);
+ await Promise.all([page.waitForResponse(r=>r.url().endsWith('/preferences') && r.request().method()==='POST'),page.evaluate(()=>ChessilPreferences.update({autoQueen:false}))]);
 });
 await t.test('board renderer special moves and promotion chooser use the same mapping',async()=>{
  await page.setViewport({width:700,height:800});

@@ -46,7 +46,8 @@ this existing repository continues using its own hosting and push deployment.
    function. A legal local candidate is sent as `m<UCI>` or `p<UCI>`. Pending
    squares are shown, but the position is not changed before server confirmation.
 6. Promotion opens a native modal with explicit Queen/Rook/Bishop/Knight buttons;
-   Escape cancels. There is no preselected hidden promotion that silently fires.
+   Escape cancels. The saved “Automatically promote to queen” option bypasses
+   the chooser for normal moves and premoves; it defaults to off.
 7. One renderer handles ordinary moves, captures, EP, promotion and castling.
    It reuses moving elements for a confirmed move; castling also relocates the
    rook. Arbitrary snapshots and replay reconcile by square, without applying a
@@ -56,11 +57,18 @@ this existing repository continues using its own hosting and push deployment.
    no cached geometry, pixel-perfect width calculations or resize listeners.
 9. Last origin/destination, selection, possible destinations, captures and queued
    premoves have distinct overlays. Keyboard users can focus the board, navigate
-   squares with arrows, select/submit with Enter or Space and cancel with Escape.
+   squares with arrows after selecting with Enter or Space, and cancel with Escape.
+   Outside that keyboard selection mode, Left/Right review history and Up/Down
+   (or Home/End) jump to the start/latest position. Editing fields and open dialogs
+   retain their keyboard behavior. Review is available live: the authoritative
+   position and clocks keep updating, and board input is disabled until returning
+   to the latest move. Entering review cancels any queued premove so it cannot
+   execute unseen. Incoming moves preserve the position being reviewed.
    Coordinate announcements and promotion buttons provide non-pointer access.
 
 Premoves use piece geometry to offer potential destinations during the opponent's
-turn. They are intentions; only the server can decide whether one is legal after
+turn, including squares occupied by the player's own pieces for anticipated
+recaptures. Pieces stay in place until server confirmation. They are intentions; only the server can decide whether one is legal after
 the opponent moves. Normal moves use the browser's legal-move list and are still
 validated by the server. Duplicate broadcasts are ignored. A missing/out-of-order
 ply triggers a fresh snapshot instead of patching partial state. Reconnects

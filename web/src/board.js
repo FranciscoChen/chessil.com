@@ -5,7 +5,7 @@
 window.ChessilBoard = class ChessilBoard {
  constructor(root,{state,submit,cancelPremove}) {
   this.root=root;this.state=state;this.submit=submit;this.cancelPremove=cancelPremove;
-  this.pieces=new Map();this.position={};this.selected=null;this.gesture=null;this.active='e2';
+  this.pieces=new Map();this.position={};this.selected=null;this.keyboardMode=false;this.gesture=null;this.active='e2';
   this.orientation='w';this.pending=null;this.lastMove='';this.premove='';this.overlay=[];
   root.tabIndex=0;root.setAttribute('role','application');root.setAttribute('aria-roledescription','chessboard');
   this.announcement=document.createElement('span');this.announcement.className='game-sr-only';this.announcement.setAttribute('aria-live','polite');root.parentElement.append(this.announcement);
@@ -33,6 +33,7 @@ window.ChessilBoard = class ChessilBoard {
  }
  canInput(){const s=this.state();return s.connected && !s.finished && !s.watcher && !this.pending;}
  // Premove destinations describe geometry, not a prediction of the opponent's move.
+ // Own occupied targets are allowed for anticipated recaptures.
  // The server checks legality when it executes a premove.
  candidates(from) {
   const s=this.state();if(s.turn===s.side)return s.moves.filter(move=>move.startsWith(from));
@@ -40,7 +41,7 @@ window.ChessilBoard = class ChessilBoard {
   const results=[],x=from.charCodeAt(0)-97,y=Number(from[1])-1;
   for(let tx=0;tx<8;tx++)for(let ty=0;ty<8;ty++) {
    const to=String.fromCharCode(97+tx)+(ty+1),dx=tx-x,dy=ty-y,a=Math.abs(dx),b=Math.abs(dy);
-   if(!a&&!b || this.position[to]?.c===s.side)continue;
+   if(!a&&!b)continue;
    let valid=false;
    if(piece.p==='n')valid=a*b===2;
    if(piece.p==='k')valid=Math.max(a,b)===1 || (!b && a===2 && from[0]==='e' && s.fen.split(' ')[2].includes(s.side==='w'?(tx===6?'K':'Q'):(tx===6?'k':'q')));
@@ -57,7 +58,7 @@ window.ChessilBoard = class ChessilBoard {
   }
   return results;
  }
- clear(){this.selected=null;this.drawOverlays();}
+ clear(){this.selected=null;this.keyboardMode=false;this.drawOverlays();}
  cancel() {
   if(this.gesture) {
    const {from,pointer}=this.gesture;this.gesture=null;
@@ -99,7 +100,7 @@ window.ChessilBoard = class ChessilBoard {
   if(!candidates.length)return false;
   const promote=this.position[from]?.p==='p' && (to[1]==='1'||to[1]==='8');
   this.clear();
-  if(promote)this.choosePromotion(from,to);else this.propose(from+to);
+  if(promote && !ChessilPreferences.get().autoQueen)this.choosePromotion(from,to);else this.propose(from+to+(promote?'q':''));
   return true;
  }
  propose(move) {
@@ -127,7 +128,7 @@ window.ChessilBoard = class ChessilBoard {
  key(event) {
   if(event.key==='Escape'){this.cancel();this.cancelPremove();return;}
   const directions={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
-  if(directions[event.key]) {
+  if(directions[event.key] && this.keyboardMode && this.canInput()) {
    event.preventDefault();const [dx,dy]=directions[event.key],[x,y]=this.point(this.active);
    const file=Math.max(0,Math.min(7,x+dx)),rank=Math.max(0,Math.min(7,y+dy));
    this.active=String.fromCharCode(97+(this.orientation==='w'?file:7-file))+(this.orientation==='w'?8-rank:rank+1);
@@ -135,7 +136,7 @@ window.ChessilBoard = class ChessilBoard {
   }
   if((event.key==='Enter'||event.key===' ') && this.canInput()) {
    event.preventDefault();if(this.selected && this.tryMove(this.selected,this.active))return;
-   if(this.position[this.active]?.c===this.state().side)this.select(this.active);
+   if(this.position[this.active]?.c===this.state().side){this.select(this.active);this.keyboardMode=true;}
   }
  }
  pieceName(piece) {return piece?`${piece.c==='w'?'White':'Black'} ${{p:'pawn',n:'knight',b:'bishop',r:'rook',q:'queen',k:'king'}[piece.p]}`:'empty';}

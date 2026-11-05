@@ -4,6 +4,7 @@ test('preferences validate every sound event independently and clamp numeric lim
  const p=normalize({board:'invalid',pieces:'sculpted',slide:-50,volume:1000,sound:'midnight',events:{move:'off',capture:'ivory',start:'evil'},admin:true});
  assert.equal(p.board,'auto');assert.equal(p.slide,0);assert.equal(p.volume,100);assert.equal(p.pieces,'sculpted');
  assert.equal(p.events.move,'off');assert.equal(p.events.capture,'ivory');assert.equal(p.events.start,'theme');assert.equal(p.admin,undefined);
+ assert.equal(normalize({autoQueen:true}).autoQueen,true);assert.equal(normalize({autoQueen:'true'}).autoQueen,false);
  assert.deepEqual(normalize(null),normalize({}));
 });
 test('account sound settings and guest sound settings persist separately',async()=>{
@@ -18,10 +19,11 @@ test('account sound settings and guest sound settings persist separately',async(
   await context.handleUiPreferences({method,body,headers:{cookie:'s='+session}},{writeHead:code=>status=code,end:value=>data=JSON.parse(value)}, {},[null,user]);
   assert.equal(status,200);return data;
  }
- await request('POST','1',{sound:'ivory',events:{capture:'midnight',move:'off'},slide:0});
+ await request('POST','1',{sound:'ivory',events:{capture:'midnight',move:'off'},slide:0,autoQueen:true});
  await request('POST','2',{sound:'midnight',events:{capture:'off'}});
  await request('POST','0',{muted:true},'b'.repeat(32));
  const one=await request('GET','1'),two=await request('GET','2'),guest=await request('GET','0',null,'b'.repeat(32));
+ assert.equal(one.preferences.autoQueen,true);assert.equal(two.preferences.autoQueen,false);
  assert.equal(one.preferences.events.capture,'midnight');assert.equal(one.preferences.events.move,'off');assert.equal(one.preferences.slide,0);
  assert.equal(two.preferences.events.capture,'off');assert.equal(guest.preferences.muted,true);assert.equal(one.preferences.muted,false);
  assert.equal(one.account,true);assert.equal(guest.account,false);

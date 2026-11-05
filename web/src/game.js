@@ -56,7 +56,9 @@ function receiveMove(raw) {
   snapshotReady=false;gameConnectionReady=false;sendGameMessage('s');return;
  }
  const from=move.slice(0,2),to=move.slice(2,4),capture=board[to].p!==' ' || (board[from].p==='p' && from[0]!==to[0]);
- uci.push(move);appendNotation(move);boardView.premove='';boardView.render(board,move,true);
+ const reviewPly=a1ti<uci.length?a1ti:null;
+ uci.push(move);appendNotation(move);boardView.premove='';
+ if(reviewPly===null)boardView.render(board,move,true);else gamereplay(reviewPly);
  clock[side]=Number(remaining);allmovetimes.push(Number(remaining));lastmovetime=Number(timestamp);
  if(snapshotReady){if(ChessilPreferences.duration()>0)ChessilSound.play('slide');ChessilSound.play(capture?'capture':'move');if(incheck(fen))ChessilSound.play('check');}
  movesList.scrollTop=movesList.scrollHeight;paintClocks();
@@ -80,11 +82,14 @@ function displayTermination(code,audible=false) {
  showResult(code);if(active && audible)ChessilSound.play('end');updateGameUi();
 }
 function gamereplay(ply) {
- if(!gamefinished)return;
+ // Reviewing a past position must not leave an invisible recapture queued.
+ if(!gamefinished && ply<uci.length && a1ti===uci.length && (boardView.premove || boardView.pending))sendGameMessage('p');
  a1ti=Math.max(0,Math.min(uci.length,ply));
- const position=ucifen(uci.slice(0,a1ti).join(' '));fen=position.f;board=position.b;moves=mg(fen);turn=fen.split(' ')[1];
- boardView.render(board,uci[a1ti-1] || '',false);
+ const position=ucifen(uci.slice(0,a1ti).join(' '));
+ boardView.render(position.b,uci[a1ti-1] || '',false);
  movesList.querySelector('.a1t')?.classList.remove('a1t');movesList.querySelector(`[ply="${a1ti}"]`)?.classList.add('a1t');
+ updateGameUi();
+ if(!gamefinished)return;
  for(const side of ['w','b']) {
   const index=Array.from({length:a1ti},(_,i)=>i).reverse().find(i=>(i%2===0?'w':'b')===side);
   const value=a1ti===uci.length?clock[side]:index===undefined?initialClock:allmovetimes[index];
@@ -156,7 +161,7 @@ async function roundstart() {
  initialClock=Number(setup.dataset.timeControl.split('+')[0])*60000;clock={w:initialClock,b:initialClock};
  movesList=document.querySelector('moves-list');
  boardView=new ChessilBoard(document.querySelector('cg-board'),{
-  state:()=>({fen,moves,turn,side:playerside,watcher,finished:gamefinished,connected:gameConnectionReady}),
+  state:()=>({fen,moves,turn,side:playerside,watcher,finished:gamefinished,connected:gameConnectionReady && a1ti===uci.length}),
   submit:move=>sendGameMessage((turn===playerside?'m':'p')+move),cancelPremove:()=>sendGameMessage('p')
  });
  boardView.orientation=orientation;boardView.active=orientation==='w'?'e2':'e7';
@@ -172,10 +177,15 @@ async function roundstart() {
  document.querySelector('.draw-yes').addEventListener('click',()=>sendGameMessage('e2'));
  document.querySelector('.resign').addEventListener('click',()=>sendGameMessage('e1'));
  document.querySelector('moves-panel').addEventListener('click',event=>{
-  if(!gamefinished)return;const target=event.target.closest('button,[ply]');if(!target)return;
+  const target=event.target.closest('button,[ply]');if(!target)return;
   const plies={rw:0,sb:a1ti-1,fw:a1ti+1,ff:uci.length};
   const ply=target.hasAttribute('ply')?Number(target.getAttribute('ply')):plies[target.id];if(ply!==undefined)gamereplay(ply);
  });
+ document.addEventListener('keydown',event=>{
+  if(event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || document.querySelector('dialog[open]') || event.target.closest?.('input,textarea,select,[contenteditable]'))return;
+  const plies={ArrowLeft:a1ti-1,ArrowRight:a1ti+1,ArrowUp:0,ArrowDown:uci.length,Home:0,End:uci.length};
+  if(uci.length && Object.hasOwn(plies,event.key)){event.preventDefault();gamereplay(plies[event.key]);}
+ },{signal:boardView.abort.signal});
  if(stat===0)await wsgame();else await dbgame();
  clocktick=setInterval(()=>{if(!gamefinished)paintClocks();},100);
  window.addEventListener('pagehide',()=>{disposed=true;clearInterval(clocktick);clearTimeout(reconnectTimer);boardView.destroy();wsc?.close();},{once:true});
