@@ -6,8 +6,7 @@ window.ChessilBoard = class ChessilBoard {
  constructor(root,{state,submit,cancelPremove}) {
   this.root=root;this.state=state;this.submit=submit;this.cancelPremove=cancelPremove;
   this.pieces=new Map();this.position={};this.selected=null;this.keyboardMode=false;this.gesture=null;this.active='e2';
-  this.orientation='w';this.pending=null;this.lastMove='';this.premove='';this.overlay=new Map();this.dragFrame=0;
-  this.paintDrag=()=>{this.dragFrame=0;const g=this.gesture;if(!g || !g.moved)return;const piece=this.pieces.get(g.from);if(piece)piece.style.transform=`translate(${(g.clientX-g.rect.left)*800/g.rect.width-50}%,${(g.clientY-g.rect.top)*800/g.rect.height-50}%)`;};
+  this.orientation='w';this.pending=null;this.lastMove='';this.premove='';this.overlay=new Map();
   root.tabIndex=0;root.setAttribute('role','application');root.setAttribute('aria-roledescription','chessboard');
   this.announcement=document.createElement('span');this.announcement.className='game-sr-only';this.announcement.setAttribute('aria-live','polite');root.parentElement.append(this.announcement);
   this.abort=new AbortController();const options={signal:this.abort.signal};
@@ -63,7 +62,7 @@ window.ChessilBoard = class ChessilBoard {
  }
  clear(){this.selected=null;this.keyboardMode=false;this.drawOverlays();}
  cancel(redraw=true) {
-  cancelAnimationFrame(this.dragFrame);this.dragFrame=0;this.root.classList.remove('is-dragging');
+  this.root.classList.remove('is-dragging');
   if(this.gesture) {
    const {from,pointer}=this.gesture;this.gesture=null;
    const piece=this.pieces.get(from);if(piece){piece.classList.remove('dragging');piece.style.transform=this.transform(from);}
@@ -90,12 +89,15 @@ window.ChessilBoard = class ChessilBoard {
    this.pieces.get(gesture.from)?.getAnimations().forEach(animation=>animation.cancel());
    this.pieces.get(gesture.from)?.classList.add('dragging');this.root.classList.add('is-dragging');
   }
-  gesture.clientX=event.clientX;gesture.clientY=event.clientY;
-  if(!this.dragFrame)this.dragFrame=requestAnimationFrame(this.paintDrag);
+  // Use the latest coalesced sample, when available, without another frame queue.
+  // Dragging follows input immediately, independently of slide speed.
+  const latest=event.getCoalescedEvents?.().at(-1) || event;
+  const piece=this.pieces.get(gesture.from);
+  if(piece)piece.style.transform=`translate(${(latest.clientX-gesture.rect.left)*800/gesture.rect.width-50}%,${(latest.clientY-gesture.rect.top)*800/gesture.rect.height-50}%)`;
  }
  up(event) {
   const gesture=this.gesture;if(!gesture || gesture.pointer!==event.pointerId)return;
-  cancelAnimationFrame(this.dragFrame);this.dragFrame=0;this.root.classList.remove('is-dragging');
+  this.root.classList.remove('is-dragging');
   const to=this.at(event);this.gesture=null;
   const piece=this.pieces.get(gesture.from);if(piece){piece.classList.remove('dragging');piece.style.transform=this.transform(gesture.from);}
   if(this.root.hasPointerCapture(event.pointerId))this.root.releasePointerCapture(event.pointerId);

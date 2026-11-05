@@ -6,7 +6,7 @@ cg-board { display:block;position:absolute;inset:0;width:100%;height:100%;touch-
 cg-board:focus-visible { outline:3px solid var(--link);outline-offset:-3px; }
 cg-board piece,cg-board square { position:absolute;left:0;top:0;width:12.5%;height:12.5%;pointer-events:none; }
 cg-board piece { z-index:2;background-size:contain;background-repeat:no-repeat;background-position:center; }
-cg-board piece.dragging { z-index:5;will-change:transform; }
+cg-board piece.dragging { z-index:5;will-change:transform;transition:none; }
 cg-board.is-dragging { cursor:grabbing; }
 cg-board square { z-index:1; }
 cg-board square.last-move { background:var(--last-square,#e9b45b55);box-shadow:inset 0 0 0 1px #ffffff14; }

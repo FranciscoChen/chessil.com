@@ -105,7 +105,7 @@ await t.test('auto queen persists and recapture premoves can target an owned pie
  await click('f3');await click('e5');assert.deepEqual(await page.evaluate(()=>submissions),[]);
  await Promise.all([page.waitForResponse(r=>r.url().endsWith('/preferences') && r.request().method()==='POST'),page.evaluate(()=>ChessilPreferences.update({autoQueen:false}))]);
 });
-await t.test('shared board has stable DOM and coalesces pointer work under 6x CPU throttling',async()=>{
+await t.test('shared board has stable DOM and follows the pointer synchronously under 6x CPU throttling',async()=>{
  await page.goto(fixture.url+'/board-harness',{waitUntil:'networkidle0'});
  const cdp=await page.target().createCDPSession();await cdp.send('Emulation.setCPUThrottlingRate',{rate:6});
  try {
@@ -123,13 +123,17 @@ await t.test('shared board has stable DOM and coalesces pointer work under 6x CP
   // Synthetic pointers have no browser capture; real capture is covered by the drag tests.
   root.setPointerCapture=()=>{};
   root.dispatchEvent(new PointerEvent('pointerdown',{button:0,isPrimary:true,pointerId:1,clientX:x,clientY:y}));
-  for(let i=0;i<1000;i++)view.drag({pointerId:1,clientX:x+55,clientY:y-55});
-  const frame=view.dragFrame;await new Promise(requestAnimationFrame);
-  const painted=view.pieces.get('e2').style.transform;
-  view.cancel();await new Promise(requestAnimationFrame);const cancelled=view.dragFrame===0 && !root.querySelector('.dragging');view.destroy();
-  return {mutations,styleReads,rectReads,frame:!!frame,painted,cancelled,empty:root.childElementCount===0,squareRatio:pieceRect.width/boardRect.width};
+  let frames=0;const originalFrame=window.requestAnimationFrame;window.requestAnimationFrame=()=>{frames++;return 0;};
+  for(let i=0;i<1000;i++)view.drag({pointerId:1,clientX:x+i/20,clientY:y-i/20});
+  view.drag({pointerId:1,clientX:x,clientY:y,getCoalescedEvents:()=>[{clientX:x+55,clientY:y-55}]});
+  const moving=view.pieces.get('e2'),painted=moving.getBoundingClientRect();
+  const error=Math.hypot(painted.left+painted.width/2-(x+55),painted.top+painted.height/2-(y-55));
+  const transition=originalStyle(moving).transitionDuration;
+  view.cancel();const restored=moving.style.transform.replaceAll(' ','')===view.transform('e2').replaceAll(' ','');window.requestAnimationFrame=originalFrame;await new Promise(requestAnimationFrame);
+  const cancelled=!root.querySelector('.dragging') && restored;view.destroy();
+  return {mutations,styleReads,rectReads,frames,error,transition,cancelled,empty:root.childElementCount===0,squareRatio:pieceRect.width/boardRect.width};
  });
- assert.equal(result.mutations,0);assert.equal(result.styleReads,0);assert.equal(result.rectReads,1);assert.equal(result.frame,true);assert.equal(result.cancelled,true);assert.equal(result.empty,true);assert.equal(result.squareRatio,.125);assert.ok(result.painted.includes('translate('));
+ assert.equal(result.mutations,0);assert.equal(result.styleReads,0);assert.equal(result.rectReads,1);assert.equal(result.frames,0);assert.ok(result.error<.1);assert.equal(result.transition,'0s');assert.equal(result.cancelled,true);assert.equal(result.empty,true);assert.equal(result.squareRatio,.125);
  }finally{await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});await cdp.detach();}
 });
 await t.test('board renderer special moves and promotion chooser use the same mapping',async()=>{

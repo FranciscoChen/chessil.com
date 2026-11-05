@@ -144,10 +144,11 @@ in their shared modules. Page CSS owns surrounding layout, never board geometry.
 
 Unchanged pieces and overlays retain their DOM nodes and attributes. Normal slides
 use known transforms without computed style reads; only interruption of an active
-slide samples its current visual position. Pointer movement is coalesced into one
-transform write per animation frame, using bounds measured at gesture start.
-Scroll, resize, pointer cancellation and teardown cancel the gesture and scheduled
-frame. Only the dragged piece gets `will-change`; whole-board layer promotion and
+slide samples its current visual position. Pointer movement writes the transform synchronously from the latest coalesced
+input sample, using bounds measured at gesture start. There is no extra animation
+frame queue, CSS transition, easing or server round trip during dragging. Slide
+duration only applies to confirmed moves. Scroll, resize, pointer cancellation
+and teardown cancel the gesture. Only the dragged piece gets `will-change`; whole-board layer promotion and
 per-frame filters are avoided. Destroy removes this instance's nodes, listeners,
 animations and timers. No parallel mobile implementation or device heuristics.
 
@@ -157,7 +158,8 @@ immediately. Reduced motion and each user's slide duration remain authoritative.
 
 Browser regressions exercise a board outside the game-page shell, 6x CPU
 throttling, zero DOM mutations/computed-style reads for unchanged snapshots,
-1,000 pointer updates sharing one queued frame and one bounds read, cancellation
+1,000 synchronous pointer updates with no queued frames, immediate piece-centre
+alignment within 0.1 px of the latest sample, one bounds read, cancellation
 and teardown, in addition to actual click/drag, touch, castling, promotion,
 premoves and history navigation. Throttling is a development approximation, not
 a guarantee of frame rate on every low-end device.
