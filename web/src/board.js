@@ -6,7 +6,7 @@ window.ChessilBoard = class ChessilBoard {
  constructor(root,{state,submit,cancelPremove}) {
   this.root=root;this.state=state;this.submit=submit;this.cancelPremove=cancelPremove;
   this.pieces=new Map();this.position={};this.selected=null;this.keyboardMode=false;this.gesture=null;this.active='e2';
-  this.orientation='w';this.pending=null;this.lastMove='';this.premove='';this.overlay=new Map();
+  this.orientation='w';this.pending=null;this.lastMove='';this.premove='';this.hover=null;this.overlay=new Map();
   root.tabIndex=0;root.setAttribute('role','application');root.setAttribute('aria-roledescription','chessboard');
   this.announcement=document.createElement('span');this.announcement.className='game-sr-only';this.announcement.setAttribute('aria-live','polite');root.parentElement.append(this.announcement);
   this.abort=new AbortController();const options={signal:this.abort.signal};
@@ -62,13 +62,13 @@ window.ChessilBoard = class ChessilBoard {
  }
  clear(){this.selected=null;this.keyboardMode=false;this.drawOverlays();}
  cancel(redraw=true) {
-  this.root.classList.remove('is-dragging');
+  this.root.classList.remove('is-dragging');this.hover=null;
   if(this.gesture) {
    const {from,pointer}=this.gesture;this.gesture=null;
    const piece=this.pieces.get(from);if(piece){piece.classList.remove('dragging');piece.style.transform=this.transform(from);}
    if(this.root.hasPointerCapture(pointer))this.root.releasePointerCapture(pointer);
   }
-  if(redraw)this.clear();else {this.selected=null;this.keyboardMode=false;}
+  if(redraw)this.clear();else {this.selected=null;this.keyboardMode=false;this.drawOverlays();}
  }
  select(square){this.selected=square;this.active=square;this.drawOverlays();}
  down(event) {
@@ -93,6 +93,7 @@ window.ChessilBoard = class ChessilBoard {
   // Use the latest coalesced sample, when available, without another frame queue.
   // Dragging follows input immediately, independently of slide speed.
   const latest=event.getCoalescedEvents?.().at(-1) || event;
+  const hovered=this.at(latest,gesture.rect);if(hovered!==this.hover){this.hover=hovered;this.drawOverlays();}
   // Pixel transforms keep pointer coordinates and the compositor in one space.
   // Only this cached element changes while dragging. No layout reads or board redraw.
   gesture.element.style.transform=`translate(${latest.clientX-gesture.rect.left-gesture.rect.width/16}px,${latest.clientY-gesture.rect.top-gesture.rect.height/16}px)`;
@@ -103,6 +104,7 @@ window.ChessilBoard = class ChessilBoard {
   const to=this.at(event);this.gesture=null;
   const piece=this.pieces.get(gesture.from);if(piece)piece.classList.remove('dragging');
   if(this.root.hasPointerCapture(event.pointerId))this.root.releasePointerCapture(event.pointerId);
+  this.hover=null;this.drawOverlays();
   if(gesture.moved){if(!to || !this.tryMove(gesture.from,to,true))this.clear();}
   else if(gesture.same)this.clear();
   if(piece && !this.preview)piece.style.transform=this.transform(gesture.from);
@@ -183,6 +185,7 @@ window.ChessilBoard = class ChessilBoard {
   if(this.selected){add(this.selected,'selected');for(const move of this.candidates(this.selected))add(move.slice(2,4),this.position[move.slice(2,4)]?'move-dest capture-dest':'move-dest');}
   for(const move of [this.premove,this.pending])if(move){add(move.slice(0,2),'current-premove');add(move.slice(2,4),'current-premove');}
   add(this.active,'keyboard-square');
+  if(this.hover)add(this.hover,'hover-square');
   for(const [key,node] of this.overlay)if(!wanted.has(key)){node.remove();this.overlay.delete(key);}
   if(fragment.childNodes.length)this.root.append(fragment);
  }

@@ -194,3 +194,8 @@ normal moves, captures, en passant, castling, promotion and Black orientation,
 with sliding off and at 320 ms. They check destination alignment before and
 after confirmation, DOM identity, and rollback on rejection, timeout and send
 failure. The shared board is our own implementation, with no Chessground dependency.
+
+While dragging, the square under the pointer receives a full-cell warm accent
+with an inset border, whether or not it is a legal destination. The existing
+legal destination dots and capture rings remain visible away from the pointer.
+The accent is defined per board palette and follows the theme.
