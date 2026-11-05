@@ -11,7 +11,7 @@ window.ChessilBoard = class ChessilBoard {
   this.announcement=document.createElement('span');this.announcement.className='game-sr-only';this.announcement.setAttribute('aria-live','polite');root.parentElement.append(this.announcement);
   this.abort=new AbortController();const options={signal:this.abort.signal};
   root.addEventListener('pointerdown',event=>this.down(event),options);
-  root.addEventListener('pointermove',event=>this.drag(event),options);
+  root.addEventListener('onpointerrawupdate' in window?'pointerrawupdate':'pointermove',event=>this.drag(event),options);
   root.addEventListener('pointerup',event=>this.up(event),options);
   root.addEventListener('pointercancel',()=>this.cancel(),options);
   root.addEventListener('lostpointercapture',()=>{if(this.gesture)this.cancel();},options);
@@ -78,7 +78,9 @@ window.ChessilBoard = class ChessilBoard {
   if(this.selected && square!==this.selected && this.tryMove(this.selected,square))return;
   if(this.position[square]?.c!==this.state().side){this.clear();this.cancelPremove();return;}
   const same=this.selected===square;this.select(square);
-  this.gesture={from:square,pointer:event.pointerId,x:event.clientX,y:event.clientY,moved:false,same,rect};
+  this.gesture={from:square,pointer:event.pointerId,x:event.clientX,y:event.clientY,moved:false,same,rect,element:this.pieces.get(square)};
+  this.gesture.element.getAnimations().forEach(animation=>animation.cancel());
+  this.gesture.element.classList.add('dragging');
   this.root.setPointerCapture(event.pointerId);
  }
  drag(event) {
@@ -86,14 +88,14 @@ window.ChessilBoard = class ChessilBoard {
   if(!gesture.moved && Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)<5)return;
   if(!gesture.moved) {
    gesture.moved=true;
-   this.pieces.get(gesture.from)?.getAnimations().forEach(animation=>animation.cancel());
-   this.pieces.get(gesture.from)?.classList.add('dragging');this.root.classList.add('is-dragging');
+   this.root.classList.add('is-dragging');
   }
   // Use the latest coalesced sample, when available, without another frame queue.
   // Dragging follows input immediately, independently of slide speed.
   const latest=event.getCoalescedEvents?.().at(-1) || event;
-  const piece=this.pieces.get(gesture.from);
-  if(piece)piece.style.transform=`translate(${(latest.clientX-gesture.rect.left)*800/gesture.rect.width-50}%,${(latest.clientY-gesture.rect.top)*800/gesture.rect.height-50}%)`;
+  // Pixel transforms keep pointer coordinates and the compositor in one space.
+  // Only this cached element changes while dragging. No layout reads or board redraw.
+  gesture.element.style.transform=`translate(${latest.clientX-gesture.rect.left-gesture.rect.width/16}px,${latest.clientY-gesture.rect.top-gesture.rect.height/16}px)`;
  }
  up(event) {
   const gesture=this.gesture;if(!gesture || gesture.pointer!==event.pointerId)return;

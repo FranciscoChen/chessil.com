@@ -128,13 +128,29 @@ await t.test('shared board has stable DOM and follows the pointer synchronously 
   view.drag({pointerId:1,clientX:x,clientY:y,getCoalescedEvents:()=>[{clientX:x+55,clientY:y-55}]});
   const moving=view.pieces.get('e2'),painted=moving.getBoundingClientRect();
   const error=Math.hypot(painted.left+painted.width/2-(x+55),painted.top+painted.height/2-(y-55));
-  const transition=originalStyle(moving).transitionDuration;
+  const focus=originalStyle(root,'::after'),focusBorder=originalStyle(root).outlineStyle==='none' && (!root.matches(':focus-visible') || focus.borderTopWidth==='3px');
+  const transition=originalStyle(moving).transitionDuration,pixelDrag=moving.style.transform.includes('px'),composited=originalStyle(moving).willChange==='transform';
   view.cancel();const restored=moving.style.transform.replaceAll(' ','')===view.transform('e2').replaceAll(' ','');window.requestAnimationFrame=originalFrame;await new Promise(requestAnimationFrame);
   const cancelled=!root.querySelector('.dragging') && restored;view.destroy();
-  return {mutations,styleReads,rectReads,frames,error,transition,cancelled,empty:root.childElementCount===0,squareRatio:pieceRect.width/boardRect.width};
+  return {mutations,styleReads,rectReads,frames,error,transition,focusBorder,pixelDrag,composited,cancelled,empty:root.childElementCount===0,squareRatio:pieceRect.width/boardRect.width};
  });
- assert.equal(result.mutations,0);assert.equal(result.styleReads,0);assert.equal(result.rectReads,1);assert.equal(result.frames,0);assert.ok(result.error<.1);assert.equal(result.transition,'0s');assert.equal(result.cancelled,true);assert.equal(result.empty,true);assert.equal(result.squareRatio,.125);
+ assert.equal(result.mutations,0);assert.equal(result.styleReads,0);assert.equal(result.rectReads,1);assert.equal(result.frames,0);assert.ok(result.error<.1);assert.equal(result.transition,'0s');assert.equal(result.focusBorder,true);assert.equal(result.pixelDrag,true);assert.equal(result.composited,true);assert.equal(result.cancelled,true);assert.equal(result.empty,true);assert.equal(result.squareRatio,.125);
  }finally{await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});await cdp.detach();}
+});
+await t.test('dragging a focused board does not repaint the board on every pointer sample',async()=>{
+ await page.goto(fixture.url+'/board-harness',{waitUntil:'networkidle0'});
+ await page.evaluate(async()=>{await ChessilPreferences.ready;const fen='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';window.view=new ChessilBoard(document.querySelector('cg-board'),{state:()=>({fen,moves:mg(fen),turn:'w',side:'w',connected:true}),submit:()=>true,cancelPremove(){}});view.render(boardgen(fen));});
+ const cdp=await page.target().createCDPSession();await cdp.send('LayerTree.enable');await cdp.send('DOM.enable');await cdp.send('CSS.enable');const {root:dom}=await cdp.send('DOM.getDocument');const {nodeId}=await cdp.send('DOM.querySelector',{nodeId:dom.nodeId,selector:'cg-board'});await cdp.send('CSS.forcePseudoState',{nodeId,forcedPseudoClasses:['focus-visible']});await cdp.send('Emulation.setCPUThrottlingRate',{rate:6});
+ const rect=await page.$eval('cg-board',el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};});let boardPaints=0;
+ const record=event=>{if(event.clip.width>=rect.w-1 && event.clip.height>=rect.h-1)boardPaints++;};
+ try {
+  await page.mouse.move(rect.x+rect.w*4.5/8,rect.y+rect.h*6.5/8);await page.mouse.down();await page.mouse.move(rect.x+rect.w*.6,rect.y+rect.h*.6);
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  cdp.on('LayerTree.layerPainted',record);
+  await page.mouse.move(rect.x+rect.w*.8,rect.y+rect.h*.2,{steps:15});await page.mouse.move(rect.x+rect.w*.2,rect.y+rect.h*.8,{steps:15});
+  cdp.off('LayerTree.layerPainted',record);
+  assert.ok(boardPaints<=3,'expected compositor-only dragging, observed '+boardPaints+' board-sized paints');
+ }finally{await page.mouse.up();await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});await cdp.detach();}
 });
 await t.test('board renderer special moves and promotion chooser use the same mapping',async()=>{
  await page.setViewport({width:700,height:800});

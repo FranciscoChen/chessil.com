@@ -148,9 +148,13 @@ slide samples its current visual position. Pointer movement writes the transform
 input sample, using bounds measured at gesture start. There is no extra animation
 frame queue, CSS transition, easing or server round trip during dragging. Slide
 duration only applies to confirmed moves. Scroll, resize, pointer cancellation
-and teardown cancel the gesture. Only the dragged piece gets `will-change`; whole-board layer promotion and
-per-frame filters are avoided. Destroy removes this instance's nodes, listeners,
-animations and timers. No parallel mobile implementation or device heuristics.
+and teardown cancel the gesture. The picked-up piece advertises `will-change:transform` at pointerdown, before
+movement begins. Drag coordinates use CSS pixels and update only the cached
+picked-up element; there are no drag-time layout reads or board redraws. Board
+paint containment is avoided so it does not introduce another clipping/compositing
+boundary around moving pieces. Per-frame filters are avoided. Destroy removes this instance's nodes, listeners,
+animations and timers. Input uses `pointerrawupdate` where supported and `pointermove` otherwise.
+No native cursor replacement, parallel mobile implementation or device heuristics.
 
 Clocks cache their elements, write only changed labels, and skip hidden documents.
 The real time source remains the server timestamp; visibility changes repaint
@@ -163,3 +167,17 @@ alignment within 0.1 px of the latest sample, one bounds read, cancellation
 and teardown, in addition to actual click/drag, touch, castling, promotion,
 premoves and history navigation. Throttling is a development approximation, not
 a guarantee of frame rate on every low-end device.
+
+Reference review: Lichess Chessground `src/drag.ts`, `src/util.ts` and
+`assets/chessground.base.css` establish its pixel-transform drag loop, animation
+cancellation and pre-existing `will-change` hint on piece elements. Our version prepares only
+the picked-up piece, conserving compositor layers on low-end devices. No Chessground
+source is copied or bundled. Chess.com documents pointer snapping separately from
+move animation; its internal implementation has not been verified. Coordinate
+alignment tests alone do not establish perceptual drag latency.
+
+The focus indicator uses a static `::after` border rather than a native CSS
+outline. A browser compositor trace reproduced a board-sized repaint for every
+drag sample with the native outline. Removing the keyboard square did not fix
+it; removing the outline did. The replacement retains the visible keyboard cue
+without an outline whose bounds track transformed descendants.
