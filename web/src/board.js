@@ -187,8 +187,8 @@ window.ChessilBoard = class ChessilBoard {
   // Keep the source cue while idle and reveal the destination only after the
   // intended piece is selected. All legal dots/capture rings remain visible.
   if(this.guidance){
-   if(this.selected===this.guidance.from)add(this.guidance.to,'guide-destination');
-   else if(!this.selected)add(this.guidance.from,'guide-source');
+   if(this.selected===this.guidance.from)add(this.guidance.to,'guide-destination ui-highlight');
+   else if(!this.selected)add(this.guidance.from,'guide-source ui-highlight');
   }
   for(const move of [this.premove,this.pending])if(move){add(move.slice(0,2),'current-premove');add(move.slice(2,4),'current-premove');}
   add(this.active,'keyboard-square');
