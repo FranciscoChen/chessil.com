@@ -20,10 +20,10 @@ test('training shared board flows, recall, puzzles, progress and responsive layo
  assert.ok(await page.$('cg-board square.guide-source'));
  const cue=await page.$eval('cg-board square.guide-source',el=>({background:getComputedStyle(el).backgroundColor,keyframes:el.getAnimations()[0]?.effect.getKeyframes().map(frame=>({offset:frame.offset,opacity:frame.opacity}))}));
  assert.equal(cue.background,'rgba(255, 255, 255, 0.5)');
- assert.deepEqual(cue.keyframes,[{offset:0,opacity:'1'},{offset:.5,opacity:'0'},{offset:1,opacity:'0'}]);
- await page.$eval('cg-board square.guide-source',el=>{const animation=el.getAnimations()[0];animation.pause();animation.currentTime=100;});
+ assert.deepEqual(cue.keyframes,[{offset:0,opacity:'0'},{offset:.5,opacity:'1'},{offset:1,opacity:'0'}]);
+ await page.$eval('cg-board square.guide-source',el=>{const animation=el.getAnimations()[0];animation.pause();animation.currentTime=800;});
  await page.screenshot({path:'/tmp/training-white-flash-on.png'});
- await page.$eval('cg-board square.guide-source',el=>{const animation=el.getAnimations()[0];animation.currentTime=700;});
+ await page.$eval('cg-board square.guide-source',el=>{const animation=el.getAnimations()[0];animation.currentTime=0;});
  await page.screenshot({path:'/tmp/training-white-flash-off.png'});
  await page.$eval('cg-board square.guide-source',el=>el.getAnimations()[0].play());
  await page.screenshot({path:'/tmp/training-guided-source.png'});
