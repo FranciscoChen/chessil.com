@@ -41,15 +41,7 @@
 .training-feedback { padding-top:1rem; border-top:1px solid var(--border); }
 #training-status { min-height:3.3em; }
 .training-progress-label { display:block; font-size:.7rem; margin-top:.75rem; }
-#training-progress { display:block; width:100%; height:.35rem; margin-top:.5rem; border:0; border-radius:var(--radius); overflow:hidden; background:var(--highlight); accent-color:var(--link); }
-#training-progress::-webkit-progress-bar { background:var(--highlight); }
-#training-progress::-webkit-progress-value { background:var(--link); }
-#training-progress::-moz-progress-bar { background:var(--link); }
 .training-autoplay { margin-top:1rem;color:var(--link);font:600 .8rem/1.5 var(--sans-font);font-variant-numeric:tabular-nums; }
-#training-autoplay-progress { display:block;width:100%;height:.4rem;margin-top:.4rem;border:0;border-radius:var(--radius);overflow:hidden;background:var(--highlight);accent-color:var(--link); }
-#training-autoplay-progress::-webkit-progress-bar { background:var(--highlight); }
-#training-autoplay-progress::-webkit-progress-value { background:var(--link); }
-#training-autoplay-progress::-moz-progress-bar { background:var(--link); }
 #training-app .training-lesson-actions .ui-button { flex:1 1 auto; }
 #training-line { display:flex; flex-wrap:wrap; gap:.35rem .75rem; list-style-position:inside; min-height:1.5rem; max-height:10rem; overflow-y:auto; font:.8rem/1.7 var(--monospace-font); }
 #training-line button { padding:.15rem .35rem; border:1px solid transparent; border-radius:var(--radius); background:transparent; color:var(--text); font:inherit; cursor:pointer; }

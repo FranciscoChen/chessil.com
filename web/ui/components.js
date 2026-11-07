@@ -10,3 +10,9 @@ exports.button = (language, route, label, style = "ui-secondary") => `<a class="
 
 // Coordinates share board geometry/styles and are updated for orientation by consumers.
 exports.coordinates = () => `<coords class="ranks" aria-hidden="true">${[8,7,6,5,4,3,2,1].map(n=>`<coord>${n}</coord>`).join('')}</coords><coords class="files" aria-hidden="true">${[...'abcdefgh'].map(n=>`<coord>${n}</coord>`).join('')}</coords>`;
+
+// Shared loading/progress markup; animation belongs exclusively to timing.css.
+const attribute=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+exports.progress=({id,label='Progress',value=0,max=100}={})=>`<progress${id?` id="${attribute(id)}"`:''} class="ui-progress" aria-label="${attribute(label)}" max="${Number(max)||100}" value="${Number(value)||0}"></progress>`;
+exports.meter=({id,label='Loading',loading=false}={})=>`<div${id?` id="${attribute(id)}"`:''} class="ui-meter" role="img" aria-label="${attribute(label)}"${loading?' data-mode="loading"':''}><span class="ui-meter-fill"></span></div>`;
+exports.countdown=()=>'<span class="ui-countdown" data-countdown></span>';

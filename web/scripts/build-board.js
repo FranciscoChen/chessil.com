@@ -8,6 +8,7 @@ async function build(){
   'game.min.js':['game.js'],
   'training.min.js':['training.js'],
   'highlight.min.js':['highlight.js'],
+  'timing.min.js':['timing.js'],
   'preferences.min.js':['sounds.js','preferences.js']
  })) {
   const files=Object.fromEntries(inputs.map(file=>[file,fs.readFileSync(path.join(root,'src',file),'utf8')]));
@@ -18,6 +19,8 @@ async function build(){
  }
  // Safe CSS stripping: declarations and data URLs are retained byte-for-byte.
  const css=['board.css','classic-pieces.css','sculpted-pieces.css'].map(file=>fs.readFileSync(path.join(root,'src',file),'utf8')).join('\n');
+ const timing=fs.readFileSync(path.join(root,'src/timing.css'),'utf8');
+ fs.writeFileSync(path.join(root,'web/css/timing.min.css'),timing.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').trim()+'\n');
  const highlight=fs.readFileSync(path.join(root,'src/highlight.css'),'utf8');
  fs.writeFileSync(path.join(root,'web/css/highlight.min.css'),highlight.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').trim()+'\n');
  const training=fs.readFileSync(path.join(root,'src/training.css'),'utf8');

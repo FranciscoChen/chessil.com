@@ -34,9 +34,4 @@ function tour(id,steps,{force=false}={}){
 }
 window.ChessilHighlight={show,tour,clear:()=>current?.close()};
 window.addEventListener('pagehide',()=>current?.close());
-document.addEventListener('DOMContentLoaded',()=>{
- const lang=document.documentElement.lang;const text=lang==='es'?['Juega una partida o busca un rival.','Aprende con lecciones y ejercicios en el tablero.','Personaliza los colores, las piezas y el sonido.']:lang==='zh'?['开始对局或寻找对手。','通过棋盘课程和练习提高棋艺。','自定义主题、棋子和声音。']:['Play a game or find an opponent.','Learn through lessons and exercises on the board.','Choose your theme, pieces and sounds.'];
- // The first visit tour stays on navigation and menus; lesson cues need no text.
- tour('welcome-v1',[{target:'#n .m:first-child a',text:text[0]},{target:'#n .m:nth-child(2) a',text:text[1]},{target:'.dasher > button',text:text[2]}]);
-});
 })();

@@ -1,6 +1,6 @@
 /* Shared training shell. Lesson content, board state and control visibility are
  * owned by the training controller; keep its IDs and section values stable. */
-const {coordinates}=require('./components');
+const {coordinates,progress,meter,countdown}=require('./components');
 const labels = {
  en: {
   heading:'A little study. A stronger game.',
@@ -99,10 +99,11 @@ exports.render = function(name, language) {
     <div class="training-feedback">
      <p id="training-status" role="status" aria-live="polite" aria-atomic="true">${t.status}</p>
      <label for="training-progress" class="ui-muted training-progress-label">${t.progress}</label>
-     <progress id="training-progress" max="100" value="0">0%</progress>
+     ${progress({id:'training-progress',label:t.progress})}
      <div id="training-autoplay" class="training-autoplay" hidden>
       <span id="training-autoplay-label" role="status" aria-live="polite"></span>
-      <progress id="training-autoplay-progress" max="100" value="0">0%</progress>
+      ${countdown()}
+      ${meter({id:'training-autoplay-progress',label:'Time until next lesson'})}
      </div>
     </div>
     <div class="ui-actions training-lesson-actions">

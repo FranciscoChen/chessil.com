@@ -3,13 +3,13 @@ document.addEventListener('DOMContentLoaded',()=>{
 'use strict';
 const root=document.querySelector('#training-app');if(!root)return;
 const $=id=>document.getElementById('training-'+id),initial='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-let data,section=root.dataset.initialSection||'tutorial',lesson,fen=initial,index=0,stage=0,active=false,busy=false,complete=false,free=false,side='w',timer,autoTimer,epoch=0,rush=null,clockTimer,positions=new Map(),progress={},account=null,saving=Promise.resolve();
+let data,section=root.dataset.initialSection||'tutorial',lesson,fen=initial,index=0,stage=0,active=false,busy=false,complete=false,free=false,side='w',timer,autoplayRun,epoch=0,rush=null,rushCountdown,positions=new Map(),progress={},account=null,saving=Promise.resolve();
 const storage='chessil.training.v1';try{progress=JSON.parse(localStorage.getItem(storage)||'{}');if(!progress||typeof progress!=='object'||Array.isArray(progress))progress={};}catch(_){}
 const text=(id,value)=>{$(id).textContent=value;},status=message=>text('status',message);
 async function request(url,options={}){const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{return await fetch(url,{...options,signal:controller.signal});}finally{clearTimeout(timeout);}}
 function expiredRush(){if(rush&&Date.now()>=rush.end){endRush('Time is up.');return true;}return false;}
 function drawClaim(){return Number(fen.split(' ')[4])>=100||positions.get(fen.split(' ').slice(0,4).join(' '))>=3;}
-function stopTimers(){clearTimeout(timer);clearInterval(autoTimer);$('autoplay').hidden=true;epoch++;busy=false;}
+function stopTimers(){clearTimeout(timer);autoplayRun?.cancel();$('autoplay').hidden=true;epoch++;busy=false;}
 function notation(move,position=fen){return gensanbase(move,boardgen(position),position,mg(position));}
 const view=new ChessilBoard(root.querySelector('cg-board'),{state:()=>({fen,autoQueen:lesson?.moves[index]?.length===5&&lesson.moves[index][4]!=='q'?false:undefined,moves:active&&!busy?mg(fen):[],turn:fen.split(' ')[1],side,watcher:!active,finished:complete,connected:active&&!busy}),submit:move=>{queueMicrotask(()=>attempt(move));return true;},cancelPremove(){}});
 function resetPositionCount(){positions=new Map([[fen.split(' ').slice(0,4).join(' '),1]]);}
@@ -64,9 +64,8 @@ function finish(){
  else{save(true);const list=lessons(),pos=list.findIndex(l=>l.id===lesson.id),hasNext=pos+1<list.length;$('next').hidden=!hasNext;$('next').textContent='Next lesson now';status('Lesson complete. '+(section==='endgames'?'Continue with tablebase practice to play the position out.':'Carry this idea into your next game.'));if(hasNext)scheduleNext();}
 }
 function scheduleNext(){
- const duration=5000,deadline=performance.now()+duration,token=epoch,bar=$('autoplay-progress');$('autoplay').hidden=false;bar.max=duration;
- const tick=()=>{if(token!==epoch)return;const remaining=Math.max(0,deadline-performance.now());bar.value=duration-remaining;text('autoplay-label',`${section==='openings'&&stage<2?'Next practice stage':'Next lesson'} in ${Math.ceil(remaining/1000)}s`);if(!remaining){clearInterval(autoTimer);next();}};
- tick();autoTimer=setInterval(tick,100);
+ const token=epoch;$('autoplay').hidden=false;text('autoplay-label',`${section==='openings'&&stage<2?'Next practice stage':'Next lesson'} in `);
+ autoplayRun=ChessilTiming.start($('autoplay'),{seconds:5,format:n=>n+'s',label:'Next lesson',onFinish:()=>{if(token===epoch)next();}});
 }
 function next(){stopTimers();if(section==='openings'&&stage<2){start(stage+1);return;}const list=lessons(),pos=list.findIndex(l=>l.id===lesson.id);if(pos+1<list.length){select(list[pos+1]);}else{status('You have completed this collection. Choose another section or repertoire.');$('next').hidden=true;}}
 function hint(){if(!lesson||stage===2||rush)return;if(free){status('Consider king activity, passed pawns and the opponent’s threats.');return;}const move=lesson.moves[index];if(move){view.guidance={from:move.slice(0,2),to:move.slice(2,4)};view.active=move.slice(0,2);view.drawOverlays();status(`Try ${notation(move)} (${move.slice(0,2)} → ${move.slice(2,4)}). ${lesson.notes?.[index]||''}`);}}
@@ -91,15 +90,15 @@ async function freeplay(){
  if(!lesson)return;stopTimers();view.guidance=null;active=false;free=true;complete=false;fen=lesson.fen||initial;index=0;side=fen.split(' ')[1];orient();resetPositionCount();paint();$('line').replaceChildren();text('stage','Tablebase practice');status('Loading endgame tablebase…');const token=epoch;
  try{const result=await tablebase(fen);if(token!==epoch)return;if(result.certainty!=='exact')throw Error('No exact result');if(!result.moves?.length||result.insufficientMaterial){endPractice(result);return;}active=true;status('Play against tablebase replies. Preserve the best result and find the plan.');$('hint').hidden=false;}catch(_){if(token===epoch)status('Tablebase unavailable. Guided lessons remain available; retry practice shortly.');}
 }
-function endRush(message=''){if(!rush)return;clearInterval(clockTimer);const score=rush.score;rush=null;stopTimers();active=false;complete=true;view.guidance=null;view.drawOverlays();$('stop').hidden=true;$('storm').hidden=section!=='tactics';$('hint').hidden=true;if(message)status(`${message} ${score} puzzles solved. This curated set is for practice, not a rating.`);}
+function endRush(message=''){if(!rush)return;rushCountdown?.cancel();const score=rush.score;rush=null;stopTimers();active=false;complete=true;view.guidance=null;view.drawOverlays();$('stop').hidden=true;$('storm').hidden=section!=='tactics';$('hint').hidden=true;if(message)status(`${message} ${score} puzzles solved. This curated set is for practice, not a rating.`);}
 function storm(){
  changeSection('tactics');const order=data.tactics.map(l=>l.id);if(!order.length)return;for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
  rush={score:0,mistakes:0,index:0,order,end:Date.now()+180000};select(data.tactics.find(l=>l.id===order[0]),2);$('stop').hidden=false;$('storm').hidden=true;text('score','0 solved · 0/3 mistakes');
- clockTimer=setInterval(()=>{const remaining=Math.max(0,Math.ceil((rush.end-Date.now())/1000));text('clock',`${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}`);if(!remaining)endRush('Time is up.');},250);
+ rushCountdown=ChessilTiming.start($('clock'),{seconds:180,format:n=>`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`,label:'Rush time remaining',onFinish:()=>endRush('Time is up.')});
 }
 function changeSection(value){endRush();stopTimers();section=value;$('search').value='';$('repertoire').closest('label').hidden=section!=='openings';$('storm').hidden=section!=='tactics';$('stop').hidden=true;text('score','');text('clock','');root.querySelectorAll('[data-section]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.section===section)));const list=lessons();if(list.length)select(list[0]);else{lesson=null;active=false;complete=true;free=false;view.guidance=null;fen=initial;paint();text('title','No lessons available');text('summary','');text('concept','');status('This collection is empty. Choose another section.');['hint','retry','next','freeplay'].forEach(id=>$(id).hidden=true);}updateLibrary();history.replaceState(null,'','#'+section);}
 root.querySelectorAll('[data-section]').forEach(b=>b.onclick=()=>changeSection(b.dataset.section));$('hint').onclick=hint;$('retry').onclick=()=>{endRush();start(0);};$('next').onclick=next;$('freeplay').onclick=freeplay;$('storm').onclick=storm;$('stop').onclick=()=>endRush('Session stopped.');$('search').oninput=updateLibrary;$('repertoire').onchange=()=>{select(lessons()[0]);updateLibrary();};
-window.addEventListener('pagehide',event=>{endRush();stopTimers();clearInterval(clockTimer);if(event.persisted){active=false;view.cancel();view.acknowledge();}else view.destroy();});
+window.addEventListener('pagehide',event=>{endRush();stopTimers();rushCountdown?.cancel();if(event.persisted){active=false;view.cancel();view.acknowledge();}else view.destroy();});
 window.addEventListener('pageshow',event=>{if(event.persisted&&lesson)start(stage);});
 root.querySelectorAll('button,select,input').forEach(el=>el.disabled=true);
 (async()=>{try{await ChessilPreferences.ready;const r=await request('/api/training/curriculum');if(!r.ok)throw Error('curriculum');data=await r.json();try{const p=await request('/api/training/progress');if(p.ok){const saved=await p.json();account=!!saved.account;if(account)progress=saved.progress||{};}}catch(_){}root.querySelectorAll('button,select,input').forEach(el=>el.disabled=false);const hash=location.hash.slice(1);changeSection(['tutorial','openings','endgames','tactics','strategy'].includes(hash)?hash:section);if(account===null)status('Progress sync is unavailable. You can train, but progress lasts for this visit.');}catch(_){status('Training could not load. Refresh to try again.');}})();

@@ -27,8 +27,8 @@ One positioned cue runs at a time. `clear()` removes it; returned handles also
 expose `update()` for application-driven position changes. Tours skip hidden
 controls and record the first presentation in localStorage. `{force:true}`
 replays a tour. Storage failure leaves guidance usable without persistence.
-The built-in welcome tour introduces Play, Train and Settings, with English,
-Spanish and Chinese text. Progress is local to the browser.
+No page starts a tour or UI callout automatically. The API is reserved for future
+guidance; tour persistence is local to the browser.
 
 Callouts use shared fonts, colors and buttons. Highlights do not intercept input;
 Escape dismisses a callout. Screen readers receive the complete text rather than
