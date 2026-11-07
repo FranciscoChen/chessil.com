@@ -15,8 +15,13 @@ Indian Defence belongs to the d4 family; King's Indian Attack is a distinct syst
 Openings have three passes: immediate guidance, a seven-second pause before a
 hint, and recall with no hints. The learner plays their repertoire's side and
 scripted replies are automatic. Completing a pass unlocks the next; the last pass
-marks the lesson complete. The next control proceeds through the filtered
-repertoire. Custom repertoires can extend this data contract later.
+marks the lesson complete. Selecting a lesson starts board input immediately.
+Guided passes pulse the source square; selecting its piece shows the board's
+usual legal destinations and pulses the intended destination. A five-second
+countdown and progress bar advance to the next pass or lesson automatically;
+the Next button advances immediately. Switching lessons or sections, retrying,
+and leaving the page cancel that countdown. Recall and puzzle rush do not
+reveal answers. Custom repertoires can extend this data contract later.
 
 Tutorial exercises teach the rules through board interaction. Strategy exercises
 ask for a move before revealing the intended plan on request. Tactics provide

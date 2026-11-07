@@ -14,10 +14,10 @@ const labels = {
   concept:'The idea', conceptHelp:'Your lesson’s key idea will appear here.',
   stage:'Ready to learn', status:'Choose a lesson to begin.', progress:'Lesson progress',
   line:'Lesson moves', meta:'Lesson details appear when you select a lesson.',
-  start:'Begin lesson', hint:'Hint', retry:'Try again', next:'Next lesson', storm:'3 min rush', freeplay:'Endgame practice', stop:'Stop',
+  hint:'Hint', retry:'Try again', next:'Next lesson', storm:'3 min rush', freeplay:'Endgame practice', stop:'Stop',
   score:'Score', clock:'Time', guidance:'How to train',
   beginner:'New to chess? Start here walks you through the board, the pieces and your first moves. Work through the lessons in order, then explore openings, endgames, tactics and strategy.',
-  steps:['Choose a lesson and read the key idea.', 'Begin the lesson, then play your move on the board.', 'Use a hint when you need one. Try again to reinforce the idea.'],
+  steps:['Choose a lesson and play your move on the board.', 'The pulsing square shows which piece to move; select it to see legal destinations.', 'Use a hint when you need one. Try again to reinforce the idea.'],
   settings:'Board & sound settings'
  },
  es: {
@@ -32,10 +32,10 @@ const labels = {
   concept:'La idea', conceptHelp:'Aquí aparecerá la idea clave de la lección.',
   stage:'Listo para aprender', status:'Elige una lección para empezar.', progress:'Progreso de la lección',
   line:'Jugadas de la lección', meta:'Los detalles aparecerán al seleccionar una lección.',
-  start:'Comenzar lección', hint:'Pista', retry:'Reintentar', next:'Siguiente lección', storm:'Reto de 3 min', freeplay:'Práctica de finales', stop:'Detener',
+  hint:'Pista', retry:'Reintentar', next:'Siguiente lección', storm:'Reto de 3 min', freeplay:'Práctica de finales', stop:'Detener',
   score:'Puntuación', clock:'Tiempo', guidance:'Cómo entrenar',
   beginner:'¿Es tu primera vez? Empieza aquí te guía por el tablero, las piezas y tus primeras jugadas. Sigue las lecciones en orden y después explora aperturas, finales, táctica y estrategia.',
-  steps:['Elige una lección y lee la idea clave.', 'Comienza la lección y juega tu movimiento en el tablero.', 'Pide una pista si la necesitas. Reintenta para afianzar la idea.'],
+  steps:['Elige una lección y juega en el tablero.', 'La casilla que parpadea indica qué pieza mover; selecciónala para ver los destinos legales.', 'Pide una pista si la necesitas. Reintenta para afianzar la idea.'],
   settings:'Ajustes del tablero y sonido'
  },
  zh: {
@@ -50,10 +50,10 @@ const labels = {
   concept:'核心思路', conceptHelp:'课程的核心思路将在这里显示。',
   stage:'准备学习', status:'选择课程以开始。', progress:'课程进度',
   line:'课程着法', meta:'选择课程后显示详细信息。',
-  start:'开始课程', hint:'提示', retry:'重试', next:'下一课', storm:'3 分钟挑战', freeplay:'残局练习', stop:'停止',
+  hint:'提示', retry:'重试', next:'下一课', storm:'3 分钟挑战', freeplay:'残局练习', stop:'停止',
   score:'得分', clock:'时间', guidance:'如何训练',
   beginner:'初学国际象棋？“从这里开始”将带你认识棋盘、棋子和基本走法。按顺序完成课程，然后探索开局、残局、战术与战略。',
-  steps:['选择课程，阅读核心思路。', '开始课程，然后在棋盘上走子。', '需要时可以查看提示。反复练习，巩固理解。'],
+  steps:['选择课程，直接在棋盘上走子。', '闪烁的格子提示要移动的棋子；选中后可查看合法落点。', '需要时可以查看提示。反复练习，巩固理解。'],
   settings:'棋盘与声音设置'
  }
 };
@@ -64,7 +64,7 @@ exports.render = function(name, language) {
  const initial = name === 'drills' ? 'openings' : name === 'puzzles' ? 'tactics' : 'tutorial';
  const sections = ['tutorial', 'openings', 'endgames', 'tactics', 'strategy'];
  const action = (id, label, style = 'ui-secondary', hidden = false) =>
-  `<button type="button" id="training-${id}" class="ui-button ${style}"${hidden ? ' hidden' : ''}${id === 'start' ? ' disabled' : ''}>${label}</button>`;
+  `<button type="button" id="training-${id}" class="ui-button ${style}"${hidden ? ' hidden' : ''}>${label}</button>`;
 
  return `<main id="main-content" class="ui-page ui-layout-${name} training-page">
  <section id="training-app" data-initial-section="${initial}" aria-label="${t.navigation}">
@@ -100,9 +100,12 @@ exports.render = function(name, language) {
      <p id="training-status" role="status" aria-live="polite" aria-atomic="true">${t.status}</p>
      <label for="training-progress" class="ui-muted training-progress-label">${t.progress}</label>
      <progress id="training-progress" max="100" value="0">0%</progress>
+     <div id="training-autoplay" class="training-autoplay" hidden>
+      <span id="training-autoplay-label" role="status" aria-live="polite"></span>
+      <progress id="training-autoplay-progress" max="100" value="0">0%</progress>
+     </div>
     </div>
     <div class="ui-actions training-lesson-actions">
-     ${action('start', t.start, 'ui-primary')}
      ${action('hint', t.hint, 'ui-secondary', true)}
      ${action('retry', t.retry, 'ui-secondary', true)}
      ${action('next', t.next, 'ui-primary', true)}

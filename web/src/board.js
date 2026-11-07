@@ -6,7 +6,7 @@ window.ChessilBoard = class ChessilBoard {
  constructor(root,{state,submit,cancelPremove}) {
   this.root=root;this.state=state;this.submit=submit;this.cancelPremove=cancelPremove;
   this.pieces=new Map();this.position={};this.selected=null;this.keyboardMode=false;this.gesture=null;this.active='e2';
-  this.orientation='w';this.pending=null;this.lastMove='';this.premove='';this.hover=null;this.overlay=new Map();
+  this.orientation='w';this.pending=null;this.lastMove='';this.premove='';this.hover=null;this.guidance=null;this.overlay=new Map();
   root.tabIndex=0;root.setAttribute('role','application');root.setAttribute('aria-roledescription','chessboard');
   this.announcement=document.createElement('span');this.announcement.className='game-sr-only';this.announcement.setAttribute('aria-live','polite');root.parentElement.append(this.announcement);
   this.abort=new AbortController();const options={signal:this.abort.signal};
@@ -183,6 +183,13 @@ window.ChessilBoard = class ChessilBoard {
   };
   if(this.lastMove){add(this.lastMove.slice(0,2),'last-move');add(this.lastMove.slice(2,4),'last-move');}
   if(this.selected){add(this.selected,'selected');for(const move of this.candidates(this.selected))add(move.slice(2,4),this.position[move.slice(2,4)]?'move-dest capture-dest':'move-dest');}
+  // The training controller supplies a cue; the board owns its presentation.
+  // Keep the source cue while idle and reveal the destination only after the
+  // intended piece is selected. All legal dots/capture rings remain visible.
+  if(this.guidance){
+   if(this.selected===this.guidance.from)add(this.guidance.to,'guide-destination');
+   else if(!this.selected)add(this.guidance.from,'guide-source');
+  }
   for(const move of [this.premove,this.pending])if(move){add(move.slice(0,2),'current-premove');add(move.slice(2,4),'current-premove');}
   add(this.active,'keyboard-square');
   if(this.hover)add(this.hover,'hover-square');
