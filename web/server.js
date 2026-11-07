@@ -550,7 +550,7 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
     return trainingApi(req, res, resHeaders, sessiondata);
   }
   // Manage language part of url
-  if (typeof languages[req.url.slice(1, 3)] !== 'undefined') {
+  if (typeof languages[req.url.slice(1, 3)] !== 'undefined' && (req.url.length === 3 || req.url[3] === '/')) {
     routelanguage(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
   }
