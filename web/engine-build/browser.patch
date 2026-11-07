@@ -1,0 +1,65 @@
+diff --git a/build.js b/build.js
+index beed34a..9aa13e2 100755
+--- a/build.js
++++ b/build.js
+@@ -14,7 +14,7 @@ var params = getParams({booleans: [
+     "debug", "do-not-verify-nets",
+     
+ ]});
+-var args = ["-j", require("os").cpus().length];
++var args = ["-j", 1];
+ var fs = require("fs");
+ var p = require("path");
+ var srcPath = p.join(__dirname, "src");
+diff --git a/src/emscripten/extern-post.js b/src/emscripten/extern-post.js
+index 440a239..450d365 100644
+--- a/src/emscripten/extern-post.js
++++ b/src/emscripten/extern-post.js
+@@ -574,7 +574,18 @@ if (isPthreadWorker) {
+                     onmessage = function (event)
+                     {
+                         /// For backwards compatibility, the engine can inform the frontend of the ability to output download progress.
+-                        if (event.data === "setoption name CanOutputEngineDownloadProgress") {
++                        if (event.data && event.data.type === "loadNetwork") {
++                            if (!engine.processCommand || engine._isSearching()) { postMessage("networkerror busy"); return; }
++                            try {
++                                var name = event.data.name;
++                                if (!/^[a-zA-Z0-9_.-]+$/.test(name)) throw new Error("Invalid network filename");
++                                engine.FS.writeFile("/" + name, new Uint8Array(event.data.data));
++                                var option = event.data.option || "EvalFile";
++                                if (!/^[A-Za-z][A-Za-z0-9 _-]{0,63}$/.test(option)) throw new Error("Invalid network option");
++                                engine.processCommand("setoption name " + option + " value /" + name);
++                                postMessage("networkready");
++                            } catch (error) { postMessage("networkerror " + error.message); }
++                        } else if (event.data === "setoption name CanOutputEngineDownloadProgress") {
+                             postMessage("info WillOutputEngineDownloadProgress");
+                         } else if (event.data.progressPort) {
+                             progressPort = event.data.progressPort;
+diff --git a/src/emscripten/wasm-makefile.mk b/src/emscripten/wasm-makefile.mk
+index cd9103f..1672f4f 100644
+--- a/src/emscripten/wasm-makefile.mk
++++ b/src/emscripten/wasm-makefile.mk
+@@ -83,7 +83,7 @@ EM_LDFLAGS  += -s EXPORT_NAME="Stockfish"
+ #EM_LDFLAGS  += -s NO_FILESYSTEM=1
+ #EM_LDFLAGS  += -s EXPORTED_FUNCTIONS="['_main','_command']"
+ 
+-EM_LDFLAGS  += -s EXPORTED_RUNTIME_METHODS=ccall
++EM_LDFLAGS  += -s EXPORTED_RUNTIME_METHODS=ccall,FS
+ #NOTE: Setting INCOMING_MODULE_JS_API *replaces* the default list (it does not
+ #extend it). `wasmBinary` was removed from the defaults in emscripten 6.0.2 and
+ #the Node.js loader supplies it for split builds, so we must re-list the other
+diff --git a/src/nnue/network.cpp b/src/nnue/network.cpp
+index 44f844a..e4ece0e 100644
+--- a/src/nnue/network.cpp
++++ b/src/nnue/network.cpp
+@@ -179,9 +179,7 @@ NetworkOutput Network::evaluate(const Position&    pos,
+ void Network::verify(const std::function<void(std::string_view)>& f,
+                      const EvalFile&                              evalFile,
+                      fs::path                                     evalfilePath) const {
+-#ifdef __EMSCRIPTEN__
+-    return;  // Skip the (expensive and unnecessary) NNUE self-test in the Wasm build
+-#endif
++
+     if (evalfilePath.empty())
+         evalfilePath = evalFile.defaultName;
+ 

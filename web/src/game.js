@@ -21,7 +21,7 @@ function sendGameMessage(message) {
  if(!wsc || wsc.readyState!==WebSocket.OPEN)return false;
  wsc.send(message);return true;
 }
-function updateGameUi(){if(typeof gameUiState==='function')gameUiState();}
+function updateGameUi(){if(typeof gameUiState==='function')gameUiState();document.dispatchEvent(new Event('chessil:game-state'));}
 function statusMessage(text) {const status=document.querySelector('[data-game-field="state"]');if(status)status.textContent=text;}
 const clockElements={};let botClockSide='';
 function paintClocks() {
@@ -90,7 +90,7 @@ function gamereplay(ply) {
  const position=ucifen(uci.slice(0,a1ti).join(' '));
  boardView.render(position.b,uci[a1ti-1] || '',false);
  movesList.querySelector('.a1t')?.classList.remove('a1t');movesList.querySelector(`[ply="${a1ti}"]`)?.classList.add('a1t');
- updateGameUi();
+ updateGameUi();document.dispatchEvent(new Event('chessil:review'));
  if(!gamefinished)return;
  for(const side of ['w','b']) {
   const index=Array.from({length:a1ti},(_,i)=>i).reverse().find(i=>(i%2===0?'w':'b')===side);

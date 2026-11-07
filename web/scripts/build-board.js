@@ -6,6 +6,7 @@ async function build(){
  for(const [output,inputs] of Object.entries({
   'board.min.js':['chess-rules.js','board.js'],
   'game.min.js':['game.js'],
+  'analysis.min.js':['local-engine.js','analysis.js'],
   'training.min.js':['training.js'],
   'highlight.min.js':['highlight.js'],
   'timing.min.js':['timing.js'],
@@ -19,6 +20,8 @@ async function build(){
  }
  // Safe CSS stripping: declarations and data URLs are retained byte-for-byte.
  const css=['board.css','classic-pieces.css','sculpted-pieces.css'].map(file=>fs.readFileSync(path.join(root,'src',file),'utf8')).join('\n');
+ const analysis=fs.readFileSync(path.join(root,'src/analysis.css'),'utf8');
+ fs.writeFileSync(path.join(root,'web/css/analysis.min.css'),analysis.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').trim()+'\n');
  const timing=fs.readFileSync(path.join(root,'src/timing.css'),'utf8');
  fs.writeFileSync(path.join(root,'web/css/timing.min.css'),timing.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').trim()+'\n');
  const highlight=fs.readFileSync(path.join(root,'src/highlight.css'),'utf8');
