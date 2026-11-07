@@ -199,3 +199,7 @@ While dragging, the square under the pointer receives a full-cell warm accent
 with an inset border, whether or not it is a legal destination. The existing
 legal destination dots and capture rings remain visible away from the pointer.
 The accent is defined per board palette and follows the theme.
+
+Shared board consumers may override `state().autoQueen` for a move-specific
+promotion lesson. When absent, the saved user preference remains authoritative.
+This lets an underpromotion exercise show the chooser without changing settings.

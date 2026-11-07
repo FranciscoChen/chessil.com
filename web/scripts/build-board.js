@@ -6,6 +6,7 @@ async function build(){
  for(const [output,inputs] of Object.entries({
   'board.min.js':['chess-rules.js','board.js'],
   'game.min.js':['game.js'],
+  'training.min.js':['training.js'],
   'preferences.min.js':['sounds.js','preferences.js']
  })) {
   const files=Object.fromEntries(inputs.map(file=>[file,fs.readFileSync(path.join(root,'src',file),'utf8')]));
@@ -16,6 +17,8 @@ async function build(){
  }
  // Safe CSS stripping: declarations and data URLs are retained byte-for-byte.
  const css=['board.css','classic-pieces.css','sculpted-pieces.css'].map(file=>fs.readFileSync(path.join(root,'src',file),'utf8')).join('\n');
+ const training=fs.readFileSync(path.join(root,'src/training.css'),'utf8');
+ fs.writeFileSync(path.join(root,'web/css/training.min.css'),training.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').trim()+'\n');
  const preferences=fs.readFileSync(path.join(root,'src/preferences.css'),'utf8');
  fs.writeFileSync(path.join(root,'web/css/preferences.min.css'),preferences.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').trim()+'\n');
  fs.writeFileSync(path.join(root,'web/css/board.min.css'),css.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').trim()+'\n');

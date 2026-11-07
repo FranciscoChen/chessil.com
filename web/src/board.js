@@ -114,7 +114,7 @@ window.ChessilBoard = class ChessilBoard {
   if(!candidates.length)return false;
   const promote=this.position[from]?.p==='p' && (to[1]==='1'||to[1]==='8');
   this.clear();
-  if(promote && !ChessilPreferences.get().autoQueen)this.choosePromotion(from,to,preview);else this.propose(from+to+(promote?'q':''),preview);
+  if(promote && !(this.state().autoQueen ?? ChessilPreferences.get().autoQueen))this.choosePromotion(from,to,preview);else this.propose(from+to+(promote?'q':''),preview);
   return true;
  }
  propose(move,preview=false) {

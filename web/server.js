@@ -48,6 +48,7 @@ const websocketserver = config.web.websocketServerIps;
 const websocketpassword = config.shared.websocketPassword;
 
 const domainname = config.web.domainName;
+const trainingApi = require('./training-api').createTrainingApi({ db: lobbyDb, origin: domainname });
 const authRateLimits = config.web.authRateLimits;
 const gameRegions = configuredRegions(config);
 const gameServerHost = config.engine.gameHost;
@@ -545,6 +546,9 @@ function routelanguage(filename, mime, ext, res, req, resHeaders, sessiondata) {
 
 function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
   // Public endpoints are served here; internal-only endpoint is /websocket (restricted by auth + IP allowlist in wsauth).
+  if (req.url.split('?', 1)[0].startsWith('/api/training/')) {
+    return trainingApi(req, res, resHeaders, sessiondata);
+  }
   // Manage language part of url
   if (typeof languages[req.url.slice(1, 3)] !== 'undefined') {
     routelanguage(filename, mime, ext, res, req, resHeaders, sessiondata)

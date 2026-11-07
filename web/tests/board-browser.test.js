@@ -216,9 +216,9 @@ await t.test('board renderer special moves and promotion chooser use the same ma
  await page.evaluate(()=>{model.fen='4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1';model.moves=mg(model.fen);model.turn='w';view.render(boardgen(model.fen));renderMove('e5d6');});
  assert.equal(await page.$('piece[data-square="d5"]'),null);assert.equal(await page.$$eval('piece',nodes=>nodes.length),3);
  // Underpromotion requires explicit choice, then uses the usual submit path.
- await page.evaluate(()=>{model.fen='4k3/P7/8/8/8/8/8/4K3 w - - 0 1';model.moves=mg(model.fen);model.turn='w';view.render(boardgen(model.fen));});
+ await page.evaluate(()=>{model.fen='4k3/P7/8/8/8/8/8/4K3 w - - 0 1';model.moves=mg(model.fen);model.turn='w';model.autoQueen=false;ChessilPreferences.update({autoQueen:true});view.render(boardgen(model.fen));});
  await click('a7');await click('a8');await page.waitForSelector('.promotion-dialog[open]');
- await page.click('.promotion-dialog button:last-child');assert.equal(await page.evaluate(()=>submissions.at(-1)),'a7a8n');
+ await page.click('.promotion-dialog button:last-child');assert.equal(await page.evaluate(()=>submissions.at(-1)),'a7a8n');assert.equal(await page.evaluate(()=>ChessilPreferences.get().autoQueen),true);
  await page.evaluate(()=>renderMove('a7a8n'));assert.equal(await page.$eval('piece[data-square="a8"]',el=>el.className),'white knight');
  // Cancelled gesture cannot leave a piece attached to the pointer.
  await page.evaluate(()=>{model.turn='w';model.side='w';view.render(boardgen('4k3/8/8/8/8/8/P7/4K3 w - - 0 1'));});

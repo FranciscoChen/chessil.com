@@ -7,3 +7,6 @@ function board(t, art=false) {
 
 exports.board = board;
 exports.button = (language, route, label, style = "ui-secondary") => `<a class="ui-button ${style}" href="/${language}/${route}">${label}</a>`;
+
+// Coordinates share board geometry/styles and are updated for orientation by consumers.
+exports.coordinates = () => `<coords class="ranks" aria-hidden="true">${[8,7,6,5,4,3,2,1].map(n=>`<coord>${n}</coord>`).join('')}</coords><coords class="files" aria-hidden="true">${[...'abcdefgh'].map(n=>`<coord>${n}</coord>`).join('')}</coords>`;
