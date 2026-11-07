@@ -8,6 +8,14 @@ test('training shared board flows, recall, puzzles, progress and responsive layo
  async function move(uci){for(const s of [uci.slice(0,2),uci.slice(2,4)]){const p=await square(s);await page.mouse.click(p.x,p.y);}}
  assert.equal(await page.$('#training-start'),null);
  assert.ok(await page.$('cg-board square.guide-source'));
+ const cue=await page.$eval('cg-board square.guide-source',el=>({background:getComputedStyle(el).backgroundColor,keyframes:el.getAnimations()[0]?.effect.getKeyframes().map(frame=>({offset:frame.offset,opacity:frame.opacity}))}));
+ assert.equal(cue.background,'rgba(255, 255, 255, 0.5)');
+ assert.deepEqual(cue.keyframes,[{offset:0,opacity:'0'},{offset:.45,opacity:'1'},{offset:.55,opacity:'1'},{offset:1,opacity:'0'}]);
+ await page.$eval('cg-board square.guide-source',el=>{const animation=el.getAnimations()[0];animation.pause();animation.currentTime=600;});
+ await page.screenshot({path:'/tmp/training-white-flash-on.png'});
+ await page.$eval('cg-board square.guide-source',el=>{const animation=el.getAnimations()[0];animation.currentTime=0;});
+ await page.screenshot({path:'/tmp/training-white-flash-off.png'});
+ await page.$eval('cg-board square.guide-source',el=>el.getAnimations()[0].play());
  await page.screenshot({path:'/tmp/training-guided-source.png'});
  const first=curriculum.tutorial[0].moves[0];await page.mouse.click(...Object.values(await square(first.slice(0,2))));
  assert.ok(await page.$(`cg-board square.guide-destination[data-square="${first.slice(2,4)}"]`));
