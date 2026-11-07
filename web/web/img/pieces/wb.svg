@@ -3,29 +3,29 @@
   <desc id="sculpted-wb-desc">Sculpted chess piece with polished surfaces and dark carved inlays.</desc>
   <defs>
     <linearGradient id="sculpted-wb-body" x1="0" y1="0" x2="1" y2="0.65">
-      <stop offset="0" stop-color="#fffef5"/><stop offset=".3" stop-color="#f9f2dc"/>
-      <stop offset=".68" stop-color="#e5d7b8"/><stop offset="1" stop-color="#c7b593"/>
+      <stop offset="0" stop-color="#f8f1e0"/><stop offset=".3" stop-color="#f2ead6"/>
+      <stop offset=".68" stop-color="#e2d3b3"/><stop offset="1" stop-color="#ccbb98"/>
     </linearGradient>
     <radialGradient id="sculpted-wb-light" cx=".28" cy=".18" r=".8">
-      <stop stop-color="#fffef8" stop-opacity=".5"/><stop offset="1" stop-color="#fffef8" stop-opacity="0"/>
+      <stop stop-color="#faf3e3" stop-opacity=".5"/><stop offset="1" stop-color="#faf3e3" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="sculpted-wb-groove" x1="0" y1="0" x2="0" y2="1">
-      <stop stop-color="#34434a" stop-opacity=".95"/><stop offset="1" stop-color="#34434a" stop-opacity=".7"/>
+      <stop stop-color="#26343d" stop-opacity=".95"/><stop offset="1" stop-color="#26343d" stop-opacity=".7"/>
     </linearGradient>
     <clipPath id="sculpted-wb-clip"><path d="M218.75 875V808.81C218.75 759.11 259.04 718.81 308.75 718.81H374.06C321.19 662.11 286.22 576 281.26 499.87C274.26 392.33 325.86 285.14 417.88 209.57C408 181 414 151 435 129C452 111 475 103 500 103C542.26 103 576.68 136.55 578.08 178.46C548 214 526 249 509 287C478 358 470 430 472 491H531C528 436 535 333 593.9 250.06Q600.5 240.5 607.26 231.82C683.51 305.41 725.23 402.49 718.89 499.87C714.62 565.44 688.07 638.45 646.99 693.66Q637 707 625 718.81H691.25C740.96 718.81 781.25 759.11 781.25 808.81V875Z"/></clipPath>
   </defs>
-  <path d="M218.75 875V808.81C218.75 759.11 259.04 718.81 308.75 718.81H374.06C321.19 662.11 286.22 576 281.26 499.87C274.26 392.33 325.86 285.14 417.88 209.57C408 181 414 151 435 129C452 111 475 103 500 103C542.26 103 576.68 136.55 578.08 178.46C548 214 526 249 509 287C478 358 470 430 472 491H531C528 436 535 333 593.9 250.06Q600.5 240.5 607.26 231.82C683.51 305.41 725.23 402.49 718.89 499.87C714.62 565.44 688.07 638.45 646.99 693.66Q637 707 625 718.81H691.25C740.96 718.81 781.25 759.11 781.25 808.81V875Z" fill="url(#sculpted-wb-body)" stroke="#15232b" stroke-width="18" stroke-linejoin="round"/>
+  <path d="M218.75 875V808.81C218.75 759.11 259.04 718.81 308.75 718.81H374.06C321.19 662.11 286.22 576 281.26 499.87C274.26 392.33 325.86 285.14 417.88 209.57C408 181 414 151 435 129C452 111 475 103 500 103C542.26 103 576.68 136.55 578.08 178.46C548 214 526 249 509 287C478 358 470 430 472 491H531C528 436 535 333 593.9 250.06Q600.5 240.5 607.26 231.82C683.51 305.41 725.23 402.49 718.89 499.87C714.62 565.44 688.07 638.45 646.99 693.66Q637 707 625 718.81H691.25C740.96 718.81 781.25 759.11 781.25 808.81V875Z" fill="url(#sculpted-wb-body)" stroke="#1d2a32" stroke-width="18" stroke-linejoin="round"/>
   <g clip-path="url(#sculpted-wb-clip)">
     <path d="M218.75 875V808.81C218.75 759.11 259.04 718.81 308.75 718.81H374.06C321.19 662.11 286.22 576 281.26 499.87C274.26 392.33 325.86 285.14 417.88 209.57C408 181 414 151 435 129C452 111 475 103 500 103C542.26 103 576.68 136.55 578.08 178.46C548 214 526 249 509 287C478 358 470 430 472 491H531C528 436 535 333 593.9 250.06Q600.5 240.5 607.26 231.82C683.51 305.41 725.23 402.49 718.89 499.87C714.62 565.44 688.07 638.45 646.99 693.66Q637 707 625 718.81H691.25C740.96 718.81 781.25 759.11 781.25 808.81V875Z" fill="url(#sculpted-wb-light)"/>
-    <path d="M218.75 875V808.81C218.75 759.11 259.04 718.81 308.75 718.81H374.06C321.19 662.11 286.22 576 281.26 499.87C274.26 392.33 325.86 285.14 417.88 209.57C408 181 414 151 435 129C452 111 475 103 500 103C542.26 103 576.68 136.55 578.08 178.46C548 214 526 249 509 287C478 358 470 430 472 491H531C528 436 535 333 593.9 250.06Q600.5 240.5 607.26 231.82C683.51 305.41 725.23 402.49 718.89 499.87C714.62 565.44 688.07 638.45 646.99 693.66Q637 707 625 718.81H691.25C740.96 718.81 781.25 759.11 781.25 808.81V875Z" fill="none" stroke="#fffdf4" stroke-width="7" stroke-linejoin="round" opacity=".58"/>
-    <path d="M248 832Q500 846 752 832V882H248Z" fill="#8b7755" opacity=".17"/>
-    <g fill="none" stroke="#fffdf4" stroke-width="17" stroke-linecap="round" stroke-linejoin="round" opacity=".32" transform="translate(0 4)">
+    <path d="M218.75 875V808.81C218.75 759.11 259.04 718.81 308.75 718.81H374.06C321.19 662.11 286.22 576 281.26 499.87C274.26 392.33 325.86 285.14 417.88 209.57C408 181 414 151 435 129C452 111 475 103 500 103C542.26 103 576.68 136.55 578.08 178.46C548 214 526 249 509 287C478 358 470 430 472 491H531C528 436 535 333 593.9 250.06Q600.5 240.5 607.26 231.82C683.51 305.41 725.23 402.49 718.89 499.87C714.62 565.44 688.07 638.45 646.99 693.66Q637 707 625 718.81H691.25C740.96 718.81 781.25 759.11 781.25 808.81V875Z" fill="none" stroke="#f5ecd9" stroke-width="7" stroke-linejoin="round" opacity=".58"/>
+    <path d="M248 832Q500 846 752 832V882H248Z" fill="#ccbb98" opacity=".17"/>
+    <g fill="none" stroke="#f5ecd9" stroke-width="17" stroke-linecap="round" stroke-linejoin="round" opacity=".32" transform="translate(0 4)">
       <path d="M349 645Q500 681 651 645"/><path d="M500 551V610M472 579H528"/><path d="M255 813Q500 826 745 813"/>
     </g>
     <g fill="none" stroke="url(#sculpted-wb-groove)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
       <path d="M349 645Q500 681 651 645"/><path d="M500 551V610M472 579H528"/><path d="M255 813Q500 826 745 813"/>
     </g>
-    <path d="M336 490C330 408 359 337 399 292M458 144Q488 126 513 139" fill="none" stroke="#fffef8" stroke-width="13" stroke-linecap="round" opacity=".8"/>
+    <path d="M336 490C330 408 359 337 399 292M458 144Q488 126 513 139" fill="none" stroke="#faf3e3" stroke-width="13" stroke-linecap="round" opacity=".8"/>
 
 
   </g>

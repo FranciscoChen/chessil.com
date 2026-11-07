@@ -1,0 +1,25 @@
+{
+  "outline": "#1d2a32",
+  "w": {
+    "label": "Ivory",
+    "stops": [
+      "#f8f1e0",
+      "#f2ead6",
+      "#e2d3b3",
+      "#ccbb98"
+    ],
+    "rim": "#f5ecd9",
+    "shine": "#faf3e3"
+  },
+  "b": {
+    "label": "Charcoal",
+    "stops": [
+      "#3b4a53",
+      "#26343d",
+      "#202d35",
+      "#17242c"
+    ],
+    "rim": "#c7bc9f",
+    "shine": "#aebebc"
+  }
+}

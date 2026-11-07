@@ -1,5 +1,5 @@
 /* Game UI. Board geometry and pieces live only in the shared board.min.css. */
-.game-page .game-shell { --game-board-size:min(42rem,max(24rem,calc(100dvh - 13rem))); width:min(calc(100% - 3rem),calc(var(--game-board-size) + 21.5rem)); padding:1.5rem 0 2.5rem; margin:0 auto; min-height:calc(100vh - var(--header-height) - var(--footer-height)); }
+.game-page .game-shell { width:min(calc(100% - 3rem),calc(var(--chess-board-size) + 21.5rem)); padding:1.5rem 0 2.5rem; margin:0 auto; min-height:calc(100vh - var(--header-height) - var(--footer-height)); }
 .game-heading { display:flex; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:1.4rem; }
 .game-heading .eyebrow { margin-bottom:.25rem; }
 .game-heading h1 { margin:0; color:var(--text); font:400 1.8rem/1.2 var(--serif-font); letter-spacing:-.02em; }
@@ -7,7 +7,7 @@
 .game-heading-actions { display:flex; align-items:center; gap:.4rem; }
 .game-heading-actions .ui-button { min-height:2.5rem; }
 .game-page .round { display:block; width:100%; margin:0; }
-.game-page .round__app { display:grid; grid-template-columns:minmax(0,var(--game-board-size)) minmax(17rem,20rem); grid-template-rows:auto minmax(8rem,1fr) auto auto; grid-template-areas:"board opponent" "board moves" "board actions" "board player"; gap:.75rem 1.5rem; justify-content:center; justify-self:auto; }
+.game-page .round__app { display:grid; grid-template-columns:minmax(0,var(--chess-board-size)) minmax(17rem,20rem); grid-template-rows:auto minmax(8rem,1fr) auto auto; grid-template-areas:"board opponent" "board moves" "board actions" "board player"; gap:.75rem 1.5rem; justify-content:center; justify-self:auto; }
 .game-page .round__app__board { grid-area:board; width:100%; height:0; padding-bottom:100%; border-radius:.35rem; overflow:hidden; box-shadow:0 10px 40px var(--shadow); background:#b58863; align-self:start; }
 .game-page .game-player { display:flex; align-items:center; justify-content:space-between; min-width:0; padding:.85rem; gap:.75rem; background:var(--bg); border:1px solid var(--border); border-radius:.5rem; transition:border-color .15s; }
 .game-player--top { grid-area:opponent; }
@@ -15,8 +15,8 @@
 .game-page .game-player.is-turn { border-color:var(--link); }
 .game-page .ruser { display:flex; align-items:center; gap:.65rem; min-width:0; padding:0; font-family:var(--sans-font); font-size:.9rem; white-space:normal; border:0; background:transparent; }
 .player-mark { flex:0 0 1.75rem; width:1.75rem; height:1.75rem; border-radius:50%; box-shadow:inset 0 0 0 1px rgba(255,255,255,.2); border:1px solid var(--border); }
-.player-mark--white { background:#f3ead6; }
-.player-mark--black { background:#28272a; }
+.player-mark--white { background:var(--piece-white); }
+.player-mark--black { background:var(--piece-black); }
 .player-details { min-width:0; }
 .player-details name { display:block; max-width:10rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; color:var(--text); }
 .player-meta { display:flex; align-items:center; gap:.55rem; color:var(--text2); font-size:.7rem; margin-top:.25rem; }
@@ -65,7 +65,7 @@
 .game-page .material-bottom mpiece { margin:0; width:2rem; height:2rem; }
 .game-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 @media(max-width:900px) {
- .game-page .game-shell { width:min(calc(100% - 2rem),42rem); padding:1.1rem 0 2rem; }
+ .game-page .game-shell { width:var(--chess-board-size); padding:1.1rem 0 2rem; }
  .game-page .round__app { width:100%; grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto auto auto auto; grid-template-areas:"opponent" "board" "player" "actions" "moves"; gap:.65rem; }
  .game-page .game-player { padding:.65rem .85rem; }
  .game-page .rclock .time { font-size:1.75rem; }
@@ -75,7 +75,7 @@
  .game-page .game-actions .fbt { min-height:2.75rem; font-size:.8rem; }
 }
 @media(max-width:480px) {
- .game-page .game-shell { width:calc(100% - 1rem); padding-top:.85rem; }
+ .game-page .game-shell { width:var(--chess-board-size); padding-top:.85rem; }
  .game-heading { gap:.5rem; margin-bottom:1rem; }
  .game-heading h1 { font-size:1.3rem; }
  .game-heading .eyebrow { font-size:.6rem; }

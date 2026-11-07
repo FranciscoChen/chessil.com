@@ -203,3 +203,10 @@ The accent is defined per board palette and follows the theme.
 Shared board consumers may override `state().autoQueen` for a move-specific
 promotion lesson. When absent, the saved user preference remains authoritative.
 This lets an underpromotion exercise show the chooser without changing settings.
+
+Game and training layouts consume `--chess-board-size` from `src/board.css`.
+Desktop boards are capped at 46rem with viewport-height and sidebar constraints.
+At 900px and below, both layouts use the same available-width rule. Training
+moves its library below the board when three columns would shrink it. Coordinate
+labels alternate light/dark ink according to the displayed square, independently
+of orientation, and use a stronger weight for small-board legibility.

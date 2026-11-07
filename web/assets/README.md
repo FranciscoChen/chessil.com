@@ -26,3 +26,18 @@ rendered PNG and inspect every piece in both colors. The sheet includes 92 px
 squares, a 40 px row and enlarged knight/bishop/king details. Also inspect the
 Sculpted set in the game page on both board palettes. XML validity alone is not a
 visual check. Screenshots are review artifacts and are not served as piece assets.
+
+## Shared piece colors
+
+`piece-palette.json` owns both sets’ material colors. White uses warm ivory
+`#F2EAD6`; Black uses blue charcoal `#26343D`. Classic uses these solid body
+colors with opposite-color details; Sculpted uses the same body stops with
+restrained highlights and shadows. Sculpted’s dark highlights are deliberately
+subdued to keep the silhouette distinct from both board palettes.
+
+`classic-pieces.json` preserves the original Classic SVG geometry as templates.
+`build-pieces.js` resolves their color tokens and generates `classic-pieces.css`
+alongside all Sculpted SVGs, CSS and version hashes. Edit the shared palette,
+then run `node web/scripts/build-pieces.js` and `node web/scripts/build-board.js`.
+The preview script renders both sets, including every piece on both square
+colors at 40 px. Inspect the PNG before publishing palette changes.
