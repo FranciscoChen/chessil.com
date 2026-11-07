@@ -64,7 +64,7 @@ button:disabled, .disabled { opacity: .5; cursor: not-allowed; }
   .round { width: calc(100% - .5rem); margin: .5rem auto; }
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  *:not(.ui-highlight):not(.ui-countdown-track):not(.ui-meter-fill), *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 .number-menu--tabs .nm-item.active, .number-menu--tabs .nm-item:hover {
   background: var(--hover); color: var(--link); border-color: var(--link);

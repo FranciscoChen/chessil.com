@@ -43,7 +43,7 @@ label,.form-label { color:var(--text); font-weight:600; font-size:.85rem; } inpu
 @keyframes board-arrive { from { opacity:0; transform:perspective(1100px) rotateX(12deg) rotateZ(-7deg) translateY(1rem); } to { opacity:1; transform:perspective(1100px) rotateX(12deg) rotateZ(-7deg); } }
 @media(max-width:900px) { .ui-hero { gap:1.5rem; } .ui-grid { grid-template-columns:1fr; } .ui-workbench { grid-template-columns:1fr; } .ui-sidebar-layout { grid-template-columns:1fr; } .ui-sidebar { display:flex; flex-wrap:wrap; } }
 @media(max-width:600px) { .ui-page { width:calc(100% - 2rem); padding-top:2rem; } .ui-hero,.ui-grid-two { grid-template-columns:1fr; } .ui-hero-art { padding:1.5rem; max-width:24rem; margin:auto; } .ui-hero h1 { max-width:12ch; } header { padding-inline:.25rem; } header .t a { font-size:1.4rem; } .site-buttons #clinput { display:none; } .ui-section { margin-top:2.5rem; } }
-@media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
+@media(prefers-reduced-motion:reduce) { *:not(.ui-highlight):not(.ui-countdown-track):not(.ui-meter-fill),*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
 /* Fixed fractional tracks prevent intrinsic SVG dimensions from sizing the board. */
 .ui-board { grid-template-columns:repeat(8,minmax(0,1fr)); grid-template-rows:repeat(8,minmax(0,1fr)); }
 .ui-square { min-width:0; min-height:0; position:relative; }

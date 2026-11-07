@@ -33,7 +33,7 @@ guidance; tour persistence is local to the browser.
 Callouts use shared fonts, colors and buttons. Highlights do not intercept input;
 Escape dismisses a callout. Screen readers receive the complete text rather than
 individual character changes. Reduced motion shows the complete text immediately
-and uses a steady white highlight.
+and slows the essential white on/off cue to one cycle every two seconds.
 
 Board guidance uses existing square overlays with the same `ui-highlight` class,
 without creating a positioned overlay, callout, observer or timer. Pointer input

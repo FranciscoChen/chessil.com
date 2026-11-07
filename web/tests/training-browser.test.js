@@ -20,10 +20,10 @@ test('training shared board flows, recall, puzzles, progress and responsive layo
  assert.ok(await page.$('cg-board square.guide-source'));
  const cue=await page.$eval('cg-board square.guide-source',el=>({background:getComputedStyle(el).backgroundColor,keyframes:el.getAnimations()[0]?.effect.getKeyframes().map(frame=>({offset:frame.offset,opacity:frame.opacity}))}));
  assert.equal(cue.background,'rgba(255, 255, 255, 0.5)');
- assert.deepEqual(cue.keyframes,[{offset:0,opacity:'0'},{offset:.45,opacity:'1'},{offset:.55,opacity:'1'},{offset:1,opacity:'0'}]);
- await page.$eval('cg-board square.guide-source',el=>{const animation=el.getAnimations()[0];animation.pause();animation.currentTime=600;});
+ assert.deepEqual(cue.keyframes,[{offset:0,opacity:'1'},{offset:.5,opacity:'0'},{offset:1,opacity:'0'}]);
+ await page.$eval('cg-board square.guide-source',el=>{const animation=el.getAnimations()[0];animation.pause();animation.currentTime=100;});
  await page.screenshot({path:'/tmp/training-white-flash-on.png'});
- await page.$eval('cg-board square.guide-source',el=>{const animation=el.getAnimations()[0];animation.currentTime=0;});
+ await page.$eval('cg-board square.guide-source',el=>{const animation=el.getAnimations()[0];animation.currentTime=700;});
  await page.screenshot({path:'/tmp/training-white-flash-off.png'});
  await page.$eval('cg-board square.guide-source',el=>el.getAnimations()[0].play());
  await page.screenshot({path:'/tmp/training-guided-source.png'});
@@ -57,8 +57,9 @@ test('training shared board flows, recall, puzzles, progress and responsive layo
  await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true})));assert.equal(await page.$$eval('cg-board piece',n=>n.length),32);await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));assert.match(await page.$eval('#training-status',e=>e.textContent),/Play your move/);
  await page.screenshot({path:'/tmp/training-desktop.png',fullPage:true});await page.evaluate(()=>document.documentElement.dataset.theme='dark');await page.screenshot({path:'/tmp/training-dark.png',fullPage:true});await page.evaluate(()=>document.documentElement.dataset.theme='light');await page.setViewport({width:390,height:844});await page.goto('http://127.0.0.1:'+server.address().port+'/training#strategy',{waitUntil:'networkidle0'});await page.waitForSelector('.training-lesson');assert.equal(await page.$eval('#x',el=>el.checked),false);await page.waitForFunction(()=>getComputedStyle(document.querySelector('#n')).opacity==='0');await page.screenshot({path:'/tmp/training-mobile-viewport.png'});await page.screenshot({path:'/tmp/training-mobile.png',fullPage:true});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);await page.evaluate(()=>ChessilHighlight.show('.dasher > button',{text:'Choose your theme.'}));
  assert.equal(await page.$eval('.ui-guide p',e=>e.textContent),'Choose your theme.');
- assert.equal(await page.$eval('.ui-highlight-overlay',e=>getComputedStyle(e).animationName),'none');
+ assert.equal(await page.$eval('.ui-highlight-overlay',e=>getComputedStyle(e).animationName),'ui-highlight-pulse');
  assert.equal(await page.$eval('.ui-guide',e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;}),true);
+ assert.equal(await page.$eval('.ui-highlight-overlay',e=>getComputedStyle(e).animationDuration),'2s');
  await page.screenshot({path:'/tmp/shared-guide-mobile.png'});await page.evaluate(()=>ChessilHighlight.clear());assert.deepEqual(errors,[]);
  }finally{await browser.close();await new Promise(r=>server.close(r));}
 });
