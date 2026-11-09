@@ -181,7 +181,7 @@ window.ChessilBoard = class ChessilBoard {
    if(!node){node=document.createElement('square');node.className=type;node.dataset.square=square;this.overlay.set(key,node);fragment.append(node);}
    const transform=this.transform(square);if(node.style.transform!==transform)node.style.transform=transform;
   };
-  for(const annotation of this.annotations||[])if(['error','suggestion'].includes(annotation.type))add(annotation.square,'annotation-'+annotation.type);
+  for(const annotation of this.annotations||[])if(['error','suggestion'].includes(annotation.type))add(annotation.square,'annotation-'+annotation.type+(annotation.type==='suggestion'?' ui-highlight':''));
   if(this.lastMove){add(this.lastMove.slice(0,2),'last-move');add(this.lastMove.slice(2,4),'last-move');}
   if(this.selected){add(this.selected,'selected');for(const move of this.candidates(this.selected))add(move.slice(2,4),this.position[move.slice(2,4)]?'move-dest capture-dest':'move-dest');}
   // The training controller supplies a cue; the board owns its presentation.

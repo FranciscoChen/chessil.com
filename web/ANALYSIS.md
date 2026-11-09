@@ -7,20 +7,35 @@ progress, and CSS countdown. `src/local-engine.js` serializes UCI searches in on
 worker. Closing analysis terminates it and restores the game board's original
 input boundary. Original history, clocks, and stored game data are not edited.
 
-The scan starts at the final position and moves backwards, keeping scores from
-both sides of each move. Searches use original move history for repetition
-context, MultiPV 3, at most 120,000 nodes or 700 ms per position. Suspected losses
-of at least 200 centipawns receive a second search restricted to the played move
-(up to 180,000 nodes / 1 second). Confirmed estimated losses of 200–399 cp are
-marked red; 400+ cp purple. Mate values are handled separately from ordinary cp.
-These are bounded-search estimates, not proof that every label is definitive.
+The scan starts at the final position and moves backwards. Searches retain the
+original game history, use MultiPV 3 and UCI_ShowWDL, and stop at 120,000 nodes or
+700 ms per position. Suspected losses of at least 100 cp receive a second search
+restricted to the played move (180,000 nodes / 1 second). The comparison uses
+both searches from the same mover's perspective.
 
-The first discovered blunder opens the position before the move, marking its
-source and destination red and offering up to two near-best alternatives. More
-findings advance in discovery order with a six-second CSS countdown. Pause,
-history navigation, and playing alternatives stop autoplay. Previous/Next and
-marked history entries select findings. Users can explore engine or book moves
-on the same board; those local variations never alter the recorded game.
+Outcome classification uses expected score `(wins + draws/2) / total` from UCI
+WDL. A score of at least .8 is likely winning; at most .2 is likely losing;
+the middle is uncertain/drawish. A downgrade between these bands is marked as
+an outcome-changing mistake only when expected score falls by at least .2.
+A fall of .5 or more receives `??`, otherwise `?`. Other improvements of at least
+100 cp or .1 expected score receive a neutral `?!` suggestion. Thus +7 to +5
+is advice, not a blunder. Engines without WDL use a conservative logistic cp
+fallback; mate scores use their winning/losing sign. These are bounded-search
+estimates, not proofs of the game's result.
+
+Normal move clicks always show the recorded position after that move. A symbol
+button before its notation opens a distinct suggestion step: the position before
+the move, with the played move's squares red, best-move squares using the shared
+white pulse, and the shared floating explanation underneath the destination.
+Adjacent arrow/button navigation visits this step between the previous and
+actual move. Leaving it clears the guide. Clicking symbols directly does the
+same. The first discovered review moment opens automatically; further moments
+use the shared six-second CSS countdown, with pause/resume controls. Manual
+navigation and exploration pause autoplay. Local variations never alter history.
+
+On mobile the shared game move list is a single horizontally scrolling line.
+Recorded move navigation keeps the selected move visible. Marker buttons have
+separate actions, keyboard focus, and an accessible explanation.
 
 The evaluation bar and scores always use White's perspective. The opening book
 is an offline position index of named ECO lines, not a games/statistics database

@@ -35,6 +35,13 @@ function paintClocks() {
   if(active && side===playerside && !watcher && value>0 && value<=10000 && !lowClockPlayed){lowClockPlayed=true;ChessilSound.play('clock');}
  }
 }
+function scrollCurrentMove(){
+ if(!movesList||!matchMedia('(max-width:900px)').matches)return;
+ const entry=movesList.querySelector('.a1t');if(!entry)return;
+ const outer=movesList.getBoundingClientRect(),inner=entry.getBoundingClientRect();
+ if(inner.right>outer.right)movesList.scrollLeft+=inner.right-outer.right;
+ else if(inner.left<outer.left)movesList.scrollLeft+=inner.left-outer.left;
+}
 function appendNotation(move) {
  const side=fen.split(' ')[1],before=gensanbase(move,board,fen,moves);
  const position=ucifen(move,fen,boardgen(fen),{});
@@ -42,7 +49,7 @@ function appendNotation(move) {
  if(side==='w'){const number=document.createElement('move-number');number.textContent=fen.split(' ')[5];movesList.append(number);}
  movesList.querySelector('.a1t')?.classList.remove('a1t');
  const entry=document.createElement('move-entry');entry.textContent=before+gensancheck(moves,fen);entry.setAttribute('ply',uci.length);entry.className='a1t';movesList.append(entry);
- a1ti=uci.length;
+ a1ti=uci.length;scrollCurrentMove();
 }
 function loadHistory(history) {
  const list=history?history.trim().split(/\s+/):[];
@@ -89,7 +96,7 @@ function gamereplay(ply) {
  a1ti=Math.max(0,Math.min(uci.length,ply));
  const position=ucifen(uci.slice(0,a1ti).join(' '));
  boardView.render(position.b,uci[a1ti-1] || '',false);
- movesList.querySelector('.a1t')?.classList.remove('a1t');movesList.querySelector(`[ply="${a1ti}"]`)?.classList.add('a1t');
+ movesList.querySelector('.a1t')?.classList.remove('a1t');movesList.querySelector(`[ply="${a1ti}"]`)?.classList.add('a1t');scrollCurrentMove();
  updateGameUi();document.dispatchEvent(new Event('chessil:review'));
  if(!gamefinished)return;
  for(const side of ['w','b']) {
