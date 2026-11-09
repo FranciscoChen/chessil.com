@@ -22,7 +22,7 @@ function gameUiState() {
   const draw = document.querySelector('.game-actions .draw-yes span')
   if (draw) draw.textContent = ownOffer ? text.offered : otherOffer && !watcher ? text.accept : text.draw
   document.querySelector('.game-actions .draw-yes')?.classList.toggle('is-offered', !!(ownOffer || otherOffer))
-  document.querySelectorAll('moves-panel .buttons button').forEach(button => { button.disabled = waiting || !uci.length || ((button.id==='rw' || button.id==='sb')?a1ti===0:a1ti===uci.length) })
+  document.querySelectorAll('moves-panel .board-history button').forEach(button => { button.disabled = waiting || !uci.length || ((button.id==='rw' || button.id==='sb')?a1ti===0:a1ti===uci.length) })
   const perspective = document.getElementById('game-perspective')
   if (perspective) perspective.textContent = state===10?text.unavailable:waiting ? document.querySelector('[data-game-field="state"]').textContent : !live ? text.review : !connected ? (wsc && wsc.readyState === WebSocket.CLOSED ? text.disconnected : text.connecting) : watcher ? text.watching : playerside === 'b' ? text.black : text.white
   const hint = document.getElementById('history-hint')

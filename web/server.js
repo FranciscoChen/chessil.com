@@ -57,6 +57,7 @@ const lobbyWatchers = new Map();
 const liveRedis = require('../shared/lobby-redis')(config);
 const lobbyIndex = require('./lobby-index')({client:liveRedis,db:lobbyDb,notify:notifyLobbyWatchers});
 const lobbyStreams=new Set();
+const gameMenu = require('./game-menu')({db:lobbyDb,index:lobbyIndex,redis:liveRedis,join:joinLobbyGame,create:createLobbyGame,notify:publishUserNotification});
 const gameStarts = require('./game-starts')({db:lobbyDb,start:startGameOnServer,notify:notifyLobbyWatchers,publish:publishUserNotification});
 
 function getGameServerAuthIp() {
@@ -549,6 +550,12 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
   if (req.url.split('?', 1)[0].startsWith('/api/training/')) {
     return trainingApi(req, res, resHeaders, sessiondata);
   }
+  if(req.url==='/my-games' && req.method==='GET') {
+    gameMenu.list(String(sessiondata[1]||'0'),req.headers.cookie.slice(2)).then(data=>{
+      res.writeHead(200,{...resHeaders,'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data));
+    }).catch(error=>{console.error('Game menu:',error.message);res.writeHead(503,{'Content-Type':'application/json'});res.end(JSON.stringify({error:'Games temporarily unavailable'}));});return;
+  }
+  if(req.url==='/game-invites' && req.method==='POST')return handleLobbyRequest(req,res,resHeaders,data=>gameMenu.action(data,req,sessiondata));
   // Manage language part of url
   if (typeof languages[req.url.slice(1, 3)] !== 'undefined' && (req.url.length === 3 || req.url[3] === '/')) {
     routelanguage(filename, mime, ext, res, req, resHeaders, sessiondata)

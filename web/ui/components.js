@@ -16,3 +16,10 @@ const attribute=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 exports.progress=({id,label='Progress',value=0,max=100}={})=>`<progress${id?` id="${attribute(id)}"`:''} class="ui-progress" aria-label="${attribute(label)}" max="${Number(max)||100}" value="${Number(value)||0}"></progress>`;
 exports.meter=({id,label='Loading',loading=false}={})=>`<div${id?` id="${attribute(id)}"`:''} class="ui-meter" role="img" aria-label="${attribute(label)}"${loading?' data-mode="loading"':''}><span class="ui-meter-fill"></span></div>`;
 exports.countdown=()=>'<span class="ui-countdown" data-countdown></span>';
+
+// One history rail for every live-game/review layout. Navigation stays fixed.
+exports.historyRail = language => {
+ const labels={en:['First move','Previous move','Next move','Last move'],es:['Primera jugada','Jugada anterior','Siguiente jugada','Última jugada'],zh:['第一步','上一步','下一步','最后一步']}[language]||['First move','Previous move','Next move','Last move'];
+ const control=(id,label,path)=>`<button id="${id}" type="button" class="fbt ui-icon-button" title="${label}" aria-label="${label}" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg></button>`;
+ return `<moves-panel aria-label="Move history"><nav class="board-history" aria-label="Game navigation">${control('rw',labels[0],'M6 5v14M17 6l-6 6 6 6')}${control('sb',labels[1],'m15 6-6 6 6 6')}<moves-list></moves-list>${control('fw',labels[2],'m9 6 6 6-6 6')}${control('ff',labels[3],'M18 5v14M7 6l6 6-6 6')}</nav><p class="game-sr-only" id="moves-empty">Waiting for the first move.</p><span class="game-sr-only status" data-game-field="state" role="status">Connecting…</span><span class="game-sr-only" id="game-perspective"></span><span class="game-sr-only" id="history-hint"></span></moves-panel>`;
+};

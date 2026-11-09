@@ -12,7 +12,7 @@ function elementOrAncestorHasClass(element, className) {
     if (parent === document) {
       break;
     }
-    if (parent.className.indexOf(className) >= 0) {
+    if ((parent.getAttribute?.('class') || '').includes(className)) {
       return true;
     }
   } while (parent = parent.parentNode);
@@ -110,7 +110,7 @@ function headerfunctions() {
 
   document.onclick = (e) => {
     if (elementOrAncestorHasClass(e.target, 'dasher')) {
-      if (e.target.className.indexOf('toggle') > -1 || e.target.parentElement.className.indexOf('toggle') > -1) {
+      if (e.target.closest('.toggle')) {
         settings.classList.toggle('shown')
       }
       if (elementOrAncestorHasClass(e.target, 'subs')) {

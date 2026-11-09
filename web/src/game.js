@@ -90,12 +90,16 @@ function displayTermination(code,audible=false) {
  const status=document.querySelector('[data-game-field="state"]');status.dataset.state=String(code);status.textContent=(gameDescriptions[document.documentElement.lang] || gameDescriptions.en)[code] || 'Finished';
  showResult(code);if(active && audible)ChessilSound.play('end');updateGameUi();
 }
-function gamereplay(ply) {
+function gamereplay(ply,animate=false) {
+ const previousPly=a1ti;
  // Reviewing a past position must not leave an invisible recapture queued.
  if(!gamefinished && ply<uci.length && a1ti===uci.length && (boardView.premove || boardView.pending))sendGameMessage('p');
  a1ti=Math.max(0,Math.min(uci.length,ply));
  const position=ucifen(uci.slice(0,a1ti).join(' '));
- boardView.render(position.b,uci[a1ti-1] || '',false);
+ const forward=a1ti===previousPly+1,backward=a1ti===previousPly-1;
+ const transition=backward?uci[a1ti]?.slice(2,4)+uci[a1ti]?.slice(0,2):uci[a1ti-1]||'';
+ boardView.render(position.b,transition,animate&&(forward||backward));
+ boardView.lastMove=uci[a1ti-1]||'';boardView.drawOverlays();
  movesList.querySelector('.a1t')?.classList.remove('a1t');movesList.querySelector(`[ply="${a1ti}"]`)?.classList.add('a1t');scrollCurrentMove();
  updateGameUi();document.dispatchEvent(new Event('chessil:review'));
  if(!gamefinished)return;

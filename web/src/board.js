@@ -22,6 +22,12 @@ window.ChessilBoard = class ChessilBoard {
   window.addEventListener('scroll',()=>{if(this.gesture)this.cancel();},{...options,capture:true,passive:true});
   this.reduced=()=>{this.cancel();for(const piece of this.pieces.values())piece.getAnimations().forEach(animation=>animation.cancel());};document.addEventListener('chessil:preferences',this.reduced,options);
  }
+ setOrientation(side) {
+  if(!['w','b'].includes(side)||this.orientation===side)return;
+  this.cancel();this.orientation=side;
+  for(const [square,element] of this.pieces){element.getAnimations().forEach(animation=>animation.cancel());element.style.transform=this.transform(square);}
+  const wrap=this.root.parentElement;wrap.querySelectorAll('coords.files coord').forEach((el,i)=>el.textContent=String.fromCharCode(side==='w'?97+i:104-i));wrap.querySelectorAll('coords.ranks coord').forEach((el,i)=>el.textContent=side==='w'?8-i:i+1);this.drawOverlays();
+ }
  point(square) {
   const file=square.charCodeAt(0)-97,rank=Number(square[1])-1;
   return this.orientation==='w'?[file,7-rank]:[7-file,rank];
@@ -213,7 +219,8 @@ window.ChessilBoard = class ChessilBoard {
    if(piece && previous[from]) {
     relocate(from,to);
     if(previous[from].p==='k' && Math.abs(from.charCodeAt(0)-to.charCodeAt(0))===2) {
-     const rookFrom=(to[0]==='g'?'h':'a')+from[1],rookTo=(to[0]==='g'?'f':'d')+from[1];
+     const reverse=to[0]==='e',kingSide=(reverse?from[0]:to[0])==='g';
+     const rookFrom=(reverse?(kingSide?'f':'d'):(kingSide?'h':'a'))+from[1],rookTo=(reverse?(kingSide?'h':'a'):(kingSide?'f':'d'))+from[1];
      relocate(rookFrom,rookTo);
     }
    }

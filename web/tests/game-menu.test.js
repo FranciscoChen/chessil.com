@@ -1,0 +1,12 @@
+const test=require('node:test'),assert=require('node:assert/strict'),createMenu=require('../game-menu');
+function fixture(){
+ const rows=[{id:1,gameid:'active001',userid1:'7',userid2:'8',sessionid1:'s1',color1:'white',started:true,username2:'Opponent',initialtime:5,increment:0},{id:2,gameid:'stale0001',userid1:'7',started:true},{id:3,gameid:'invite001',userid1:'8',username1:'Inviter',timecontrol1:'5+0'},{id:4,gameid:'expired01',userid1:'8'}];
+ const invites=new Map([['ui:invites:7',new Set(['invite001','expired01'])]]);let joined=0;
+ const redis={zremrangebyscore:async()=>{},zrange:async key=>[...(invites.get(key)||[])],zrem:async(key,id)=>invites.get(key)?.delete(id),zadd:async(key,score,id)=>{if(!invites.has(key))invites.set(key,new Set());invites.get(key).add(id);},expire:async()=>{},incr:async()=>1};
+ const db={query:async(sql,args)=>{if(sql.includes('canonical'))return {rows:[{id:'7'}]};if(sql.includes('WHERE gameid=$1'))return {rows:rows.filter(row=>row.gameid===args[0])};assert.deepEqual(args,['7','s1',['invite001','expired01']]);return {rows};}};
+ const menu=createMenu({db,redis,index:{read:async()=>new Map([['active001',{turn:'w'}]]),openIds:async()=>new Set(['invite001'])},join:async({id})=>{joined++;return {gameid:rows.find(row=>row.id===id).gameid};},create:async()=>({gameid:'invite001'})});
+ return {menu,invites,get joined(){return joined;}};
+}
+test('menu filters expired games/invitations and returns only owned live games',async()=>{const f=fixture(),data=await f.menu.list('7','s1');assert.deepEqual(data.games.map(g=>g.gameid),['active001']);assert.equal(data.games[0].yourTurn,true);assert.deepEqual(data.invitations.map(g=>g.gameid),['invite001']);});
+test('only the addressed recipient can accept; decline cannot create a game',async()=>{const f=fixture(),req={headers:{cookie:'s=s1'}};await assert.rejects(f.menu.action({action:'accept',gameid:'invite001'},req,[null,'9']),e=>e.status===403);assert.equal(f.joined,0);const result=await f.menu.action({action:'accept',gameid:'invite001'},req,[null,'7']);assert.equal(result.gameid,'invite001');assert.equal(f.joined,1);assert.equal(f.invites.get('ui:invites:7').has('invite001'),false);await f.menu.action({action:'decline',gameid:'expired01'},req,[null,'7']);assert.equal(f.joined,1);});
+test('only challenge owners may send invitations',async()=>{const f=fixture();await assert.rejects(f.menu.action({action:'send',gameid:'invite001',username:'player'}, {headers:{cookie:'s=wrong'}},[null,'9']),e=>e.status===410);});

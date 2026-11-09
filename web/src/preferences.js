@@ -84,7 +84,7 @@ window.ChessilPreferences = (() => {
   const dialog=document.querySelector('#board-settings-dialog');
   if(dialog) {
    const open=document.querySelector('#open-board-settings');open.textContent=words().title;
-   open.addEventListener('click',()=>{render(dialog.querySelector('[data-board-settings]'));dialog.showModal();});
+   open.addEventListener('click',()=>{document.querySelector('.dasher')?.classList.remove('shown');render(dialog.querySelector('[data-board-settings]'));dialog.showModal();});
    const close=dialog.querySelector('[data-close-board-settings]');close.setAttribute('aria-label',words().close);close.addEventListener('click',()=>dialog.close());
    dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left || event.clientX>r.right || event.clientY<r.top || event.clientY>r.bottom)dialog.close();}});
   }

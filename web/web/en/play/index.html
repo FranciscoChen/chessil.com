@@ -25,7 +25,7 @@
   <main class="game-shell">
     <div class="game-heading">
       <div><p class="eyebrow">AT THE BOARD</p><h1>Chess game</h1><p class="setup" data-game-field="setup">Loading game…</p></div>
-      <div class="game-heading-actions"><button id="open-board-settings" class="ui-button ui-secondary" type="button" aria-haspopup="dialog">Board & sound</button><a class="ui-button ui-quiet" href="/lobby">← Lobby</a><button class="ui-button ui-secondary" id="share-game" type="button">Share</button><span id="share-status" class="game-sr-only" role="status"></span></div>
+      <div class="game-heading-actions"><a class="ui-button ui-quiet" href="/lobby">← Lobby</a><button class="ui-button ui-secondary" id="share-game" aria-label="Share game" title="Share game" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M5 13v7h14v-7"/></svg></button><span id="share-status" class="game-sr-only" role="status"></span></div>
     </div>
     <div class="round">
       <div class="round__app">
@@ -47,20 +47,13 @@
           </div>
           <div class="rclock rclock-bottom"><div class="bar"></div><div class="time hour">—:—</div></div>
         </section>
-        <moves-panel aria-label="Move history">
-          <div class="game-panel-heading"><h2>Move history</h2><span class="status" data-game-field="state" role="status">Connecting…</span></div>
-          <p class="game-perspective" id="game-perspective">Connecting…</p>
-          <p class="game-empty" id="moves-empty">Waiting for the first move.</p>
-          <moves-list></moves-list>
-          <div class="buttons"><button id="rw" type="button" class="fbt" title="First move" aria-label="First move" disabled>|‹</button><button id="sb" type="button" class="fbt" title="Previous move" aria-label="Previous move" disabled>‹</button><button id="fw" type="button" class="fbt" title="Next move" aria-label="Next move" disabled>›</button><button id="ff" type="button" class="fbt" title="Last move" aria-label="Last move" disabled>›|</button></div>
-          <p class="game-history-hint" id="history-hint">Review moves after the game.</p>
-        </moves-panel>
+        <!-- ui:game-history -->
         <div class="rcontrols game-actions"><div class="ricons"><button type="button" class="fbt draw-yes" disabled><span>Offer draw</span></button><button type="button" class="fbt resign" disabled><span>Resign</span></button></div><div class="game-followup" hidden><a class="ui-button ui-primary" href="/lobby">New game</a><a class="ui-button ui-secondary" href="/easy">Play computer</a></div></div>
       </div>
       <p class="round__underboard game-guidance" id="game-guidance">Drag a piece, or tap a piece and its destination.</p>
     </div>
   </main>
-  <dialog id="board-settings-dialog" class="board-settings-dialog"><button type="button" class="dialog-close" data-close-board-settings aria-label="Close">×</button><div data-board-settings></div></dialog>
+
   <!-- component:footer -->
 </body>
 </html>

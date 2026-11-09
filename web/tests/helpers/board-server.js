@@ -11,6 +11,8 @@ module.exports=async()=>{
   const send=data=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(data));};
   if(url.pathname==='/preferences'){if(req.method==='POST'){preferences=normalize(JSON.parse(body));saves++;}return send({preferences,account:true});}
   if(url.pathname==='/game-servers')return send([{id:'ws0',url:'ws://127.0.0.1:'+server.address().port+'/ping',enabled:true}]);
+  if(url.pathname==='/game-invites'){const action=JSON.parse(body);game.inviteActions=(game.inviteActions||[]).concat(action);if(game.menu)game.menu.invitations=[];return send({success:true,gameid:game.id});}
+  if(url.pathname==='/my-games')return send(game.menu||{games:game.state===0?[{gameid:game.id,opponent:'Opponent',yourTurn:true,time:'5+0',side:game.side}]:[],invitations:[],challenges:[]});
   if(url.pathname==='/loggedin')return send(1);
   if(url.pathname==='/gameinfo')return send({username1:'You',username2:'Opponent',rating1:1500,rating2:1500,initialtime:5,increment:0,rated:false,state:game.state,side:game.side,gameserver:'ws0'});
   if(url.pathname==='/gamestate')return send({m:game.history.join(' '),c:game.times.join(' '),e:game.events,d:'',t:300000,u:300000});

@@ -56,3 +56,45 @@ label,.form-label { color:var(--text); font-weight:600; font-size:.85rem; } inpu
 .easy-bot-symbol { color:var(--link); font:clamp(5rem,12vw,10rem)/1 Georgia,serif; text-shadow:.07em .08em 0 var(--highlight); }
 #easy-form .ui-section { margin-top:1.5rem; }
 #easy-form #difficulty-help { margin-top:.75rem; font-size:.85rem; }
+/* Global compact navigation: opaque surfaces and one consistent icon treatment. */
+header { align-items:center; }
+header .z,header .site-buttons { align-items:center; }
+header .shown .dropdown,header .dropdown,#challenge-app .empty { background:var(--bg);color:var(--text); }
+header .dropdown { max-height:calc(100dvh - var(--header-height) - 1rem);overflow:auto;overscroll-behavior:contain; }
+header .settings-link { height:auto;min-height:44px;width:100%;text-align:left;color:var(--text);font:500 .85rem var(--sans-font);background:var(--bg); }
+.ui-icon-button svg,#share-game svg { width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round; }
+#share-game { width:36px;min-height:36px;padding:6px; }
+@media(max-width:900px) {
+ :root { --header-height:48px; }
+ header { height:48px;min-height:48px;padding:0 8px;justify-content:center;gap:4px; }
+ header .z { margin-right:auto; }
+ header .t { display:block;margin:0 8px 0 40px;line-height:1; }
+ header .t a { font-size:1.2rem; }
+ header .r { width:44px;height:48px;display:grid;place-items:center; }
+ header .u,header .u::before,header .u::after { width:22px;height:2px;left:11px; }
+ header .u::before,header .u::after { left:0; }
+ header .u::before { top:-7px; }header .u::after { top:7px; }
+ header #n { top:48px; }
+ header .site-buttons > div,header .site-buttons .toggle { min-width:44px;width:44px;height:48px; }
+ header .site-buttons { gap:0;justify-content:center; }
+ header .dropdown { top:48px;right:8px;width:min(340px,calc(100vw - 16px)); }
+ header #clinput { display:none; }
+}
+#challenge-app { width:min(340px,calc(100vw - 16px));padding:.7rem; }
+.game-menu-title { font:600 .85rem var(--sans-font);padding:.4rem;margin:0; }
+.game-menu-game { display:block;padding:.65rem .4rem;border-bottom:1px solid var(--border);color:var(--text);font-size:.8rem; }
+.game-menu-game strong,.game-menu-game small { display:block; }
+.game-menu-game small,.game-menu-status,.game-menu-invite small { color:var(--text2);font-size:.75rem; }
+.game-menu-game.is-your-turn { border-left:3px solid var(--link);padding-left:.6rem; }
+header .game-menu-game .ui-button { height:32px;min-height:32px;padding:.3rem .6rem;margin:.4rem .4rem 0 0; }
+.game-menu-invite { padding:.5rem .4rem; }
+.game-menu-invite summary { cursor:pointer;font-size:.8rem; }
+.game-menu-invite form { display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.4rem;margin-top:.6rem; }
+header .game-menu-invite input,header .game-menu-invite button { width:100%;min-height:36px;height:36px;font-size:.75rem;padding:.35rem .5rem; }
+/* Keep the game icon's full touch target; only its artwork is small. */
+header #challenge-toggle { transform:none;filter:none;background:none;position:relative; }
+header #challenge-toggle::before { content:'';position:absolute;inset:0;background:var(--text);mask:url('/img/icons/quarterboard.svg') center / 22px 22px no-repeat; }
+header #challenge-toggle .data-count { position:static; }
+header #challenge-toggle .data-count::after { content:attr(data-count);position:absolute;top:4px;right:3px;min-width:15px;height:15px;padding:0 2px;display:grid;place-items:center;border-radius:8px;background:var(--link);color:var(--on-accent);font:700 10px/1 var(--sans-font); }
+header #challenge-toggle .data-count[data-count="0"]::after { display:none; }
+header #challenge-app { overflow:auto; }

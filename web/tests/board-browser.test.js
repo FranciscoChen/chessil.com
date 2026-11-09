@@ -46,7 +46,7 @@ await t.test('production page: click, drag, illegal drop, last move, premove, ke
  await page.evaluate(()=>{boardView.active='d2';boardView.root.focus();});
  await page.keyboard.press('Enter');await page.keyboard.press('ArrowUp');await page.keyboard.press('ArrowUp');await page.keyboard.press('Enter');await waitMoves(7);
  await page.evaluate(()=>window.scrollTo(0,0));
- await page.click('#open-board-settings');await page.waitForSelector('#board-settings-dialog[open]');
+ await page.click('.dasher > button');await page.click('#open-board-settings');await page.waitForSelector('#board-settings-dialog[open]');
  await page.click('#board-settings-dialog [data-preference="autoQueen"]');
  await page.select('#board-settings-dialog [data-preference="pieces"]','sculpted');
  await page.select('#board-settings-dialog [data-preference="board"]','walnut');
@@ -80,7 +80,7 @@ await t.test('arrows review live and finished games without changing authoritati
  await click('g1');await click('f3');assert.equal(await page.evaluate(()=>uci.length),2);
  fixture.move('g1f3');await waitMoves(3);assert.equal(await page.evaluate(()=>a1ti),1);
  await page.keyboard.press('ArrowDown');assert.equal(await page.evaluate(()=>a1ti),3);assert.ok(await page.$('piece[data-square="f3"]'));
- await page.click('#open-board-settings');await page.keyboard.press('ArrowLeft');assert.equal(await page.evaluate(()=>a1ti),3);await page.keyboard.press('Escape');
+ await page.click('.dasher > button');await page.click('#open-board-settings');await page.keyboard.press('ArrowLeft');assert.equal(await page.evaluate(()=>a1ti),3);await page.keyboard.press('Escape');
  await page.evaluate(()=>{const input=document.createElement('input');input.id='navigation-input';document.body.append(input);input.focus();});
  await page.keyboard.press('ArrowLeft');assert.equal(await page.evaluate(()=>a1ti),3);await page.evaluate(()=>document.querySelector('#navigation-input').remove());
  await page.click('.resign');await page.waitForFunction(()=>gamefinished);await page.keyboard.press('Home');assert.equal(await page.evaluate(()=>a1ti),0);
@@ -212,6 +212,8 @@ await t.test('board renderer special moves and promotion chooser use the same ma
  await page.evaluate(()=>renderMove('e1g1'));
  assert.equal(await page.$eval('piece[data-square="f1"]',el=>el.className),'white rook');
  assert.equal(await page.$eval('piece[data-square="g1"]',el=>el.className),'white king');
+ // Rewinding castling slides the same king and rook elements back.
+ assert.deepEqual(await page.evaluate(()=>{ChessilPreferences.update({slide:180});const king=view.pieces.get('g1'),rook=view.pieces.get('f1');view.render(boardgen('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1'),'g1e1',true);return {king:view.pieces.get('e1')===king,rook:view.pieces.get('h1')===rook,animated:king.getAnimations().length>0&&rook.getAnimations().length>0};}),{king:true,rook:true,animated:true});
  // En passant removes only the captured pawn.
  await page.evaluate(()=>{model.fen='4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1';model.moves=mg(model.fen);model.turn='w';view.render(boardgen(model.fen));renderMove('e5d6');});
  assert.equal(await page.$('piece[data-square="d5"]'),null);assert.equal(await page.$$eval('piece',nodes=>nodes.length),3);

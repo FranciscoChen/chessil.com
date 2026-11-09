@@ -89,3 +89,44 @@
 .game-page .round__app__board { position:relative; isolation:isolate; overflow:hidden; }
 .game-followup { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.6rem; }
 .game-followup .ui-button { min-height:2.75rem; padding:.6rem; font-size:.75rem; }
+/* Board workspace: the same rail, compact clocks and evaluation in every view. */
+.game-page .game-shell { padding-top:.65rem; }
+.game-heading { margin-bottom:.5rem;gap:.5rem; }
+.game-heading .eyebrow,.game-heading h1 { display:none; }
+.game-heading-actions { max-width:none;gap:.3rem; }
+.game-heading-actions .ui-button { padding:.35rem .6rem;min-height:34px;font-size:.75rem; }
+.game-page .round__app,.game-page.analysis-open .round__app { grid-template-areas:"moves opponent" "evaluation opponent" "board analysis" "board player" "board actions";grid-template-rows:40px 26px minmax(0,1fr) auto auto;gap:6px 1.25rem; }
+.game-page moves-panel,.game-page.analysis-open moves-panel { display:block;min-height:0;max-height:none!important;overflow:visible;background:var(--bg);border-radius:var(--radius);box-shadow:none;position:sticky;top:var(--header-height);z-index:5; }
+.board-history { display:grid;grid-template-columns:32px 36px minmax(0,1fr) 36px 32px;height:40px;align-items:center; }
+.game-page .board-history .fbt { display:grid;place-items:center;width:100%;height:40px;margin:0;padding:0;background:var(--bg);color:var(--text);border:0; }
+.game-page .round__app .board-history moves-list { display:flex;flex-flow:row nowrap;align-items:center;min-height:0;height:40px;max-height:40px;overflow:auto hidden;white-space:nowrap;scrollbar-width:none; }
+.game-page .round__app .board-history moves-list > move-entry,.game-page .round__app .board-history moves-list > move-number { flex:0 0 auto;display:inline-flex;align-items:center;width:auto;height:36px;padding:0 .35rem;margin:0;font-size:.8rem; }
+.game-page .board-history move-number::after { content:'.'; }
+.game-page .board-history .result-wrap { display:none; }
+.game-page .game-player,.game-page.analysis-open .game-player { display:flex;padding:.3rem .5rem;gap:.35rem;box-shadow:none; }
+.game-page .player-mark { width:12px;height:12px;flex-basis:12px; }
+.game-page .player-details { display:flex;align-items:baseline;gap:.4rem; }
+.game-page .player-details name { font-size:.8rem;max-width:9rem; }
+.game-page .player-meta { margin:0;font-size:.65rem; }
+.game-page .player-meta > span { display:none; }
+.game-page .game-player .rclock .time { min-width:4.6rem;font-size:1.3rem;line-height:1.2;padding:.2rem .35rem; }
+.game-page .game-guidance { display:none; }
+.game-page #analysis-panel { grid-area:analysis;align-self:start;min-width:0;max-height:calc(var(--chess-board-size) - 6rem);overflow:auto;border:1px solid var(--border);background:var(--bg); }
+.board-evaluation { grid-area:evaluation;display:flex;align-items:center;gap:.45rem;min-width:0;height:26px;font:600 .65rem var(--monospace-font);position:sticky;top:calc(var(--header-height) + 40px);background:var(--bg2);z-index:4; }
+.board-evaluation #analysis-score { min-width:3.1rem;font-size:.75rem; }
+.board-evaluation .analysis-eval { flex:1;height:7px;min-width:20px; }
+.board-evaluation #analysis-depth { font-size:.6rem; }
+.board-evaluation #analysis-wdl { white-space:nowrap;font-weight:400; }
+@media(max-width:900px) {
+ .game-page .game-shell { padding-top:.25rem; }
+ .game-page .round__app,.game-page.analysis-open .round__app { grid-template-columns:minmax(0,1fr);grid-template-rows:40px 26px auto auto auto auto auto;grid-template-areas:"moves" "evaluation" "opponent" "board" "player" "analysis" "actions";gap:3px; }
+ .game-page .game-heading { margin-bottom:.2rem;flex-wrap:nowrap; }
+ .game-page .setup { margin:0;font-size:.65rem; }
+ .game-page .game-heading-actions { flex-wrap:nowrap;max-width:none;margin-left:auto; }
+ .game-page .game-heading-actions a[href="/lobby"] { display:none; }
+ .game-page .game-player { border:0;border-radius:0;background:transparent; }
+ .game-page #analysis-panel { max-height:none;padding:.7rem; }
+ .game-page .analysis-heading h2,.game-page #analysis-engine { display:none; }
+ .game-page .analysis-heading { justify-content:flex-end; }
+ .game-page .game-actions .fbt { min-height:36px;padding:.3rem; }
+}

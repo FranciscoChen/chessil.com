@@ -29,11 +29,19 @@ the move, with the played move's squares red, best-move squares using the shared
 white pulse, and the shared floating explanation underneath the destination.
 Adjacent arrow/button navigation visits this step between the previous and
 actual move. Leaving it clears the guide. Clicking symbols directly does the
-same. The first discovered review moment opens automatically; further moments
-use the shared six-second CSS countdown, with pause/resume controls. Manual
+same. Backward autoplay visits every ply, from the final position through the start.
+Ordinary steps use a two-second CSS countdown; review suggestions pause for five
+seconds. Piece sliding uses the shared renderer and respects motion preferences. Manual
 navigation and exploration pause autoplay. Local variations never alter history.
 
-On mobile the shared game move list is a single horizontally scrolling line.
+All game/review layouts use a shared horizontal history rail above the board,
+with fixed navigation buttons at both ends. A separate compact evaluation row
+shows the score and engine WDL percentages. Live games display unknown values,
+never engine assistance. Review defaults to the player’s side (both for spectators);
+White, Black and Both change marker visibility, board orientation, score and WDL
+perspective, without restarting the scan. All positions are analyzed once.
+
+On mobile the header, player rows and clocks are compact.
 Recorded move navigation keeps the selected move visible. Marker buttons have
 separate actions, keyboard focus, and an accessible explanation.
 
@@ -89,3 +97,15 @@ live-game gating, reverse discovery of both sides' queen blunders, autoplay,
 manual/variation navigation, local book moves, unchanged game history, mates,
 load failure, and mobile overflow. Existing shared board compositor tests remain
 required when changing its renderer or annotation layer.
+
+## Header game menu
+
+`game-menu.js` serves session/account-owned games from the Redis live index; SQL
+supplies opponent identity. `GET /my-games` never uses stale unfinished rows as
+proof of liveness. The global header and ongoing-games page share one renderer.
+Invitations are recipient-scoped Redis sets with five-minute expiry; they are
+shown only while the original challenge lease remains live. Accept goes through
+the existing atomic lobby join/start path. Send verifies challenge ownership and
+rate-limits invitations. Notification events and opening the menu refresh it; a
+visible-page 30-second refresh keeps badges current and renews owned challenges.
+Board and sound settings use one global header dialog.

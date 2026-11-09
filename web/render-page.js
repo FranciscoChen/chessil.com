@@ -38,8 +38,8 @@ module.exports = function renderPage(data, language, theme) {
   const parts = components[language] || components.en;
   const html = data.toString('utf8')
     .replace(/<!-- ui:([a-z-]+) -->/g, (_, name) => ui.render(name, language))
-    .replace('</head>', '<link rel="stylesheet" href="/css/design-system.css"><link rel="stylesheet" href="/css/preferences.min.css"><link rel="stylesheet" href="/css/highlight.min.css"><link rel="stylesheet" href="/css/timing.min.css"><script defer src="/js/timing.min.js"></script><script defer src="/js/highlight.min.js"></script><script defer src="/js/ui.js"></script><script defer src="/js/preferences.min.js"></script></head>')
-    .replace(/<!-- component:(header|footer) -->/g, (_, name) => parts[name])
+    .replace('</head>', '<link rel="stylesheet" href="/css/design-system.css"><link rel="stylesheet" href="/css/preferences.min.css"><link rel="stylesheet" href="/css/highlight.min.css"><link rel="stylesheet" href="/css/timing.min.css"><script defer src="/js/timing.min.js"></script><script defer src="/js/highlight.min.js"></script><script defer src="/js/ui.js"></script><script defer src="/js/game-menu.js"></script><script defer src="/js/preferences.min.js"></script></head>')
+    .replace(/<!-- component:(header|footer) -->/g, (_, name) => parts[name]+(name==='header'?'<dialog id="board-settings-dialog" class="board-settings-dialog"><button type="button" class="dialog-close" data-close-board-settings aria-label="Close">×</button><div data-board-settings></div></dialog>':''))
     .replace(/(href|src)="(\/(?:css|js)\/[^"?]+)"/g, (_, attribute, url) => `${attribute}="${assetVersion(url)}"`)
     .replace('<html ', `<html data-theme="${theme === 'l' ? 'light' : 'dark'}" `);
   return Buffer.from(html);
