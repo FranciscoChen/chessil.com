@@ -1,0 +1,7 @@
+{
+  "name": "Leela BT4-1740",
+  "sha256": "05aacd4c9186764fceef7c26af394657e9ca74bc0254e34cbeb37e61b33c8cec",
+  "positions": 97155,
+  "base": "/engine/book/05aacd4c9186764f/",
+  "probability": "Normalized weights from the pruned Polyglot book; not win probabilities."
+}

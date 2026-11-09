@@ -130,3 +130,24 @@
  .game-page .analysis-heading { justify-content:flex-end; }
  .game-page .game-actions .fbt { min-height:36px;padding:.3rem; }
 }
+/* Desktop retains the original board-left, history-and-controls-right layout. */
+@media(min-width:901px) {
+ .game-page .game-shell { padding-top:1.5rem; }
+ .game-heading { margin-bottom:1.4rem; }
+ .game-heading h1 { display:block; }
+ .game-page .round__app { grid-template-areas:"board opponent" "board moves" "board evaluation" "board player" "board actions";grid-template-rows:auto minmax(8rem,1fr) auto auto auto;gap:.75rem 1.5rem; }
+ .game-page.analysis-open .round__app { grid-template-areas:"board opponent" "board moves" "board evaluation" "board analysis" "board player" "board actions";grid-template-rows:auto 9rem auto minmax(0,1fr) auto auto; }
+ .game-page moves-panel,.game-page.analysis-open moves-panel { position:static;overflow:hidden; }
+ .game-page .board-history { grid-template-columns:repeat(4,1fr);grid-template-rows:minmax(0,1fr) 40px;height:100%; }
+ .game-page .round__app .board-history moves-list { grid-column:1/-1;grid-row:1;display:grid;grid-template-columns:2rem minmax(0,1fr) minmax(0,1fr);height:100%;max-height:none;overflow:auto;align-items:stretch;align-content:start;white-space:normal; }
+ .game-page .round__app .board-history moves-list > move-entry,.game-page .round__app .board-history moves-list > move-number { display:flex;min-width:0;width:auto;height:auto;min-height:36px;padding:.3rem .4rem; }
+ .game-page .board-history > button { grid-row:2; }
+ .game-page .board-history .result-wrap { display:block; }
+ .game-page .game-player,.game-page.analysis-open .game-player { padding:.65rem .75rem; }
+ .game-page .player-details { display:block; }
+ .game-page .player-meta > span { display:inline; }
+ .game-page .player-mark { width:1.4rem;height:1.4rem;flex-basis:1.4rem; }
+ .game-page .game-player .rclock .time { font-size:1.65rem; }
+ .game-page #analysis-panel { max-height:max(16rem,calc(var(--chess-board-size) - 25rem)); }
+ .board-evaluation { position:static;height:auto;min-height:38px;flex-wrap:wrap;gap:.3rem; }
+}

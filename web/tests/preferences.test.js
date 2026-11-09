@@ -36,3 +36,9 @@ test('browser rules preserve start-position move counts and special-move FENs',(
  assert.equal(context.ucifen('e1g1','r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1',0).b.f1.p,'r');
  assert.equal(context.ucifen('e5d6','4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1',0).b.d5.p,' ');
 });
+
+test('analysis settings are bounded and keep only identifiers and supported numeric fields',()=>{
+ const settings=normalize({analysis:{engine:'../../escape',network:'https://other',multiPV:999,hash:100000,threads:-1,exec:'bad'}}).analysis;
+ assert.deepEqual(settings,{engine:'stockfish-lite',network:'default',multiPV:8,hash:256,threads:1});
+ assert.deepEqual(normalize({analysis:{engine:'stockfish-lite',network:'embedded',multiPV:2,hash:64,threads:1}}).analysis,{engine:'stockfish-lite',network:'embedded',multiPV:2,hash:64,threads:1});
+});

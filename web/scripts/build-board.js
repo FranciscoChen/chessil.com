@@ -6,7 +6,7 @@ async function build(){
  for(const [output,inputs] of Object.entries({
   'board.min.js':['chess-rules.js','board.js'],
   'game.min.js':['game.js'],
-  'analysis.min.js':['local-engine.js','analysis-judgment.js','analysis.js'],
+  'analysis.min.js':['local-engine.js','opening-book.js','analysis-judgment.js','analysis.js'],
   'training.min.js':['training.js'],
   'highlight.min.js':['highlight.js'],
   'timing.min.js':['timing.js'],

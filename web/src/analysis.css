@@ -25,3 +25,22 @@ cg-board square.annotation-suggestion { z-index:3; }
 cg-board square.annotation-suggestion { background:#ffffff26; }
 .analysis-perspective { display:flex;align-items:center;gap:.5rem;font-size:.75rem; }
 .analysis-perspective select { min-height:32px;padding:.2rem .5rem;font-size:.75rem; }
+.engine-toolbar { display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-size:.75rem;margin-bottom:.6rem; }
+.opening-explorer { min-width:0; }
+#analysis-book-moves { display:grid;grid-template-columns:1fr;gap:.2rem; }
+.book-move { display:flex;justify-content:space-between;align-items:center;gap:1rem;position:relative;isolation:isolate;border:0;border-bottom:1px solid var(--border);border-radius:3px;background:transparent;color:var(--text);padding:.45rem .6rem;min-height:36px;cursor:pointer;text-align:left; }
+.book-move::before { content:'';position:absolute;inset:0 auto 0 0;width:var(--book-prior);background:var(--highlight);opacity:.7;z-index:-1; }
+.book-move:hover { outline:1px solid var(--link); }
+.book-move span { font:600 .8rem var(--monospace-font); }
+#analysis-book-note { display:block;margin-top:.5rem;color:var(--text2); }
+.board-evaluation { gap:.4rem;height:34px; }
+.board-evaluation .analysis-eval { flex:1;max-width:42%;height:10px; }
+.board-evaluation .wdl-bar { flex:1.7;min-width:170px;height:29px; }
+.wdl-track { display:flex;height:10px;overflow:hidden;border-radius:3px;border:1px solid var(--border); }
+.wdl-track span { flex-grow:0;flex-shrink:0;min-width:0; }
+.wdl-track [data-wdl="win"] { background:var(--piece-white,#f2ead6); }
+.wdl-track [data-wdl="draw"] { background:#82958d; }
+.wdl-track [data-wdl="loss"] { background:var(--piece-black,#26343d); }
+.wdl-labels { display:flex;justify-content:space-between;gap:3px;margin-top:3px;font:500 11px/1.2 var(--sans-font);color:var(--text); }
+.wdl-bar.is-unknown { opacity:.55; }
+@media(max-width:900px) { .game-page .round__app,.game-page.analysis-open .round__app { grid-template-rows:40px 34px auto auto auto auto auto; }.board-evaluation #analysis-depth { display:none; } }

@@ -24,7 +24,7 @@ window.ChessilPreferences = (() => {
   message(words().failed);
  }).finally(()=>{apply();});
  function update(patch) {
-  value=normalizeBoardPreferences({...value,...patch,events:{...value.events,...patch.events}});version++;apply();cache();
+  value=normalizeBoardPreferences({...value,...patch,analysis:{...value.analysis,...patch.analysis},events:{...value.events,...patch.events}});version++;apply();cache();
   clearTimeout(saveTimer);message(words().saving);
   saveTimer=setTimeout(()=>{
    const snapshot=get(),revision=version;
@@ -45,6 +45,8 @@ window.ChessilPreferences = (() => {
  zh:{autoQueen:'自动升变为后',title:'棋盘与声音',board:'棋盘配色',pieces:'棋子风格',slide:'棋子滑动',none:'关闭滑动',fast:'快速 · 100 毫秒',normal:'平滑 · 180 毫秒',slow:'舒缓 · 320 毫秒',sound:'声音主题',auto:'跟随网站主题',ivory:'Ivory Study',midnight:'Midnight Observatory',walnut:'胡桃木',classic:'经典',sculpted:'雕塑',volume:'音量',mute:'静音',events:'自定义每种声音',theme:'所选声音主题',off:'关闭',preview:'试听',move:'走子',capture:'吃子',start:'对局开始',end:'对局结束',clock:'时间不足',check:'将军',slideEvent:'滑动',saving:'保存中…',saved:'已保存到账户。',guestSaved:'已保存到当前浏览器会话。',failed:'同步失败，请修改设置重试。',help:'交互后启用声音。轮到你且不足10秒时提醒一次。减少动态效果会关闭滑动。',reset:'重置棋盘与声音',close:'关闭'}
  };
  function words(){return labels[document.documentElement.lang] || labels.en;}
+ let catalogRequest;
+ function loadEngineCatalog(){return catalogRequest||(catalogRequest=fetch('/engine/catalog.json').then(r=>{if(!r.ok)throw Error();return r.json();}).catch(error=>{catalogRequest=null;throw error;}));}
  function render(host) {
   const t=words();host.replaceChildren();
   function el(tag,className,text){const e=document.createElement(tag);if(className)e.className=className;if(text)e.textContent=text;return e;}
@@ -74,13 +76,23 @@ window.ChessilPreferences = (() => {
    select(row,key==='slide'?t.slideEvent:t[key],null,[['theme',t.theme],['ivory',t.ivory],['midnight',t.midnight],['off',t.off]],key);
    const preview=el('button','ui-button ui-secondary',t.preview);preview.type='button';preview.setAttribute('aria-label',t.preview+' · '+(key==='slide'?t.slideEvent:t[key]));preview.addEventListener('click',()=>{ChessilSound.unlock();ChessilSound.play(key,true);});row.append(preview);
   }
+  const analysis=el('section','engine-settings');if(!host.closest('dialog'))analysis.id='analysis-engine-settings';analysis.append(el('h3','','Analysis engine'));host.append(analysis);
+  const engineGrid=el('div','board-settings-grid');analysis.append(engineGrid);
+  const hint=el('p','ui-muted','Changes apply the next time you start the engine.');analysis.append(hint);
+  function engineSelect(label,key,options){const field=el('label','ui-field',label),input=el('select');input.dataset.preference='analysis.'+key;for(const [id,name] of options)input.add(new Option(name,String(id)));input.value=String(value.analysis[key]);field.append(input);engineGrid.append(field);input.onchange=()=>update({analysis:{[key]:['multiPV','hash','threads'].includes(key)?Number(input.value):input.value}});return input;}
+  engineSelect('Lines (MultiPV)','multiPV',Array.from({length:8},(_,i)=>[i+1,String(i+1)]));
+  engineSelect('Hash memory','hash',[8,16,32,64,128,256].map(n=>[n,n+' MB']));
+  loadEngineCatalog().then(catalog=>{if(!analysis.isConnected)return;const engine=engineSelect('Engine','engine',catalog.engines.map(e=>[e.id,e.name]));let threads,network;
+   function choices(){const chosen=catalog.engines.find(e=>e.id===engine.value)||catalog.engines[0];engine.value=chosen.id;threads?.closest('label').remove();network?.closest('label').remove();threads=engineSelect('Threads','threads',chosen.threads.map(n=>[n,String(n)]));network=engineSelect('Network','network',chosen.networks.map(n=>[n.id,n.name]));if(!threads.value)threads.value=String(chosen.threads[0]);if(!network.value)network.value=chosen.networks[0].id;hint.textContent='Changes apply on engine start.'+(chosen.threads.length===1?' This build supports '+chosen.threads[0]+' thread.':'');}
+   choices();engine.onchange=()=>{const chosen=catalog.engines.find(e=>e.id===engine.value);update({analysis:{engine:chosen.id,threads:chosen.threads[0],network:chosen.networks[0].id}});choices();};
+  }).catch(()=>{hint.textContent='Engine choices unavailable. Reopen settings to retry.';});
   const help=el('p','ui-muted',t.help);host.append(help);
   const status=el('p','preference-status');status.dataset.preferenceStatus='';status.setAttribute('role','status');host.append(status);
   const reset=el('button','ui-button ui-quiet',t.reset);reset.type='button';reset.addEventListener('click',()=>{update(structuredClone(defaults));render(host);});host.append(reset);
  }
  document.addEventListener('DOMContentLoaded',async()=>{
   await ready;
-  document.querySelectorAll('[data-board-settings]').forEach(render);
+  document.querySelectorAll('[data-board-settings]').forEach(host=>{if(!host.closest('dialog'))render(host);});
   const dialog=document.querySelector('#board-settings-dialog');
   if(dialog) {
    const open=document.querySelector('#open-board-settings');open.textContent=words().title;

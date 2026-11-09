@@ -1,7 +1,7 @@
 # Local post-game review
 
 The Analyze game action is available only for finished games with moves (result
-codes 1–8). No engine/network/book asset is downloaded before the user opens it.
+codes 1–8). Engine binaries, NNUE files and book shards are downloaded only when review opens; the small engine catalog is also used by settings.
 `src/analysis.js` composes the existing native board, move history, shared buttons,
 progress, and CSS countdown. `src/local-engine.js` serializes UCI searches in one
 worker. Closing analysis terminates it and restores the game board's original
@@ -16,7 +16,11 @@ both searches from the same mover's perspective.
 Outcome classification uses expected score `(wins + draws/2) / total` from UCI
 WDL. A score of at least .8 is likely winning; at most .2 is likely losing;
 the middle is uncertain/drawish. A downgrade between these bands is marked as
-an outcome-changing mistake only when expected score falls by at least .2.
+an outcome-changing mistake only when expected score falls by at least .2. Hopeless positions are excluded: losing mate scores, a best
+move still at -400 cp or worse, or <=5% expected score with a best move below
+-200 cp. Same-sign mate-distance changes are omitted. A best defense of -250 cp
+or better against a played move of -400 cp or worse (at least 200 cp difference)
+is retained as a practical-chances suggestion even if engine WDL is pessimistic.
 A fall of .5 or more receives `??`, otherwise `?`. Other improvements of at least
 100 cp or .1 expected score receive a neutral `?!` suggestion. Thus +7 to +5
 is advice, not a blunder. Engines without WDL use a conservative logistic cp
@@ -24,7 +28,7 @@ fallback; mate scores use their winning/losing sign. These are bounded-search
 estimates, not proofs of the game's result.
 
 Normal move clicks always show the recorded position after that move. A symbol
-button before its notation opens a distinct suggestion step: the position before
+button after its notation opens a distinct suggestion step: the position before
 the move, with the played move's squares red, best-move squares using the shared
 white pulse, and the shared floating explanation underneath the destination.
 Adjacent arrow/button navigation visits this step between the previous and
@@ -34,9 +38,10 @@ Ordinary steps use a two-second CSS countdown; review suggestions pause for five
 seconds. Piece sliding uses the shared renderer and respects motion preferences. Manual
 navigation and exploration pause autoplay. Local variations never alter history.
 
-All game/review layouts use a shared horizontal history rail above the board,
-with fixed navigation buttons at both ends. A separate compact evaluation row
-shows the score and engine WDL percentages. Live games display unknown values,
+Mobile game/review layouts use a shared horizontal history rail above the board,
+with fixed navigation buttons at both ends. Desktop keeps the original side
+column with a two-column move list and navigation below it. A separate compact evaluation row
+shows separate centipawn and three-segment WDL bars with labeled percentages. Live games display unknown values,
 never engine assistance. Review defaults to the player’s side (both for spectators);
 White, Black and Both change marker visibility, board orientation, score and WDL
 perspective, without restarting the scan. All positions are analyzed once.
@@ -45,12 +50,32 @@ On mobile the header, player rows and clocks are compact.
 Recorded move navigation keeps the selected move visible. Marker buttons have
 separate actions, keyboard focus, and an accessible explanation.
 
-The evaluation bar and scores always use White's perspective. The opening book
-is an offline position index of named ECO lines, not a games/statistics database
-or a recommendation that every book move is good. Its source is the CC0
-lichess-org/chess-openings dataset, revision
-`3ba6b20d31b2e6125cb0e6a2e792f400717d9d39`, preserved in `assets/openings`.
-Rebuild with `python web/scripts/build-opening-book.py` using `chess==1.11.2`.
+The bar, score and WDL follow the selected perspective (White for Both).
+Opening names still come from the offline CC0 ECO index. The opening explorer
+uses the project's Leela BT4-1740 Polyglot book at
+`Stockfish-policy-search/policy/data/mixed/book/depth_12_BT4-1740.bin`, SHA-256
+`05aacd4c9186764fceef7c26af394657e9ca74bc0254e34cbeb37e61b33c8cec`.
+`python web/scripts/build-leela-book.py` (python-chess) exports 97,155 reachable
+positions, limited to the first 12 plies, as 256 lazy FEN shards. The original
+integer weights and their totals are retained. Percentages are normalized
+pruned-book policy priors, not game counts, win rates, or full raw network output.
+The browser caches up to 24 shards. Book moves remain playable with the engine
+stopped, and Back retraces the explored opening without changing game history.
+
+Engine Start/Stop terminates/recreates the local worker. Stopping keeps the board,
+book, evaluations and completed review moments. Starting with unchanged settings
+resumes the unfinished scan; changed settings reset evaluations and scan again.
+Global settings persist engine/network IDs, MultiPV (1–8), hash (8–256 MB), and
+requested thread count. `/engine/catalog.json` lists installed compatible options;
+the current Lite build supports one thread only, and the loader clamps the
+requested count to the selected build's capabilities. The supplied external and
+bundled NNUE options currently contain the same default network. New builds and
+matching external networks can be registered through the catalog; arbitrary
+URLs and incompatible files are not accepted from preference storage.
+
+Shared highlight calls accept multiple `areas` and use a pointer-transparent
+8% dimming mask around them. The mask follows scroll/resize and is removed with
+the highlight; header stacking remains above board highlights.
 
 ## Engine source and network builds
 
