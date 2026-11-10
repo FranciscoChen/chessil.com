@@ -5,7 +5,7 @@ const root=document.querySelector('#training-app');if(!root)return;
 const $=id=>document.getElementById('training-'+id),initial='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 let data,section=root.dataset.initialSection||'tutorial',lesson,fen=initial,index=0,stage=0,active=false,busy=false,complete=false,free=false,side='w',timer,autoplayRun,epoch=0,rush=null,rushCountdown,positions=new Map(),progress={},account=null,saving=Promise.resolve();
 const storage='chessil.training.v1';try{progress=JSON.parse(localStorage.getItem(storage)||'{}');if(!progress||typeof progress!=='object'||Array.isArray(progress))progress={};}catch(_){}
-const text=(id,value)=>{$(id).textContent=value;},status=message=>text('status',message);
+const text=(id,value)=>{const element=$(id);element.textContent=value;if(id==='summary'){const plain=text=>String(text||'').toLowerCase().replace(/[.!?。！？…\s]+$/g,'');element.hidden=!value||plain(value)===plain($('title').textContent);}},status=message=>text('status',message);
 async function request(url,options={}){const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{return await fetch(url,{...options,signal:controller.signal});}finally{clearTimeout(timeout);}}
 function expiredRush(){if(rush&&Date.now()>=rush.end){endRush('Time is up.');return true;}return false;}
 function drawClaim(){return Number(fen.split(' ')[4])>=100||positions.get(fen.split(' ').slice(0,4).join(' '))>=3;}

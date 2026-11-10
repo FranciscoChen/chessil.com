@@ -5,10 +5,9 @@ const labels = {
  en: {
   heading:'A little study. A stronger game.',
   intro:'Build understanding, then put it into practice on the board.',
-  curriculum:'Lesson content is currently in English.',
   navigation:'Training sections', tutorial:'Start here', openings:'Openings', endgames:'Endgames', tactics:'Tactics', strategy:'Strategy',
   library:'Lesson library', repertoire:'Repertoire', d4:'White · 1.d4', e4:'White · 1.e4', black:'Black repertoire',
-  search:'Find a lesson', searchPlaceholder:'Search lessons…', libraryHelp:'Choose a section, then a lesson to study.',
+  search:'Find a lesson', searchPlaceholder:'Search lessons…',
   board:'Training board', boardHelp:'Select a piece, then its destination, or drag to move. With the board focused, use arrow keys and Enter; Escape clears the selection.',
   coach:'Your lesson', title:'Start with the essentials', summary:'Select a lesson from the library to explore the idea and practise it on the board.',
   concept:'The idea', conceptHelp:'Your lesson’s key idea will appear here.',
@@ -23,10 +22,9 @@ const labels = {
  es: {
   heading:'Un poco de estudio. Un juego más sólido.',
   intro:'Comprende las ideas y ponlas en práctica en el tablero.',
-  curriculum:'El contenido de las lecciones está en inglés por ahora.',
   navigation:'Secciones de entrenamiento', tutorial:'Empieza aquí', openings:'Aperturas', endgames:'Finales', tactics:'Táctica', strategy:'Estrategia',
   library:'Biblioteca de lecciones', repertoire:'Repertorio', d4:'Blancas · 1.d4', e4:'Blancas · 1.e4', black:'Repertorio con negras',
-  search:'Buscar una lección', searchPlaceholder:'Buscar lecciones…', libraryHelp:'Elige una sección y una lección para estudiar.',
+  search:'Buscar una lección', searchPlaceholder:'Buscar lecciones…',
   board:'Tablero de entrenamiento', boardHelp:'Selecciona una pieza y su destino, o arrástrala. Con el foco en el tablero, usa las flechas y Entrar; Escape borra la selección.',
   coach:'Tu lección', title:'Empieza por lo esencial', summary:'Selecciona una lección de la biblioteca para descubrir la idea y practicarla en el tablero.',
   concept:'La idea', conceptHelp:'Aquí aparecerá la idea clave de la lección.',
@@ -41,10 +39,9 @@ const labels = {
  zh: {
   heading:'日积月累，棋艺精进。',
   intro:'理解棋理，再到棋盘上练习。',
-  curriculum:'课程内容目前为英语。',
   navigation:'训练分类', tutorial:'从这里开始', openings:'开局', endgames:'残局', tactics:'战术', strategy:'战略',
   library:'课程库', repertoire:'开局库', d4:'白棋 · 1.d4', e4:'白棋 · 1.e4', black:'黑棋开局',
-  search:'查找课程', searchPlaceholder:'搜索课程…', libraryHelp:'选择分类，再选择要学习的课程。',
+  search:'查找课程', searchPlaceholder:'搜索课程…',
   board:'训练棋盘', boardHelp:'选择棋子和目标格，或拖动棋子。棋盘获得焦点后，可用方向键和回车走子，按 Escape 取消选择。',
   coach:'当前课程', title:'从基础开始', summary:'从课程库中选择一课，理解要点并在棋盘上练习。',
   concept:'核心思路', conceptHelp:'课程的核心思路将在这里显示。',
@@ -68,10 +65,9 @@ exports.render = function(name, language) {
 
  return `<main id="main-content" class="ui-page ui-layout-${name} training-page">
  <section id="training-app" data-initial-section="${initial}" aria-label="${t.navigation}">
-  <div class="training-heading">
+  <div class="training-heading ui-mobile-secondary">
    <h1>${t.heading}</h1>
    <p class="ui-intro">${t.intro}</p>
-   <p class="ui-muted training-language-note">${t.curriculum}</p>
   </div>
   <nav class="ui-tabs training-tabs" aria-label="${t.navigation}">
    ${sections.map(section => `<button type="button" class="ui-button ui-quiet" data-section="${section}" aria-pressed="${section === initial}">${t[section]}</button>`).join('\n   ')}
@@ -82,7 +78,7 @@ exports.render = function(name, language) {
      <cg-board aria-label="${t.board}" aria-describedby="training-board-help"></cg-board>
      ${coordinates()}
     </div>
-    <p id="training-board-help" class="ui-muted training-board-help">${t.boardHelp}</p>
+    <p id="training-board-help" class="ui-muted training-board-help ui-mobile-secondary">${t.boardHelp}</p>
     <details class="training-settings">
      <summary>${t.settings}</summary>
      <div data-board-settings></div>
@@ -115,7 +111,7 @@ exports.render = function(name, language) {
      <h3 id="training-line-label">${t.line}</h3>
      <div id="training-line" aria-labelledby="training-line-label"></div>
     </div>
-    <p id="training-meta" class="ui-muted">${t.meta}</p>
+    <p id="training-meta" class="ui-muted ui-mobile-secondary">${t.meta}</p>
     <dl class="training-session-metrics">
      <div><dt>${t.score}</dt><dd id="training-score">—</dd></div>
      <div><dt>${t.clock}</dt><dd id="training-clock">—</dd></div>
@@ -125,7 +121,7 @@ exports.render = function(name, language) {
      ${action('freeplay', t.freeplay, 'ui-secondary', true)}
      ${action('stop', t.stop, 'ui-quiet', true)}
     </div>
-    <details class="training-guidance"${initial === 'tutorial' ? ' open' : ''}>
+    <details class="training-guidance">
      <summary>${t.guidance}</summary>
      <p class="ui-muted">${t.beginner}</p>
      <ol>${t.steps.map(step => `<li>${step}</li>`).join('')}</ol>
@@ -145,7 +141,6 @@ exports.render = function(name, language) {
       <input id="training-search" type="search" placeholder="${t.searchPlaceholder}" autocomplete="off" aria-controls="training-library">
      </label>
     </div>
-    <p class="ui-muted training-library-help">${t.libraryHelp}</p>
     <div id="training-library" aria-labelledby="training-library-heading"></div>
    </aside>
   </div>
