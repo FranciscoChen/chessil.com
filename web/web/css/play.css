@@ -96,7 +96,7 @@
 .game-heading-actions { max-width:none;gap:.3rem; }
 .game-heading-actions .ui-button { padding:.35rem .6rem;min-height:34px;font-size:.75rem; }
 .game-page .round__app,.game-page.analysis-open .round__app { grid-template-areas:"moves opponent" "evaluation opponent" "board analysis" "board player" "board actions";grid-template-rows:40px 26px minmax(0,1fr) auto auto;gap:6px 1.25rem; }
-.game-page moves-panel,.game-page.analysis-open moves-panel { display:block;min-height:0;max-height:none!important;overflow:visible;background:var(--bg);border-radius:var(--radius);box-shadow:none;position:sticky;top:var(--header-height);z-index:5; }
+.game-page moves-panel,.game-page.analysis-open moves-panel { display:block;min-height:0;max-height:none!important;overflow:visible;background:var(--bg);border-radius:var(--radius);box-shadow:none;position:static; }
 .board-history { display:grid;grid-template-columns:32px 36px minmax(0,1fr) 36px 32px;height:40px;align-items:center; }
 .game-page .board-history .fbt { display:grid;place-items:center;width:100%;height:40px;margin:0;padding:0;background:var(--bg);color:var(--text);border:0; }
 .game-page .round__app .board-history moves-list { display:flex;flex-flow:row nowrap;align-items:center;min-height:0;height:40px;max-height:40px;overflow:auto hidden;white-space:nowrap;scrollbar-width:none; }
@@ -112,7 +112,7 @@
 .game-page .game-player .rclock .time { min-width:4.6rem;font-size:1.3rem;line-height:1.2;padding:.2rem .35rem; }
 .game-page .game-guidance { display:none; }
 .game-page #analysis-panel { grid-area:analysis;align-self:start;min-width:0;max-height:calc(var(--chess-board-size) - 6rem);overflow:auto;border:1px solid var(--border);background:var(--bg); }
-.board-evaluation { grid-area:evaluation;display:flex;align-items:center;gap:.45rem;min-width:0;height:26px;font:600 .65rem var(--monospace-font);position:sticky;top:calc(var(--header-height) + 40px);background:var(--bg2);z-index:4; }
+.board-evaluation { grid-area:evaluation;display:flex;align-items:center;gap:.45rem;min-width:0;height:26px;font:600 .65rem var(--monospace-font);position:static;background:var(--bg2); }
 .board-evaluation #analysis-score { min-width:3.1rem;font-size:.75rem; }
 .board-evaluation .analysis-eval { flex:1;height:7px;min-width:20px; }
 .board-evaluation #analysis-depth { font-size:.6rem; }
