@@ -18,3 +18,25 @@ Use the shared native board implementation in `web/src/board.js`. Do not add
 Chessground as a dependency, bundle its source, or replace this renderer with it.
 Keep dragging independent of move animations and preserve the compositor
 regression checks when changing pointer handling or board styles.
+
+# UI density
+
+Treat every operational page with an interactive chessboard as a dense workspace:
+game, analysis, training, drills, puzzles, and any future board workspace. This
+applies on desktop as well as mobile. Prioritize the board, move history,
+controls, clocks, and information needed for the current task. Space is functional,
+not an invitation to add decoration or explanatory copy.
+
+Omit obvious titles, repeated instructions, redundant labels, promotional prose,
+and engine/build metadata from these workspaces. Keep useful lesson titles,
+position-specific guidance, actionable errors, and essential controls. Prefer
+compact shared components, icon controls with accessible names, and plain move
+lines over padded cards for individual lines.
+
+Landing and informational pages can keep their fuller editorial presentation.
+Do not apply operational density rules indiscriminately sitewide. A decorative
+chessboard illustration on the landing page does not make it a board workspace.
+
+Evaluation, WDL, engine, and opening-book tools belong on dedicated analysis
+pages, not game pages. Analysis pages show separate compact Engine and Book cards
+by default, without switches between them or obvious heading/help text.
