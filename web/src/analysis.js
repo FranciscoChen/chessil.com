@@ -1,7 +1,9 @@
-/* Post-game review. The scan owns immutable game positions; exploration owns a
- * separate FEN. Neither can mutate the authoritative game history. */
+/* Shared engine/book tools for post-game review and the standalone study board.
+ * Game exploration never mutates authoritative history; the study adapter owns
+ * its local variation tree. Both use the same engine lifecycle and UI. */
 (()=>{
 'use strict';
+const study=!!window.ChessilStudy;
 const initial='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const key=fen=>{const fields=fen.split(' ').slice(0,4);if(fields[3]!=='-'&&!mg(fen).some(move=>move.slice(2,4)===fields[3]&&boardgen(fen)[move.slice(0,2)].p==='p'&&move[0]!==move[2]))fields[3]='-';return fields.join(' ');};
 const magnitude=score=>score.kind==='mate'?(score.value>0?100000-Math.min(99,score.value)*100:score.value<0?-100000+Math.min(99,-score.value)*100:-100000):score.value;
@@ -17,6 +19,7 @@ const included=item=>perspective==='both'||(item.ply%2?'w':'b')===perspective;
 function adjacent(direction){for(let i=selected+direction;i>=0&&i<findings.length;i+=direction)if(included(findings[i]))return i;return -1;}
 function controls(){if(!panel)return;$('book-return').hidden=!exploring;$('engine-toggle').textContent=engineReady||engineLoading?'Stop engine':'Start engine';$('engine-toggle').setAttribute('aria-pressed',String(engineReady||engineLoading));const eligible=findings.filter(included);$('autoplay').textContent=autoplay?'Pause':'Play backward';$('autoplay').setAttribute('aria-pressed',String(autoplay));$('previous').disabled=adjacent(-1)<0;$('next').disabled=adjacent(1)<0;$('finding').textContent=eligible.length?`${eligible.length} review moments`:(scanning?'Analyzing every move…':'No review moments for this side');}
 function schedule(){
+ if(study)return;
  if(!opened||!autoplay||autoplayRun)return;
  if(a1ti===0&&!suggestionView){cancelCountdown();autoplay=false;controls();return;}
  if(!suggestionView&&!scores.has(positions[a1ti-1]))return;
@@ -29,7 +32,7 @@ function schedule(){
 }
 function showActual(ply){clearGuide();internal=true;gamereplay(ply,true);internal=false;exploring=false;position=positions[a1ti];viewEpoch++;annotate(null);$('alternatives').replaceChildren();$('explanation').textContent=a1ti?'Position after move '+Math.ceil(a1ti/2)+'.':'Starting position. Review complete.';renderDetails();}
 function orientReview(side){
- boardView.setOrientation(side);
+ boardView.setOrientation(side);if(study)return;
  const top=document.querySelector('.game-player--top'),bottom=document.querySelector('.game-player--bottom');
  const topIsWhite=!!top.querySelector('.player-mark--white');
  if(topIsWhite!==(side==='b'))for(const selector of ['.ruser','.rclock']){const first=top.querySelector(selector),second=bottom.querySelector(selector);top.append(second);bottom.append(first);}
@@ -64,7 +67,7 @@ function evalDisplay(){
 function linesDisplay(){const lines=scores.get(position)||[];$('lines').replaceChildren();for(const line of lines){if(!line.pv.length)continue;const b=document.createElement('button');b.type='button';b.className='ui-button ui-secondary analysis-line';b.textContent=scoreText(line,perspective==='b'?position.replace(/ [wb] /,position.split(' ')[1]==='w'?' b ':' w '):position)+'  '+pvText(line.pv,position);b.onclick=()=>play(line.pv[0]);$('lines').append(b);}}
 async function bookDisplay(){
  if(!bookPanel||bookPanel.hidden)return;
- const epoch=++bookEpoch,fen=position,entry=book[key(fen)];$('book-name').textContent=entry?.names?.map(n=>n.join(' · ')).slice(0,2).join(' / ')||'';$('book-back').disabled=!bookPath.length;$('book-moves').replaceChildren();$('book-note').textContent='Loading Leela priors…';
+ const epoch=++bookEpoch,fen=position,entry=book[key(fen)];$('book-name').textContent=entry?.names?.map(n=>n.join(' · ')).slice(0,2).join(' / ')||'';$('book-back').disabled=study?a1ti===0:!bookPath.length;$('book-moves').replaceChildren();$('book-note').textContent='Loading Leela priors…';
  try{const result=await leelaBook.lookup(key(fen));if(epoch!==bookEpoch||!opened||bookPanel.hidden)return;
   for(const [move,label,weight,total] of result.moves){if(!mg(fen).includes(move))continue;const probability=weight/total,b=document.createElement('button');b.type='button';b.className='book-move';b.style.setProperty('--book-prior',probability*100+'%');const name=document.createElement('strong'),prior=document.createElement('span');name.textContent=label;prior.textContent=(probability*100).toFixed(1)+'%';b.append(name,prior);b.setAttribute('aria-label',label+', book prior '+prior.textContent);b.onclick=()=>play(move);$('book-moves').append(b);}
   $('book-note').textContent=result.moves.length?result.name+' · normalized book priors, not win probabilities.':'Outside the Leela book. Navigate back to an opening position.';
@@ -81,7 +84,7 @@ function reveal(index){if(index<0||index>=findings.length)return;cancelCountdown
  guide=ChessilHighlight.show(target,{text:explanation,actions:false,placement:'bottom',subtle:true,areas:[...document.querySelectorAll('cg-board square.annotation-suggestion')]});
  $('alternatives').replaceChildren();for(const line of item.alternatives){const b=document.createElement('button');b.type='button';b.className='ui-button ui-secondary analysis-line';b.textContent='Better: '+pvText(line.pv,position);b.onclick=()=>play(line.pv[0]);$('alternatives').append(b);}renderDetails();schedule();}
 async function evaluate(fen,options){const legal=mg(fen);if(!legal.length)return [{kind:incheck(fen)?'mate':'cp',value:0,depth:0,pv:[]}];return engine.search(fen,options);}
-async function play(move){if(!opened||!mg(position).includes(move)){boardView.acknowledge();return;}pause();clearGuide();bookPath.push(position);position=ucifen(move,position,boardgen(position),{}).f;exploring=true;annotate(null);boardView.render(boardgen(position),move,true);$('explanation').textContent='Exploring an alternative. Return to the game to continue review.';const mine=++viewEpoch,run=token;renderDetails();if(!engineReady)return;try{const lines=await evaluate(position);if(run!==token||mine!==viewEpoch)return;scores.set(position,lines);renderDetails();}catch(error){if(run===token)status(error.message);}}
+async function play(move){if(study){ChessilStudy.play(move);return;}if(!opened||!mg(position).includes(move)){boardView.acknowledge();return;}pause();clearGuide();bookPath.push(position);position=ucifen(move,position,boardgen(position),{}).f;exploring=true;annotate(null);boardView.render(boardgen(position),move,true);$('explanation').textContent='Exploring an alternative. Return to the game to continue review.';const mine=++viewEpoch,run=token;renderDetails();if(!engineReady)return;try{const lines=await evaluate(position);if(run!==token||mine!==viewEpoch)return;scores.set(position,lines);renderDetails();}catch(error){if(run===token)status(error.message);}}
 async function scan(run){
  scanning=true;let after=scores.get(positions.at(-1))||await evaluate(positions.at(-1),{history});if(run!==token)return;scores.set(positions.at(-1),after);
  for(let ply=history.length;ply>0;ply--){if(run!==token)return;const beforeFen=positions[ply-1];if(processed.has(ply)){after=scores.get(beforeFen);continue;}const before=scores.get(beforeFen)||await evaluate(beforeFen,{history:history.slice(0,ply-1)});if(run!==token)return;scores.set(beforeFen,before);
@@ -103,28 +106,36 @@ async function scan(run){
 }
 async function open(review=true){
  if(review){tools.prepend(panel);tools.scrollTop=0;}
- if(opened){if(review&&panel.hidden){panel.hidden=false;button.disabled=true;autoplay=true;await startEngine();}return;}
- if(!gamefinished||stat<1||stat>8||!uci.length)return;
+ if(opened){if(review&&panel.hidden){panel.hidden=false;button.disabled=true;autoplay=!study;await startEngine();}return;}
+ if(!study&&(!gamefinished||stat<1||stat>8||!uci.length))return;
  opened=true;engineReady=false;exploring=false;const run=++token;history=uci.slice();positions=[initial];for(const move of history)positions.push(ucifen(move,positions.at(-1),boardgen(positions.at(-1)),{}).f);
- processed=new Set();bookPath=[];scores=new Map();findings=[];movesList.querySelectorAll('.analysis-marker').forEach(el=>el.remove());movesList.querySelectorAll('[data-analysis]').forEach(entry=>{delete entry.dataset.analysis;entry.removeAttribute('title');entry.removeAttribute('aria-label');});selected=-1;autoplay=review;scanning=review;perspective=playerside==='w'||playerside==='b'?playerside:'both';$('perspective').value=perspective;position=positions[a1ti];panel.hidden=!review;tools.hidden=false;document.body.classList.add('analysis-open');button.disabled=review;originalState=boardView.state;originalSubmit=boardView.submit;
+ processed=new Set();bookPath=[];scores=new Map();findings=[];movesList.querySelectorAll('.analysis-marker').forEach(el=>el.remove());movesList.querySelectorAll('[data-analysis]').forEach(entry=>{delete entry.dataset.analysis;entry.removeAttribute('title');entry.removeAttribute('aria-label');});selected=-1;autoplay=review&&!study;scanning=review&&!study;perspective=playerside==='w'||playerside==='b'?playerside:'both';$('perspective').value=perspective;position=positions[a1ti];panel.hidden=!review;tools.hidden=false;document.body.classList.add('analysis-open');button.disabled=review;originalState=boardView.state;originalSubmit=boardView.submit;
  boardView.state=()=>({fen:position,moves:mg(position),turn:position.split(' ')[1],side:position.split(' ')[1],connected:opened,finished:false,watcher:false});boardView.submit=move=>{queueMicrotask(()=>play(move));return true;};
- showActual(review?history.length:a1ti);$('progress').max=history.length;$('progress').value=0;$('explanation').textContent='Reviewing from the end. Review moments appear between the recorded moves.';$('alternatives').replaceChildren();status('Loading local Stockfish and neural network…');controls();
+ showActual(review&&!study?history.length:a1ti);$('progress').max=history.length;$('progress').value=0;$('explanation').textContent='Reviewing from the end. Review moments appear between the recorded moves.';$('alternatives').replaceChildren();status('Loading local Stockfish and neural network…');controls();
  if(review)await startEngine();
 
 }
-function stopEngine(){token++;viewEpoch++;engine?.close();engineReady=false;engineLoading=false;scanning=false;pause();status('Engine stopped. Book exploration and saved evaluations remain available.');controls();}
+let studySearching=false,studyQueued=false;
+async function evaluateStudy(){
+ if(!engineReady||!opened)return;studyQueued=true;if(studySearching)return;studySearching=true;const run=token;
+ try{while(studyQueued&&engineReady&&opened&&run===token){studyQueued=false;const current=position,epoch=viewEpoch;status('Evaluating position…');const lines=await evaluate(current);if(run!==token)return;if(epoch!==viewEpoch)continue;scores.set(current,lines);renderDetails();status('Position evaluated · depth '+lines[0].depth);}}
+ catch(error){if(run===token&&engineReady)status(error.message);}
+ finally{studySearching=false;if(studyQueued&&engineReady&&opened)evaluateStudy();}
+}
+function stopEngine(){studyQueued=false;token++;viewEpoch++;engine?.close();engineReady=false;engineLoading=false;scanning=false;pause();status('Engine stopped. Book exploration and saved evaluations remain available.');controls();}
 async function startEngine(){
  if(!opened||engineReady||engineLoading)return;
  const settings=ChessilPreferences.get().analysis,signature=JSON.stringify(settings);
  if(engineConfig&&signature!==engineConfig){scores.clear();processed.clear();findings=[];selected=-1;movesList.querySelectorAll('.analysis-marker').forEach(el=>el.remove());movesList.querySelectorAll('[data-analysis]').forEach(el=>delete el.dataset.analysis);$('progress').value=0;clearGuide();annotate(null);}
  engineConfig=signature;const run=++token;engineLoading=true;engine=new ChessilLocalEngine();status('Starting local engine…');controls();
  try{const manifest=await engine.load(settings);if(run!==token)return;engineLoading=false;engineReady=true;$('engine').textContent=manifest.name+' · '+engine.settings.threads+' thread · '+engine.settings.hash+' MB';$('source').href=manifest.source;renderDetails();
+  if(study){await evaluateStudy();return;}
   if(exploring){const current=position,epoch=viewEpoch,lines=await evaluate(current);if(run!==token)return;if(epoch===viewEpoch){scores.set(current,lines);renderDetails();}}
   await scan(run);
  }catch(error){if(run===token){engineLoading=false;scanning=false;engineReady=false;status(error.message+' Press Start engine to retry.');pause();engine?.close();controls();}}
 }
 
-function closeWorkspace(){if(!opened)return;opened=false;engineReady=false;engineLoading=false;bookEpoch++;token++;viewEpoch++;clearGuide();cancelCountdown();engine?.close();boardView.state=originalState;boardView.submit=originalSubmit;orientReview(playerside==='b'?'b':'w');annotate(null);panel.hidden=true;bookPanel.hidden=true;bookButton.setAttribute('aria-expanded','false');tools.hidden=true;document.body.classList.remove('analysis-open');internal=true;gamereplay(a1ti);internal=false;update();}
+function closeWorkspace(){if(!opened)return;opened=false;engineReady=false;engineLoading=false;bookEpoch++;token++;viewEpoch++;clearGuide();cancelCountdown();engine?.close();boardView.state=originalState;boardView.submit=originalSubmit;if(!study)orientReview(playerside==='b'?'b':'w');annotate(null);panel.hidden=true;bookPanel.hidden=true;bookButton.setAttribute('aria-expanded','false');tools.hidden=true;document.body.classList.remove('analysis-open');internal=true;gamereplay(a1ti);internal=false;update();}
 function close(){if(bookPanel.hidden){closeWorkspace();return;}stopEngine();clearGuide();annotate(null);panel.hidden=true;tools.scrollTop=0;update();}
 async function toggleBook(){
  if(!bookPanel.hidden){bookPanel.hidden=true;bookEpoch++;bookButton.setAttribute('aria-expanded','false');if(panel.hidden)closeWorkspace();return;}
@@ -132,20 +143,21 @@ async function toggleBook(){
  if(!Object.keys(book).length)fetch('/engine/openings.json',{cache:'force-cache'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{book=data;bookDisplay();}).catch(()=>{});
 }
 function returnToGame(){pause();exploring=false;const ply=suggestionView?findings[selected].ply:a1ti;clearGuide();gamereplay(ply);}
-function update(){if(!button)return;button.hidden=bookButton.hidden=!(gamefinished&&stat>=1&&stat<=8&&uci.length);button.disabled=opened&&!panel.hidden;}
+function update(){if(!button)return;button.hidden=bookButton.hidden=!(study||gamefinished&&stat>=1&&stat<=8&&uci.length);button.disabled=opened&&!panel.hidden;}
 
 document.addEventListener('DOMContentLoaded',()=>{
- if(!document.querySelector('moves-panel'))return;button=document.createElement('button');button.type='button';button.id='analyze-game';button.className='ui-button ui-primary';button.textContent='Analyze game';button.hidden=true;button.onclick=()=>open();document.querySelector('.game-heading-actions').prepend(button);
+ if(!document.querySelector('moves-panel'))return;button=document.createElement('button');button.type='button';button.id='analyze-game';button.className='ui-button ui-primary';button.textContent=study?'Engine':'Analyze game';button.hidden=true;button.onclick=()=>open();document.querySelector('.game-heading-actions').prepend(button);
  panel=document.createElement('section');panel.id='analysis-panel';panel.className='analysis-panel';panel.hidden=true;panel.setAttribute('aria-label','Game analysis');panel.innerHTML=`<div class="analysis-heading"><h2>Game analysis</h2><button id="analysis-close" class="ui-button ui-quiet" type="button">Close</button></div><div class="engine-toolbar"><button id="analysis-engine-toggle" type="button" class="ui-button ui-secondary">Start engine</button><a href="/settings#analysis-engine-settings">Engine settings</a></div><p id="analysis-engine">Local Stockfish</p><p id="analysis-status" role="status"></p><progress id="analysis-progress" class="ui-progress" max="1" value="0" aria-label="Analysis progress"></progress><div class="analysis-evaluation"><strong id="analysis-score">—</strong><div id="analysis-wdl" class="wdl-bar" role="img" aria-label="Win, draw, loss estimates unavailable"><div class="wdl-track"><span data-wdl="win"></span><span data-wdl="draw"></span><span data-wdl="loss"></span></div><div class="wdl-labels" aria-hidden="true"><span>Win —</span><span>Draw —</span><span>Loss —</span></div></div><span id="analysis-depth"></span></div><div id="analysis-eval" class="analysis-eval" role="img" aria-label="Position evaluation"><span id="analysis-eval-white"></span></div><div class="analysis-controls"><button id="analysis-previous" type="button" class="ui-button ui-secondary">Previous</button><button id="analysis-next" type="button" class="ui-button ui-secondary">Next moment</button><button id="analysis-autoplay" type="button" class="ui-button ui-secondary">Pause autoplay</button></div><label class="analysis-perspective">Review <select id="analysis-perspective"><option value="w">White</option><option value="b">Black</option><option value="both">Both sides</option></select></label><p id="analysis-finding"></p><div id="analysis-countdown" hidden>Next moment in <span data-countdown></span><div class="ui-meter"><span class="ui-meter-fill"></span></div></div><p id="analysis-explanation"></p><div id="analysis-alternatives"></div><button id="analysis-return" class="ui-button ui-quiet" type="button">Return to game position</button><details><summary>Engine lines</summary><div id="analysis-lines"></div></details><p class="analysis-note ui-mobile-secondary">Estimates from a bounded local search. Explore alternatives on the board.</p><a id="analysis-source" href="/engine/manifest.json">Engine source &amp; license</a>`;
  bookButton=document.createElement('button');bookButton.id='open-book';bookButton.type='button';bookButton.className='ui-button ui-secondary';bookButton.textContent='Book';bookButton.setAttribute('aria-label','Opening book');bookButton.title='Opening book';bookButton.hidden=true;bookButton.setAttribute('aria-controls','analysis-book-panel');bookButton.setAttribute('aria-expanded','false');bookButton.onclick=toggleBook;button.after(bookButton);
  bookPanel=document.createElement('section');bookPanel.id='analysis-book-panel';bookPanel.className='book-panel';bookPanel.hidden=true;bookPanel.setAttribute('aria-labelledby','analysis-book-title');bookPanel.innerHTML=`<div class="book-heading"><h2 id="analysis-book-title">Opening book</h2><button id="analysis-book-close" type="button" class="ui-button ui-quiet" aria-label="Close opening book">Close</button></div><div class="book-controls"><button id="analysis-book-back" type="button" class="ui-button ui-secondary" disabled>← Back</button><button id="analysis-book-return" type="button" class="ui-button ui-quiet" hidden>Return to game position</button></div><p id="analysis-book-name"></p><div id="analysis-book-moves"></div><small id="analysis-book-note" role="status"></small>`;
  tools=document.createElement('div');tools.className='board-tools';tools.hidden=true;tools.append(panel,bookPanel);document.querySelector('.round__app').append(tools);$('book-close').onclick=toggleBook;$('book-return').onclick=returnToGame;
  const evaluation=document.createElement('div');evaluation.className='board-evaluation';evaluation.setAttribute('aria-label','Position evaluation');evaluation.append($('score'),$('eval'),$('wdl'),$('depth'));document.querySelector('.round__app').append(evaluation);
- $('engine-toggle').onclick=()=>engineReady||engineLoading?stopEngine():startEngine();$('book-back').onclick=()=>{if(!bookPath.length)return;pause();position=bookPath.pop();viewEpoch++;clearGuide();annotate(null);boardView.render(boardgen(position));renderDetails();};$('perspective').onchange=changePerspective;$('close').onclick=close;$('previous').onclick=()=>{pause();reveal(adjacent(-1));};$('next').onclick=()=>{pause();reveal(adjacent(1));};$('autoplay').onclick=()=>{if(autoplay)pause();else{autoplay=true;controls();if(a1ti===0)showActual(history.length);schedule();}};$('return').onclick=returnToGame;update();
+ $('engine-toggle').onclick=()=>engineReady||engineLoading?stopEngine():startEngine();$('book-back').onclick=()=>{if(study){gamereplay(a1ti-1,true);return;}if(!bookPath.length)return;pause();position=bookPath.pop();viewEpoch++;clearGuide();annotate(null);boardView.render(boardgen(position));renderDetails();};$('perspective').onchange=changePerspective;$('close').onclick=close;$('previous').onclick=()=>{pause();reveal(adjacent(-1));};$('next').onclick=()=>{pause();reveal(adjacent(1));};$('autoplay').onclick=()=>{if(autoplay)pause();else{autoplay=true;controls();if(a1ti===0)showActual(history.length);schedule();}};$('return').onclick=returnToGame;update();
+ if(study){history=uci.slice();positions=ChessilStudy.positions();position=positions[a1ti];panel.querySelector('h2').textContent='Engine analysis';panel.querySelector('details').open=true;for(const selector of ['.analysis-controls','#analysis-progress','#analysis-finding','#analysis-explanation','#analysis-alternatives','#analysis-return'])panel.querySelector(selector).hidden=true;renderDetails();}
 });
 document.addEventListener('chessil:game-state',update);
 document.addEventListener('chessil:preferences',()=>{if(opened&&engineConfig!==JSON.stringify(ChessilPreferences.get().analysis)){stopEngine();status('Engine settings changed. Press Start engine to apply.');}});
-document.addEventListener('chessil:review',()=>{if(internal)return;if(!opened){if(positions[a1ti]&&gamefinished){position=positions[a1ti];evalDisplay();}return;}pause();exploring=false;setPosition(positions[a1ti]);$('explanation').textContent='Game position after move '+a1ti+'.';$('alternatives').replaceChildren();controls();});
+document.addEventListener('chessil:review',()=>{if(internal||!panel)return;if(study){history=uci.slice();positions=ChessilStudy.positions();position=positions[a1ti];viewEpoch++;bookPath=[];exploring=false;clearGuide();annotate(null);renderDetails();if(engineReady)evaluateStudy();return;}if(!opened){if(positions[a1ti]&&gamefinished){position=positions[a1ti];evalDisplay();}return;}pause();exploring=false;setPosition(positions[a1ti]);$('explanation').textContent='Game position after move '+a1ti+'.';$('alternatives').replaceChildren();controls();});
 
 function step(direction){
  pause();
@@ -154,11 +166,11 @@ function step(direction){
  if(index>=0)reveal(index);else gamereplay(a1ti+direction);
 }
 document.addEventListener('keydown',event=>{
- if(!opened||panel.hidden||event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||document.querySelector('dialog[open]')||event.target.closest?.('input,textarea,select,[contenteditable]'))return;
+ if(study||!opened||panel.hidden||event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||document.querySelector('dialog[open]')||event.target.closest?.('input,textarea,select,[contenteditable]'))return;
  if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();event.stopImmediatePropagation();step(event.key==='ArrowRight'?1:-1);}
 },true);
 document.addEventListener('click',event=>{
- if(!opened||panel.hidden)return;const button=event.target.closest('#sb,#fw');if(!button)return;event.preventDefault();event.stopPropagation();step(button.id==='fw'?1:-1);
+ if(study||!opened||panel.hidden)return;const button=event.target.closest('#sb,#fw');if(!button)return;event.preventDefault();event.stopPropagation();step(button.id==='fw'?1:-1);
 },true);
-window.addEventListener('pagehide',()=>{guide?.close();token++;engine?.close();autoplayRun?.cancel();});
+window.addEventListener('pagehide',()=>{guide?.close();token++;engine?.close();autoplayRun?.cancel();if(study){engineReady=false;engineLoading=false;controls();}});
 })();
