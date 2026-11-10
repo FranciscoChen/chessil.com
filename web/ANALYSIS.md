@@ -40,8 +40,10 @@ navigation and exploration pause autoplay. Local variations never alter history.
 
 Mobile game/review layouts use a shared horizontal history rail above the board,
 with fixed navigation buttons at both ends. Desktop keeps the original side
-column with a two-column move list and navigation below it. A separate compact evaluation row
-shows separate centipawn and three-segment WDL bars with labeled percentages. Live games display unknown values,
+column with a two-column move list and navigation below it. A compact evaluation block gives the centipawn bar its full available width and
+puts the three-segment WDL bar with labeled percentages on its own row. Win uses
+the reviewing side’s piece color, Loss uses the opponent’s, and Draw is their
+50/50 color mix. Both-sides review labels these segments White, Draw and Black. Live games display unknown values,
 never engine assistance. Review defaults to the player’s side (both for spectators);
 White, Black and Both change marker visibility, board orientation, score and WDL
 perspective, without restarting the scan. All positions are analyzed once.

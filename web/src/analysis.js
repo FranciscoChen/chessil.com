@@ -55,6 +55,7 @@ function evalDisplay(){
  const labels=perspective==='both'?['White','Draw','Black']:['Win','Draw','Loss'];
  let percentages=null;
  if(wdl){const values=wdl.slice();if(position.split(' ')[1]==='b')values.reverse();if(perspective==='b')values.reverse();const total=values.reduce((a,b)=>a+b,0)||1000,win=Math.round(values[0]*100/total),loss=Math.round(values[2]*100/total);percentages=[win,100-win-loss,loss];}
+ $('wdl').dataset.side=perspective==='b'?'b':'w';
  $('wdl').classList.toggle('is-unknown',!percentages);
  $('wdl').setAttribute('aria-label',percentages?labels.map((label,i)=>label+' '+percentages[i]+'%').join(', '):'Win, draw, loss estimates unavailable');$('wdl').title=$('wdl').getAttribute('aria-label');
  $('wdl').querySelectorAll('[data-wdl]').forEach((el,i)=>{el.style.flexBasis=(percentages?percentages[i]:[33,34,33][i])+'%';el.textContent='';$('wdl').querySelectorAll('.wdl-labels span')[i].textContent=labels[i]+' '+(percentages?percentages[i]+'%':'—');el.setAttribute('aria-hidden','true');});
