@@ -45,3 +45,8 @@ Played-game analysis defaults to the authenticated/session player's color, with
 that player's pieces at the bottom and coordinates oriented accordingly. Review
 annotations, evaluation and WDL use the same perspective. Respect manual overrides;
 when the viewer is a spectator, default to both sides.
+
+Show the selected engine name in its compact analysis card. Provide Start/Stop
+and an inline expanding Options control, without Close or theme controls. Engine
+options must share their renderer and preference store with general settings.
+Omit the Explore preface above analysis boards to preserve vertical space.

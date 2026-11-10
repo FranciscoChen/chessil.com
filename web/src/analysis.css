@@ -6,14 +6,21 @@
 .analysis-icon { display:inline-grid;place-items:center;box-sizing:border-box;width:32px;height:32px;min-height:32px;padding:5px;border:0;border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer;text-decoration:none; }
 .analysis-icon svg { width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round; }
 .analysis-icon:hover,.analysis-icon:focus-visible { color:var(--link);background:var(--hover); }
-#analysis-close { margin-inline-start:auto; }
+.engine-name { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 .75rem var(--sans-font); }
+.engine-options-reveal { display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .22s ease,opacity .22s ease; }
+.engine-options-reveal.is-expanded { grid-template-rows:1fr;opacity:1; }
+.engine-options-clip { overflow:hidden;min-height:0; }
+.engine-options-reveal .engine-option-fields { padding:.4rem 0 .5rem;gap:.5rem; }
+.engine-options-reveal .ui-field { margin:0;gap:.2rem;font-size:.7rem; }
+.engine-options-reveal select { width:100%;min-width:0;min-height:30px;padding:.25rem .35rem;font-size:.72rem; }
+.engine-options-reveal label:nth-child(-n+2) { grid-column:1/-1; }
+#analysis-options-toggle[aria-expanded="true"] { color:var(--link);background:var(--hover); }
 #analysis-lines { max-height:6rem;overflow:auto;scrollbar-width:thin; }
 #analysis-lines:empty::before { content:'—';color:var(--text2); }
 .engine-line { display:flex;align-items:baseline;gap:.5rem;width:100%;min-height:22px;padding:2px 0;border:0;border-radius:0;background:transparent;color:var(--text);font:400 .75rem/1.5 var(--monospace-font);cursor:pointer;text-align:start; }
 .engine-line strong { flex:0 0 3.25rem;font-weight:600; }
 .engine-line span { min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 .engine-line:hover { color:var(--link);background:var(--hover); }
-.engine-card.is-closed #analysis-lines { display:none; }
 .engine-card.engine-error #analysis-status { position:static;width:auto;height:auto;margin:.2rem 0;clip-path:none;white-space:normal;color:var(--attention);font-size:.7rem; }
 #analysis-book-name { margin:0 0 .2rem;color:var(--text2);font-size:.7rem; }
 #analysis-book-name:empty,#analysis-book-note:empty { display:none; }

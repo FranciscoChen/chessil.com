@@ -9,9 +9,11 @@ Imports reject unfinished/unavailable games. Engine binaries and NNUE files down
 `src/analysis.js` composes the existing native board, move history, shared buttons,
 progress, and CSS countdown. `src/local-engine.js` serializes UCI searches in one
 worker. Engine and book each have a compact card, visible by default. Engine
-controls are shared SVG icons: Play starts, Stop retains output, and X stops the
-worker and dismisses its lines while leaving a restart control. No titles or
-build metadata occupy these cards. Original history, clocks, and stored game
+controls are shared SVG icons: Play starts, Stop retains output, and Options
+expands a CSS-animated panel inside the engine card. The selected engine name is
+visible; close/theme controls and the Explore preface are omitted. Engine,
+network, MultiPV, hash and thread fields use the same renderer and preference
+owner as general settings. Changes persist globally and apply on engine start. Original history, clocks, and stored game
 data are not edited.
 
 The scan starts at the final position and moves backwards. Searches retain the

@@ -20,3 +20,12 @@
 .engine-settings { border-top:1px solid var(--border);padding-top:1rem;margin-top:1rem; }
 .engine-settings h3 { margin-bottom:1rem;font-size:1.25rem; }
 .engine-settings .ui-muted { margin-top:.75rem;font-size:.75rem; }
+
+/* Engine fields have one renderer and preference owner in every surface. */
+.engine-option-fields { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem; }
+.engine-option-fields .ui-field { min-width:0;margin:0; }
+.engine-option-fields > .ui-field + .ui-field { margin-top:0; }
+.engine-option-fields select { width:100%;min-width:0; }
+.engine-option-fields > .ui-muted { grid-column:1/-1; }
+ .engine-option-fields > .preference-status { grid-column:1/-1;min-height:0;margin:0;font-size:.7rem; }
+.engine-option-fields > .preference-status:empty { display:none; }

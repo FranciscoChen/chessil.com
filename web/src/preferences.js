@@ -8,6 +8,7 @@ window.ChessilPreferences = (() => {
   const root=document.documentElement;
   root.dataset.board=value.board;root.dataset.pieces=value.pieces;
   root.style.setProperty('--piece-slide',duration()+'ms');
+  syncEngineOptions();
   document.dispatchEvent(new CustomEvent('chessil:preferences',{detail:get()}));
  }
  function get(){return structuredClone(value);}
@@ -47,6 +48,28 @@ window.ChessilPreferences = (() => {
  function words(){return labels[document.documentElement.lang] || labels.en;}
  let catalogRequest;
  function loadEngineCatalog(){return catalogRequest||(catalogRequest=fetch('/engine/catalog.json').then(r=>{if(!r.ok)throw Error();return r.json();}).catch(error=>{catalogRequest=null;throw error;}));}
+ const engineForms=new Set();
+ function syncEngineOptions(){for(const form of engineForms){if(!form.host.isConnected){engineForms.delete(form);continue;}form.sync();}}
+ function renderEngineOptions(host,{compact=false}={}){
+  for(const form of engineForms)if(form.host===host||!form.host.isConnected)engineForms.delete(form);
+  host.replaceChildren();host.classList.add('engine-option-fields');
+  const labels={en:['Engine','Network','Lines (MultiPV)','Hash memory','Threads'],es:['Motor','Red','Líneas (MultiPV)','Memoria hash','Hilos'],zh:['引擎','网络','变化 (MultiPV)','哈希内存','线程']}[document.documentElement.lang]||['Engine','Network','Lines (MultiPV)','Hash memory','Threads'];
+  const fields={};let catalog,selectedId;
+  for(const [index,key] of ['engine','network','multiPV','hash','threads'].entries()){
+   const label=document.createElement('label'),input=document.createElement('select');label.className='ui-field';label.textContent=labels[index];input.dataset.preference='analysis.'+key;input.dataset.engineOption=key;label.append(input);host.append(label);fields[key]=input;
+   input.onchange=()=>{if(key==='engine'){const chosen=catalog?.engines.find(engine=>engine.id===input.value);if(chosen)update({analysis:{engine:chosen.id,threads:chosen.threads[0],network:chosen.networks[0].id}});}else update({analysis:{[key]:['multiPV','hash','threads'].includes(key)?Number(input.value):input.value}});};
+  }
+  const fill=(key,options)=>fields[key].replaceChildren(...options.map(([id,label])=>new Option(label,String(id))));
+  fill('multiPV',Array.from({length:8},(_,i)=>[i+1,String(i+1)]));fill('hash',[8,16,32,64,128,256].map(n=>[n,n+' MB']));
+  const hint=document.createElement('p');hint.className='ui-muted';if(!compact)host.append(hint);
+  if(compact){const status=document.createElement('output');status.className='preference-status';status.dataset.preferenceStatus='';status.setAttribute('role','status');host.append(status);}
+  const form={host,sync(){
+   const config=value.analysis,chosen=catalog?.engines.find(engine=>engine.id===config.engine)||catalog?.engines[0];
+   if(chosen&&selectedId!==chosen.id){selectedId=chosen.id;fill('engine',catalog.engines.map(engine=>[engine.id,engine.name]));fill('threads',chosen.threads.map(n=>[n,String(n)]));fill('network',chosen.networks.map(network=>[network.id,network.name]));hint.textContent='Changes apply on engine start.'+(chosen.threads.length===1?' This build supports '+chosen.threads[0]+' thread.':'');}
+   for(const [key,input] of Object.entries(fields)){input.disabled=!catalog&&['engine','network','threads'].includes(key);input.value=String(config[key]);if(!input.value&&input.options.length)input.selectedIndex=0;}
+  }};engineForms.add(form);form.sync();
+  return loadEngineCatalog().then(result=>{if(!host.isConnected)return false;catalog=result;form.sync();return true;}).catch(()=>{hint.textContent='Engine choices unavailable. Reopen options to retry.';if(compact){hint.setAttribute('role','status');host.append(hint);}return false;});
+ }
  function render(host) {
   const t=words();host.replaceChildren();
   function el(tag,className,text){const e=document.createElement(tag);if(className)e.className=className;if(text)e.textContent=text;return e;}
@@ -77,15 +100,7 @@ window.ChessilPreferences = (() => {
    const preview=el('button','ui-button ui-secondary',t.preview);preview.type='button';preview.setAttribute('aria-label',t.preview+' · '+(key==='slide'?t.slideEvent:t[key]));preview.addEventListener('click',()=>{ChessilSound.unlock();ChessilSound.play(key,true);});row.append(preview);
   }
   const analysis=el('section','engine-settings');if(!host.closest('dialog'))analysis.id='analysis-engine-settings';analysis.append(el('h3','','Analysis engine'));host.append(analysis);
-  const engineGrid=el('div','board-settings-grid');analysis.append(engineGrid);
-  const hint=el('p','ui-muted','Changes apply the next time you start the engine.');analysis.append(hint);
-  function engineSelect(label,key,options){const field=el('label','ui-field',label),input=el('select');input.dataset.preference='analysis.'+key;for(const [id,name] of options)input.add(new Option(name,String(id)));input.value=String(value.analysis[key]);field.append(input);engineGrid.append(field);input.onchange=()=>update({analysis:{[key]:['multiPV','hash','threads'].includes(key)?Number(input.value):input.value}});return input;}
-  engineSelect('Lines (MultiPV)','multiPV',Array.from({length:8},(_,i)=>[i+1,String(i+1)]));
-  engineSelect('Hash memory','hash',[8,16,32,64,128,256].map(n=>[n,n+' MB']));
-  loadEngineCatalog().then(catalog=>{if(!analysis.isConnected)return;const engine=engineSelect('Engine','engine',catalog.engines.map(e=>[e.id,e.name]));let threads,network;
-   function choices(){const chosen=catalog.engines.find(e=>e.id===engine.value)||catalog.engines[0];engine.value=chosen.id;threads?.closest('label').remove();network?.closest('label').remove();threads=engineSelect('Threads','threads',chosen.threads.map(n=>[n,String(n)]));network=engineSelect('Network','network',chosen.networks.map(n=>[n.id,n.name]));if(!threads.value)threads.value=String(chosen.threads[0]);if(!network.value)network.value=chosen.networks[0].id;hint.textContent='Changes apply on engine start.'+(chosen.threads.length===1?' This build supports '+chosen.threads[0]+' thread.':'');}
-   choices();engine.onchange=()=>{const chosen=catalog.engines.find(e=>e.id===engine.value);update({analysis:{engine:chosen.id,threads:chosen.threads[0],network:chosen.networks[0].id}});choices();};
-  }).catch(()=>{hint.textContent='Engine choices unavailable. Reopen settings to retry.';});
+  const engineGrid=el('div','board-settings-grid');analysis.append(engineGrid);renderEngineOptions(engineGrid);
   const help=el('p','ui-muted',t.help);host.append(help);
   const status=el('p','preference-status');status.dataset.preferenceStatus='';status.setAttribute('role','status');host.append(status);
   const reset=el('button','ui-button ui-quiet',t.reset);reset.type='button';reset.addEventListener('click',()=>{update(structuredClone(defaults));render(host);});host.append(reset);
@@ -101,5 +116,5 @@ window.ChessilPreferences = (() => {
    dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left || event.clientX>r.right || event.clientY<r.top || event.clientY>r.bottom)dialog.close();}});
   }
  });
- return {ready,get,update,duration};
+ return {ready,get,update,duration,renderEngineOptions,engineCatalog:loadEngineCatalog};
 })();

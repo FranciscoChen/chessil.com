@@ -3,7 +3,9 @@
 Explore links to `/en/analysis`, `/es/analysis`, or `/zh/analysis`. No game or account
 is required. `ui/study.js` renders the shared history rail, native board and
 coordinates. `src/study.css` composes the existing game layout without player
-cards or clocks. Mobile keeps history and evaluations above the board.
+cards or clocks. Mobile keeps history and evaluations above the board. There is no Explore
+preface or header row above the workspace. The named engine card expands its
+shared engine options in place without opening a dialog or changing pages.
 
 `src/study.js` owns an in-memory variation tree. Each node stores its FEN, SAN,
 parent and children; revisiting an earlier position and choosing another move
