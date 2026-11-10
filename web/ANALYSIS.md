@@ -1,10 +1,11 @@
 # Local post-game review
 
 The Analyze game action is available only for finished games with moves (result
-codes 1–8). Engine binaries, NNUE files and book shards are downloaded only when review opens; the small engine catalog is also used by settings.
+codes 1–8). Engine binaries and NNUE files download when engine analysis starts; book shards download only when Book opens; the small engine catalog is also used by settings.
 `src/analysis.js` composes the existing native board, move history, shared buttons,
 progress, and CSS countdown. `src/local-engine.js` serializes UCI searches in one
-worker. Closing analysis terminates it and restores the game board's original
+worker. Closing analysis terminates it. When the book remains open, exploration stays
+active; closing the last tool restores the game board's original
 input boundary. Original history, clocks, and stored game data are not edited.
 
 The scan starts at the final position and moves backwards. Searches retain the
@@ -61,8 +62,12 @@ uses the project's Leela BT4-1740 Polyglot book at
 positions, limited to the first 12 plies, as 256 lazy FEN shards. The original
 integer weights and their totals are retained. Percentages are normalized
 pruned-book policy priors, not game counts, win rates, or full raw network output.
-The browser caches up to 24 shards. Book moves remain playable with the engine
-stopped, and Back retraces the explored opening without changing game history.
+The browser caches up to 24 shards. Book has its own button, panel and close
+control, alongside engine analysis. Opening it starts no engine and requests no
+WASM or NNUE assets. Book moves remain playable with analysis closed; Back
+retraces book moves and Return to game restores the selected recorded position
+without changing game history. Both tools can stay open and follow the same
+board. Neither is available as assistance during a live game.
 
 Engine Start/Stop terminates/recreates the local worker. Stopping keeps the board,
 book, evaluations and completed review moments. Starting with unchanged settings

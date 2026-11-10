@@ -1,7 +1,7 @@
 /* Analysis composes the existing board, move list, buttons and progress UI. */
 .game-page [hidden] { display:none!important; }
 .analysis-panel { padding:1rem;border-top:1px solid var(--border);font:.8rem/1.6 var(--sans-font);min-width:0; }
-.analysis-heading,.analysis-evaluation { display:flex;align-items:center;justify-content:space-between;gap:.5rem; }
+.analysis-heading,.analysis-evaluation,.book-heading { display:flex;align-items:center;justify-content:space-between;gap:.5rem; }
 .analysis-heading h2 { font-size:1.25rem; }
 .analysis-panel p { margin:.6rem 0; }
 .analysis-controls { display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.8rem; }
@@ -26,7 +26,6 @@ cg-board square.annotation-suggestion { --ui-highlight-fill:#ffffff26; }
 .analysis-perspective { display:flex;align-items:center;gap:.5rem;font-size:.75rem; }
 .analysis-perspective select { min-height:32px;padding:.2rem .5rem;font-size:.75rem; }
 .engine-toolbar { display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-size:.75rem;margin-bottom:.6rem; }
-.opening-explorer { min-width:0; }
 #analysis-book-moves { display:grid;grid-template-columns:1fr;gap:.2rem; }
 .book-move { display:flex;justify-content:space-between;align-items:center;gap:1rem;position:relative;isolation:isolate;border:0;border-bottom:1px solid var(--border);border-radius:3px;background:transparent;color:var(--text);padding:.45rem .6rem;min-height:36px;cursor:pointer;text-align:left; }
 .book-move::before { content:'';position:absolute;inset:0 auto 0 0;width:var(--book-prior);background:var(--highlight);opacity:.7;z-index:-1; }
@@ -48,3 +47,18 @@ cg-board square.annotation-suggestion { --ui-highlight-fill:#ffffff26; }
 .wdl-labels { display:flex;justify-content:space-between;gap:3px;margin-top:3px;font:500 11px/1.2 var(--sans-font);color:var(--text); }
 .wdl-bar.is-unknown { opacity:.55; }
 @media(max-width:900px) { .game-page .round__app,.game-page.analysis-open .round__app { grid-template-rows:40px 46px auto auto auto auto auto; }.board-evaluation { grid-template-columns:auto minmax(0,1fr); }.board-evaluation #analysis-depth { display:none; } }
+
+/* Independent sibling tools share layout, never visibility or engine startup. */
+.board-tools { grid-area:analysis;align-self:start;min-width:0;display:grid;gap:.65rem;align-content:start; }
+.book-panel { padding:1rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);font:.8rem/1.6 var(--sans-font); }
+.book-panel h2 { margin:0;font-size:1.15rem; }
+.book-panel p { margin:.6rem 0; }
+.book-panel .ui-button { padding:.4rem .6rem;min-height:34px;font-size:.75rem; }
+.book-controls { display:flex;flex-wrap:wrap;gap:.4rem;margin:.65rem 0; }
+@media(min-width:901px) {
+ .game-page .board-tools { max-height:max(16rem,calc(var(--chess-board-size) - 25rem));overflow:auto; }
+ .game-page #analysis-panel { max-height:none;overflow:visible; }
+}
+@media(max-width:900px) { .book-panel { padding:.7rem; } }
+
+#analysis-book-name:empty { display:none; }
