@@ -60,8 +60,9 @@ exports.render = function(name, language) {
  const t = labels[lang];
  const initial = name === 'drills' ? 'openings' : name === 'puzzles' ? 'tactics' : 'tutorial';
  const sections = ['tutorial', 'openings', 'endgames', 'tactics', 'strategy'];
- const action = (id, label, style = 'ui-secondary', hidden = false) =>
-  `<button type="button" id="training-${id}" class="ui-button ${style}"${hidden ? ' hidden' : ''}>${label}</button>`;
+ const action = (id, label, icon, hidden = false) =>
+  `<button type="button" id="training-${id}" class="ui-button ui-icon-button" aria-label="${label}" title="${label}"${hidden ? ' hidden' : ''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${icon}"/></svg></button>`;
+ const icons={hint:'M9 18h6m-5 3h4M9 15c0-2-4-3.5-4-7a7 7 0 0 1 14 0c0 3.5-4 5-4 7H9z',retry:'M3 11a9 9 0 1 1 2 6M3 4v7h7',next:'M4 12h15m-6-6 6 6-6 6',storm:'M12 3 4 13h7l-1 8 10-12h-7l1-6z',freeplay:'M8 5l11 7-11 7z',stop:'M6 6h12v12H6z',book:'M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1zm0 0v15'};
 
  return `<main id="main-content" class="ui-page ui-layout-${name} training-page">
  <section id="training-app" data-initial-section="${initial}" aria-label="${t.navigation}">
@@ -74,17 +75,14 @@ exports.render = function(name, language) {
   </nav>
   <div class="training-workspace">
    <section class="training-board-area" aria-label="${t.board}">
-    <h2 id="training-title">${t.title}</h2>
+    <div class="training-bar"><h2 id="training-title">${t.title}</h2><button type="button" id="training-open-library" class="ui-button ui-icon-button" aria-label="${t.library}" title="${t.library}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${icons.book}"/></svg></button><div class="training-quick-actions">${action('hint',t.hint,icons.hint,true)}${action('retry',t.retry,icons.retry,true)}${action('next',t.next,icons.next,true)}</div></div>
     <div class="training-board-wrap">
      <cg-board aria-label="${t.board}" aria-describedby="training-board-help"></cg-board>
      ${coordinates()}
+     <div id="training-guidance-callout"></div>
     </div>
-    <div id="training-guidance-callout"></div>
     <p id="training-board-help" class="ui-muted training-board-help ui-mobile-secondary">${t.boardHelp}</p>
-    <details class="training-settings">
-     <summary>${t.settings}</summary>
-     <div data-board-settings></div>
-    </details>
+
    </section>
    <aside class="ui-panel training-coach" aria-label="${t.coach}">
     <p id="training-stage" class="training-stage">${t.stage}</p>
@@ -105,11 +103,7 @@ exports.render = function(name, language) {
       ${meter({id:'training-autoplay-progress',label:'Time until next lesson'})}
      </div>
     </div>
-    <div class="ui-actions training-lesson-actions">
-     ${action('hint', t.hint, 'ui-secondary', true)}
-     ${action('retry', t.retry, 'ui-secondary', true)}
-     ${action('next', t.next, 'ui-primary', true)}
-    </div>
+
     <div class="training-line-block">
      <h3 id="training-line-label">${t.line}</h3>
      <div id="training-line" aria-labelledby="training-line-label"></div>
@@ -120,9 +114,9 @@ exports.render = function(name, language) {
      <div><dt>${t.clock}</dt><dd id="training-clock">—</dd></div>
     </dl>
     <div class="ui-actions training-session-actions">
-     ${action('storm', t.storm, 'ui-secondary', true)}
-     ${action('freeplay', t.freeplay, 'ui-secondary', true)}
-     ${action('stop', t.stop, 'ui-quiet', true)}
+     ${action('storm', t.storm, icons.storm, true)}
+     ${action('freeplay', t.freeplay, icons.freeplay, true)}
+     ${action('stop', t.stop, icons.stop, true)}
     </div>
     <details class="training-guidance">
      <summary>${t.guidance}</summary>
@@ -130,7 +124,7 @@ exports.render = function(name, language) {
      <ol>${t.steps.map(step => `<li>${step}</li>`).join('')}</ol>
     </details>
    </aside>
-   <aside class="training-library-rail" aria-labelledby="training-library-heading">
+   <dialog id="training-library-dialog" class="training-library-dialog" aria-labelledby="training-library-heading"><div class="training-library-head"><h2 id="training-library-heading">${t.library}</h2><button type="button" id="training-close-library" class="ui-button ui-icon-button" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
     <h2 id="training-library-heading">${t.library}</h2>
     <div id="training-filters" class="ui-filters">
      <label class="ui-field" for="training-repertoire">${t.repertoire}
@@ -145,7 +139,7 @@ exports.render = function(name, language) {
      </label>
     </div>
     <div id="training-library" aria-labelledby="training-library-heading"></div>
-   </aside>
+   </dialog>
   </div>
  </section>
  </main>`;

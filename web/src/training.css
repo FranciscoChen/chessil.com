@@ -78,3 +78,30 @@
 @media(max-width:380px) {
  #training-filters { grid-template-columns:minmax(0,1fr); }
 }
+/* Dense training workspace; the native board owns pointer interaction. */
+.ui-page.training-page {width:calc(var(--chess-board-size) + 18rem);padding-top:.5rem}
+#training-app .training-tabs {margin-bottom:.5rem;gap:.75rem}
+#training-app .training-tabs button {padding:.35rem 0;min-height:2rem;font-size:.8rem}
+.training-workspace {grid-template-columns:var(--chess-board-size) minmax(0,18rem);grid-template-areas:"board coach";gap:.75rem}
+.training-bar {display:flex;align-items:center;gap:.4rem;margin-bottom:.4rem}
+#training-title {margin:0 auto 0 0;font-size:clamp(1rem,1.6vw,1.3rem);line-height:1.2}
+#training-app .ui-icon-button {display:inline-grid;place-items:center;width:2rem;height:2rem;min-width:2rem;min-height:2rem;padding:.3rem;flex:none}
+#training-app .ui-icon-button svg {width:1.1rem;height:1.1rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.training-quick-actions {display:flex;gap:.2rem}
+#training-guidance-callout {position:absolute;left:3%;right:3%;bottom:3%;z-index:4;margin:0;pointer-events:none}
+#training-guidance-callout:empty {display:none}
+#training-guidance-callout .ui-guide.ui-guide-inline {width:100%;padding:.55rem .7rem;background:color-mix(in srgb,var(--bg) 78%,transparent);border-color:color-mix(in srgb,var(--border) 75%,transparent);box-shadow:0 3px 14px #0004;text-shadow:0 1px 2px var(--bg);font-size:clamp(.72rem,1.6vw,.9rem);line-height:1.35;max-height:34%;overflow:hidden}
+#training-guidance-callout .ui-guide p {min-height:0;margin:0}
+.training-library-dialog {width:min(32rem,calc(100vw - 1.5rem));max-height:min(85vh,48rem);padding:1rem;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 16px 55px #0007}
+.training-library-dialog::backdrop {background:#0009}
+.training-library-head {display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.75rem}
+#training-app .training-library-head h2 {margin:0;font-size:1.15rem}
+#training-filters {gap:.5rem}
+#training-library {max-height:55vh;margin-top:.5rem}
+#training-library button {padding:.55rem .65rem}
+#training-app.training-tutorial .training-coach {display:none}
+#training-app.training-tutorial .training-workspace {grid-template-columns:var(--chess-board-size);grid-template-areas:"board";justify-content:center}
+#training-app.training-tutorial .training-board-help {display:none}
+.training-heading {display:none}
+@media(max-width:900px){.ui-page.training-page {width:var(--chess-board-size)}.training-workspace {grid-template-columns:minmax(0,1fr);grid-template-areas:"board" "coach"}}
+@media(max-width:650px){#training-app .training-tabs {gap:.65rem;overflow-x:auto;white-space:nowrap}#training-app .training-tabs button {font-size:.72rem}#training-app .training-coach {padding:.65rem}.training-library-dialog {padding:.75rem}}

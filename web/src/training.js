@@ -12,6 +12,7 @@ function status(message){
  text('status',message);
  const parts=[lesson&&!rush?$('concept').textContent:'',active&&stage===0&&!rush?lesson?.notes?.[index]:'',message].filter(Boolean);
  const unique=parts.filter((part,i)=>!parts.some((other,j)=>j!==i&&plain(other).includes(plain(part))&&(plain(other)!==plain(part)||j<i)));
+ if(complete&&section==='tutorial')return;
  lessonGuide=ChessilHighlight.show(root.querySelector('cg-board'),{text:unique.join(' '),actions:false,highlight:false,container:$('guidance-callout')});
 }
 async function request(url,options={}){const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{return await fetch(url,{...options,signal:controller.signal});}finally{clearTimeout(timeout);}}
@@ -26,7 +27,7 @@ function paint(move='',animate=false){view.render(boardgen(fen),move,animate);}
 function lessons(){return (data?.[section]||[]).filter(l=>section!=='openings'||l.repertoire===$('repertoire').value);}
 function updateLibrary(){
  const query=$('search').value.toLowerCase(),list=lessons().filter(l=>(l.title+' '+l.summary).toLowerCase().includes(query));
- $('library').replaceChildren(...list.map(l=>{const b=document.createElement('button'),title=document.createElement('strong'),summary=document.createElement('small');b.type='button';b.className='training-lesson';b.setAttribute('aria-pressed',String(lesson?.id===l.id));title.textContent=l.title;summary.textContent=(progress[l.id]?.completed?'✓ Completed · ':'')+(plain(l.summary)===plain(l.title)?'':l.summary);b.append(title);if(summary.textContent)b.append(summary);b.onclick=()=>{endRush();select(l);};return b;}));
+ $('library').replaceChildren(...list.map(l=>{const b=document.createElement('button'),title=document.createElement('strong'),summary=document.createElement('small');b.type='button';b.className='training-lesson';b.setAttribute('aria-pressed',String(lesson?.id===l.id));title.textContent=l.title;summary.textContent=(progress[l.id]?.completed?'✓ Completed · ':'')+(plain(l.summary)===plain(l.title)?'':l.summary);b.append(title);if(summary.textContent)b.append(summary);b.onclick=()=>{endRush();$('library-dialog').close();select(l);};return b;}));
  if(!list.length){const p=document.createElement('p');p.textContent='No lessons match this search.';$('library').append(p);}
 }
 function save(completed=false){
@@ -68,8 +69,9 @@ function finish(){
  if(expiredRush())return;
  active=false;complete=true;view.guidance=null;view.drawOverlays();$('hint').hidden=true;$('progress').value=lesson.moves.length;
  if(rush){rush.score++;text('score',`${rush.score} solved · ${rush.mistakes}/3 mistakes`);if(rush.index+1>=rush.order.length){endRush('You solved the entire training set.');return;}rush.index++;later(()=>{const session=rush;select(data.tactics.find(l=>l.id===session.order[session.index]),2);},500);return;}
- if(section==='openings'&&stage<2){save(false);$('next').hidden=false;$('next').textContent=stage===0?'Repeat with delayed hints now':'Recall without hints now';status(stage===0?'Look over the moves and memorize the sequence. Then repeat it.':'Now repeat the line without guidance.');scheduleNext();}
- else{save(true);const list=lessons(),pos=list.findIndex(l=>l.id===lesson.id),hasNext=pos+1<list.length;$('next').hidden=!hasNext;$('next').textContent='Next lesson now';status('Lesson complete. '+(section==='endgames'?'Continue with tablebase practice to play the position out.':'Carry this idea into your next game.'));if(hasNext)scheduleNext();}
+ if(section==='tutorial'){save(true);lessonGuide?.close();lessonGuide=null;$('guidance-callout').replaceChildren();const list=lessons(),pos=list.findIndex(l=>l.id===lesson.id);if(pos+1<list.length)later(next,350);return;}
+ if(section==='openings'&&stage<2){save(false);$('next').hidden=false;$('next').setAttribute('aria-label',stage===0?'Repeat with delayed hints now':'Recall without hints now');scheduleNext();}
+ else{save(true);const list=lessons(),pos=list.findIndex(l=>l.id===lesson.id),hasNext=pos+1<list.length;$('next').hidden=!hasNext;$('next').setAttribute('aria-label','Next lesson now');lessonGuide?.close();lessonGuide=null;$('guidance-callout').replaceChildren();if(hasNext)scheduleNext();}
 }
 function scheduleNext(){
  const token=epoch;$('autoplay').hidden=false;text('autoplay-label',`${section==='openings'&&stage<2?'Next practice stage':'Next lesson'} in `);
@@ -104,8 +106,8 @@ function storm(){
  rush={score:0,mistakes:0,index:0,order,end:Date.now()+180000};select(data.tactics.find(l=>l.id===order[0]),2);$('stop').hidden=false;$('storm').hidden=true;text('score','0 solved · 0/3 mistakes');
  rushCountdown=ChessilTiming.start($('clock'),{seconds:180,format:n=>`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`,label:'Rush time remaining',onFinish:()=>endRush('Time is up.')});
 }
-function changeSection(value){endRush();stopTimers();section=value;$('search').value='';$('repertoire').closest('label').hidden=section!=='openings';$('storm').hidden=section!=='tactics';$('stop').hidden=true;text('score','');text('clock','');root.querySelectorAll('[data-section]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.section===section)));const list=lessons();if(list.length)select(list[0]);else{lesson=null;active=false;complete=true;free=false;view.guidance=null;fen=initial;paint();text('title','No lessons available');text('summary','');text('concept','');status('This collection is empty. Choose another section.');['hint','retry','next','freeplay'].forEach(id=>$(id).hidden=true);}updateLibrary();history.replaceState(null,'','#'+section);}
-root.querySelectorAll('[data-section]').forEach(b=>b.onclick=()=>changeSection(b.dataset.section));$('hint').onclick=hint;$('retry').onclick=()=>{endRush();start(0);};$('next').onclick=next;$('freeplay').onclick=freeplay;$('storm').onclick=storm;$('stop').onclick=()=>endRush('Session stopped.');$('search').oninput=updateLibrary;$('repertoire').onchange=()=>{select(lessons()[0]);updateLibrary();};
+function changeSection(value){endRush();stopTimers();section=value;root.classList.toggle('training-tutorial',value==='tutorial');$('search').value='';$('repertoire').closest('label').hidden=section!=='openings';$('storm').hidden=section!=='tactics';$('stop').hidden=true;text('score','');text('clock','');root.querySelectorAll('[data-section]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.section===section)));const list=lessons();if(list.length)select(list[0]);else{lesson=null;active=false;complete=true;free=false;view.guidance=null;fen=initial;paint();text('title','No lessons available');text('summary','');text('concept','');status('This collection is empty. Choose another section.');['hint','retry','next','freeplay'].forEach(id=>$(id).hidden=true);}updateLibrary();history.replaceState(null,'','#'+section);}
+root.querySelectorAll('[data-section]').forEach(b=>b.onclick=()=>changeSection(b.dataset.section));$('hint').onclick=hint;$('retry').onclick=()=>{endRush();start(0);};$('next').onclick=next;$('freeplay').onclick=freeplay;$('storm').onclick=storm;$('stop').onclick=()=>endRush('Session stopped.');$('open-library').onclick=()=>$('library-dialog').showModal();$('close-library').onclick=()=>$('library-dialog').close();$('search').oninput=updateLibrary;$('repertoire').onchange=()=>{select(lessons()[0]);updateLibrary();};
 window.addEventListener('pagehide',event=>{endRush();stopTimers();lessonGuide?.close();rushCountdown?.cancel();if(event.persisted){active=false;view.cancel();view.acknowledge();}else view.destroy();});
 window.addEventListener('pageshow',event=>{if(event.persisted&&lesson)start(stage);});
 root.querySelectorAll('button,select,input').forEach(el=>el.disabled=true);
