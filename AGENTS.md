@@ -40,3 +40,8 @@ chessboard illustration on the landing page does not make it a board workspace.
 Evaluation, WDL, engine, and opening-book tools belong on dedicated analysis
 pages, not game pages. Analysis pages show separate compact Engine and Book cards
 by default, without switches between them or obvious heading/help text.
+
+Played-game analysis defaults to the authenticated/session player's color, with
+that player's pieces at the bottom and coordinates oriented accordingly. Review
+annotations, evaluation and WDL use the same perspective. Respect manual overrides;
+when the viewer is a spectator, default to both sides.
