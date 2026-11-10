@@ -61,12 +61,13 @@ label,.form-label { color:var(--text); font-weight:600; font-size:.85rem; } inpu
  * Mark optional copy explicitly; never hide status, instructions or legal body text
  * by tag name, muted color, or placement. Desktop keeps its editorial spacing. */
 @media(max-width:900px) {
- .ui-mobile-secondary,.eyebrow,.ui-caption,.ui-index { display:none!important; }
- .ui-page { padding-top:1rem; }
+ .ui-mobile-secondary,body:not(.landing-page) :is(.eyebrow,.ui-caption,.ui-index) { display:none!important; }
+ .landing-page footer .ui-mobile-secondary { display:block!important; }
+ .ui-page:not(.ui-layout-landing) { padding-top:1rem; }
  .ui-page.training-page { padding-top:.65rem; }
- .ui-page .ui-section { margin-top:1.5rem; }
- .ui-page .ui-hero { padding-top:0;gap:1rem; }
- .ui-page .ui-hero .ui-actions { margin-top:0; }
+ .ui-page:not(.ui-layout-landing) .ui-section { margin-top:1.5rem; }
+ .ui-page:not(.ui-layout-landing) .ui-hero { padding-top:0;gap:1rem; }
+ .ui-page:not(.ui-layout-landing) .ui-hero .ui-actions { margin-top:0; }
  .easy-layout { grid-template-columns:minmax(0,1fr); }
- .ui-page .ui-section-heading { margin-bottom:1rem; }
+ .ui-page:not(.ui-layout-landing) .ui-section-heading { margin-bottom:1rem; }
 }
