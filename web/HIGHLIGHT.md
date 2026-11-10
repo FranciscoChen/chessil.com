@@ -27,15 +27,32 @@ One positioned cue runs at a time. `clear()` removes it; returned handles also
 expose `update()` for application-driven position changes. Tours skip hidden
 controls and record the first presentation in localStorage. `{force:true}`
 replays a tour. Storage failure leaves guidance usable without persistence.
-No page starts a tour or UI callout automatically. The API is reserved for future
-guidance; tour persistence is local to the browser.
+No page starts a UI tour automatically. Training uses an inline callout for the
+current lesson; tour persistence remains local to the browser.
 
 Callouts use shared fonts, colors and buttons. Highlights do not intercept input;
-Escape dismisses a callout. Screen readers receive the complete text rather than
+Escape dismisses a positioned callout; inline lesson text stays in place. Screen readers receive the complete text rather than
 individual character changes. Reduced motion shows the complete text immediately
 and slows the essential white fade to one cycle every two seconds.
 
 Board guidance uses existing square overlays with the same `ui-highlight` class,
-without creating a positioned overlay, callout, observer or timer. Pointer input
+without creating a positioned overlay, observer or timer for each square. Pointer input
 and piece animations remain independent. Source/destination geometry and legal
 move markers remain owned by the shared native board.
+
+Training supplies lesson text once through the same callout primitive:
+
+```js
+ChessilHighlight.show(board, {
+  text: lessonInstruction,
+  actions: false,
+  highlight: false,
+  container: document.querySelector('#training-guidance-callout')
+});
+```
+
+`container` keeps the callout in normal document flow; `highlight: false` omits
+additional overlays and dimming. Existing CSS square cues keep pulsing. Text is
+not attached to pointer updates. Training deduplicates concept, move note and
+status text, hides the duplicated panel copy, and places the lesson title above
+the board. Recall and timed tactics do not reveal move notes through this callout.

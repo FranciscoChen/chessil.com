@@ -6,7 +6,7 @@ test('training shared board flows, recall, puzzles, progress and responsive layo
  try{const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));await page.setViewport({width:1440,height:1050});await page.goto('http://127.0.0.1:'+server.address().port+'/training',{waitUntil:'networkidle0'});await page.waitForSelector('.training-lesson');assert.ok(await page.$eval('#training-title',e=>e.textContent.length>2));
  async function square(name){return page.$eval('cg-board',(root,s)=>{const r=root.getBoundingClientRect(),f=s.charCodeAt(0)-97,k=8-Number(s[1]);return {x:r.x+(f+.5)*r.width/8,y:r.y+(k+.5)*r.height/8};},name);}
  async function move(uci){for(const s of [uci.slice(0,2),uci.slice(2,4)]){const p=await square(s);await page.mouse.click(p.x,p.y);}}
- assert.equal(await page.$('.ui-guide'),null);assert.equal(await page.$('.ui-highlight-overlay'),null);
+ assert.ok(await page.$('#training-guidance-callout .ui-guide-inline'));assert.equal(await page.$('.ui-highlight-overlay'),null);assert.ok(await page.evaluate(()=>document.querySelector('#training-title').getBoundingClientRect().bottom<document.querySelector('cg-board').getBoundingClientRect().top));assert.match(await page.$eval('.ui-guide-inline',e=>e.getAttribute('aria-label')),/Play Kd5/);assert.equal(await page.$eval('.ui-guide-inline',e=>(e.getAttribute('aria-label').match(/Files run a to h/g)||[]).length),1);
  await page.evaluate(()=>{ChessilHighlight.clear();ChessilHighlight.show('.dasher > button',{text:'Choose your theme.',onNext(){window.guideDone=true;}});});
  await page.waitForFunction(()=>document.querySelector('.ui-guide p')?.textContent==='Choose your theme.');
  assert.equal(await page.$eval('.ui-highlight-overlay',e=>getComputedStyle(e).pointerEvents),'none');

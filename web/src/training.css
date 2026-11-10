@@ -32,12 +32,14 @@
 .training-coach { grid-area:coach; }
 #training-app .training-coach { padding:1.25rem; box-shadow:none; overflow-wrap:anywhere; }
 #training-app .training-stage { color:var(--link); font:600 .75rem/1.5 var(--sans-font); }
-#training-title { font-size:1.65rem; }
+#training-title { margin:0 0 .75rem;font-size:clamp(1.15rem,2vw,1.65rem);line-height:1.25; }
+#training-guidance-callout { margin-top:.75rem; }
+.training-sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
 #training-summary, #training-concept, #training-status { font-size:.85rem; line-height:1.65; }
 .training-concept-block { border-left:2px solid var(--link); padding-left:1rem; }
 #training-app .training-coach h3 { font:600 .8rem/1.5 var(--sans-font); margin-bottom:.4rem; }
 .training-feedback { padding-top:1rem; border-top:1px solid var(--border); }
-#training-status { min-height:3.3em; }
+
 .training-progress-label { display:block; font-size:.7rem; margin-top:.75rem; }
 .training-autoplay { margin-top:1rem;color:var(--link);font:600 .8rem/1.5 var(--sans-font);font-variant-numeric:tabular-nums; }
 #training-app .training-lesson-actions .ui-button { flex:1 1 auto; }

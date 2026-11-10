@@ -16,3 +16,6 @@
 .ui-highlight-subtle { background:#ffffff26; }
 
 .ui-guide-dimmer { position:fixed;inset:0;width:100%;height:100%;pointer-events:none; }
+
+/* The same callout can accompany a highlighted widget in document flow. */
+.ui-guide.ui-guide-inline { position:static;width:100%;margin:0;pointer-events:none;box-shadow:none;background:var(--bg);text-shadow:none; }

@@ -4,8 +4,16 @@ document.addEventListener('DOMContentLoaded',()=>{
 const root=document.querySelector('#training-app');if(!root)return;
 const $=id=>document.getElementById('training-'+id),initial='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 let data,section=root.dataset.initialSection||'tutorial',lesson,fen=initial,index=0,stage=0,active=false,busy=false,complete=false,free=false,side='w',timer,autoplayRun,epoch=0,rush=null,rushCountdown,positions=new Map(),progress={},account=null,saving=Promise.resolve();
+let lessonGuide;
 const storage='chessil.training.v1';try{progress=JSON.parse(localStorage.getItem(storage)||'{}');if(!progress||typeof progress!=='object'||Array.isArray(progress))progress={};}catch(_){}
-const text=(id,value)=>{const element=$(id);element.textContent=value;if(id==='summary'){const plain=text=>String(text||'').toLowerCase().replace(/[.!?。！？…\s]+$/g,'');element.hidden=!value||plain(value)===plain($('title').textContent);}},status=message=>text('status',message);
+const plain=value=>String(value||'').toLowerCase().replace(/[.!?。！？…\s]+$/g,'');
+const text=(id,value)=>{const element=$(id);element.textContent=value;if(id==='summary'){element.hidden=!value||plain(value)===plain($('title').textContent);}};
+function status(message){
+ text('status',message);
+ const parts=[lesson&&!rush?$('concept').textContent:'',active&&stage===0&&!rush?lesson?.notes?.[index]:'',message].filter(Boolean);
+ const unique=parts.filter((part,i)=>!parts.some((other,j)=>j!==i&&plain(other).includes(plain(part))&&(plain(other)!==plain(part)||j<i)));
+ lessonGuide=ChessilHighlight.show(root.querySelector('cg-board'),{text:unique.join(' '),actions:false,highlight:false,container:$('guidance-callout')});
+}
 async function request(url,options={}){const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);try{return await fetch(url,{...options,signal:controller.signal});}finally{clearTimeout(timeout);}}
 function expiredRush(){if(rush&&Date.now()>=rush.end){endRush('Time is up.');return true;}return false;}
 function drawClaim(){return Number(fen.split(' ')[4])>=100||positions.get(fen.split(' ').slice(0,4).join(' '))>=3;}
@@ -18,7 +26,7 @@ function paint(move='',animate=false){view.render(boardgen(fen),move,animate);}
 function lessons(){return (data?.[section]||[]).filter(l=>section!=='openings'||l.repertoire===$('repertoire').value);}
 function updateLibrary(){
  const query=$('search').value.toLowerCase(),list=lessons().filter(l=>(l.title+' '+l.summary).toLowerCase().includes(query));
- $('library').replaceChildren(...list.map(l=>{const b=document.createElement('button'),title=document.createElement('strong'),summary=document.createElement('small');b.type='button';b.className='training-lesson';b.setAttribute('aria-pressed',String(lesson?.id===l.id));title.textContent=l.title;summary.textContent=(progress[l.id]?.completed?'✓ Completed · ':'')+l.summary;b.append(title,summary);b.onclick=()=>{endRush();select(l);};return b;}));
+ $('library').replaceChildren(...list.map(l=>{const b=document.createElement('button'),title=document.createElement('strong'),summary=document.createElement('small');b.type='button';b.className='training-lesson';b.setAttribute('aria-pressed',String(lesson?.id===l.id));title.textContent=l.title;summary.textContent=(progress[l.id]?.completed?'✓ Completed · ':'')+(plain(l.summary)===plain(l.title)?'':l.summary);b.append(title);if(summary.textContent)b.append(summary);b.onclick=()=>{endRush();select(l);};return b;}));
  if(!list.length){const p=document.createElement('p');p.textContent='No lessons match this search.';$('library').append(p);}
 }
 function save(completed=false){
@@ -39,7 +47,7 @@ function start(pass=stage){
 function guide(){
  const move=lesson.moves[index];if(!active||complete||!move)return;
  view.guidance=null;view.drawOverlays();
- if(stage===0&&!rush&&!['tactics','strategy'].includes(section)){view.guidance={from:move.slice(0,2),to:move.slice(2,4)};view.active=view.guidance.from;view.drawOverlays();status(`Play ${notation(move)}: ${move.slice(0,2)} → ${move.slice(2,4)}. ${lesson.notes?.[index]||''}`);}
+ if(stage===0&&!rush&&!['tactics','strategy'].includes(section)){view.guidance={from:move.slice(0,2),to:move.slice(2,4)};view.active=view.guidance.from;view.drawOverlays();status(`Play ${notation(move)}: ${move.slice(0,2)} → ${move.slice(2,4)}.`);}
  else if(stage===1&&!rush){status('What is the next move? Take a moment to remember.');later(()=>{if(active&&!busy){view.guidance={from:move.slice(0,2),to:move.slice(2,4)};view.drawOverlays();status(`Hint: ${notation(move)} (${move.slice(0,2)} → ${move.slice(2,4)}).`);}},7000);}
  else status(rush?'Find the tactical move.':'What comes next? Play your move without hints.');
 }
@@ -68,7 +76,7 @@ function scheduleNext(){
  autoplayRun=ChessilTiming.start($('autoplay'),{seconds:5,format:n=>n+'s',label:'Next lesson',onFinish:()=>{if(token===epoch)next();}});
 }
 function next(){stopTimers();if(section==='openings'&&stage<2){start(stage+1);return;}const list=lessons(),pos=list.findIndex(l=>l.id===lesson.id);if(pos+1<list.length){select(list[pos+1]);}else{status('You have completed this collection. Choose another section or repertoire.');$('next').hidden=true;}}
-function hint(){if(!lesson||stage===2||rush)return;if(free){status('Consider king activity, passed pawns and the opponent’s threats.');return;}const move=lesson.moves[index];if(move){view.guidance={from:move.slice(0,2),to:move.slice(2,4)};view.active=move.slice(0,2);view.drawOverlays();status(`Try ${notation(move)} (${move.slice(0,2)} → ${move.slice(2,4)}). ${lesson.notes?.[index]||''}`);}}
+function hint(){if(!lesson||stage===2||rush)return;if(free){status('Consider king activity, passed pawns and the opponent’s threats.');return;}const move=lesson.moves[index];if(move){view.guidance={from:move.slice(0,2),to:move.slice(2,4)};view.active=move.slice(0,2);view.drawOverlays();status(`Try ${notation(move)} (${move.slice(0,2)} → ${move.slice(2,4)}).`);}}
 async function tablebase(position){const r=await request('/api/training/tablebase?fen='+encodeURIComponent(position));if(!r.ok)throw Error('Tablebase unavailable');return r.json();}
 async function playEndgame(move){
  const token=epoch,position=fen;busy=true;
@@ -98,7 +106,7 @@ function storm(){
 }
 function changeSection(value){endRush();stopTimers();section=value;$('search').value='';$('repertoire').closest('label').hidden=section!=='openings';$('storm').hidden=section!=='tactics';$('stop').hidden=true;text('score','');text('clock','');root.querySelectorAll('[data-section]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.section===section)));const list=lessons();if(list.length)select(list[0]);else{lesson=null;active=false;complete=true;free=false;view.guidance=null;fen=initial;paint();text('title','No lessons available');text('summary','');text('concept','');status('This collection is empty. Choose another section.');['hint','retry','next','freeplay'].forEach(id=>$(id).hidden=true);}updateLibrary();history.replaceState(null,'','#'+section);}
 root.querySelectorAll('[data-section]').forEach(b=>b.onclick=()=>changeSection(b.dataset.section));$('hint').onclick=hint;$('retry').onclick=()=>{endRush();start(0);};$('next').onclick=next;$('freeplay').onclick=freeplay;$('storm').onclick=storm;$('stop').onclick=()=>endRush('Session stopped.');$('search').oninput=updateLibrary;$('repertoire').onchange=()=>{select(lessons()[0]);updateLibrary();};
-window.addEventListener('pagehide',event=>{endRush();stopTimers();rushCountdown?.cancel();if(event.persisted){active=false;view.cancel();view.acknowledge();}else view.destroy();});
+window.addEventListener('pagehide',event=>{endRush();stopTimers();lessonGuide?.close();rushCountdown?.cancel();if(event.persisted){active=false;view.cancel();view.acknowledge();}else view.destroy();});
 window.addEventListener('pageshow',event=>{if(event.persisted&&lesson)start(stage);});
 root.querySelectorAll('button,select,input').forEach(el=>el.disabled=true);
 (async()=>{try{await ChessilPreferences.ready;const r=await request('/api/training/curriculum');if(!r.ok)throw Error('curriculum');data=await r.json();try{const p=await request('/api/training/progress');if(p.ok){const saved=await p.json();account=!!saved.account;if(account)progress=saved.progress||{};}}catch(_){}root.querySelectorAll('button,select,input').forEach(el=>el.disabled=false);const hash=location.hash.slice(1);changeSection(['tutorial','openings','endgames','tactics','strategy'].includes(hash)?hash:section);if(account===null)status('Progress sync is unavailable. You can train, but progress lasts for this visit.');}catch(_){status('Training could not load. Refresh to try again.');}})();

@@ -74,10 +74,12 @@ exports.render = function(name, language) {
   </nav>
   <div class="training-workspace">
    <section class="training-board-area" aria-label="${t.board}">
+    <h2 id="training-title">${t.title}</h2>
     <div class="training-board-wrap">
      <cg-board aria-label="${t.board}" aria-describedby="training-board-help"></cg-board>
      ${coordinates()}
     </div>
+    <div id="training-guidance-callout"></div>
     <p id="training-board-help" class="ui-muted training-board-help ui-mobile-secondary">${t.boardHelp}</p>
     <details class="training-settings">
      <summary>${t.settings}</summary>
@@ -86,14 +88,15 @@ exports.render = function(name, language) {
    </section>
    <aside class="ui-panel training-coach" aria-label="${t.coach}">
     <p id="training-stage" class="training-stage">${t.stage}</p>
-    <h2 id="training-title">${t.title}</h2>
+    <div hidden>
     <p id="training-summary" class="ui-muted">${t.summary}</p>
     <div class="training-concept-block">
      <h3>${t.concept}</h3>
      <p id="training-concept">${t.conceptHelp}</p>
     </div>
+    </div>
     <div class="training-feedback">
-     <p id="training-status" role="status" aria-live="polite" aria-atomic="true">${t.status}</p>
+     <p id="training-status" class="training-sr-only" role="status" aria-live="polite" aria-atomic="true">${t.status}</p>
      <label for="training-progress" class="ui-muted training-progress-label">${t.progress}</label>
      ${progress({id:'training-progress',label:t.progress})}
      <div id="training-autoplay" class="training-autoplay" hidden>
@@ -111,7 +114,7 @@ exports.render = function(name, language) {
      <h3 id="training-line-label">${t.line}</h3>
      <div id="training-line" aria-labelledby="training-line-label"></div>
     </div>
-    <p id="training-meta" class="ui-muted ui-mobile-secondary">${t.meta}</p>
+    <p id="training-meta" hidden class="ui-muted">${t.meta}</p>
     <dl class="training-session-metrics">
      <div><dt>${t.score}</dt><dd id="training-score">—</dd></div>
      <div><dt>${t.clock}</dt><dd id="training-clock">—</dd></div>
