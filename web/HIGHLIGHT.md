@@ -56,3 +56,9 @@ additional overlays and dimming. Existing CSS square cues keep pulsing. Text is
 not attached to pointer updates. Training deduplicates concept, move note and
 status text, hides the duplicated panel copy, and places the lesson title above
 the board. Recall and timed tactics do not reveal move notes through this callout.
+
+Every `.ui-highlight` also draws an outer white outline that contracts into its
+bounds over the pulse cycle. The pseudo-element inherits the cue's corner shape;
+positioned overlays copy the target's border radius on layout updates. Outline
+ink does not expand layout or scroll bounds, including board-edge squares. The
+contraction uses CSS keyframes; reduced motion retains the fade without contraction.

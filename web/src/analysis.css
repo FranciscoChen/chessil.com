@@ -22,7 +22,7 @@ html[data-theme="dark"] .game-page moves-list move-entry[data-analysis] { color:
 html[data-theme="dark"] .game-page moves-list move-entry[data-analysis="major"] { color:#f4a7e9; }
 cg-board square.annotation-error { z-index:3;background:#d5404059;box-shadow:inset 0 0 0 4px #df524a; }
 cg-board square.annotation-suggestion { z-index:3; }
-cg-board square.annotation-suggestion { background:#ffffff26; }
+cg-board square.annotation-suggestion { --ui-highlight-fill:#ffffff26; }
 .analysis-perspective { display:flex;align-items:center;gap:.5rem;font-size:.75rem; }
 .analysis-perspective select { min-height:32px;padding:.2rem .5rem;font-size:.75rem; }
 .engine-toolbar { display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-size:.75rem;margin-bottom:.6rem; }
