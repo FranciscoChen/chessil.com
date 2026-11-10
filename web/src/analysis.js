@@ -131,7 +131,7 @@ async function startEngine(){
  const settings=ChessilPreferences.get().analysis,signature=JSON.stringify(settings);
  if(engineConfig&&signature!==engineConfig){scores.clear();processed.clear();findings=[];selected=-1;movesList.querySelectorAll('.analysis-marker').forEach(el=>el.remove());movesList.querySelectorAll('[data-analysis]').forEach(el=>delete el.dataset.analysis);$('progress').value=0;clearGuide();annotate(null);}
  engineConfig=signature;const run=++token;engineLoading=true;engine=new ChessilLocalEngine();status('Starting local engine…');controls();
- try{const manifest=await engine.load(settings);if(run!==token)return;engineLoading=false;engineReady=true;$('engine-name').textContent=manifest.name;$('source').href=manifest.source;renderDetails();
+ try{const manifest=await engine.load(settings);if(run!==token)return;engineLoading=false;engineReady=true;$('source').href=manifest.source;renderDetails();
   if(freeStudy){await evaluateStudy();return;}
   if(exploring){const current=position,epoch=viewEpoch,lines=await evaluate(current);if(run!==token)return;if(epoch===viewEpoch){scores.set(current,lines);renderDetails();}}
   await scan(run);
