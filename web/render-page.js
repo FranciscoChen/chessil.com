@@ -28,7 +28,8 @@ function assetVersion(url) {
 const components = {};
 for (const language of ['en', 'es', 'zh']) {
   components[language] = {};
-  for (const name of ['header', 'footer']) {
+  components[language].header = require('./ui/header')(language);
+  for (const name of ['footer']) {
     components[language][name] = fs.readFileSync(
       path.join(__dirname, 'web', 'components', `${name}-${language}.html`), 'utf8');
   }

@@ -2,7 +2,7 @@
  * No client connects directly to Redis. Never show stale data after a failed fetch. */
 (()=>{document.addEventListener('DOMContentLoaded',()=>{
  const toggle=document.querySelector('#challenge-toggle'),host=document.querySelector('#challenge-app');if(!toggle||!host)return;
- const container=toggle.closest('.seek');let data={games:[],invitations:[],challenges:[]},busy=false,timer;
+ let data={games:[],invitations:[],challenges:[]},busy=false,timer;
  const text={en:{title:'Your boards',empty:'No active games or invitations.',turn:'Your move',wait:'Opponent’s move',accept:'Accept',decline:'Decline',invite:'Invite a player',send:'Send invite',user:'Username',sent:'Invitation sent.',error:'Could not load games. Open again to retry.',all:'All games'},es:{title:'Tus tableros',empty:'No hay partidas ni invitaciones.',turn:'Tu turno',wait:'Turno del rival',accept:'Aceptar',decline:'Rechazar',invite:'Invitar a un jugador',send:'Enviar invitación',user:'Usuario',sent:'Invitación enviada',error:'No se pudieron cargar las partidas.',all:'Todas las partidas'},zh:{title:'我的对局',empty:'暂无对局或邀请。',turn:'轮到你',wait:'等待对手',accept:'接受',decline:'拒绝',invite:'邀请棋手',send:'发送邀请',user:'用户名',sent:'邀请已发送',error:'加载失败，请重试。',all:'全部对局'}}[document.documentElement.lang]||{};
  const make=(tag,className,content)=>{const el=document.createElement(tag);el.className=className;if(content)el.textContent=content;return el;};
  host.replaceChildren();const heading=make('h2','game-menu-title',text.title),list=make('div','game-menu-list'),status=make('p','game-menu-status');status.setAttribute('role','status');host.append(heading,list,status);
@@ -16,9 +16,7 @@
  }
  async function refresh(){if(busy||document.hidden)return;busy=true;try{const response=await fetch('/my-games',{cache:'no-store'});if(!response.ok)throw Error();data=await response.json();status.textContent='';render();for(const challenge of data.challenges)fetch('/lobby/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({gameid:challenge.gameid})}).catch(()=>{});}catch(_){list.replaceChildren();document.querySelectorAll('[data-my-games-list]').forEach(el=>el.textContent=text.error);toggle.querySelector('[data-count]').dataset.count='0';status.textContent=text.error;}finally{busy=false;}}
  form.onsubmit=async event=>{event.preventDefault();send.disabled=true;try{await request({action:'send',username:input.value.trim(),gameid:data.challenges[0]?.gameid});await refresh();status.textContent=text.sent;input.value='';}catch(error){status.textContent=error.message;}finally{send.disabled=false;}};
- toggle.setAttribute('aria-expanded','false');toggle.onclick=()=>{container.classList.toggle('shown');toggle.setAttribute('aria-expanded',String(container.classList.contains('shown')));if(container.classList.contains('shown'))refresh();};
- document.addEventListener('click',event=>{if(!container.contains(event.target)){container.classList.remove('shown');toggle.setAttribute('aria-expanded','false');}});
- document.addEventListener('keydown',event=>{if(event.key==='Escape'){container.classList.remove('shown');toggle.setAttribute('aria-expanded','false');}});
+ document.addEventListener('chessil:menu-open',event=>{if(event.detail.id==='challenge-app')refresh();});
  window.addEventListener('chessil:notify',refresh);document.addEventListener('visibilitychange',refresh);
  refresh();timer=setInterval(refresh,30000);window.addEventListener('pagehide',()=>clearInterval(timer));
  });})();

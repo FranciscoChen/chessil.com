@@ -19,7 +19,7 @@ module.exports=async()=>{
   if(url.pathname==='/board-harness'){res.setHeader('Content-Type','text/html');res.end('<!doctype html><html lang="en" data-theme="light"><head><link rel="stylesheet" href="/css/design-system.css"><link rel="stylesheet" href="/css/board.min.css"><link rel="stylesheet" href="/css/preferences.min.css"><script src="/js/preferences.min.js"></script><script src="/js/board.min.js"></script><script src="/js/game.min.js"></script></head><body><div class="game-page"><div style="position:relative;width:480px;height:480px"><cg-board id="harness"></cg-board></div></div></body></html>');return;}
   let file=url.pathname.startsWith('/game/')?'/en/play/index.html':url.pathname;
   if(!path.extname(file))file+='/index.html';
-  try {const actual=path.join(__dirname,'../../web',file);let data=fs.readFileSync(actual);const ext=path.extname(file);if(ext==='.html')data=render(data,'en','l');res.setHeader('Content-Type',({'.html':'text/html','.css':'text/css','.js':'text/javascript','.svg':'image/svg+xml','.wasm':'application/wasm'})[ext] || 'application/octet-stream');res.end(data);}catch(_){res.statusCode=404;res.end('Not found');}
+  try {const actual=path.join(__dirname,'../../web',file);let data=fs.readFileSync(actual);const ext=path.extname(file);if(ext==='.html')data=render(data,url.pathname.match(/^\/(en|es|zh)(?:\/|$)/)?.[1]||'en','l');res.setHeader('Content-Type',({'.html':'text/html','.css':'text/css','.js':'text/javascript','.svg':'image/svg+xml','.wasm':'application/wasm'})[ext] || 'application/octet-stream');res.end(data);}catch(_){res.statusCode=404;res.end('Not found');}
  });
  const wss=new WebSocketServer({server});
  function broadcast(message){for(const socket of game.sockets)if(socket.readyState===1)socket.send(message);}

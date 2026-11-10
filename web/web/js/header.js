@@ -1,188 +1,36 @@
-var settings, userbutton, dasher, subs, dashermain, dasherlangs, dasherbackground, clinput, lang, tto, si, sr, noresults, nochallenges, cr
-var loggedin = 0
-
-const typingthreshold = 512
-
-function elementOrAncestorHasClass(element, className) {
-  if (!element || element.length === 0) {
-    return false;
-  }
-  var parent = element;
-  do {
-    if (parent === document) {
-      break;
-    }
-    if ((parent.getAttribute?.('class') || '').includes(className)) {
-      return true;
-    }
-  } while (parent = parent.parentNode);
-  return false;
+/* Global header controller: one open surface, native controls, no DOM swapping.
+ * Search cancels stale requests; keyboard navigation follows the visible links. */
+var lang=document.documentElement.lang||'en',loggedin=0;
+function headerfunctions(){
+ const header=document.querySelector('.site-header');if(!header||header.dataset.ready)return;header.dataset.ready='true';
+ const triggers=[...header.querySelectorAll('[data-header-toggle]')],nav=header.querySelector('#n'),mobile=matchMedia('(max-width:900px)'),backdrop=header.querySelector('.header-backdrop');let active=null;
+ function setOpen(trigger){
+  if(trigger!==active)header.querySelectorAll("[data-header-view]").forEach(el=>el.hidden=el.dataset.headerView!=="main");
+  for(const item of triggers){const open=item===trigger;item.setAttribute('aria-expanded',String(open));item.parentElement.classList.toggle('shown',open);}
+  active=trigger;const navOpen=trigger?.getAttribute('aria-controls')==='n';nav.classList.toggle('header-nav-open',navOpen);header.querySelector('#x').checked=navOpen;backdrop.hidden=!navOpen;
+  document.body.classList.toggle('header-nav-open',navOpen&&mobile.matches);
+  if(trigger){header.dispatchEvent(new CustomEvent('chessil:menu-open',{bubbles:true,detail:{id:trigger.getAttribute('aria-controls')}}));if(trigger.id==='search-toggle')header.querySelector('#header-search-input').focus();}
+ }
+ window.ChessilHeader={close:()=>setOpen(null),toggle:trigger=>setOpen(active===trigger?null:trigger)};
+ header.addEventListener('click',event=>{
+  const trigger=event.target.closest('[data-header-toggle]');if(trigger){window.ChessilHeader.toggle(trigger);return;}
+  if(event.target.closest('.header-backdrop'))setOpen(null);
+  const view=event.target.closest('[data-header-show]');if(view){const name=view.dataset.headerShow;header.querySelectorAll('[data-header-view]').forEach(el=>el.hidden=el.dataset.headerView!==name);const first=header.querySelector('[data-header-view="'+name+'"] button');first?.focus();}
+  if(event.target.closest('#open-board-settings,#n a'))setOpen(null);
+ });
+ document.addEventListener('click',event=>{if(!header.contains(event.target))setOpen(null);});
+ document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&active){const previous=active;setOpen(null);previous.focus();event.preventDefault();}
+  if(!active||!['ArrowDown','ArrowUp','Home','End'].includes(event.key)||event.target.matches('input,textarea,select'))return;
+  const panel=document.getElementById(active.getAttribute('aria-controls')),items=[...panel.querySelectorAll('a[href],button,input')].filter(el=>el.getClientRects().length&&!el.disabled);if(!items.length)return;
+  event.preventDefault();const index=items.indexOf(document.activeElement);items[event.key==='Home'?0:event.key==='End'?items.length-1:(index+(event.key==='ArrowDown'?1:-1)+items.length)%items.length].focus();
+ });
+ document.addEventListener('focusin',event=>{if(active&&!header.contains(event.target))setOpen(null);});
+ mobile.addEventListener('change',()=>setOpen(null));
+ const input=header.querySelector('#header-search-input'),results=header.querySelector('.complete-list'),host=header.querySelector('#clinput');let timer,request,sequence=0;
+ input.addEventListener('input',()=>{clearTimeout(timer);request?.abort();const current=++sequence;results.replaceChildren();if(input.value.trim().length<2)return;timer=setTimeout(async()=>{request=new AbortController();try{const response=await fetch('/search',{method:'POST',body:input.value.trim(),signal:request.signal});if(!response.ok)throw Error();const users=await response.json();if(current!==sequence)return;for(const username of users){const a=document.createElement('a');a.className='header-row';a.href='/@/'+encodeURIComponent(username);a.textContent=username;results.append(a);}if(!users.length)results.textContent=host.dataset.empty;}catch(error){if(error.name!=='AbortError'&&current===sequence)results.textContent=host.dataset.error;}},300);});
+ isloggedin();
 }
-function elementOrAncestorHasId(element, idName) {
-  if (!element || element.length === 0) {
-    return false;
-  }
-  var parent = element;
-  do {
-    if (parent === document) {
-      break;
-    }
-    if (parent.id === idName) {
-      return true;
-    }
-  } while (parent = parent.parentNode);
-  return false;
-}
-
-function headerfunctions() {
-  settings = document.getElementsByClassName("dasher")[0];
-  document.querySelectorAll('header [role="button"]').forEach(element => {
-    element.addEventListener('keydown', event => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault()
-        element.click()
-      }
-    })
-  })
-
-
-  userbutton = document.getElementById("user_button");
-  dasher = document.getElementById("dasher_app");
-  clinput = document.getElementById("clinput");
-  dasherlangs = dasher.getElementsByClassName('sub langs')[0];
-  dasherbackground = dasher.getElementsByClassName('sub background')[0];
-  lang = dasherlangs.getElementsByClassName('current')[0].value
-  document.getElementById('lightmode').onclick = function () {
-    if (document.documentElement.dataset.theme !== 'light') {
-      setlightmode()
-    }
-  }
-  document.getElementById('darkmode').onclick = function () {
-    if (document.documentElement.dataset.theme !== 'dark') {
-      setdarkmode()
-    }
-  }
-  dasher.removeChild(dasherlangs)
-  dasher.removeChild(dasherbackground)
-  subs = document.getElementsByClassName("subs")[0];
-  dashermain = subs.parentElement;
-  si = document.getElementById('clinput').getElementsByTagName('input')[0]
-  sr = document.getElementById('clinput').getElementsByClassName('complete-list')[0]
-  si.addEventListener("input", function () {
-    clearTimeout(tto);
-    tto = setTimeout(searchusers, typingthreshold);
-  });
-
-  function searchusers() {
-    if (si.value.length > 1) {
-      // xhr to check the username
-      var xhr = new XMLHttpRequest();
-      xhr.open("POST", '/search', true);
-      xhr.send(si.value)
-      xhr.onreadystatechange = function () {
-        if (this.readyState != 4) return;
-        if (this.status == 200) {
-          // Clear previous results
-          sr.innerHTML = ''
-          if (sr.className.indexOf('none') > -1) sr.classList.toggle('none')
-          const usr = JSON.parse(this.responseText)
-          const l = usr.length
-          // List all results
-          for (var i = 0; i < l; ++i) {
-            const ne = document.createElement('a')
-            ne.setAttribute('class', 'complete-result ulpt user-link online')
-            ne.setAttribute('href', '/@/' + usr[i])
-            ne.innerHTML = '<i class="line"></i>' + usr[i]
-            sr.appendChild(ne)
-          }
-          if (l === 0) sr.innerHTML = '<div class="complete-list__empty">' + noresults + '</div>'
-        }
-      };
-    }
-  }
-
-
-  function setTheme(theme) {
-    window.chessilTheme(theme)
-  }
-  function setlightmode() { setTheme('light') }
-  function setdarkmode() { setTheme('dark') }
-
-  document.onclick = (e) => {
-    if (elementOrAncestorHasClass(e.target, 'dasher')) {
-      if (e.target.closest('.toggle')) {
-        settings.classList.toggle('shown')
-      }
-      if (elementOrAncestorHasClass(e.target, 'subs')) {
-        if (e.target === subs.children[0]) {
-          dasher.removeChild(dashermain)
-          dasher.appendChild(dasherlangs)
-
-        }
-        if (e.target === subs.children[1]) {
-          dasher.removeChild(dashermain)
-          dasher.appendChild(dasherbackground)
-        }
-      }
-      if (elementOrAncestorHasClass(e.target, 'head text')) {
-        if (elementOrAncestorHasClass(e.target, 'sub langs')) {
-          dasher.removeChild(dasherlangs)
-        }
-        if (elementOrAncestorHasClass(e.target, 'sub background')) {
-          dasher.removeChild(dasherbackground)
-        }
-        dasher.appendChild(dashermain)
-      }
-    } else {
-      settings.classList = ('dasher')
-    }
-
-    if (elementOrAncestorHasId(e.target, 'clinput')) {
-      if (document.body.className.indexOf('clinput') === -1) {
-        document.body.classList.toggle('clinput')
-        document.getElementById('clinput').getElementsByTagName('input')[0].focus()
-      }
-    } else {
-      document.body.classList.remove('clinput')
-      sr.innerHTML = ''
-      if (sr.className.indexOf('none') === -1) sr.classList.toggle('none')
-    }
-    if (userbutton !== null) {
-      if (elementOrAncestorHasId(e.target, 'user_button')) {
-        if (e.target.classList.contains('toggle')) {
-          userbutton.classList.toggle('shown')
-        }
-      } else {
-        userbutton.classList = 'icon-user toggle'
-      }
-    }
-  }
-
-}
-
-function isloggedin() {
-  var xhr = new XMLHttpRequest;
-  xhr.open("POST", "/loggedin", true);
-  xhr.send();
-  xhr.onreadystatechange = function () {
-    if (this.readyState != 4)
-      return;
-    if (this.status == 200) {
-      loggedin = 1*this.responseText
-      updateuserbutton();
-    }
-  }
-}
-
-function updateuserbutton() {
-  if (loggedin === 1) {
-    document.getElementById('login').classList.add('none')
-    document.getElementById('logout').classList.remove('none')
-    document.getElementById('profile').classList.remove('none')
-  }
-  if (loggedin === 0) {
-    document.getElementById('login').classList.remove('none')
-    document.getElementById('logout').classList.add('none')
-    document.getElementById('profile').classList.add('none')
-  }
-}
+async function isloggedin(){try{const response=await fetch('/loggedin',{method:'POST'});if(response.ok){loggedin=Number(await response.text())===1?1:0;updateuserbutton();}}catch(_){}}
+function updateuserbutton(){for(const id of ['login','header-register','profile','logout']){const el=document.getElementById(id);if(el)el.classList.toggle('none',['profile','logout'].includes(id)?!loggedin:!!loggedin);}}
+document.addEventListener('DOMContentLoaded',headerfunctions);
