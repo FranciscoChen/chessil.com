@@ -17,8 +17,11 @@ evaluation, settings and Start/Stop controls as game review.
 In study mode, the engine evaluates the selected position rather than scanning
 backward for mistakes. Rapid changes coalesce into the most recent pending
 position; stale scores cannot replace a newer view. Book and engine-line moves
-become local study variations. Neither tool starts until requested. No game IDs,
-game API calls, game-server connection, database writes or game creation occur.
+become local study variations. Both compact tool cards are visible by default;
+the book loads automatically and the engine starts only when requested. Free analysis needs no game IDs or game API calls. A finished game can be loaded
+read-only with `?game=ID`; `&review=1` automatically starts the backward game
+review after import. Metadata and moves come from the existing game read APIs.
+Neither mode creates a game, connects to a game server, or writes game data.
 The tree lasts for the current page visit; saved studies and position imports
 are separate future features.
 

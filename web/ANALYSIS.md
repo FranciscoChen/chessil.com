@@ -1,12 +1,18 @@
 # Local post-game review
 
-The Analyze game action is available only for finished games with moves (result
-codes 1–8). Engine binaries and NNUE files download when engine analysis starts; book shards download only when Book opens; the small engine catalog is also used by settings.
+Game pages contain no evaluation, WDL, engine or book UI. Their Analyze game link
+appears only for finished games with moves (result codes 1–8), and navigates to
+`/analysis?game=ID&review=1`. The dedicated analysis page loads the recorded moves
+and player perspective before starting the existing backward review. A direct
+`?game=ID` link loads the same game without automatically starting the engine.
+Imports reject unfinished/unavailable games. Engine binaries and NNUE files download when engine analysis starts; book shards load with the analysis board; the small engine catalog is also used by settings.
 `src/analysis.js` composes the existing native board, move history, shared buttons,
 progress, and CSS countdown. `src/local-engine.js` serializes UCI searches in one
-worker. Closing analysis terminates it. When the book remains open, exploration stays
-active; closing the last tool restores the game board's original
-input boundary. Original history, clocks, and stored game data are not edited.
+worker. Engine and book each have a compact card, visible by default. Engine
+controls are shared SVG icons: Play starts, Stop retains output, and X stops the
+worker and dismisses its lines while leaving a restart control. No titles or
+build metadata occupy these cards. Original history, clocks, and stored game
+data are not edited.
 
 The scan starts at the final position and moves backwards. Searches retain the
 original game history, use MultiPV 3 and UCI_ShowWDL, and stop at 120,000 nodes or
@@ -62,12 +68,11 @@ uses the project's Leela BT4-1740 Polyglot book at
 positions, limited to the first 12 plies, as 256 lazy FEN shards. The original
 integer weights and their totals are retained. Percentages are normalized
 pruned-book policy priors, not game counts, win rates, or full raw network output.
-The browser caches up to 24 shards. Book has its own button, panel and close
-control, alongside engine analysis. Opening it starts no engine and requests no
-WASM or NNUE assets. Book moves remain playable with analysis closed; Back
-retraces book moves and Return to game restores the selected recorded position
-without changing game history. Both tools can stay open and follow the same
-board. Neither is available as assistance during a live game.
+The browser caches up to 24 shards. The book card is always visible on analysis
+pages and starts no engine. It shows the current opening name and compact move
+priors; empty positions use a dash instead of instructional filler. Navigation
+uses the shared move history, without a separate book Back button or switch.
+Neither card is present on game pages, including finished-game pages.
 
 Engine Start/Stop terminates/recreates the local worker. Stopping keeps the board,
 book, evaluations and completed review moments. Starting with unchanged settings

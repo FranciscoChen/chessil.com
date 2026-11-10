@@ -1,3 +1,4 @@
+.game-page [hidden] { display:none!important; }
 /* Game UI. Board geometry and pieces live only in the shared board.min.css. */
 .game-page .game-shell { width:min(calc(100% - 3rem),calc(var(--chess-board-size) + 21.5rem)); padding:1.5rem 0 2.5rem; margin:0 auto; min-height:calc(100vh - var(--header-height) - var(--footer-height)); }
 .game-heading { display:flex; justify-content:space-between; align-items:center; gap:1.5rem; margin-bottom:1.4rem; }
@@ -150,4 +151,10 @@
  .game-page .game-player .rclock .time { font-size:1.65rem; }
  .game-page #analysis-panel { max-height:max(16rem,calc(var(--chess-board-size) - 25rem)); }
  .board-evaluation { position:static;height:auto;min-height:38px;flex-wrap:wrap;gap:.3rem; }
+}
+
+/* Playing and spectating never reserve space for analysis tools. */
+.game-page:not(.study-page) .round__app { grid-template-areas:"board opponent" "board moves" "board player" "board actions";grid-template-rows:auto minmax(8rem,1fr) auto auto; }
+@media(max-width:900px) {
+ .game-page:not(.study-page) .round__app { grid-template-areas:"moves" "opponent" "board" "player" "actions";grid-template-rows:40px auto auto auto auto; }
 }
