@@ -5,7 +5,8 @@ exports.render = function(name, language) {
  if(name==='analysis')return require('./study').render(language);
  if(name==='game-history')return require('./components').historyRail(language);
  const t=copy[language]||copy.en; const lang=copy[language]?language:'en';
- if(['training','drills','puzzles'].includes(name)) return require('./training').render(name,lang);
+ if(name==='puzzles') return require('./puzzles').render(lang);
+ if(['training','drills'].includes(name)) return require('./training').render(name,lang);
  const link=(route,label,style='ui-secondary')=>button(lang,route,label,style);
  const card=(index,title,text,route,label)=>`<article class="ui-panel"><span class="ui-index">0${index} /</span><h3>${title}</h3><p class="ui-muted">${text}</p>${link(route,label)}</article>`;
  const heading=(title,intro=t.pending)=>`<div class="ui-page-heading${name==='report'?'':' ui-mobile-secondary'}"><p class="eyebrow">ChessiL / ${name==='settings'?t.preferences:t.library}</p><h1>${title}</h1><p class="ui-intro">${intro}</p></div>`;

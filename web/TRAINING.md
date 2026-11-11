@@ -63,3 +63,27 @@ to detect drift. Verify the seven endgame key moves against archived complete
 provider responses with `node database/training-verify.js --offline`, or probe
 live with `node database/training-verify.js`. The archive includes all legal
 alternatives, checked independently against the shared move generator.
+
+## Lichess puzzle workspace
+
+`/{language}/training/puzzles` is linked from Training; the existing
+`/{language}/puzzles` URL serves the same workspace. `ui/puzzles.js` composes
+shared training geometry, controls, coordinates and progress. `src/puzzles.js`
+uses the native board and rules, including promotions and alternative mates in
+one. The export FEN precedes the opponent's setup move: apply that first move,
+then orient to the solving side. Solutions and replies run entirely locally.
+
+`GET /api/training/puzzles?theme=mixed` returns up to 16 puzzles, or filter by
+one of the export's exact theme tokens. `exclude` accepts up to 128 recent IDs.
+Random primary-key seeks wrap at the end of the collection; this intentionally
+provides variety rather than a statistically uniform sample. Theme membership
+uses a GIN index. `GET /api/training/puzzle-themes` reads precomputed counts.
+The migration preserves the separate `lichess_puzzles` collection. After any
+future replacement import, refresh `lichess_puzzle_theme_counts` explicitly.
+
+`src/buffer.js` is a reusable persistent batch queue independent of chess. The
+puzzle consumer fetches 16 when fewer than 12 upcoming puzzles remain, coalesces
+refills, deduplicates IDs, and retries failures after 30 seconds or reconnection.
+Current and upcoming puzzles persist per theme in localStorage. Connection
+loss never blocks buffered play; loading the page itself still requires its
+HTML and assets. Browser storage failures fall back to memory for the visit.

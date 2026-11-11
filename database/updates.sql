@@ -213,3 +213,19 @@ ON CONFLICT (id) DO UPDATE SET
 WHERE (training_puzzles.fen, training_puzzles.solution, training_puzzles.theme, training_puzzles.title)
     IS DISTINCT FROM (EXCLUDED.fen, EXCLUDED.solution, EXCLUDED.theme, EXCLUDED.title);
 -- END TRAINING MIGRATION
+
+-- Imported Lichess collection, separate from curated training exercises.
+CREATE TABLE IF NOT EXISTS lichess_puzzles (
+    puzzle_id text PRIMARY KEY, fen text NOT NULL, moves text NOT NULL,
+    rating integer NOT NULL, rating_deviation integer NOT NULL,
+    popularity integer NOT NULL, nb_plays integer NOT NULL,
+    themes text NOT NULL, game_url text NOT NULL, opening_tags text, daily_date bigint
+);
+CREATE INDEX IF NOT EXISTS lichess_puzzles_themes_idx
+    ON lichess_puzzles USING gin (string_to_array(themes, ' '));
+-- Compute labels/counts once, rather than scanning the collection per visit.
+CREATE MATERIALIZED VIEW IF NOT EXISTS lichess_puzzle_theme_counts AS
+    SELECT theme, count(*) AS puzzle_count
+    FROM lichess_puzzles, unnest(string_to_array(themes, ' ')) AS theme
+    GROUP BY theme;
+ANALYZE lichess_puzzles;

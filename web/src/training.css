@@ -116,3 +116,21 @@
 #training-app.training-rush .training-session-metrics {display:flex;gap:1rem;margin:.35rem 0 0;padding:0;border:0}
 #training-app.training-rush .training-session-metrics div {display:flex;gap:.3rem;align-items:baseline}
 #training-app.training-rush .training-session-metrics dd {margin:0;font-size:.85rem}
+/* Puzzle workspace composes shared training geometry and global controls. */
+#puzzle-app [hidden] {display:none!important}
+#puzzle-app .training-tabs {margin-bottom:.5rem;gap:.75rem}
+#puzzle-app .training-tabs .ui-button,#training-app .training-tabs a {padding:.35rem 0;min-height:2rem;border:0;border-radius:0;background:transparent;font-size:.8rem}
+#puzzle-app .training-tabs [aria-current] {color:var(--link);border-bottom:2px solid var(--link)}
+#puzzle-app .ui-icon-button {display:inline-grid;place-items:center;width:2rem;height:2rem;min-width:2rem;min-height:2rem;padding:.3rem}
+#puzzle-app .ui-icon-button svg {width:1.1rem;height:1.1rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#puzzle-app .puzzle-type {margin:0;min-width:0;flex:1}
+#puzzle-type {width:100%;min-width:0}
+#puzzle-rating {font-variant-numeric:tabular-nums;font-size:.8rem}
+.puzzle-details {grid-area:coach;padding:.75rem;box-shadow:none;font-size:.85rem;overflow-wrap:anywhere}
+#puzzle-status {margin:0 0 .5rem}
+#puzzle-line {display:flex;flex-wrap:wrap;gap:.25rem .65rem;margin:.5rem 0;font:.85rem/1.6 var(--monospace-font)}
+#puzzle-buffer,#puzzle-themes,#puzzle-source {font-size:.75rem}
+#puzzle-app .ui-actions {gap:.35rem;flex-wrap:wrap}
+#puzzle-app .ui-actions .ui-button {padding:.35rem .5rem;min-height:2rem;font-size:.8rem}
+#puzzle-app .puzzle-details {padding:.65rem}
+#puzzle-app .puzzle-details p {margin:.35rem 0}

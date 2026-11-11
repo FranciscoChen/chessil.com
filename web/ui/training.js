@@ -1,6 +1,6 @@
 /* Shared training shell. Lesson content, board state and control visibility are
  * owned by the training controller; keep its IDs and section values stable. */
-const {coordinates,progress,meter,countdown}=require('./components');
+const {coordinates,progress,meter,countdown,iconButton}=require('./components');
 const labels = {
  en: {
   heading:'A little study. A stronger game.',
@@ -60,8 +60,7 @@ exports.render = function(name, language) {
  const t = labels[lang];
  const initial = name === 'drills' ? 'openings' : name === 'puzzles' ? 'tactics' : 'tutorial';
  const sections = ['tutorial', 'openings', 'endgames', 'tactics', 'strategy'];
- const action = (id, label, icon, hidden = false) =>
-  `<button type="button" id="training-${id}" class="ui-button ui-icon-button" aria-label="${label}" title="${label}"${hidden ? ' hidden' : ''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${icon}"/></svg></button>`;
+ const action = (id,label,path,hidden=false) => iconButton({id:'training-'+id,label,path,hidden});
  const icons={hint:'M9 18h6m-5 3h4M9 15c0-2-4-3.5-4-7a7 7 0 0 1 14 0c0 3.5-4 5-4 7H9z',retry:'M3 11a9 9 0 1 1 2 6M3 4v7h7',next:'M4 12h15m-6-6 6 6-6 6',storm:'M12 3 4 13h7l-1 8 10-12h-7l1-6z',freeplay:'M8 5l11 7-11 7z',stop:'M6 6h12v12H6z',book:'M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1zm0 0v15'};
 
  return `<main id="main-content" class="ui-page ui-layout-${name} training-page">
@@ -71,6 +70,7 @@ exports.render = function(name, language) {
    <p class="ui-intro">${t.intro}</p>
   </div>
   <nav class="ui-tabs training-tabs" aria-label="${t.navigation}">
+   <a class="ui-button ui-quiet" href="/${lang}/training/puzzles">${{en:'Puzzles',es:'Problemas',zh:'习题'}[lang]}</a>
    ${sections.map(section => `<button type="button" class="ui-button ui-quiet" data-section="${section}" aria-pressed="${section === initial}">${t[section]}</button>`).join('\n   ')}
   </nav>
   <div class="training-workspace">

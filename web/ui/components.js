@@ -23,3 +23,6 @@ exports.historyRail = language => {
  const control=(id,label,path)=>`<button id="${id}" type="button" class="fbt ui-icon-button" title="${label}" aria-label="${label}" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg></button>`;
  return `<moves-panel aria-label="Move history"><nav class="board-history" aria-label="Game navigation">${control('rw',labels[0],'M6 5v14M17 6l-6 6 6 6')}${control('sb',labels[1],'m15 6-6 6 6 6')}<moves-list></moves-list>${control('fw',labels[2],'m9 6 6 6-6 6')}${control('ff',labels[3],'M18 5v14M7 6l6 6-6 6')}</nav><p class="game-sr-only" id="moves-empty">Waiting for the first move.</p><span class="game-sr-only status" data-game-field="state" role="status">Connecting…</span><span class="game-sr-only" id="game-perspective"></span><span class="game-sr-only" id="history-hint"></span></moves-panel>`;
 };
+
+// Shared accessible icon control; consumers supply state and the SVG path.
+exports.iconButton=({id,label,path,hidden=false,disabled=false})=>`<button type="button" id="${attribute(id)}" class="ui-button ui-icon-button" aria-label="${attribute(label)}" title="${attribute(label)}"${hidden?' hidden':''}${disabled?' disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${attribute(path)}"/></svg></button>`;

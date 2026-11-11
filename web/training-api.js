@@ -1,6 +1,7 @@
 'use strict';
 
 const https = require('node:https');
+const { puzzleBatch } = require('./puzzle-api');
 
 const BODY_LIMIT = 4096;
 const FEN_LIMIT = 128;
@@ -265,7 +266,7 @@ function createTrainingApi({ db, origin, curriculum = () => require('./training/
       if (req.url.length > 2048) throw fail(414, 'Request URL too long');
       const url = new URL(req.url, 'http://training.invalid');
       const route = url.pathname.slice('/api/training/'.length);
-      const routes = { curriculum: ['GET'], progress: ['GET', 'POST'], tablebase: ['GET', 'POST'] };
+      const routes = { curriculum: ['GET'], progress: ['GET', 'POST'], tablebase: ['GET', 'POST'], puzzles: ['GET'], 'puzzle-themes': ['GET'] };
       const allowed = Object.hasOwn(routes, route) && routes[route];
       if (!allowed) throw fail(404, 'Not found');
       if (!allowed.includes(req.method)) {
@@ -273,7 +274,7 @@ function createTrainingApi({ db, origin, curriculum = () => require('./training/
         return send(405, { error: 'Method not allowed' }, { Allow: allowed.join(', ') });
       }
       for (const key of url.searchParams.keys()) {
-        if (route !== 'tablebase' || key !== 'fen' || url.searchParams.getAll(key).length !== 1) throw fail(400, 'Unexpected query parameters');
+        if (!(route === 'tablebase' && key === 'fen' || route === 'puzzles' && ['theme', 'exclude'].includes(key)) || url.searchParams.getAll(key).length !== 1) throw fail(400, 'Unexpected query parameters');
       }
       if (req.method === 'POST') {
         if (req.headers['sec-fetch-site'] === 'cross-site' ||
@@ -282,6 +283,11 @@ function createTrainingApi({ db, origin, curriculum = () => require('./training/
         }
       }
       if (route === 'curriculum') return send(200, curriculum());
+      if (route === 'puzzles') return send(200, await puzzleBatch(db, url.searchParams));
+      if (route === 'puzzle-themes') {
+        const { rows } = await db.query('SELECT theme, puzzle_count FROM lichess_puzzle_theme_counts ORDER BY theme');
+        return send(200, { themes: rows.map(row => ({ id: row.theme, count: Number(row.puzzle_count) })) });
+      }
       if (route === 'tablebase') {
         let fen = url.searchParams.get('fen');
         if (req.method === 'POST') {

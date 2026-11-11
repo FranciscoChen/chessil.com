@@ -274,3 +274,14 @@ test('all curriculum tactics match both persistent seed SQL and the hook migrati
   assert.match(migration, /PRIMARY KEY \(user_id, lesson_id\)/);
   assert.match(migration, /stage BETWEEN 0 AND 3/);
 });
+
+test('puzzle batches validate filters, parameterize theme/exclusions and wrap at the keyspace boundary', async t => {
+  const calls=[];
+  const call=await api(t,{db:{async query(sql,values){calls.push({sql,values});if(sql.includes('theme_counts'))return {rows:[{theme:'fork',puzzle_count:'42'}]};return {rows:[{id:sql.includes('>=')?'00001':'00002',fen:FEN,moves:'e4f4 f2g2',rating:1200,themes:'fork short',gameUrl:'https://lichess.org/abcdefgh'}]};}}});
+  const result=await call('puzzles?theme=fork&exclude=00003');
+  assert.equal(result.status,200);assert.deepEqual(result.body.puzzles.map(p=>p.id),['00001','00002']);assert.deepEqual(result.body.puzzles[0].moves,['e4f4','f2g2']);
+  assert.equal(calls.length,2);for(const {sql,values} of calls){assert.match(sql,/LIMIT 16/);assert.match(sql,/@> ARRAY\[\$3\]/);assert.deepEqual(values.slice(1),[['00003'],'fork']);assert.doesNotMatch(sql,/fork|00003/);}
+  for(const query of ['theme=a%27','theme=fork&theme=mate','exclude=bad','exclude='+Array(129).fill('00001').join(','),'limit=1000'])assert.equal((await call('puzzles?'+query)).status,400);
+  assert.equal(calls.length,2);assert.equal((await call('puzzles',{method:'POST'})).status,405);
+  assert.deepEqual((await call('puzzle-themes')).body,{themes:[{id:'fork',count:42}]});
+});
