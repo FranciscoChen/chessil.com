@@ -87,3 +87,13 @@ refills, deduplicates IDs, and retries failures after 30 seconds or reconnection
 Current and upcoming puzzles persist per theme in localStorage. Connection
 loss never blocks buffered play; loading the page itself still requires its
 HTML and assets. Browser storage failures fall back to memory for the visit.
+
+Puzzle setup moves animate from the export FEN before input unlocks. Solution
+reveal plays each remaining move at a readable interval; Next, Restart, type
+changes and leaving the page cancel playback. The game history rail is reused
+with `src/history.js` for move selection, first/previous/next/last controls and
+arrow/Home/End shortcuts. Only moves already played or revealed enter history;
+reviewing an earlier position disables solving until returning to the latest.
+Puzzle and lesson orientation changes use `ChessilBoard.setOrientation`, which
+repositions every existing piece as well as coordinates. Cached counts stay
+internal; only connection failures/offline state appear in the workspace.

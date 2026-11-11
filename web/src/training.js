@@ -22,7 +22,8 @@ function stopTimers(){clearTimeout(timer);autoplayRun?.cancel();$('autoplay').hi
 function notation(move,position=fen){return gensanbase(move,boardgen(position),position,mg(position));}
 const view=new ChessilBoard(root.querySelector('cg-board'),{state:()=>({fen,autoQueen:lesson?.moves[index]?.length===5&&lesson.moves[index][4]!=='q'?false:undefined,moves:active&&!busy?mg(fen):[],turn:fen.split(' ')[1],side,watcher:!active,finished:complete,connected:active&&!busy}),submit:move=>{queueMicrotask(()=>attempt(move));return true;},cancelPremove(){}});
 function resetPositionCount(){positions=new Map([[fen.split(' ').slice(0,4).join(' '),1]]);}
-function orient(){view.orientation=side;root.querySelectorAll('coords.files coord').forEach((el,i)=>el.textContent=String.fromCharCode(side==='w'?97+i:104-i));root.querySelectorAll('coords.ranks coord').forEach((el,i)=>el.textContent=side==='w'?8-i:i+1);}
+function orient(){view.setOrientation(side);}
+
 function paint(move='',animate=false){view.render(boardgen(fen),move,animate);}
 function lessons(){return (data?.[section]||[]).filter(l=>section!=='openings'||l.repertoire===$('repertoire').value);}
 function updateLibrary(){
@@ -43,7 +44,7 @@ function select(item,pass){
 }
 function later(fn,ms){const token=epoch;timer=setTimeout(()=>{if(token===epoch)fn();},ms);}
 function start(pass=stage){
- if(!lesson)return;stopTimers();view.guidance=null;stage=pass;index=0;free=false;complete=false;active=true;side=lesson.side||lesson.fen?.split(' ')[1]||'w';fen=lesson.fen||initial;resetPositionCount();paint();$('retry').hidden=false;$('next').hidden=true;$('hint').hidden=stage===2||!!rush;$('freeplay').hidden=section!=='endgames';text('stage',section==='openings'?['01 / Learn the line','02 / Remember with a pause','03 / Recall without guidance'][stage]:'Your turn');text('summary',section==='openings'&&stage===2?'Reproduce the opening sequence from memory.':lesson.summary);text('concept',section==='openings'&&stage===2?'Play the repertoire from memory. The lesson explanation returns when you restart.':lesson.concept||lesson.summary);text('meta',stage===2?'Recall the moves from memory. Restart to see the line again.':lesson.summary);$('line').replaceChildren();advance();
+ if(!lesson)return;stopTimers();view.guidance=null;stage=pass;index=0;free=false;complete=false;active=true;side=lesson.side||lesson.fen?.split(' ')[1]||'w';fen=lesson.fen||initial;orient();resetPositionCount();paint();$('retry').hidden=false;$('next').hidden=true;$('hint').hidden=stage===2||!!rush;$('freeplay').hidden=section!=='endgames';text('stage',section==='openings'?['01 / Learn the line','02 / Remember with a pause','03 / Recall without guidance'][stage]:'Your turn');text('summary',section==='openings'&&stage===2?'Reproduce the opening sequence from memory.':lesson.summary);text('concept',section==='openings'&&stage===2?'Play the repertoire from memory. The lesson explanation returns when you restart.':lesson.concept||lesson.summary);text('meta',stage===2?'Recall the moves from memory. Restart to see the line again.':lesson.summary);$('line').replaceChildren();advance();
 }
 function guide(){
  const move=lesson.moves[index];if(!active||complete||!move)return;

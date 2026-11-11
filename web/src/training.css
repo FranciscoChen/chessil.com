@@ -128,9 +128,17 @@
 #puzzle-rating {font-variant-numeric:tabular-nums;font-size:.8rem}
 .puzzle-details {grid-area:coach;padding:.75rem;box-shadow:none;font-size:.85rem;overflow-wrap:anywhere}
 #puzzle-status {margin:0 0 .5rem}
-#puzzle-line {display:flex;flex-wrap:wrap;gap:.25rem .65rem;margin:.5rem 0;font:.85rem/1.6 var(--monospace-font)}
-#puzzle-buffer,#puzzle-themes,#puzzle-source {font-size:.75rem}
+#puzzle-connection,#puzzle-themes,#puzzle-source {font-size:.75rem}
 #puzzle-app .ui-actions {gap:.35rem;flex-wrap:wrap}
 #puzzle-app .ui-actions .ui-button {padding:.35rem .5rem;min-height:2rem;font-size:.8rem}
 #puzzle-app .puzzle-details {padding:.65rem}
 #puzzle-app .puzzle-details p {margin:.35rem 0}
+/* Same history rail and controls as games, compact alongside the puzzle board. */
+#puzzle-app moves-panel {display:block;min-width:0;margin:.4rem 0}
+#puzzle-app .board-history {display:grid;grid-template-columns:32px 32px minmax(0,1fr) 32px 32px;align-items:center;min-width:0}
+#puzzle-app .board-history button {border:0;background:transparent;color:var(--text);padding:.3rem}
+#puzzle-app moves-list {display:flex;align-items:center;gap:.3rem;overflow:auto;white-space:nowrap;scrollbar-width:thin;min-width:0;font:.8rem/1.5 var(--monospace-font)}
+#puzzle-app move-entry,#puzzle-app move-number {flex:none;padding:.2rem}
+#puzzle-app move-entry {cursor:pointer}
+#puzzle-app move-entry.a1t,#puzzle-app move-entry:hover {color:var(--link);background:var(--hover)}
+#puzzle-app .game-sr-only {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}

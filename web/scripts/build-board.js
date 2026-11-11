@@ -9,7 +9,7 @@ async function build(){
   'study.min.js':['study.js'],
   'analysis.min.js':['local-engine.js','opening-book.js','analysis-judgment.js','analysis.js'],
   'training.min.js':['training.js'],
-  'puzzles.min.js':['buffer.js','puzzles.js'],
+  'puzzles.min.js':['buffer.js','history.js','puzzles.js'],
   'highlight.min.js':['highlight.js'],
   'timing.min.js':['timing.js'],
   'preferences.min.js':['sounds.js','preferences.js']

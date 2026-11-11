@@ -8,15 +8,22 @@ const label=id=>id.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/([a-zA-Z])(\d)/g,
 const message=value=>{$('status').textContent=value;};
 const valid=p=>p&&/^[a-zA-Z0-9]{5,8}$/.test(p.id)&&typeof p.fen==='string'&&p.fen.length<128&&Array.isArray(p.moves)&&p.moves.length>=2&&p.moves.length<100&&p.moves.every(m=>/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(m))&&Number.isFinite(p.rating)&&Array.isArray(p.themes)&&p.themes.every(t=>/^[a-zA-Z][a-zA-Z0-9]{0,47}$/.test(t));
 const board=new ChessilBoard(root.querySelector('cg-board'),{
- state:()=>({fen,side,turn:fen.split(' ')[1],moves:current&&!done&&!busy?mg(fen):[],connected:!!current&&!busy,finished:done,watcher:!current,autoQueen:false}),
+ state:()=>({fen,side,turn:fen.split(' ')[1],moves:current&&!done&&!busy&&history.ply===index?mg(fen):[],connected:!!current&&!busy&&history.ply===index,finished:done,watcher:!current||history.ply!==index,autoQueen:false}),
  submit:move=>{queueMicrotask(()=>attempt(move));return true;},cancelPremove(){}
 });
+const history=new ChessilHistory(root.querySelector('moves-panel'),{signal:board.abort.signal,onSelect:(ply,previous)=>{
+ board.guidance=null;const move=ply<previous?history.moves[ply]?.slice(2,4)+history.moves[ply]?.slice(0,2):history.moves[ply-1]||'';
+ board.render(boardgen(history.positions[ply]),move,Math.abs(ply-previous)===1);
+ board.lastMove=history.moves[ply-1]||'';board.drawOverlays();controls();
+ message(ply<index?'Reviewing puzzle moves.':done?'Puzzle complete.':side==='w'?'White to move.':'Black to move.');
+}});
+history.reset(fen);
 function paint(move='',animate=false){board.render(boardgen(fen),move,animate);}
 function cancel(){clearTimeout(timer);busy=false;board.cancel();board.acknowledge();board.guidance=null;}
-function controls(){for(const id of ['hint','restart','solution'])$(id).disabled=!current||busy||(id!=='restart'&&done);$('next').disabled=!current;}
+function controls(){for(const id of ['hint','restart','solution'])$(id).disabled=!current||(id!=='restart'&&(busy||done||history.ply!==index));$('next').disabled=!current;history.lock(busy);}
 function apply(move,animate=true){
  const san=gensanbase(move,boardgen(fen),fen,mg(fen));fen=ucifen(move,fen,boardgen(fen),{}).f;index++;
- const entry=document.createElement('span');entry.className='training-ply';entry.textContent=san;$('line').append(entry);
+ history.push(move,fen,san);
  $('progress').value=Math.max(0,index-1);paint(move,animate);
 }
 function finished(revealed=false){done=true;busy=false;board.guidance=null;board.drawOverlays();controls();$('progress').value=$('progress').max;
@@ -24,7 +31,7 @@ function finished(revealed=false){done=true;busy=false;board.guidance=null;board
  $('themes').textContent=current.themes.map(label).join(' · ');$('source').href='https://lichess.org/training/'+current.id;$('source').hidden=false;
 }
 function attempt(move){
- if(!current||busy||done){board.acknowledge();return;}
+ if(!current||busy||done||history.ply!==index){board.acknowledge();return;}
  const next=ucifen(move,fen,boardgen(fen),{}).f;
  // Every checkmate wins a mate-in-one, including a different mating move.
  const alternativeMate=index===1&&current.themes.includes('mateIn1')&&incheck(next)&&mg(next).length===0;
@@ -36,26 +43,26 @@ function attempt(move){
 }
 function start(puzzle){
  cancel();current=puzzle;done=false;assisted=false;index=0;
- $('line').replaceChildren();$('themes').textContent='';$('source').hidden=true;
+ history.reset(fen);$('themes').textContent='';$('source').hidden=true;
  if(!current){controls();paint();return;}
  // Validate the complete line before allowing interaction, including the setup move.
  try{let position=current.fen;for(const move of current.moves){if(!mg(position).includes(move))throw Error('Invalid line');position=ucifen(move,position,boardgen(position),{}).f;}}
  catch(_){current=null;controls();message('This puzzle could not load. Choose Next to skip it.');$('next').disabled=false;return;}
- fen=current.fen;$('progress').max=current.moves.length-1;$('progress').value=0;apply(current.moves[0],false);
- side=fen.split(' ')[1];board.orientation=side;
- root.querySelectorAll('coords.files coord').forEach((el,i)=>el.textContent=String.fromCharCode(side==='w'?97+i:104-i));
- root.querySelectorAll('coords.ranks coord').forEach((el,i)=>el.textContent=side==='w'?8-i:i+1);
- paint();$('rating').textContent=String(current.rating);controls();message(side==='w'?'White to move.':'Black to move.');
+ fen=current.fen;side=fen.split(' ')[1]==='w'?'b':'w';board.setOrientation(side);
+ history.reset(fen);$('progress').max=current.moves.length-1;$('progress').value=0;
+ paint();$('rating').textContent=String(current.rating);busy=true;controls();message('');
+ timer=setTimeout(()=>{apply(current.moves[0]);timer=setTimeout(()=>{busy=false;controls();message(side==='w'?'White to move.':'Black to move.');},ChessilPreferences.duration()+40);},180);
 }
 function changed(){
- const pending=Math.max(0,queue.items.length-1);
- $('buffer').textContent=(navigator.onLine?'':'Offline · ')+`${pending} ready`+(queue.loading?' · Loading…':queue.error?' · Could not refill':'');
+ if(!queue)return;
+ const notice=!navigator.onLine?'Offline':queue.error?'Could not load more puzzles. Reconnect and retry.':'';
+ $('connection').textContent=notice;$('connection').hidden=!notice;
  $('reload').hidden=!queue.error&&!(!queue.loading&&!queue.peek());
  if(!current&&queue.peek())start(queue.peek());
  else if(!current)message(queue.loading?'Loading puzzles…':queue.error?'Could not load puzzles. Reconnect and retry.':'No puzzles available for this type. Choose another type.');
 }
 function select(value){
- queue?.destroy();cancel();current=null;theme=value;done=false;$('rating').textContent='';$('line').replaceChildren();$('themes').textContent='';$('source').hidden=true;$('progress').value=0;
+ queue?.destroy();cancel();current=null;theme=value;done=false;$('rating').textContent='';history.reset(fen);$('themes').textContent='';$('source').hidden=true;$('progress').value=0;
  try{localStorage.setItem('chessil.puzzle-type',theme);}catch(_){}
  queue=new ChessilBuffer({key:'chessil.puzzles.v1.'+theme,validate:valid,onChange:changed,
   fetchBatch:async(exclude,signal)=>{const params=new URLSearchParams({theme,exclude:exclude.join(',')});const r=await fetch('/api/training/puzzles?'+params,{signal});if(!r.ok)throw Error('Load failed');return (await r.json()).puzzles;}
@@ -65,8 +72,11 @@ function select(value){
 $('type').onchange=()=>select($('type').value);
 $('hint').onclick=()=>{if(!current||done||busy)return;assisted=true;const move=current.moves[index];board.guidance={from:move.slice(0,2),to:move.slice(2,4)};board.active=move.slice(0,2);board.drawOverlays();message(`Try ${gensanbase(move,boardgen(fen),fen,mg(fen))}.`);};
 $('restart').onclick=()=>start(current);
-$('next').onclick=()=>{cancel();current=null;$('rating').textContent='';$('line').replaceChildren();$('themes').textContent='';$('source').hidden=true;queue.advance();if(!current){controls();paint();}};
-$('solution').onclick=()=>{if(!current||done||busy)return;cancel();while(index<current.moves.length)apply(current.moves[index],false);finished(true);};
+$('next').onclick=()=>{cancel();current=null;$('rating').textContent='';history.reset(fen);$('themes').textContent='';$('source').hidden=true;queue.advance();if(!current){controls();paint();}};
+$('solution').onclick=()=>{
+ if(!current||done||busy||history.ply!==index)return;cancel();busy=true;assisted=true;controls();message('Solution…');
+ const step=()=>{apply(current.moves[index]);timer=setTimeout(()=>{if(index<current.moves.length)step();else finished(true);},Math.max(650,ChessilPreferences.duration()+200));};step();
+};
 $('reload').onclick=()=>{queue.fill();loadThemes();};
 async function loadThemes(){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);
