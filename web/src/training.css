@@ -105,3 +105,14 @@
 .training-heading {display:none}
 @media(max-width:900px){.ui-page.training-page {width:var(--chess-board-size)}.training-workspace {grid-template-columns:minmax(0,1fr);grid-template-areas:"board" "coach"}}
 @media(max-width:650px){#training-app .training-tabs {gap:.65rem;overflow-x:auto;white-space:nowrap}#training-app .training-tabs button {font-size:.72rem}#training-app .training-coach {padding:.65rem}.training-library-dialog {padding:.75rem}}
+/* All lesson tabs share the same board-first layout. Session data is only
+ * relevant while the separate timed rush is running. */
+#training-app .training-workspace {grid-template-columns:var(--chess-board-size);grid-template-areas:"board";justify-content:center}
+#training-app .training-coach {display:none}
+#training-app .training-board-help {display:none}
+#training-app .training-session-actions {display:flex;gap:.2rem;margin:0}
+#training-app .training-session-actions:has(> :not([hidden])) {margin-left:.2rem}
+#training-app .training-session-metrics {display:none}
+#training-app.training-rush .training-session-metrics {display:flex;gap:1rem;margin:.35rem 0 0;padding:0;border:0}
+#training-app.training-rush .training-session-metrics div {display:flex;gap:.3rem;align-items:baseline}
+#training-app.training-rush .training-session-metrics dd {margin:0;font-size:.85rem}

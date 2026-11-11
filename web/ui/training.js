@@ -5,7 +5,7 @@ const labels = {
  en: {
   heading:'A little study. A stronger game.',
   intro:'Build understanding, then put it into practice on the board.',
-  navigation:'Training sections', tutorial:'Start here', openings:'Openings', endgames:'Endgames', tactics:'Tactics', strategy:'Strategy',
+  navigation:'Training sections', tutorial:'Tutorial', openings:'Openings', endgames:'Endgames', tactics:'Tactics', strategy:'Strategy',
   library:'Lesson library', repertoire:'Repertoire', d4:'White · 1.d4', e4:'White · 1.e4', black:'Black repertoire',
   search:'Find a lesson', searchPlaceholder:'Search lessons…',
   board:'Training board', boardHelp:'Select a piece, then its destination, or drag to move. With the board focused, use arrow keys and Enter; Escape clears the selection.',
@@ -22,7 +22,7 @@ const labels = {
  es: {
   heading:'Un poco de estudio. Un juego más sólido.',
   intro:'Comprende las ideas y ponlas en práctica en el tablero.',
-  navigation:'Secciones de entrenamiento', tutorial:'Empieza aquí', openings:'Aperturas', endgames:'Finales', tactics:'Táctica', strategy:'Estrategia',
+  navigation:'Secciones de entrenamiento', tutorial:'Tutorial', openings:'Aperturas', endgames:'Finales', tactics:'Táctica', strategy:'Estrategia',
   library:'Biblioteca de lecciones', repertoire:'Repertorio', d4:'Blancas · 1.d4', e4:'Blancas · 1.e4', black:'Repertorio con negras',
   search:'Buscar una lección', searchPlaceholder:'Buscar lecciones…',
   board:'Tablero de entrenamiento', boardHelp:'Selecciona una pieza y su destino, o arrástrala. Con el foco en el tablero, usa las flechas y Entrar; Escape borra la selección.',
@@ -39,7 +39,7 @@ const labels = {
  zh: {
   heading:'日积月累，棋艺精进。',
   intro:'理解棋理，再到棋盘上练习。',
-  navigation:'训练分类', tutorial:'从这里开始', openings:'开局', endgames:'残局', tactics:'战术', strategy:'战略',
+  navigation:'训练分类', tutorial:'教程', openings:'开局', endgames:'残局', tactics:'战术', strategy:'战略',
   library:'课程库', repertoire:'开局库', d4:'白棋 · 1.d4', e4:'白棋 · 1.e4', black:'黑棋开局',
   search:'查找课程', searchPlaceholder:'搜索课程…',
   board:'训练棋盘', boardHelp:'选择棋子和目标格，或拖动棋子。棋盘获得焦点后，可用方向键和回车走子，按 Escape 取消选择。',
@@ -75,12 +75,20 @@ exports.render = function(name, language) {
   </nav>
   <div class="training-workspace">
    <section class="training-board-area" aria-label="${t.board}">
-    <div class="training-bar"><h2 id="training-title">${t.title}</h2><button type="button" id="training-open-library" class="ui-button ui-icon-button" aria-label="${t.library}" title="${t.library}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${icons.book}"/></svg></button><div class="training-quick-actions">${action('hint',t.hint,icons.hint,true)}${action('retry',t.retry,icons.retry,true)}${action('next',t.next,icons.next,true)}</div></div>
+    <div class="training-bar"><h2 id="training-title">${t.title}</h2><button type="button" id="training-open-library" class="ui-button ui-icon-button" aria-label="${t.library}" title="${t.library}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${icons.book}"/></svg></button><div class="training-quick-actions">${action('hint',t.hint,icons.hint,true)}${action('retry',t.retry,icons.retry,true)}${action('next',t.next,icons.next,true)}</div>    <div class="ui-actions training-session-actions">
+     ${action('storm', t.storm, icons.storm, true)}
+     ${action('freeplay', t.freeplay, icons.freeplay, true)}
+     ${action('stop', t.stop, icons.stop, true)}
+    </div></div>
     <div class="training-board-wrap">
      <cg-board aria-label="${t.board}" aria-describedby="training-board-help"></cg-board>
      ${coordinates()}
      <div id="training-guidance-callout"></div>
     </div>
+        <dl class="training-session-metrics">
+     <div><dt>${t.score}</dt><dd id="training-score">—</dd></div>
+     <div><dt>${t.clock}</dt><dd id="training-clock">—</dd></div>
+    </dl>
     <p id="training-board-help" class="ui-muted training-board-help ui-mobile-secondary">${t.boardHelp}</p>
 
    </section>
@@ -109,15 +117,8 @@ exports.render = function(name, language) {
      <div id="training-line" aria-labelledby="training-line-label"></div>
     </div>
     <p id="training-meta" hidden class="ui-muted">${t.meta}</p>
-    <dl class="training-session-metrics">
-     <div><dt>${t.score}</dt><dd id="training-score">—</dd></div>
-     <div><dt>${t.clock}</dt><dd id="training-clock">—</dd></div>
-    </dl>
-    <div class="ui-actions training-session-actions">
-     ${action('storm', t.storm, icons.storm, true)}
-     ${action('freeplay', t.freeplay, icons.freeplay, true)}
-     ${action('stop', t.stop, icons.stop, true)}
-    </div>
+
+
     <details class="training-guidance">
      <summary>${t.guidance}</summary>
      <p class="ui-muted">${t.beginner}</p>
@@ -125,7 +126,6 @@ exports.render = function(name, language) {
     </details>
    </aside>
    <dialog id="training-library-dialog" class="training-library-dialog" aria-labelledby="training-library-heading"><div class="training-library-head"><h2 id="training-library-heading">${t.library}</h2><button type="button" id="training-close-library" class="ui-button ui-icon-button" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
-    <h2 id="training-library-heading">${t.library}</h2>
     <div id="training-filters" class="ui-filters">
      <label class="ui-field" for="training-repertoire">${t.repertoire}
       <select id="training-repertoire">
