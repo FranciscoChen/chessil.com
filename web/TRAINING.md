@@ -97,3 +97,8 @@ reviewing an earlier position disables solving until returning to the latest.
 Puzzle and lesson orientation changes use `ChessilBoard.setOrientation`, which
 repositions every existing piece as well as coordinates. Cached counts stay
 internal; only connection failures/offline state appear in the workspace.
+
+Lichess puzzle data is CC0. The footer links to localized Credits & Sources
+pages (`/{language}/credits`) thanking Lichess and linking its puzzle export,
+documentation and CC0 dedication. Puzzle completion keeps only solving controls
+and theme labels; there is no per-puzzle external source link.

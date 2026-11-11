@@ -2,6 +2,7 @@
 const copy = require('./copy');
 const { board, button } = require('./components');
 exports.render = function(name, language) {
+ if(name==='credits')return require('./credits').render(language);
  if(name==='analysis')return require('./study').render(language);
  if(name==='game-history')return require('./components').historyRail(language);
  const t=copy[language]||copy.en; const lang=copy[language]?language:'en';

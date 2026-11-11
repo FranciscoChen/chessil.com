@@ -28,7 +28,7 @@ function apply(move,animate=true){
 }
 function finished(revealed=false){done=true;busy=false;board.guidance=null;board.drawOverlays();controls();$('progress').value=$('progress').max;
  message(revealed?'Solution shown. Restart to practise it.':assisted?'Solved with a hint.':'Puzzle solved.');
- $('themes').textContent=current.themes.map(label).join(' · ');$('source').href='https://lichess.org/training/'+current.id;$('source').hidden=false;
+ $('themes').textContent=current.themes.map(label).join(' · ');
 }
 function attempt(move){
  if(!current||busy||done||history.ply!==index){board.acknowledge();return;}
@@ -43,7 +43,7 @@ function attempt(move){
 }
 function start(puzzle){
  cancel();current=puzzle;done=false;assisted=false;index=0;
- history.reset(fen);$('themes').textContent='';$('source').hidden=true;
+ history.reset(fen);$('themes').textContent='';
  if(!current){controls();paint();return;}
  // Validate the complete line before allowing interaction, including the setup move.
  try{let position=current.fen;for(const move of current.moves){if(!mg(position).includes(move))throw Error('Invalid line');position=ucifen(move,position,boardgen(position),{}).f;}}
@@ -62,7 +62,7 @@ function changed(){
  else if(!current)message(queue.loading?'Loading puzzles…':queue.error?'Could not load puzzles. Reconnect and retry.':'No puzzles available for this type. Choose another type.');
 }
 function select(value){
- queue?.destroy();cancel();current=null;theme=value;done=false;$('rating').textContent='';history.reset(fen);$('themes').textContent='';$('source').hidden=true;$('progress').value=0;
+ queue?.destroy();cancel();current=null;theme=value;done=false;$('rating').textContent='';history.reset(fen);$('themes').textContent='';$('progress').value=0;
  try{localStorage.setItem('chessil.puzzle-type',theme);}catch(_){}
  queue=new ChessilBuffer({key:'chessil.puzzles.v1.'+theme,validate:valid,onChange:changed,
   fetchBatch:async(exclude,signal)=>{const params=new URLSearchParams({theme,exclude:exclude.join(',')});const r=await fetch('/api/training/puzzles?'+params,{signal});if(!r.ok)throw Error('Load failed');return (await r.json()).puzzles;}
@@ -72,7 +72,7 @@ function select(value){
 $('type').onchange=()=>select($('type').value);
 $('hint').onclick=()=>{if(!current||done||busy)return;assisted=true;const move=current.moves[index];board.guidance={from:move.slice(0,2),to:move.slice(2,4)};board.active=move.slice(0,2);board.drawOverlays();message(`Try ${gensanbase(move,boardgen(fen),fen,mg(fen))}.`);};
 $('restart').onclick=()=>start(current);
-$('next').onclick=()=>{cancel();current=null;$('rating').textContent='';history.reset(fen);$('themes').textContent='';$('source').hidden=true;queue.advance();if(!current){controls();paint();}};
+$('next').onclick=()=>{cancel();current=null;$('rating').textContent='';history.reset(fen);$('themes').textContent='';queue.advance();if(!current){controls();paint();}};
 $('solution').onclick=()=>{
  if(!current||done||busy||history.ply!==index)return;cancel();busy=true;assisted=true;controls();message('Solution…');
  const step=()=>{apply(current.moves[index]);timer=setTimeout(()=>{if(index<current.moves.length)step();else finished(true);},Math.max(650,ChessilPreferences.duration()+200));};step();

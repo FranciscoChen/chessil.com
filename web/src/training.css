@@ -128,7 +128,7 @@
 #puzzle-rating {font-variant-numeric:tabular-nums;font-size:.8rem}
 .puzzle-details {grid-area:coach;padding:.75rem;box-shadow:none;font-size:.85rem;overflow-wrap:anywhere}
 #puzzle-status {margin:0 0 .5rem}
-#puzzle-connection,#puzzle-themes,#puzzle-source {font-size:.75rem}
+#puzzle-connection,#puzzle-themes {font-size:.75rem}
 #puzzle-app .ui-actions {gap:.35rem;flex-wrap:wrap}
 #puzzle-app .ui-actions .ui-button {padding:.35rem .5rem;min-height:2rem;font-size:.8rem}
 #puzzle-app .puzzle-details {padding:.65rem}

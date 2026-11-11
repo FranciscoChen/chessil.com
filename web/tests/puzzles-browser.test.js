@@ -19,7 +19,7 @@ test('puzzles solve locally, refill below 12, persist and survive offline play i
  await move('e6e5');await page.waitForFunction(()=>document.querySelector('#puzzle-status').textContent==='Try another move.');
  await move('e6e7');await page.waitForFunction(()=>document.querySelector('moves-list').querySelectorAll('move-entry').length===3);
  await move('b3c1');await page.waitForFunction(()=>document.querySelector('moves-list').querySelectorAll('move-entry').length===5);
- await move('h6c1');await page.waitForFunction(()=>document.querySelector('#puzzle-status').textContent==='Puzzle solved.');assert.equal(await page.$eval('#puzzle-source',e=>e.hidden),false);
+ await move('h6c1');await page.waitForFunction(()=>document.querySelector('#puzzle-status').textContent==='Puzzle solved.');assert.equal(await page.$('#puzzle-source'),null);
  for(let i=0;i<3;i++)await page.click('#puzzle-next');assert.equal(calls.length,1);
  await page.click('#puzzle-next');await page.waitForFunction(()=>JSON.parse(localStorage.getItem('chessil.puzzles.v1.mixed')).items.length===28);assert.equal(calls.length,2);assert.equal(calls[1].searchParams.get('exclude').split(',').length,16);
  await page.setOfflineMode(true);for(let i=0;i<5;i++)await page.click('#puzzle-next');await page.waitForFunction(()=>!document.querySelector('#puzzle-hint').disabled);await page.click('#puzzle-hint');await page.waitForFunction(()=>document.querySelector('#puzzle-status').textContent.startsWith('Try '));await page.click('#puzzle-solution');await page.waitForFunction(()=>document.querySelector('#puzzle-status').textContent.startsWith('Solution shown'));assert.equal(calls.length,2);
@@ -47,4 +47,14 @@ test('puzzles solve locally, refill below 12, persist and survive offline play i
  await page.select('#training-repertoire','black');await orientation(true);await page.select('#training-repertoire','e4');await orientation(false);
  assert.deepEqual(errors,[]);
  }finally{await browser.close();await new Promise(r=>server.close(r));}
+});
+
+test('credits are localized, linked from every footer, and cite Lichess and CC0',()=>{
+ for(const lang of ['en','es','zh']){
+  const html=render(fs.readFileSync(path.join(__dirname,`../web/${lang}/credits/index.html`)),lang,'l').toString();
+  assert.match(html,/id="main-content"/);assert.match(html,/id="credits-puzzles"/);
+  assert.ok(html.includes(`href="/${lang}/credits"`));assert.ok(html.includes('href="https://database.lichess.org/#puzzles"'));assert.ok(html.includes('href="https://creativecommons.org/publicdomain/zero/1.0/"'));
+  const puzzle=render(fs.readFileSync(path.join(__dirname,`../web/${lang}/training/puzzles/index.html`)),lang,'l').toString();
+  assert.doesNotMatch(puzzle,/id="puzzle-source"/);assert.ok(puzzle.includes(`href="/${lang}/credits"`));
+ }
 });
