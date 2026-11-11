@@ -155,12 +155,18 @@ window.ChessilBoard = class ChessilBoard {
   if(this.promotion)return;
   const dialog=document.createElement('dialog');dialog.className='promotion-dialog';this.promotion=dialog;
   const titles={en:'Promote pawn',es:'Promocionar peón',zh:'兵升变'};
-  const title=document.createElement('h2');title.textContent=titles[document.documentElement.lang] || titles.en;dialog.append(title);dialog.setAttribute('aria-label',title.textContent);
+  dialog.setAttribute('aria-label',titles[document.documentElement.lang] || titles.en);
   const names={en:['Queen','Rook','Bishop','Knight'],es:['Dama','Torre','Alfil','Caballo'],zh:['后','车','象','马']};
+  const classes={q:'queen',r:'rook',b:'bishop',n:'knight'},side=this.position[from]?.c==='b'?'black':'white';
+  const choices=document.createElement('div');choices.className='promotion-choices';
   ['q','r','b','n'].forEach((piece,i)=>{
-   const button=document.createElement('button');button.type='button';button.textContent=(names[document.documentElement.lang] || names.en)[i];button.className='ui-button ui-secondary';
-   button.addEventListener('click',()=>{dialog.close();this.propose(from+to+piece,preview);});dialog.append(button);
+   const button=document.createElement('button');button.type='button';button.className='promotion-choice';
+   const name=(names[document.documentElement.lang] || names.en)[i];button.setAttribute('aria-label',name);button.title=name;
+   const piecePreview=document.createElement('cg-board');piecePreview.className='promotion-preview';piecePreview.setAttribute('aria-hidden','true');
+   const image=document.createElement('piece');image.className=side+' '+classes[piece];piecePreview.append(image);button.append(piecePreview);
+   button.addEventListener('click',()=>{dialog.close();this.propose(from+to+piece,preview);});choices.append(button);
   });
+  dialog.append(choices);
   dialog.addEventListener('close',()=>{dialog.remove();this.promotion=null;this.root.focus({preventScroll:true});},{once:true});
   document.body.append(dialog);dialog.showModal();
  }

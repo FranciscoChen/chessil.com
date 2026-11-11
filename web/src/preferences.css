@@ -12,9 +12,12 @@
 [data-board-settings]>.ui-muted { margin-block:1rem;font-size:.8rem; }
 .preference-status { min-height:1.5em;color:var(--text2);font-size:.8rem; }
 .board-settings-account { margin-top:2rem;padding-top:2rem;border-top:1px solid var(--border); }
-.promotion-dialog { position:fixed;inset:0;margin:auto;padding:1.5rem;max-width:calc(100% - 2rem);background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--radius); }
-.promotion-dialog h2 { margin-bottom:1rem; }
-.promotion-dialog button { margin:.25rem; }
+.promotion-dialog { position:fixed;inset:0;margin:auto;padding:.65rem;max-width:calc(100% - 1rem);background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--panel-shadow); }
+.promotion-choices { display:grid;grid-template-columns:repeat(4,minmax(3.5rem,4.5rem));gap:.35rem; }
+.promotion-choice { display:grid;place-items:center;aspect-ratio:1;padding:.25rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface,var(--bg));cursor:pointer; }
+.promotion-choice:hover,.promotion-choice:focus-visible { border-color:var(--link);background:var(--hover);outline:2px solid var(--link);outline-offset:1px; }
+.promotion-dialog cg-board.promotion-preview { position:relative;inset:auto;display:block;width:100%;height:100%;background:none;pointer-events:none; }
+.promotion-dialog cg-board.promotion-preview piece { position:absolute;inset:0;width:100%;height:100%;background-size:contain;background-repeat:no-repeat;background-position:center;transform:none; }
 @media(max-width:600px) { .game-heading-actions { flex-wrap:wrap;justify-content:flex-end;max-width:55%; } .board-settings-grid { gap:1rem; } }
 @media(max-width:480px) { .board-settings-grid { grid-template-columns:1fr; } .board-settings-dialog { padding:1.25rem; } }
 .engine-settings { border-top:1px solid var(--border);padding-top:1rem;margin-top:1rem; }
