@@ -6,7 +6,7 @@ revision=d91bd1443ac1a4f367de96d3569dce7bbd35920a
 mkdir -p "$book_work"
 cd "$book_work"
 python3 -m venv venv
-venv/bin/pip install --upgrade pip meson-python pybind11 python-chess
+venv/bin/pip install --upgrade pip patchelf meson-python pybind11 python-chess
 if [[ ! -d lc0/.git ]]; then
  git init lc0
  git -C lc0 remote add origin https://github.com/LeelaChessZero/lc0.git
