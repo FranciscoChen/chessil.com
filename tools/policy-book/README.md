@@ -8,7 +8,9 @@ application checkout. The output is a standard Polyglot book below 600,000 bytes
 Requires Python 3.11+, a C++20 compiler, Python development headers, pkg-config,
 Ninja, zlib and OpenBLAS development libraries. `bootstrap.sh /absolute/workdir`
 creates an isolated virtual environment, builds Lc0 Python bindings from revision
-`d91bd1443ac1a4f367de96d3569dce7bbd35920a`, and downloads the network from Lc0.
+`d91bd1443ac1a4f367de96d3569dce7bbd35920a`, and downloads the network from Lc0. The pinned source receives a one-line
+`pybind11` namespace alias fix in its python-chess bridge; the patch is included
+in the bootstrap script. Build files persist under `lc0/build-cpu` for retries.
 The script verifies SHA-256 and gzip integrity. Do not commit network weights,
 checkpoints, or synthetic test books.
 
