@@ -71,8 +71,8 @@ function linesDisplay(){const lines=scores.get(position)||[];$('lines').replaceC
 async function bookDisplay(){
  if(!bookPanel||bookPanel.hidden)return;
  const epoch=++bookEpoch,fen=position,entry=book[key(fen)];$('book-name').textContent=entry?.names?.map(n=>n.join(' · ')).slice(0,2).join(' / ')||'';$('book-moves').replaceChildren();$('book-note').textContent='';bookPanel.setAttribute('aria-busy','true');
- try{const result=await leelaBook.lookup(key(fen));if(epoch!==bookEpoch||!opened||bookPanel.hidden)return;
-  for(const [move,label,weight,total] of result.moves){if(!mg(fen).includes(move))continue;const probability=weight/total,b=document.createElement('button');b.type='button';b.className='book-move';b.style.setProperty('--book-prior',probability*100+'%');const name=document.createElement('strong'),prior=document.createElement('span');name.textContent=label;prior.textContent=(probability*100).toFixed(1)+'%';b.append(name,prior);b.setAttribute('aria-label',label+', book prior '+prior.textContent);b.onclick=()=>play(move);$('book-moves').append(b);}
+ try{const result=await leelaBook.lookup(fen,a1ti);if(epoch!==bookEpoch||!opened||bookPanel.hidden)return;
+  const legal=mg(fen);for(const [move,label,weight,total] of result.moves){if(!legal.includes(move))continue;const probability=weight/total,b=document.createElement('button');b.type='button';b.className='book-move';b.style.setProperty('--book-prior',probability*100+'%');const name=document.createElement('strong'),prior=document.createElement('span');name.textContent=label;prior.textContent=(probability*100).toFixed(1)+'%';b.append(name,prior);b.setAttribute('aria-label',label+', book prior '+prior.textContent);b.onclick=()=>play(move);$('book-moves').append(b);}
   bookPanel.classList.toggle('is-empty',!result.moves.length);bookPanel.setAttribute('aria-busy','false');bookPanel.title=result.name+' · normalized move priors';
  }catch(error){if(epoch===bookEpoch){bookPanel.setAttribute('aria-busy','false');$('book-note').textContent='Book unavailable';$('book-note').title=error.message;}}
 }

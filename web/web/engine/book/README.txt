@@ -6,3 +6,8 @@ Export: web/scripts/build-leela-book.py
 Weights are normalized pruned-book priors, not win probabilities or game counts.
 FEN keys use legal en-passant squares, omit clocks, and hash via FNV-1a to 256 shards.
 Original source and training cursors are not modified by this export.
+
+Current analysis clients use polyglot-manifest.json: BT4-it332, generated from
+native raw policy inference. See the versioned JSON report and
+ tools/policy-book/README.md for human coverage, sample windows and verification.
+The original manifest and shards above remain for older cached clients.

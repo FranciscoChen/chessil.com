@@ -1,0 +1,15 @@
+{
+  "name": "Leela BT4-it332",
+  "format": "polyglot",
+  "sha256": "7ac91c958a852c00a78d7a9939a4aed32ac539c18d05fdc74ebcd8f7ac77b714",
+  "bytes": 2080720,
+  "gzip_bytes": 630738,
+  "entries": 130045,
+  "positions": 4281,
+  "url": "/engine/book/bt4-it332-7ac91c958a852c00.bin",
+  "gzip_url": "/engine/book/bt4-it332-7ac91c958a852c00.bin.gz",
+  "report": "/engine/book/bt4-it332-7ac91c958a852c00.json",
+  "maxSourcePly": 16,
+  "emptyFromPly": 17,
+  "probability": "BT4-it332 temperature-1 policy priors; human frequency selects positions, not weights."
+}

@@ -1,0 +1,10 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),crypto=require('node:crypto'),zlib=require('node:zlib');
+test('published BT4 artifact and gzip match verified report and retain full shallow coverage',()=>{
+ const root=path.resolve(__dirname,'../..'),publicRoot=path.join(root,'web/web'),manifest=JSON.parse(fs.readFileSync(path.join(publicRoot,'engine/book/polyglot-manifest.json'))),raw=fs.readFileSync(path.join(publicRoot,manifest.url)),report=JSON.parse(fs.readFileSync(path.join(publicRoot,manifest.report)));
+ assert.equal(crypto.createHash('sha256').update(raw).digest('hex'),manifest.sha256);assert.equal(raw.length,manifest.entries*16);assert.equal(report.complete,true);assert.equal(Object.keys(report.uci_verification).length,5);assert.ok(report.human_coverage.cohorts.below1600>30000);assert.deepEqual(zlib.gunzipSync(fs.readFileSync(path.join(publicRoot,manifest.gzip_url))),raw);
+ const context={};vm.createContext(context);for(const file of ['web/src/chess-rules.js','tools/policy-book/polyglot-random.js','tools/policy-book/polyglot.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),context);vm.runInContext('globalThis.Book=ChessilPolyglotBook',context);
+ const book=new context.Book(raw.buffer.slice(raw.byteOffset,raw.byteOffset+raw.byteLength)),start='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';let checked=0;
+ function check(fen,ply){assert.deepEqual(Array.from(book.lookup(fen,ply),m=>m.uci).sort(),Array.from(context.mg(fen)).sort());checked++;}
+ check(start,0);for(const first of context.mg(start)){const fen=context.ucifen(first,start,context.boardgen(start),{}).f;check(fen,1);for(const second of context.mg(fen))check(context.ucifen(second,fen,context.boardgen(fen),{}).f,2);}
+ assert.equal(checked,421);assert.equal(book.lookup(start,17).length,0);assert.ok(Object.values(report.positions_by_minimum_ply).length===17);
+});

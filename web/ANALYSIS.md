@@ -5,7 +5,7 @@ appears only for finished games with moves (result codes 1–8), and navigates t
 `/analysis?game=ID&review=1`. The dedicated analysis page loads the recorded moves
 and player perspective before starting the existing backward review. A direct
 `?game=ID` link loads the same game without automatically starting the engine.
-Imports reject unfinished/unavailable games. Engine binaries and NNUE files download when engine analysis starts; book shards load with the analysis board; the small engine catalog is also used by settings.
+Imports reject unfinished/unavailable games. Engine binaries and NNUE files download when engine analysis starts; the opening book loads with the analysis board; the small engine catalog is also used by settings.
 `src/analysis.js` composes the existing native board, move history, shared buttons,
 progress, and CSS countdown. `src/local-engine.js` serializes UCI searches in one
 worker. Engine and book each have a compact card, visible by default. Engine
@@ -63,14 +63,26 @@ separate actions, keyboard focus, and an accessible explanation.
 
 The bar, score and WDL follow the selected perspective (White for Both).
 Opening names still come from the offline CC0 ECO index. The opening explorer
-uses the project's Leela BT4-1740 Polyglot book at
-`Stockfish-policy-search/policy/data/mixed/book/depth_12_BT4-1740.bin`, SHA-256
-`05aacd4c9186764fceef7c26af394657e9ca74bc0254e34cbeb37e61b33c8cec`.
-`python web/scripts/build-leela-book.py` (python-chess) exports 97,155 reachable
-positions, limited to the first 12 plies, as 256 lazy FEN shards. The original
-integer weights and their totals are retained. Percentages are normalized
-pruned-book policy priors, not game counts, win rates, or full raw network output.
-The browser caches up to 24 shards. The book card is always visible on analysis
+loads the BT4-it332 Polyglot book described by
+`web/engine/book/polyglot-manifest.json`, using the shared reader in
+`tools/policy-book`. It fetches one cached ArrayBuffer, optionally from the
+precompressed gzip asset using native DecompressionStream. Lookup uses exact
+64-bit Polyglot hashes and binary search. The original manifest and JSON shards
+remain available to cached older clients.
+
+The book contains 4,281 positions / 130,045 moves. Every legal move is retained
+at selected positions, including every position through source ply 2. Moves are
+available from positions through ply 16; the client requires the actual game ply
+and suppresses lookup from ply 17, including repetitions/transpositions. Raw
+weights are quantized temperature-1 BT4-it332 policy priors, not human move
+frequency or win rates. Coverage includes named samples and frequent histories
+in 89,558 accepted public human games, with separate Lichess rating cohorts.
+Exact sampling windows and limitations are in the versioned JSON report.
+`tools/policy-book/README.md` documents generation, checkpointing, independent
+UCI verification and packaging. The client caches 128 notation results and uses
+the shared chess rules for legal moves and SAN.
+
+The book card is always visible on analysis
 pages and starts no engine. It shows the current opening name and compact move
 priors; empty positions use a dash instead of instructional filler. Navigation
 uses the shared move history, without a separate book Back button or switch.

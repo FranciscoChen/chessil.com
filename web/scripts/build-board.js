@@ -7,7 +7,7 @@ async function build(){
   'board.min.js':['chess-rules.js','board.js'],
   'game.min.js':['game.js'],
   'study.min.js':['study.js'],
-  'analysis.min.js':['local-engine.js','opening-book.js','analysis-judgment.js','analysis.js'],
+  'analysis.min.js':['local-engine.js','../../tools/policy-book/polyglot-random.js','../../tools/policy-book/polyglot.js','opening-book.js','analysis-judgment.js','analysis.js'],
   'training.min.js':['training.js'],
   'puzzles.min.js':['buffer.js','history.js','puzzles.js'],
   'highlight.min.js':['highlight.js'],

@@ -4,3 +4,9 @@ updates.txt
 screenshots/
 engine/stockfish
 servers.txt
+
+# Local policy-book outputs; verified web assets are tracked separately.
+/bt4_it332_policy.bin
+/bt4_it332_policy.bin.gz
+/bt4_it332_policy.json
+/bt4-book-work/

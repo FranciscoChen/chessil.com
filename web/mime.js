@@ -25,6 +25,7 @@ const data = {
   ".webm": "video/webm",
   ".zip": "application/x-compressed",
   ".bin": "application/octet-stream",
+  ".gz": "application/gzip",
   ".nnue": "application/octet-stream",
   ".json": "text/javascript",
   ".wasm": "application/wasm",

@@ -139,3 +139,14 @@ are preserved, and final size can exceed the initial budget. `--min-games`
 controls the observed-frequency threshold. The frequency database is retained
 for later expansion and all additions are checkpointed. No claim of exhaustive
 coverage of every human opening is made.
+
+## Publishing into the analysis explorer
+
+After generation and verification, run `python tools/policy-book/publish.py`.
+It verifies checksums and completion metadata, writes content-addressed binary,
+gzip and report assets under `web/web/engine/book`, and writes
+`polyglot-manifest.json` last. The original manifest and JSON shards remain for
+cached older analysis bundles. The analysis bundle reuses these exact reader
+sources; no separate renderer or browser library is introduced. Modern browsers
+use native gzip decompression, with a raw ArrayBuffer fallback. Deploy application
+changes through the repository's GitHub push hook.
