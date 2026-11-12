@@ -1,7 +1,8 @@
 # BT4-it332 policy opening book
 
 Standalone CPU generator. It does not change the live explorer or production
-application checkout. The output is a standard Polyglot book below 600,000 bytes.
+application checkout. The output is a standard Polyglot book. Base generation defaults to 599,984 bytes;
+named opening coverage may extend the final size without removing positions.
 
 ## Reproducible environment
 
@@ -36,7 +37,10 @@ probability goes first, with every fifth selection giving one of the twenty
 first moves a turn. There is no 3% threshold, top-p cutoff or path cutoff.
 Every selected position keeps all legal moves; only expansion is budgeted.
 The final few bytes may remain unused if the next complete policy will not fit.
-Default ceiling: 599,984 bytes / 37,499 entries.
+Default base ceiling: 599,984 bytes / 37,499 entries. `--max-bytes` can raise it.
+The final coverage pass adds missing prefixes of the Najdorf and Ruy Lopez sample
+positions, keeping all their legal moves and preserving existing positions.
+Final size is flexible and reported explicitly.
 
 Transpositions share output entries but not inference inputs. Up to four actual
 histories per position are evaluated, and their policies are combined using the
@@ -92,10 +96,13 @@ const moves = book.lookup(fen, actualPly);
 Keys use BigInt and DataView big-endian reads. Lookup is binary search. Castling
 is decoded to standard UCI. `prior` is the quantized policy mixture, not a win
 probability. SAN can be produced by the site's shared chess rules. No new browser
-library is needed. After generation, `run.sh` runs `verify_uci.py` against fresh `go nodes 1`
+library is needed. After generation, `run.sh` adds the named sample openings and measured human
+coverage, then runs `verify_uci.py` against fresh `go nodes 1`
 searches at startpos and after e4, d4, c4 and Nf3. It checks every legal prior
-against the saved full-precision extraction, allowing 0.00025 absolute error
-for rounded UCI output and compressed tree priors. Successful comparisons are
+against Lc0's native FastExp softmax, allowing 0.00025 absolute error
+for rounded UCI output and compressed tree priors. A separate fresh native
+evaluation checks cached ideal-softmax policies to 0.000001 and records the
+difference between the ideal exponential and Lc0's FastExp approximation. Successful comparisons are
 recorded in the JSON report as `uci_verification`. Treat the artifact as verified
 only when `complete` is true and this field is present.
 
@@ -111,3 +118,24 @@ python -m unittest discover -s tools/policy-book -p 'test_*.py'
 Tests use synthetic priors only in temporary files. They verify mandatory coverage,
 resume, source ply 16, file budget, castling/promotions, browser hash/move parity
 against python-chess and empty browser results at ply 17.
+
+## Human opening coverage
+
+`human_coverage.py` streams bounded samples directly from public Lichess monthly
+standard-rated PGN dumps; no whole dump is downloaded to disk. Default: 30,000
+games from each of August, September and October 2026. These are prefix samples,
+not random samples or complete months. Exact UTC windows, accepted counts and
+rating cohorts are recorded. `--games-per-month 0` scans complete months. Use a
+new frequency database to resample existing months with a larger limit; additional
+months can be appended to an existing database. Interrupted months restart
+atomically; completed months are reused.
+
+Average player rating defines three cohorts: below 1600, 1600–2199, and 2200+.
+Known BOT titles and missing/invalid ratings are excluded. Any history occurring
+at least ten times in any cohort qualifies, through source ply 16. Every legal
+move is evaluated by BT4 for newly covered positions. Human frequency selects
+positions only; the binary weights remain Leela policies. Existing positions
+are preserved, and final size can exceed the initial budget. `--min-games`
+controls the observed-frequency threshold. The frequency database is retained
+for later expansion and all additions are checkpointed. No claim of exhaustive
+coverage of every human opening is made.

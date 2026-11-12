@@ -7,6 +7,7 @@ import queue
 import re
 import sqlite3
 import subprocess
+import sys
 import threading
 import time
 
@@ -16,6 +17,8 @@ parser.add_argument('--weights', type=Path, required=True)
 parser.add_argument('--work', type=Path, default=Path('bt4-book-work'))
 parser.add_argument('--report', type=Path, default=Path('bt4_it332_policy.json'))
 args = parser.parse_args()
+subprocess.run([sys.executable, str(Path(__file__).with_name('verify_native.py')), '--weights', str(args.weights), '--work', str(args.work)], check=True)
+native = json.loads((args.work / 'native-verification.json').read_text())
 lines = queue.Queue()
 log = (args.work / 'uci-verification.log').open('w')
 process = subprocess.Popen([str(args.engine.resolve()), '--backend=blas', '--backend-opts=batch_size=1,threads=1,policy_head=vanilla', '--weights=' + str(args.weights.resolve())], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=log, text=True, bufsize=1)
@@ -56,7 +59,7 @@ try:
     database = sqlite3.connect(args.work / 'checkpoint.sqlite3')
     result = {}
     for path in ['', 'e2e4', 'd2d4', 'c2c4', 'g1f3']:
-        expected = json.loads(database.execute('SELECT policy FROM evaluations WHERE path=?', (path,)).fetchone()[0])
+        expected = native[path or 'startpos']['policy']
         send('ucinewgame')
         send('position startpos' + (' moves ' + path if path else ''))
         send('go nodes 1')
@@ -76,6 +79,7 @@ try:
     if not report.get('complete'):
         raise ValueError('Book generation is incomplete')
     report['uci_verification'] = result
+    report['native_policy_verification'] = {path: {'ideal_softmax_max_error': row['ideal_softmax_max_error']} for path, row in native.items()}
     args.report.write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(result), flush=True)
 finally:

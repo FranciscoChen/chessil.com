@@ -40,6 +40,8 @@ def softmax(logits):
 
 class NativePolicy:
     def __init__(self, weights, backend, options):
+        if hashlib.file_digest(Path(weights).open('rb'), 'sha256').hexdigest() != NETWORK_SHA:
+            raise ValueError('Unexpected BT4-it332 weights')
         from lczero import backends
         self.api = backends
         self.binding_sha256 = hashlib.file_digest(Path(backends.__file__).open('rb'), 'sha256').hexdigest()
@@ -57,6 +59,7 @@ class NativePolicy:
             raise ValueError('Invalid network policy output')
         probabilities = softmax(logits)  # Legal moves only; temperature exactly 1.
         native = output.p_softmax(state.policy_indices())
+        self.last_native_policy = dict(zip(moves, native))
         if max(abs(a - b) for a, b in zip(probabilities, native)) > 0.002:
             raise ValueError('Policy differs from native softmax beyond tolerance')
         result = dict(zip(moves, probabilities))
@@ -214,8 +217,8 @@ def main():
     parser.add_argument('--benchmark', type=int, default=0)
     parser.add_argument('--stop-after', type=int)
     args = parser.parse_args()
-    if not 9322 * 16 <= args.max_bytes < 600000:
-        parser.error('--max-bytes must fit all 9,322 mandatory shallow entries and be below 600000')
+    if args.max_bytes < 9322 * 16:
+        parser.error('--max-bytes must fit all 9,322 mandatory shallow entries')
     digest = hashlib.file_digest(args.weights.open('rb'), 'sha256').hexdigest()
     if digest != NETWORK_SHA:
         parser.error('Unexpected BT4-it332 SHA-256')
