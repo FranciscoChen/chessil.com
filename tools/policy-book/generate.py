@@ -132,6 +132,7 @@ def generate(store, engine, budget, max_ply=16, stop_after=None):
             raise ValueError('Polyglot hash collision detected')
         if (prior and prior[4] >= 4) or (not prior and entries + legal_count > budget):
             db.execute('UPDATE tasks SET done=2 WHERE path=?', (path,))
+            db.execute('INSERT OR REPLACE INTO metadata VALUES (?,?)', ('tick', str(tick)))
             db.commit()
             continue
         policy = store.evaluate(path, engine)
@@ -233,6 +234,8 @@ def main():
             policy = store.evaluate(path, engine)
             frontier.extend((path + ' ' + move).strip() for move in policy)
             done += 1
+            if done % 10 == 0:
+                print(json.dumps({'benchmark_positions': done, 'seconds_including_load': round(time.monotonic() - started, 2)}), flush=True)
         elapsed = time.monotonic() - started
         report = {'positions': done, 'seconds_including_load': elapsed, 'positions_per_second': done / elapsed, 'peak_rss_kib': resource.getrusage(resource.RUSAGE_SELF).ru_maxrss}
         print(json.dumps(report), flush=True)
@@ -241,6 +244,7 @@ def main():
     complete = generate(store, engine, args.max_bytes // RECORD.size, stop_after=args.stop_after)
     report = export(store, args.output)
     report['complete'] = complete
+    args.output.with_suffix('.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report), flush=True)
 
 
