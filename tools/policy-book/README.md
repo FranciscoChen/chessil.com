@@ -11,7 +11,8 @@ creates an isolated virtual environment, builds Lc0 Python bindings from revisio
 `d91bd1443ac1a4f367de96d3569dce7bbd35920a`, and downloads the network from Lc0. The pinned source receives a one-line
 `pybind11` namespace alias fix in its python-chess bridge; the patch is included
 in the bootstrap script. Build files persist under `lc0/build-cpu` for retries.
-The script verifies SHA-256 and gzip integrity. Do not commit network weights,
+The script verifies SHA-256 and gzip integrity. It installs `patchelf` for the
+Linux wheel packaging step. Do not commit network weights,
 checkpoints, or synthetic test books.
 
 BT4-it332 network SHA-256:
@@ -91,7 +92,14 @@ const moves = book.lookup(fen, actualPly);
 Keys use BigInt and DataView big-endian reads. Lookup is binary search. Castling
 is decoded to standard UCI. `prior` is the quantized policy mixture, not a win
 probability. SAN can be produced by the site's shared chess rules. No new browser
-library is needed. The existing JSON explorer stays in place until the finished
+library is needed. After generation, `run.sh` runs `verify_uci.py` against fresh `go nodes 1`
+searches at startpos and after e4, d4, c4 and Nf3. It checks every legal prior
+against the saved full-precision extraction, allowing 0.00025 absolute error
+for rounded UCI output and compressed tree priors. Successful comparisons are
+recorded in the JSON report as `uci_verification`. Treat the artifact as verified
+only when `complete` is true and this field is present.
+
+The existing JSON explorer stays in place until the finished
 real-network artifact is reviewed and integrated.
 
 ## Verification

@@ -13,3 +13,4 @@ if r['positions_per_second'] < 1/30:
 print('Benchmark passed; starting checkpointed generation.', flush=True)
 PY
 venv/bin/python -u generate.py --weights BT4-it332.pb.gz --lc0-revision "$revision"
+venv/bin/python verify_uci.py --engine venv/bin/lc0 --weights BT4-it332.pb.gz
