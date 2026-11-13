@@ -194,3 +194,13 @@ python tools/policy-book/publish.py --manifest-name bt4-it332-8mb-manifest.json
 The website continues loading `polyglot-manifest.json`. The preserved 4.16 MB
 edition has its own `bt4-it332-4mb-manifest.json`, binary, gzip and verification
 report. Generating or archiving a larger edition does not select it for users.
+
+An individual high-prior move does not guarantee its child position is covered:
+all moves are stored at each selected parent, while expansion is ranked by full
+path probability. To protect a concrete opening from this size-budget effect,
+`expand_policy.py --seed 'd2d4 g8f6 c2c4 e7e6 g1f3 d7d5 b1c3 f8b4'` reserves that
+opening and its highest-policy continuation through source ply 16. The seed uses
+the same byte budget and keeps existing weights unchanged. Repeated requests are
+idempotent; their continuations are recorded in the expansion report. These
+explicit seeds are exceptions to frontier ranking, not a claim that all named
+openings or every path above a global probability threshold are covered.

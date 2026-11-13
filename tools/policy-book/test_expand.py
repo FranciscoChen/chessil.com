@@ -7,6 +7,21 @@ from test_generate import g,synthetic
 
 
 class PolicyExpansionTest(unittest.TestCase):
+    def test_reserved_opening_keeps_full_policy_and_continues_to_ply16(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store=g.Store(Path(folder)/'checkpoint.sqlite3',{'test':True})
+            g.generate(store,synthetic,16000,stop_after=1)
+            config=expansion.prepare(store,200000,{'complete':True})
+            line='d2d4 g8f6 c2c4 e7e6 g1f3 d7d5 b1c3 f8b4'
+            expansion.seed_line(store,synthetic,line,config)
+            board=g.board_for(line)
+            self.assertEqual(json.loads(store.db.execute('SELECT policy FROM positions WHERE key=?',(expansion.position_key(board),)).fetchone()[0]),synthetic(line))
+            continuation=store.db.execute('SELECT continuation FROM policy_seeds WHERE path=?',(line,)).fetchone()[0]
+            self.assertEqual(len(continuation.split()),16)
+            existing=dict(store.db.execute('SELECT key,policy FROM positions'))
+            expansion.seed_line(store,synthetic,line,config)
+            self.assertEqual(existing,dict(store.db.execute('SELECT key,policy FROM positions')))
+
     def test_preserves_entries_resumes_and_reaches_deep_positions(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder)

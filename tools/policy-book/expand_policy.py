@@ -70,6 +70,43 @@ def prepare(store, max_bytes, prior_report, deep_weight=4):
     return configuration
 
 
+def seed_line(store, engine, line, configuration):
+    """Protect an explicitly requested opening, then its highest-policy continuation."""
+    moves=line.split()
+    board_for(line)  # Validate the entire requested line before writing anything.
+    if len(moves)>16:
+        raise ValueError('Seed opening exceeds source ply 16')
+    db=store.db
+    board=chess.Board()
+    path=''
+    mass=1.0
+    entries=configuration['initial_entries']+sum(row[0] for row in db.execute('SELECT entries FROM policy_added'))
+    added=[]
+    for ply in range(17):
+        policy=store.evaluate(path,engine)
+        key=position_key(board)
+        if not db.execute('SELECT 1 FROM positions WHERE key=?',(key,)).fetchone():
+            if entries+len(policy)>configuration['max_bytes']//16:
+                raise ValueError('Seed cannot fit the remaining expansion budget')
+            fen=' '.join(board.fen(en_passant='xfen').split()[:4])
+            db.execute('INSERT INTO positions VALUES (?,?,?,?,?,?)',(key,fen,mass,json.dumps(policy),ply,1))
+            db.execute('INSERT INTO policy_added VALUES (?,?,?,?)',(key,ply,len(policy),mass))
+            enqueue(db,path,board,mass,policy)
+            entries+=len(policy)
+            added.append(key)
+            db.commit()
+        if ply==16 or not policy:
+            break
+        move=moves[ply] if ply<len(moves) else max(policy,key=policy.get)
+        mass*=policy[move]
+        board.push_uci(move)
+        path=(path+' '+move).strip()
+    db.execute('CREATE TABLE IF NOT EXISTS policy_seeds(path TEXT PRIMARY KEY,continuation TEXT)')
+    db.execute('INSERT OR REPLACE INTO policy_seeds VALUES (?,?)',(line,path))
+    db.commit()
+    print(json.dumps({'seed':line,'continuation':path,'positions_added':len(added)}),flush=True)
+
+
 def expand(store, engine, configuration, stop_after=None):
     db = store.db
     budget = configuration['max_bytes']//16
@@ -154,6 +191,7 @@ def main():
     parser.add_argument('--stop-after',type=int)
     parser.add_argument('--new-round',action='store_true')
     parser.add_argument('--deep-weight',type=int,default=4)
+    parser.add_argument('--seed',action='append',default=[],help='UCI opening path to reserve, with top-policy continuation through ply 16')
     args=parser.parse_args()
     report_path=args.output.with_suffix('.json')
     prior=json.loads(report_path.read_text())
@@ -174,6 +212,8 @@ def main():
         backup.close()
     config=prepare(store,args.max_bytes,prior,args.deep_weight)
     policy=NativePolicy(args.weights,prior['configuration']['backend'],prior['configuration']['backend_options'])
+    for line in args.seed:
+        seed_line(store,policy,line,config)
     complete=expand(store,policy,config,args.stop_after)
     del policy
     report=export(store,args.output)
@@ -184,6 +224,8 @@ def main():
     if 'policy_expansion' in config['prior_report']:
         report['previous_policy_expansions']=config['prior_report'].get('previous_policy_expansions',[])+[config['prior_report']['policy_expansion']]
     report['policy_expansion']={key:value for key,value in config.items() if key!='prior_report'}
+    if store.db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='policy_seeds'").fetchone():
+        report['policy_expansion']['reserved_opening_continuations']=dict(store.db.execute('SELECT path,continuation FROM policy_seeds'))
     report['policy_expansion']['added_positions_by_ply']=dict(store.db.execute('SELECT ply,COUNT(*) FROM policy_added GROUP BY ply'))
     report_path.write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps({'complete':complete,'bytes':report['bytes'],'entries':report['entries'],'depths':report['positions_by_minimum_ply']}),flush=True)
