@@ -60,7 +60,7 @@ await t.test('production page: click, drag, illegal drop, last move, premove, ke
  await page.click('#board-settings-dialog .sound-event button');
  assert.ok(await page.evaluate(n=>audioNotes.length>n,prior));
  await page.keyboard.press('Escape');
- await page.waitForFunction(()=>document.querySelector('[data-preference-status]')?.textContent==='Saved to your account.');
+ await new Promise(resolve=>setTimeout(resolve,350));assert.equal(await page.$eval('[data-preference-status]',e=>e.textContent),'');
  assert.equal(fixture.preferences.autoQueen,true);assert.equal(fixture.preferences.pieces,'sculpted');assert.equal(fixture.preferences.slide,0);assert.equal(fixture.preferences.events.capture,'ivory');
  fixture.move('e5d4');await waitMoves(8);
  await page.click('.resign');await page.waitForFunction(()=>gamefinished);

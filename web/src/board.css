@@ -61,12 +61,14 @@ cg-board[data-orientation="b"]~coords coord:nth-child(even){color:var(--coord-on
 @keyframes board-side-arrive{0%,100%{opacity:0;transform:scale(.9)}45%{opacity:.9;transform:scale(1.3)}}
 @media(prefers-reduced-motion:reduce){.board-cue,.board-cue::after{animation:none;transition:none}}
 .board-arrows{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;overflow:hidden}
-.board-arrow{stroke:var(--link);stroke-width:.1;stroke-linecap:round;opacity:.6;animation:board-arrow-arrive .3s ease-out both;animation-delay:calc(var(--arrow-order)*45ms)}
+.board-arrow{stroke:var(--link);stroke-width:.1;stroke-linecap:round;opacity:var(--arrow-opacity,.6);animation:board-arrow-arrive .3s ease-out both;animation-delay:calc(var(--arrow-order)*45ms)}
 .board-arrow.setup{stroke:var(--attention,#d49c50);stroke-width:.08;opacity:.45;stroke-dasharray:.16 .12}
 .board-arrow.threat{stroke:#e65743;stroke-width:.16;opacity:.85}
-.arrow-head-plan{fill:var(--link)}.arrow-head-setup{fill:var(--attention,#d49c50)}.arrow-head-threat{fill:#e65743}
+.arrow-head-plan{fill:var(--link)}.board-arrow.plan-first{stroke:var(--board-hover-border,#c66e45)}.arrow-head-plan-first{fill:var(--board-hover-border,#c66e45)}.arrow-head-setup{fill:var(--attention,#d49c50)}.arrow-head-threat{fill:#e65743}
 @keyframes board-arrow-arrive{from{opacity:0}to{}}
 @media(prefers-reduced-motion:reduce){.board-arrow{animation:none}}
 
 /* The renderer owns its accessibility text in every host, including previews. */
 .board-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+.board-arrows,.board-arrows *{pointer-events:none}

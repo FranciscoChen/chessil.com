@@ -75,3 +75,9 @@ button:disabled, .disabled { opacity: .5; cursor: not-allowed; }
 .round .ruser { border-color: var(--link); }
 .number-menu button.nm-item { border: 0; border-bottom: 2px solid transparent; background: transparent; font: inherit; }
 .number-menu button.nm-item.active, .number-menu button.nm-item:hover { background: var(--hover); color: var(--link); border-bottom-color: var(--link); }
+/* Navigation backgrounds share the clipping boundary with their rounded rail. */
+.board-history{overflow:hidden;border-radius:var(--radius);isolation:isolate}
+
+.ui-engine-source pre{max-width:100%;overflow:auto;padding:.8rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2);font:.8rem/1.6 var(--monospace-font)}
+.ui-engine-source [data-engine-source-name]{overflow-wrap:anywhere;color:var(--text2);font:.8rem/1.6 var(--monospace-font)}
+.ui-engine-source [hidden]{display:none!important}

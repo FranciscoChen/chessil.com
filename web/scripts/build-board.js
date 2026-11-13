@@ -5,8 +5,9 @@ const root=path.resolve(__dirname,'..');
 async function build(){
  for(const [output,inputs] of Object.entries({
   'board.min.js':['chess-rules.js','board.js'],
+  'wdl.min.js':['wdl.js'],
   'game.min.js':['game.js'],
-  'study.min.js':['variations.js','study.js'],
+  'study.min.js':['variations.js','history-gestures.js','study.js'],
   'analysis.min.js':['local-engine.js','../../tools/policy-book/polyglot-random.js','../../tools/policy-book/polyglot.js','opening-book.js','analysis-judgment.js','analysis-guidance.js','analysis-book.js','analysis.js'],
   'training.min.js':['training.js'],
   'puzzles.min.js':['buffer.js','history.js','puzzles.js'],
@@ -20,6 +21,8 @@ async function build(){
   const result=await minify(ordered,{compress:true,mangle:{toplevel:false},format:{comments:false},ecma:2020});
   fs.writeFileSync(path.join(root,'web/js',output),result.code+'\n');
  }
+ const wdl=fs.readFileSync(path.join(root,'src/wdl.css'),'utf8');
+ fs.writeFileSync(path.join(root,'web/css/wdl.min.css'),wdl.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').trim()+'\n');
  // Safe CSS stripping: declarations and data URLs are retained byte-for-byte.
  const css=['board.css','classic-pieces.css','sculpted-pieces.css'].map(file=>fs.readFileSync(path.join(root,'src',file),'utf8')).join('\n');
  const analysis=fs.readFileSync(path.join(root,'src/analysis.css'),'utf8');

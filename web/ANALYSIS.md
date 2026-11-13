@@ -11,8 +11,8 @@ progress, and CSS countdown. `src/local-engine.js` serializes UCI searches in on
 worker. Engine and book each have a compact card, visible by default. Engine
 controls are shared SVG icons: Play starts, Stop retains output, and Options
 expands a CSS-animated panel inside the engine card. The selected engine name is
-visible; close/theme controls and the Explore preface are omitted. Engine,
-network, MultiPV, hash and thread fields use the same renderer and preference
+visible; close/theme controls and the Explore preface are omitted. Point of view and board flip live inside Analysis options. Reset and the external
+branch toolbar are omitted. Engine, network, MultiPV, hash and thread fields use the same renderer and preference
 owner as general settings. Changes persist globally; changing engine configuration restarts a running engine,
 while a manually stopped engine stays stopped. Original history, clocks, and stored game
 data are not edited.
@@ -51,7 +51,10 @@ navigation and exploration pause autoplay. Local variations never alter history.
 Mobile game/review layouts use a shared horizontal history rail above the board,
 with fixed navigation buttons at both ends. Desktop keeps the original side
 column with a two-column move list and navigation below it. A compact evaluation block gives the centipawn bar its full available width and
-puts the three-segment WDL bar with labeled percentages on its own row. Win uses
+puts the WDL bar on its own row, exactly as wide as the centipawn bar. Q (win
+probability minus loss probability, −1 to +1) sits below the pawn score. Shared
+`wdl.js`/`wdl.css` own perspective, rounding, colors, and in-bar percentages for
+both position and book bars. Segment container queries hide labels that cannot fit. Win uses
 the reviewing side’s piece color, Loss uses the opponent’s, and Draw is their
 50/50 color mix. Both-sides review labels these segments White, Draw and Black. Game pages never show these tools. Review defaults to the player’s side (both for spectators);
 White, Black and Both change marker visibility, board orientation, score and WDL
@@ -132,16 +135,19 @@ book, existing evaluations, and review findings.
 policy exists. From full move 9, or without policy, it ranks by mover-relative
 engine score. All legal moves remain selectable; absent policy displays a dash,
 not an invented prior. Engine fallback rows after source ply 16 are not additional
-book coverage. Each row shows policy percentage, pawn-equivalent score (or mate),
-and perspective-aware WDL. Rows update without resetting the scroll position and
-hold order while a row has keyboard focus.
+book coverage. Each row shows the move, a flexible WDL bar, an optional policy percentage, and
+pawn-equivalent score (or mate). Missing policy occupies no column; prior-fill
+backgrounds are omitted. Cached evaluations are muted. Only the configured current
+PV moves are fresh; evaluation ordering puts them above cached rows, with the
+current best first. Keyed rows update without resetting the scroll position.
 
 Plan and threat controls share the same global/inline preference store as other
 engine options, default off. `analysis-guidance.js` validates PV moves using the
 shared rules and picks up to four moves by the reviewed side. A plan requires
 depth 6, repeated agreement, and 650 ms stability; a bounded timer displays the
-last stable candidate even if the search has finished. Drawing stays independent
-of pointer handling. Flip reprojects the same SVG arrows.
+last stable candidate even if the search has finished. The first arrow uses a separate accent, followed by progressively lower opacity
+for moves two, three, and four. Drawing stays independent of pointer handling;
+all SVG descendants ignore pointer input. Flip reprojects the same SVG arrows.
 
 Threat probing plays the best move, then skips the opponent's turn, clears en
 passant, and advances the counters. It refuses checks, terminal positions, or
@@ -186,7 +192,8 @@ the manifest's external network before any search.
 
 `--package-only --source /path/to/completed-build` packages an existing build.
 The release includes GPLv3 license and complete corresponding patched source,
-build scripts, and network in `source.zip`, linked from the panel. When adding
+build scripts, and network in `source.zip`. Analysis options link to a localized engine-source explanation page;
+only that page offers the corresponding source and license downloads. When adding
 new source files to a fork, keep them tracked or not ignored so packaging includes
 them. Production assets are committed and deployed solely by the GitHub hook.
 No compiler is needed on production servers.
@@ -208,3 +215,17 @@ the existing atomic lobby join/start path. Send verifies challenge ownership and
 rate-limits invitations. Notification events and opening the menu refresh it; a
 visible-page 30-second refresh keeps badges current and renews owned challenges.
 Board and sound settings use one global header dialog.
+
+## Stable engine workspace
+
+`analysis-lines` reserves one PV row on mobile and up to three on desktop, capped
+by the selected MultiPV. Incoming worker messages never determine its height. A
+border chevron explicitly expands to the configured line count; changing MultiPV
+updates that capacity. Depth and searched node count sit beneath the engine name.
+Guidance flags are centered in the shared inline/general settings renderer. Toggle
+hover/focus styling never imitates the enabled state. Preference writes retain
+actionable errors but omit success/saving messages.
+
+Piece input always uses the actual side to move; review perspective and original
+player identity independently control orientation, annotations, scores and cues.
+White and Black can therefore be moved in either chosen point of view.

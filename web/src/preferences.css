@@ -32,3 +32,7 @@
 .engine-option-fields > .ui-muted { grid-column:1/-1; }
  .engine-option-fields > .preference-status { grid-column:1/-1;min-height:0;margin:0;font-size:.7rem; }
 .engine-option-fields > .preference-status:empty { display:none; }
+/* Analysis guidance is one centered row in inline and general options. */
+.engine-guidance-options{grid-column:1/-1;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:.5rem 1rem}
+.engine-guidance-options .board-settings-toggle{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;margin:0;font-size:.75rem}
+.engine-guidance-options input{margin:0;flex:none}

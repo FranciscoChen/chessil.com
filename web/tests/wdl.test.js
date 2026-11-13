@@ -1,0 +1,5 @@
+const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
+const c={};c.window=c;vm.createContext(c);vm.runInContext(fs.readFileSync(require.resolve('../src/wdl.js'),'utf8'),c);const wdl=c.ChessilWdl;
+test('shared WDL owns side-to-move/perspective conversion, terminal outcomes, exact rounding and Q',()=>{
+ const score={kind:'cp',value:20,pv:['e2e4'],wdl:[600,300,100]};assert.deepEqual(Array.from(wdl.values(score,'8/8/8/8/8/8/8/8 b - - 0 1','w')),[100,300,600]);assert.deepEqual(Array.from(wdl.values(score,'8/8/8/8/8/8/8/8 b - - 0 1','b')),[600,300,100]);assert.equal(wdl.expected([600,300,100]),.5);assert.equal(wdl.expected(null),null);assert.deepEqual(Array.from(wdl.percentages([335,335,330])),[34,33,33]);assert.equal(Array.from(wdl.percentages([1,1,1])).reduce((a,b)=>a+b),100);assert.deepEqual(Array.from(wdl.values({kind:'mate',value:0},'8/8/8/8/8/8/8/8 b - - 0 1','b')),[0,0,1000]);assert.deepEqual(Array.from(wdl.values({kind:'cp',value:0,pv:[]},'8/8/8/8/8/8/8/8 w - - 0 1')),[0,1000,0]);assert.equal(wdl.values({wdl:[-1,1,2]},' w '),null);
+});

@@ -13,12 +13,15 @@ parent and children. Defaults bound the complete tree to 2,048 nodes (including
 root), 12 alternatives per position, eight nested variations, and 1,024 plies.
 Rejected additions leave existing branches intact. Deleting removes the complete
 subtree. Promotion and sibling reordering validate the resulting nesting before
-committing. Reset starts a new tree; Flip changes orientation and coordinate edges.
+committing. Flip in Analysis options changes orientation and coordinate edges. Reset is not
+an analysis control; a new page visit starts a new local tree.
 
 `src/study.js` adapts this model to the existing board/history interface:
 `boardView`, `movesList`, `uci`, `a1ti`, and `gamereplay`. `uci` is the selected
-continuation. Desktop displays inline variation groups; the branch icon opens the
-same tree renderer in a dialog on either viewport. Branch controls select, promote,
+continuation. Desktop displays parenthesized variation groups. Double-click/double-tap or
+press and hold the history rail to open the same tree renderer in a dialog;
+keyboard V or Shift+F10 also opens it. Movement cancels a hold so scrolling remains
+normal. Black variation entries include a full prefix such as `3. ... Nf6`. Branch controls select, promote,
 reorder, or delete. The mobile rail always stays flat and compact.
 
 `ChessilStudy.play`, `position`, and `positions` describe the selected variation.
@@ -41,3 +44,9 @@ imports remain separate features.
 Build with `node web/scripts/build-board.js`. Tests include
 `variation-model.test.js`, `study-browser.test.js`, and the real-WASM engine/review
 browser suites. Shared pointer/compositor regression checks remain required.
+
+The model exposes a monotonic revision for structural edits. Selecting a move
+preserves the existing history nodes unless the selected mobile path changes.
+This keeps double-click targets intact and avoids rebuilding the tree during
+ordinary navigation. `history-gestures.js` owns the shared pointer/keyboard gesture
+boundary and cleans up its timer and listeners on teardown.
