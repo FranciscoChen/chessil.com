@@ -150,3 +150,37 @@ cached older analysis bundles. The analysis bundle reuses these exact reader
 sources; no separate renderer or browser library is introduced. Modern browsers
 use native gzip decompression, with a raw ArrayBuffer fallback. Deploy application
 changes through the repository's GitHub push hook.
+
+## Continuing policy expansion
+
+`expand_policy.py` extends a completed checkpoint without modifying any existing
+position or weights. It reconstructs a frontier from the saved real-history
+policies, with path reach probability computed solely from the Leela priors.
+Candidates are ordered by that probability within each depth. Entry quotas reserve
+more new capacity for the deep opening: depths 3–7 get weight 1, depths 8–11 get
+weight 2, depths 12–16 get `--deep-weight` (default 4). Remaining capacity is filled
+by probability. Every added position stores all legal moves, without a minimum
+move probability. No source positions beyond ply 16 are expanded.
+
+```sh
+# First expansion (the base 2,080,720-byte book can grow to at most double).
+venv/bin/python -u expand_policy.py --weights BT4-it332.pb.gz --max-bytes 4161440
+venv/bin/python verify_preserved.py --before before-policy-expansion.bin \
+  --after bt4_it332_policy.bin --max-bytes 4161440
+venv/bin/python verify_uci.py --engine venv/bin/lc0 --weights BT4-it332.pb.gz
+
+# A further authorized expansion starts a separate resumable round.
+# Save the current binary/report before starting it.
+venv/bin/python -u expand_policy.py --weights BT4-it332.pb.gz \
+  --new-round --deep-weight 8 --max-bytes 8320960
+```
+
+Resume with the same arguments **without `--new-round`**. A different byte budget
+is rejected on resume. Each new round requires a completed, preservation-verified
+previous report, archives its metadata, and backs up the database before resetting
+the round's frontier. The report retains earlier rounds and their verification.
+Before publishing, run preservation verification against the saved binary from
+the start of the round, then fresh UCI verification. Packaging rejects expansions
+that lack a matching preservation result or exceed the authorized byte ceiling.
+At most 63 entries (1,008 bytes) remain unused at the end; the worker stops rather
+than spending inference time chasing tiny residual policies.

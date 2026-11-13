@@ -1,0 +1,14 @@
+{
+  "name": "Leela BT4-it332 \u00b7 4.16 MB edition",
+  "format": "polyglot",
+  "sha256": "7146af85f24e82ac649d4ac2fdfb7b24985fee52cd12ecd27802380dbea6710e",
+  "bytes": 4160480,
+  "gzip_bytes": 1246660,
+  "positions": 8258,
+  "entries": 260030,
+  "url": "/engine/book/bt4-it332-7146af85f24e82ac.bin",
+  "gzip_url": "/engine/book/bt4-it332-7146af85f24e82ac.bin.gz",
+  "report": "/engine/book/bt4-it332-7146af85f24e82ac.json",
+  "maxSourcePly": 16,
+  "emptyFromPly": 17
+}

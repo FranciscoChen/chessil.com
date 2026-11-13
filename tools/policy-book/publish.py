@@ -19,6 +19,11 @@ if not report.get('complete') or len(report.get('uci_verification', {})) != 5 or
     raise ValueError('Book must have completed generation, human coverage and UCI verification')
 if sha != report['sha256'] or len(raw) != report['bytes'] or len(raw) != report['entries'] * 16:
     raise ValueError('Artifact differs from verified report')
+if report.get('policy_expansion'):
+    expansion=report['policy_expansion']
+    preservation=expansion.get('preservation_verification',{})
+    if not preservation.get('existing_positions_preserved') or preservation.get('new_bytes')!=len(raw) or len(raw)>expansion['max_bytes']:
+        raise ValueError('Expanded book must pass preservation and size checks before publishing')
 records = list(struct.iter_unpack('>QHHI', raw))
 if len({(key, move) for key, move, _, _ in records}) != len(records) or any(weight < 1 or learn for _, _, weight, learn in records):
     raise ValueError('Invalid records')
@@ -35,7 +40,7 @@ for suffix, content in [('.bin', raw), ('.bin.gz', compressed), ('.json', (json.
     temporary = target.with_name(target.name + '.tmp')
     temporary.write_bytes(content)
     temporary.replace(target)
-manifest = {'name':'Leela BT4-it332', 'format':'polyglot', 'sha256':sha, 'bytes':len(raw), 'gzip_bytes':len(compressed), 'entries':len(records), 'positions':report['positions'], 'url':'/engine/book/' + name + '.bin', 'gzip_url':'/engine/book/' + name + '.bin.gz', 'report':'/engine/book/' + name + '.json', 'maxSourcePly':16, 'emptyFromPly':17, 'probability':'BT4-it332 temperature-1 policy priors; human frequency selects positions, not weights.'}
+manifest = {'name':'Leela BT4-it332', 'format':'polyglot', 'sha256':sha, 'bytes':len(raw), 'gzip_bytes':len(compressed), 'entries':len(records), 'positions':report['positions'], 'url':'/engine/book/' + name + '.bin', 'gzip_url':'/engine/book/' + name + '.bin.gz', 'report':'/engine/book/' + name + '.json', 'maxSourcePly':16, 'emptyFromPly':17, 'probability':'BT4-it332 temperature-1 policy priors; coverage follows policy likelihood and sampled human openings.'}
 # Publish the manifest last. Keep the previous manifest/shards for cached clients.
 (args.target/'polyglot-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
 print(json.dumps(manifest), flush=True)
