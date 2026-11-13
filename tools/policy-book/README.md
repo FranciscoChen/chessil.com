@@ -225,3 +225,13 @@ an active checkpoint is only live progress. Reports use the stored minimum ply
 for transposed positions, and omit moves out of ply 16 because their ply-17
 positions are intentionally empty. They do not assert a global percentage cutoff
 or exhaustive coverage of every unvisited chess position.
+
+`--seed-file mainline-seeds.json` reserves representative strong opening lines
+from the project's CC0 ECO data before spending the rest of the expansion budget.
+For each named position, inference follows its highest-policy continuation through
+source ply 16. These explicit coverage reservations are recorded separately from
+probability-ranked frontier additions. They do not change any existing weights.
+Run `verify_mainlines.py` after export: it checks every position along every
+reserved line against the actual binary and requires all legal moves at each
+position, including source ply 16. Packaging requires this verification when a
+representative opening catalog is present.

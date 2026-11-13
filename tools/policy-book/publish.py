@@ -25,6 +25,8 @@ if sha != report['sha256'] or len(raw) != report['bytes'] or len(raw) != report[
 if report.get('policy_expansion'):
     expansion=report['policy_expansion']
     preservation=expansion.get('preservation_verification',{})
+    if expansion.get('representative_mainlines') and not report.get('mainline_verification',{}).get('full_legal_move_policy_at_every_position'):
+        raise ValueError('Reserved main-line continuations must be verified before publishing')
     if not preservation.get('existing_positions_preserved') or preservation.get('new_bytes')!=len(raw) or len(raw)>expansion['max_bytes']:
         raise ValueError('Expanded book must pass preservation and size checks before publishing')
 records = list(struct.iter_unpack('>QHHI', raw))

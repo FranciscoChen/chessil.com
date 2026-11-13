@@ -191,6 +191,7 @@ def main():
     parser.add_argument('--stop-after',type=int)
     parser.add_argument('--new-round',action='store_true')
     parser.add_argument('--deep-weight',type=int,default=4)
+    parser.add_argument('--seed-file',type=Path,help='Named representative opening seeds in JSON')
     parser.add_argument('--seed',action='append',default=[],help='UCI opening path to reserve, with top-policy continuation through ply 16')
     args=parser.parse_args()
     report_path=args.output.with_suffix('.json')
@@ -212,7 +213,11 @@ def main():
         backup.close()
     config=prepare(store,args.max_bytes,prior,args.deep_weight)
     policy=NativePolicy(args.weights,prior['configuration']['backend'],prior['configuration']['backend_options'])
-    for line in args.seed:
+    seed_catalog=json.loads(args.seed_file.read_text()) if args.seed_file else None
+    if seed_catalog:
+        store.db.execute('INSERT OR REPLACE INTO metadata VALUES (?,?)',('representative_mainlines',json.dumps(seed_catalog)))
+        store.db.commit()
+    for line in args.seed+([entry['uci'] for entry in seed_catalog['lines']] if seed_catalog else []):
         seed_line(store,policy,line,config)
     complete=expand(store,policy,config,args.stop_after)
     del policy
@@ -226,6 +231,9 @@ def main():
     report['policy_expansion']={key:value for key,value in config.items() if key!='prior_report'}
     if store.db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='policy_seeds'").fetchone():
         report['policy_expansion']['reserved_opening_continuations']=dict(store.db.execute('SELECT path,continuation FROM policy_seeds'))
+    seed_catalog_row=store.db.execute("SELECT value FROM metadata WHERE key='representative_mainlines'").fetchone()
+    if seed_catalog_row:
+        report['policy_expansion']['representative_mainlines']=json.loads(seed_catalog_row[0])
     report['policy_expansion']['added_positions_by_ply']=dict(store.db.execute('SELECT ply,COUNT(*) FROM policy_added GROUP BY ply'))
     report_path.write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps({'complete':complete,'bytes':report['bytes'],'entries':report['entries'],'depths':report['positions_by_minimum_ply']}),flush=True)
