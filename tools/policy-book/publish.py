@@ -10,8 +10,11 @@ import struct
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--book', type=Path, default=Path('bt4_it332_policy.bin'))
 parser.add_argument('--report', type=Path, default=Path('bt4_it332_policy.json'))
+parser.add_argument('--manifest-name', default='polyglot-manifest.json', help='Separate manifest filename to archive an edition without changing the default')
 parser.add_argument('--target', type=Path, default=Path(__file__).resolve().parents[2] / 'web/web/engine/book')
 args = parser.parse_args()
+if Path(args.manifest_name).name != args.manifest_name or not args.manifest_name.endswith('.json'):
+    parser.error('--manifest-name must be a JSON filename without a directory')
 report = json.loads(args.report.read_text())
 raw = args.book.read_bytes()
 sha = hashlib.sha256(raw).hexdigest()
@@ -42,5 +45,5 @@ for suffix, content in [('.bin', raw), ('.bin.gz', compressed), ('.json', (json.
     temporary.replace(target)
 manifest = {'name':'Leela BT4-it332', 'format':'polyglot', 'sha256':sha, 'bytes':len(raw), 'gzip_bytes':len(compressed), 'entries':len(records), 'positions':report['positions'], 'url':'/engine/book/' + name + '.bin', 'gzip_url':'/engine/book/' + name + '.bin.gz', 'report':'/engine/book/' + name + '.json', 'maxSourcePly':16, 'emptyFromPly':17, 'probability':'BT4-it332 temperature-1 policy priors; coverage follows policy likelihood and sampled human openings.'}
 # Publish the manifest last. Keep the previous manifest/shards for cached clients.
-(args.target/'polyglot-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+(args.target/args.manifest_name).write_text(json.dumps(manifest, indent=2) + '\n')
 print(json.dumps(manifest), flush=True)

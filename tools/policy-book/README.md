@@ -184,3 +184,13 @@ the start of the round, then fresh UCI verification. Packaging rejects expansion
 that lack a matching preservation result or exceed the authorized byte ceiling.
 At most 63 entries (1,008 bytes) remain unused at the end; the worker stops rather
 than spending inference time chasing tiny residual policies.
+
+To archive the larger edition without changing the website default:
+
+```sh
+python tools/policy-book/publish.py --manifest-name bt4-it332-8mb-manifest.json
+```
+
+The website continues loading `polyglot-manifest.json`. The preserved 4.16 MB
+edition has its own `bt4-it332-4mb-manifest.json`, binary, gzip and verification
+report. Generating or archiving a larger edition does not select it for users.
