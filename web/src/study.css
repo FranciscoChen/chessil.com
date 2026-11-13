@@ -29,3 +29,11 @@
 @media(max-width:900px){.study-page .round__app,.study-page.analysis-open .round__app{grid-template-areas:"moves" "evaluation" "board" "analysis" "actions";grid-template-rows:40px 31px auto auto auto}.study-page .board-tools{max-height:none}.study-tree-dialog .variation-toolbar{opacity:1}}
 
 .study-tree-heading button.ui-icon-button:hover{background:var(--hover);color:var(--text);opacity:1}
+
+.history-branch-cue{display:inline-block;min-width:25px;min-height:24px;margin:0 0 0 .2rem;padding:0 .15rem;border:0;border-radius:var(--radius);background:transparent;color:var(--link);font:600 .75rem/24px var(--sans-font);cursor:pointer;vertical-align:baseline}
+.history-branch-cue:hover,.history-branch-cue:focus-visible{background:var(--hover);outline:1px solid var(--link)}
+.study-tree-dialog{box-sizing:border-box;max-width:calc(100vw - 1rem);max-height:min(80dvh,44rem);overflow:hidden}
+.study-tree-dialog[open]{display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:.25rem}
+.study-tree-dialog #study-tree-content{min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+
+.board-settings-dialog.study-tree-dialog{width:min(40rem,calc(100vw - 1rem));max-width:calc(100vw - 1rem);max-height:min(80dvh,44rem);padding:.85rem;overflow:hidden}

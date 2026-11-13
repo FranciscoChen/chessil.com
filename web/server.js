@@ -192,7 +192,7 @@ var server = http.createServer(function (req, res) {
      created:1,
      useragent:'',
    };*/
-  const resHeaders = {};
+  const resHeaders = require('./isolation')(req.url);
 
   if (req.url === '/websocket' && req.method === 'POST') {
     wsauth(filename, mime, ext, res, req, resHeaders, sessiondata)

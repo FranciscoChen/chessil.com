@@ -48,6 +48,7 @@ window.ChessilPreferences = (() => {
  function words(){return labels[document.documentElement.lang] || labels.en;}
  let catalogRequest;
  function loadEngineCatalog(){return catalogRequest||(catalogRequest=fetch('/engine/catalog.json').then(r=>{if(!r.ok)throw Error();return r.json();}).catch(error=>{catalogRequest=null;throw error;}));}
+ function engineThreads(engine){const limit=Math.max(1,Math.min(8,navigator.hardwareConcurrency||2));return engine.threadedManifest&&window.crossOriginIsolated&&typeof SharedArrayBuffer!=='undefined'?engine.threads.filter(n=>n<=limit):[1];}
  const engineForms=new Set();
  function syncEngineOptions(){for(const form of engineForms){if(!form.host.isConnected){engineForms.delete(form);continue;}form.sync();}}
  function renderEngineOptions(host,{compact=false}={}){
@@ -67,9 +68,9 @@ window.ChessilPreferences = (() => {
   if(compact){const status=document.createElement('output');status.className='preference-status';status.dataset.preferenceStatus='';status.setAttribute('role','status');host.append(status);}
   const form={host,sync(){
    const config=value.analysis,chosen=catalog?.engines.find(engine=>engine.id===config.engine)||catalog?.engines[0];
-   if(chosen&&selectedId!==chosen.id){selectedId=chosen.id;fill('engine',catalog.engines.map(engine=>[engine.id,engine.name]));fill('threads',chosen.threads.map(n=>[n,String(n)]));fill('network',chosen.networks.map(network=>[network.id,network.name]));hint.textContent='Changes apply to analysis.'+(chosen.threads.length===1?' This build supports '+chosen.threads[0]+' thread.':'');}
+   if(chosen&&selectedId!==chosen.id){selectedId=chosen.id;fill('engine',catalog.engines.map(engine=>[engine.id,engine.name]));fill('threads',engineThreads(chosen).map(n=>[n,String(n)]));fill('network',chosen.networks.map(network=>[network.id,network.name]));hint.textContent='Changes apply to analysis.'+(chosen.threads.length===1?' This build supports '+chosen.threads[0]+' thread.':'');}
    for(const [key,input] of Object.entries(flags))input.checked=!!config[key];
-   for(const [key,input] of Object.entries(fields)){input.disabled=!catalog&&['engine','network','threads'].includes(key);input.value=String(config[key]);if(!input.value&&input.options.length)input.selectedIndex=0;}
+   for(const [key,input] of Object.entries(fields)){input.disabled=!catalog&&['engine','network','threads'].includes(key);input.value=key==='network'&&config.network==='embedded'&&!chosen?.networks.some(n=>n.id==='embedded')?'default':String(config[key]);if(!input.value&&input.options.length)input.selectedIndex=0;}
   }};engineForms.add(form);form.sync();
   return loadEngineCatalog().then(result=>{if(!host.isConnected)return false;catalog=result;form.sync();return true;}).catch(()=>{hint.textContent='Engine choices unavailable. Reopen options to retry.';if(compact){hint.setAttribute('role','status');host.append(hint);}return false;});
  }
@@ -119,5 +120,5 @@ window.ChessilPreferences = (() => {
    dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left || event.clientX>r.right || event.clientY<r.top || event.clientY>r.bottom)dialog.close();}});
   }
  });
- return {ready,get,update,duration,renderEngineOptions,engineCatalog:loadEngineCatalog};
+ return {ready,get,update,duration,renderEngineOptions,engineThreads,engineCatalog:loadEngineCatalog};
 })();

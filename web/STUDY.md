@@ -50,3 +50,8 @@ preserves the existing history nodes unless the selected mobile path changes.
 This keeps double-click targets intact and avoids rebuilding the tree during
 ordinary navigation. `history-gestures.js` owns the shared pointer/keyboard gesture
 boundary and cleans up its timer and listeners on teardown.
+
+Moves with alternatives show an inline `(…)` control in the rail, including on
+mobile. Clicking it opens the tree at that branch point; long-press and double-tap
+remain available. The variation dialog is bounded to 40rem width, 80dvh / 44rem
+height, with its tree as the inner scroller and its heading/close control visible.

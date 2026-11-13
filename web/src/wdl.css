@@ -8,6 +8,6 @@
 .wdl-track [data-wdl="loss"]{background:var(--wdl-loss);color:var(--piece-white)}
 .wdl-bar[data-side="b"] [data-wdl="win"]{color:var(--piece-white)}
 .wdl-bar[data-side="b"] [data-wdl="loss"]{color:var(--piece-black)}
-.wdl-percent{position:absolute;inset:0;display:none;align-items:center;justify-content:center;white-space:nowrap;font:600 9px/1 var(--monospace-font);font-variant-numeric:tabular-nums}
+.wdl-percent{position:absolute;inset:0;display:none;align-items:center;justify-content:center;white-space:nowrap;font:600 10px/1 var(--sans-font);font-variant-numeric:tabular-nums}
 @container(min-width:30px){.wdl-percent{display:flex}}
 .wdl-bar.is-unknown{opacity:.45}

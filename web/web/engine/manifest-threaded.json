@@ -1,0 +1,18 @@
+{
+  "name": "Stockfish 19 Lite \u00b7 local analysis",
+  "revision": "0dc3d0ac03705353dad6659c0dad4597cdee4021",
+  "release": "c843bc805853e0f5",
+  "worker": "/engine/c843bc805853e0f5/chessil-stockfish.js",
+  "source": "/engine/c843bc805853e0f5/source.zip",
+  "license": "/engine/c843bc805853e0f5/LICENSE.txt",
+  "networks": [
+    {
+      "option": "EvalFile",
+      "name": "nn-61e7af4bb97d.nnue",
+      "url": "/engine/55f00e29b7f308f6/nn-61e7af4bb97d.nnue",
+      "sha256": "61e7af4bb97d51eeeb25d322916f86513b5cd3a827ce189c98c6e31946f99e5b"
+    }
+  ],
+  "threaded": true,
+  "embeddedNetwork": "61e7af4bb97d51eeeb25d322916f86513b5cd3a827ce189c98c6e31946f99e5b"
+}

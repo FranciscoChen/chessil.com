@@ -5,7 +5,8 @@ appears only for finished games with moves (result codes 1–8), and navigates t
 `/analysis?game=ID&review=1`. The dedicated analysis page loads the recorded moves
 and player perspective before starting the existing backward review. A direct
 `?game=ID` link starts the same engine and scan, with autoplay paused.
-Imports reject unfinished/unavailable games. Engine binaries and NNUE files download when engine analysis starts; the opening book loads with the analysis board; the small engine catalog is also used by settings.
+Imports reject unfinished/unavailable games. Engine binaries download when analysis starts; the default NNUE is already bundled.
+Only an explicitly selected external override downloads a separate network; the opening book loads with the analysis board; the small engine catalog is also used by settings.
 `src/analysis.js` composes the existing native board, move history, shared buttons,
 progress, and CSS countdown. `src/local-engine.js` serializes UCI searches in one
 worker. Engine and book each have a compact card, visible by default. Engine
@@ -51,8 +52,8 @@ navigation and exploration pause autoplay. Local variations never alter history.
 Mobile game/review layouts use a shared horizontal history rail above the board,
 with fixed navigation buttons at both ends. Desktop keeps the original side
 column with a two-column move list and navigation below it. A compact evaluation block gives the centipawn bar its full available width and
-puts the WDL bar on its own row, exactly as wide as the centipawn bar. Q (win
-probability minus loss probability, −1 to +1) sits below the pawn score. Shared
+puts the WDL bar on its own row, exactly as wide as the centipawn bar. Expected outcome (win probability minus loss probability, −1 to +1) sits below the
+pawn score without a visible Q prefix. Shared
 `wdl.js`/`wdl.css` own perspective, rounding, colors, and in-bar percentages for
 both position and book bars. Segment container queries hide labels that cannot fit. Win uses
 the reviewing side’s piece color, Loss uses the opponent’s, and Draw is their
@@ -110,9 +111,12 @@ book, evaluations and completed review moments. Starting with unchanged settings
 resumes the unfinished scan; changed settings reset evaluations and scan again.
 Global settings persist engine/network IDs, MultiPV (1–8), hash (8–256 MB), and
 requested thread count. `/engine/catalog.json` lists installed compatible options;
-the current Lite build supports one thread only, and the loader clamps the
-requested count to the selected build's capabilities. The supplied external and
-bundled NNUE options currently contain the same default network. New builds and
+the current Lite builds support single-threaded or threaded WebAssembly. The
+threaded build is selected for more than one analysis thread, with choices bounded
+by hardware concurrency and eight threads. Cross-origin isolation and
+SharedArrayBuffer are required for the threaded build; unsupported hosts retain
+the single-threaded build. The external override currently contains exactly the
+same weights as the default bundled NNUE. It is optional, not a stronger network. New builds and
 matching external networks can be registered through the catalog; arbitrary
 URLs and incompatible files are not accepted from preference storage.
 
@@ -124,9 +128,15 @@ the highlight; header stacking remains above board highlights.
 
 The engine starts by default on dedicated analysis boards. A selected position
 gets one wide MultiPV pass (all legal moves, up to 180,000 nodes / 900 ms) for
-per-move book evaluations, followed by the configured MultiPV. Refinement is
-bounded to ten rounds or depth 18. The foreground position and backward scan
-share one serial worker; navigation coalesces and stale results are ignored.
+per-move book evaluations, followed by the configured MultiPV. After this
+initialization, the selected position uses `go infinite`: no UCI
+depth, node or move-time limit. Stop terminates the worker. A visible activation is
+bounded to 15 minutes; the user can start a new activation. Position changes send
+Stop to the old continuous search before starting the latest position. The
+foreground position and backward scan share one serial worker. Batch review
+keeps its bounded per-position searches so the entire game can finish; continuous
+foreground analysis starts when that scan completes. Navigation coalesces and
+stale results are ignored.
 Hidden pages stop the worker and resume on return if it was running. At most 128
 position move-score maps and book lookup requests are cached. Stop retains the
 book, existing evaluations, and review findings.
@@ -164,8 +174,11 @@ https://github.com/nmrugg/stockfish.js at
 `0dc3d0ac03705353dad6659c0dad4597cdee4021`. Like the Lichess approach it compiles
 Stockfish to WebAssembly and runs UCI in a worker. The lite network is smaller
 and weaker than the full network; it makes a practical default for local review.
-Modern WebAssembly SIMD support is required. No SharedArrayBuffer or special
-cross-origin isolation headers are required. Failures appear in the panel and
+Modern WebAssembly SIMD support is required. Multi-threaded analysis additionally
+requires SharedArrayBuffer and cross-origin isolation. `web/isolation.js` applies
+COOP/COEP to analysis and settings pages, and COEP/CORP to engine worker/assets.
+Other pages keep their existing policy. The single-threaded build works without
+isolation. Failures appear in the panel and
 can be retried with Start; there is no server-engine fallback.
 
 Install/activate Emscripten **6.0.9**, then:
@@ -187,8 +200,9 @@ accepts the target UCI network option, and retains native network validation.
 The client verifies each network's SHA-256 and checks that the engine advertises
 its configured option. Future builds can list additional network files/options
 in the manifest (for example a policy option implemented by that engine).
-The initial build also embeds its upstream default network; it explicitly loads
-the manifest's external network before any search.
+Both builds embed their default network. The default preference loads no external
+NNUE file. Explicit external overrides retain SHA-256 and UCI option validation;
+identical networks share one content-addressed URL across both builds.
 
 `--package-only --source /path/to/completed-build` packages an existing build.
 The release includes GPLv3 license and complete corresponding patched source,
@@ -229,3 +243,24 @@ actionable errors but omit success/saving messages.
 Piece input always uses the actual side to move; review perspective and original
 player identity independently control orientation, annotations, scores and cues.
 White and Black can therefore be moved in either chosen point of view.
+
+## Threaded builds and source presentation
+
+Use `python3 web/scripts/build-browser-engine.py --threaded` with Emscripten 6.0.9
+to reproduce the shipped threaded variant. The single-threaded build remains the
+default and fallback. `manifest-threaded.json` selects the separate threaded
+worker/WASM/source release. A supplied `--network` is copied into the build and its
+compile-time filename selected before compilation, so its weights are bundled.
+Source packaging excludes generated worker/WASM binaries and includes the exact
+network, patched source, build command and tooling.
+
+The source page has a reusable article/aside layout, fact list, and code snippets.
+`codeSnippet` in `ui/components.js` supplies copy buttons; the global `ui.js`
+controller owns clipboard behavior. Its build selector chooses the corresponding
+single/threaded source archive. Analysis links retain the selected thread variant.
+Opening Analysis options hides PV rows and their expander completely, rather than
+leaving an empty dash below View source.
+
+Optional threat guidance rechecks a changed best move after it stays stable for
+one second. It briefly interrupts the continuous search for its bounded probe,
+then resumes; ordinary continuous analysis has no periodic search restart.

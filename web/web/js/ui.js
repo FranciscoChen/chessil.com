@@ -50,3 +50,9 @@ window.ChessilHistoryFocus=(()=>{
   const state={identity};pending.set(list,state);state.frame=requestAnimationFrame(()=>{state.frame=0;if(!entry){list.scrollTop=0;list.scrollLeft=0;return;}if(!entry.isConnected)return;size(list);const outer=list.getBoundingClientRect(),inner=entry.getBoundingClientRect();if(list.scrollHeight>list.clientHeight+1)list.scrollTop+=inner.top+inner.height/2-outer.top-list.clientHeight/2;if(list.scrollWidth>list.clientWidth+1)list.scrollLeft+=inner.left+inner.width/2-outer.left-list.clientWidth/2;});
  };
 })();
+
+/* Code snippets share one event boundary; no per-snippet setup is required. */
+document.addEventListener('click',async event=>{
+ const button=event.target.closest?.('[data-copy-code]');if(!button)return;const snippet=button.closest('[data-code-snippet]'),status=snippet.querySelector('.ui-code-status');
+ try{await navigator.clipboard.writeText(snippet.querySelector('code').textContent);button.classList.add('is-copied');status.textContent=document.documentElement.lang==='es'?'Copiado':document.documentElement.lang==='zh'?'已复制':'Copied';setTimeout(()=>{button.classList.remove('is-copied');status.textContent='';},2000);}catch(_){status.textContent=document.documentElement.lang==='es'?'No se pudo copiar':document.documentElement.lang==='zh'?'无法复制':'Could not copy';}
+});

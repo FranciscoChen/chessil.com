@@ -36,3 +36,6 @@
 .engine-guidance-options{grid-column:1/-1;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:.5rem 1rem}
 .engine-guidance-options .board-settings-toggle{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;margin:0;font-size:.75rem}
 .engine-guidance-options input{margin:0;flex:none}
+
+.engine-guidance-options .board-settings-toggle{display:grid;grid-template-columns:16px auto;align-items:center;gap:.4rem;line-height:1.3}
+.engine-guidance-options .board-settings-toggle input[type="checkbox"]{appearance:auto;display:block;box-sizing:border-box;width:16px;height:16px;min-width:16px;min-height:16px;padding:0;margin:0;align-self:center;vertical-align:middle;flex:none;transform:none}

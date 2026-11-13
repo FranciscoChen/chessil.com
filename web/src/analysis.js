@@ -18,7 +18,7 @@ const moveScores=new Map(),bookEvaluated=new Set();
 const stablePlan=new ChessilStablePlan();let planArrows=[],threatArrows=[],guidancePosition='',planTimer;
 function original(ply){if(reviewGame)return ChessilStudy.selectOriginal(ply);gamereplay(ply,true);return true;}
 const $=id=>document.getElementById('analysis-'+id);
-const status=value=>{$('status').textContent=value;panel.classList.toggle('engine-error',/unavailable|timed out|retry|failed|could not/i.test(value));};
+const status=value=>{$('status').textContent=value;panel.classList.toggle('engine-error',/unavailable|timed out|retry|failed|could not|paused after/i.test(value));};
 function cancelCountdown(){autoplayRun?.cancel();autoplayRun=null;$('countdown').hidden=true;}
 function pause(){autoplay=false;cancelCountdown();controls();}
 const included=item=>perspective==='both'||(item.ply%2?'w':'b')===perspective;
@@ -37,7 +37,7 @@ function schedule(){
   schedule();
  }});
 }
-function showActual(ply){clearGuide();internal=true;const restored=original(ply);internal=false;if(!restored)return;exploring=false;position=positions[a1ti];viewEpoch++;annotate(null);$('alternatives').replaceChildren();$('explanation').textContent=a1ti?'Position after move '+Math.ceil(a1ti/2)+'.':'Starting position. Review complete.';renderDetails();}
+function showActual(ply){clearGuide();internal=true;const restored=original(ply);internal=false;if(!restored)return;exploring=false;position=positions[a1ti];viewEpoch++;annotate(null);$('alternatives').replaceChildren();$('explanation').textContent=a1ti?'Position after move '+Math.ceil(a1ti/2)+'.':'Starting position. Review complete.';renderDetails();if(engineReady)queuePosition();}
 function orientReview(side){
  boardView.contextSide=perspective==='both'?(['w','b'].includes(playerside)?playerside:null):perspective;boardView.setOrientation(side);boardView.syncContext();if(study)return;
  const top=document.querySelector('.game-player--top'),bottom=document.querySelector('.game-player--bottom');
@@ -60,12 +60,12 @@ function evalDisplay(){
  $('score').textContent=score?scoreText(score,sign===1?position:position.replace(/ [wb] /,position.split(' ')[1]==='w'?' b ':' w ')):'—';
  const percent=score?Math.max(1,Math.min(99,50+50*Math.tanh(white/500))):50;$('eval-white').style.width=(sign===1?percent:100-percent)+'%';$('eval-white').style.background=perspective==='b'?'var(--piece-black)':'var(--piece-white)';$('eval').style.background=perspective==='b'?'var(--piece-white)':'var(--piece-black)';$('eval').setAttribute('aria-label',score?(perspective==='b'?'Black':'White')+' evaluation '+$('score').textContent:'Evaluation available after the game');
  const result=ChessilWdl.render($('wdl'),{score,fen:position,perspective});
- $('q').textContent=result.q===null?'Q —':'Q '+(result.q>0?'+':'')+result.q.toFixed(2);
+ $('q').textContent=result.q===null?'—':(result.q>0?'+':'')+result.q.toFixed(2);
  $('q').title='Expected outcome: win minus loss (−1 to +1)';
 }
 function linesDisplay(){
  const settings=ChessilPreferences.get().analysis,lines=(scores.get(position)||[]).slice(0,settings.multiPV),visible=linesExpanded?settings.multiPV:Math.min(settings.multiPV,compactView.matches?1:3);
- panel.style.setProperty('--engine-visible-lines',visible);const toggle=$('lines-toggle');toggle.hidden=settings.multiPV<=(compactView.matches?1:3);toggle.setAttribute('aria-expanded',String(linesExpanded));toggle.setAttribute('aria-label',linesExpanded?'Collapse engine variations':'Expand engine variations');
+ panel.style.setProperty('--engine-visible-lines',visible);const toggle=$('lines-toggle');toggle.hidden=!lines.some(line=>line.pv.length)||settings.multiPV<=(compactView.matches?1:3);toggle.setAttribute('aria-expanded',String(linesExpanded));toggle.setAttribute('aria-label',linesExpanded?'Collapse engine variations':'Expand engine variations');
  const current=lines[0],nodes=current?.nodes||0;const count=nodes>=1000000?(nodes/1000000).toFixed(1)+'M':nodes>=1000?Math.round(nodes/1000)+'k':String(nodes);
  $('metrics').textContent=current?'d'+current.depth+' · '+count:'';$('metrics').title=current?'Depth '+current.depth+' · '+nodes.toLocaleString()+' nodes':'';
  const keep=new Set();for(const line of lines){if(!line.pv.length)continue;const move=line.pv[0];keep.add(move);let row=engineRows.get(move);if(!row){const button=document.createElement('button'),value=document.createElement('strong'),moves=document.createElement('span');button.type='button';button.className='engine-line';button.append(value,moves);button.onclick=()=>play(move);row={button,value,moves};engineRows.set(move,row);}
@@ -96,7 +96,7 @@ function reveal(index){if(index<0||index>=findings.length)return;cancelCountdown
  const marker=movesList.querySelector(`.analysis-marker[data-ply="${item.ply}"]`);marker?.setAttribute('aria-current','step');if(marker){const outer=movesList.getBoundingClientRect(),inner=marker.getBoundingClientRect();if(inner.right>outer.right)movesList.scrollLeft+=inner.right-outer.right;else if(inner.left<outer.left)movesList.scrollLeft+=inner.left-outer.left;}
  const target=document.querySelector(`cg-board square.annotation-suggestion[data-square="${item.alternatives[0].pv[0].slice(2,4)}"]`);
  guide=ChessilHighlight.show(target,{text:explanation,actions:false,placement:'bottom',subtle:true,areas:[...document.querySelectorAll('cg-board square.annotation-suggestion')]});
- $('alternatives').replaceChildren();for(const line of item.alternatives){const b=document.createElement('button');b.type='button';b.className='engine-line';b.textContent=pvText(line.pv,position);b.onclick=()=>play(line.pv[0]);$('alternatives').append(b);}renderDetails();schedule();}
+ $('alternatives').replaceChildren();for(const line of item.alternatives){const b=document.createElement('button');b.type='button';b.className='engine-line';b.textContent=pvText(line.pv,position);b.onclick=()=>play(line.pv[0]);$('alternatives').append(b);}renderDetails();if(engineReady)queuePosition();schedule();}
 async function evaluate(fen,options){const legal=mg(fen);if(!legal.length)return [{kind:incheck(fen)?'mate':'cp',value:0,depth:0,pv:[]}];return engine.search(fen,options);}
 async function play(move){if(!opened)return;pause();clearGuide();if(reviewGame&&explorationOrigin===null)explorationOrigin=a1ti;playing=true;try{ChessilStudy.play(move);}finally{playing=false;}}
 async function scan(run){
@@ -116,7 +116,7 @@ async function scan(run){
   }
   processed.add(ply);after=before;$('progress').value=history.length-ply+1;status(`Reviewed ${history.length-ply+1} of ${history.length} moves, working backward.`);if(!exploring)renderDetails();schedule();
  }
- if(run!==token)return;scanning=false;status(`Review complete · ${findings.filter(item=>item.outcome).length} outcome-changing mistakes · ${findings.filter(item=>!item.outcome).length} suggestions.`);if(!findings.length)$('explanation').textContent='No significant improvement found in this review. Explore the game or opening book.';controls();
+ if(run!==token)return;scanning=false;status(`Review complete · ${findings.filter(item=>item.outcome).length} outcome-changing mistakes · ${findings.filter(item=>!item.outcome).length} suggestions.`);if(!findings.length)$('explanation').textContent='No significant improvement found in this review. Explore the game or opening book.';controls();if(engineReady)queuePosition();
 }
 async function open(review=true){
  if(!ChessilStudy.ready)return;
@@ -129,33 +129,40 @@ async function open(review=true){
  loadBookNames();await startEngine();
 
 }
-let studySearching=false,studyQueued=false,refineTimer,refineRounds=0,threatFor='';
-function queuePosition(){clearTimeout(refineTimer);refineRounds=0;studyQueued=true;evaluateStudy();}
+const MAX_ANALYSIS_MS=15*60*1000;let engineLimitTimer;
+let studySearching=false,studyQueued=false,threatFor='',threatRefreshTimer,threatCandidate='';
+function queuePosition(){clearTimeout(threatRefreshTimer);threatRefreshTimer=null;engine?.interruptContinuous();studyQueued=true;evaluateStudy();}
+function refreshThreat(fen,lines,epoch,run){
+ const settings=ChessilPreferences.get().analysis,side=perspective==='both'?fen.split(' ')[1]:perspective,move=lines[0]?.pv[0],candidate=fen+'|'+side+'|'+move;
+ if(!settings.threat||!move||lines[0].depth<8||candidate===threatFor)return;
+ if(threatRefreshTimer&&candidate===threatCandidate)return;clearTimeout(threatRefreshTimer);threatCandidate=candidate;
+ threatRefreshTimer=setTimeout(()=>{threatRefreshTimer=null;if(run===token&&epoch===viewEpoch&&engineReady&&ChessilPreferences.get().analysis.threat&&scores.get(fen)?.[0]?.pv[0]===move)queuePosition();},1000);
+}
 async function evaluateStudy(){
  if(!engineReady||!opened||document.hidden)return;studyQueued=true;if(studySearching)return;studySearching=true;const run=token;
  try{while(studyQueued&&engineReady&&opened&&run===token){studyQueued=false;const current=position,epoch=viewEpoch,legal=mg(current);status('Evaluating position…');
  const retain=lines=>{if(!moveScores.has(current)){if(moveScores.size>=128){const oldest=moveScores.keys().next().value;moveScores.delete(oldest);bookEvaluated.delete(oldest);}moveScores.set(current,new Map());}const saved=moveScores.get(current);for(const line of lines)if(line.pv[0])saved.set(line.pv[0],line);};
- const progress=lines=>{if(run!==token||epoch!==viewEpoch)return;retain(lines);freshSearch={fen:current,epoch,run,lines:lines.slice(0,ChessilPreferences.get().analysis.multiPV)};scores.set(current,lines);renderDetails();};
- const lines=await evaluate(current,{multiPV:bookEvaluated.has(current)?ChessilPreferences.get().analysis.multiPV:Math.max(1,legal.length),nodes:180000,movetime:900,onUpdate:progress});if(run!==token)return;if(epoch!==viewEpoch)continue;retain(lines);if(moveScores.get(current).size>=legal.length)bookEvaluated.add(current);freshSearch={fen:current,epoch,run,lines:lines.slice(0,ChessilPreferences.get().analysis.multiPV)};scores.set(current,lines);renderDetails();status('Position evaluated · depth '+lines[0].depth);
+ const progress=(lines,continuous=false)=>{if(run!==token||epoch!==viewEpoch)return;retain(lines);freshSearch={fen:current,epoch,run,lines:lines.slice(0,ChessilPreferences.get().analysis.multiPV)};scores.set(current,lines);renderDetails();if(continuous)refreshThreat(current,lines,epoch,run);};
+ let lines=scores.get(current)||[];if(!bookEvaluated.has(current)||scanning){lines=await evaluate(current,{multiPV:bookEvaluated.has(current)?ChessilPreferences.get().analysis.multiPV:Math.max(1,legal.length),nodes:180000,movetime:900,onUpdate:progress});if(run!==token)return;if(epoch!==viewEpoch)continue;retain(lines);if(moveScores.get(current).size>=legal.length)bookEvaluated.add(current);freshSearch={fen:current,epoch,run,lines:lines.slice(0,ChessilPreferences.get().analysis.multiPV)};scores.set(current,lines);renderDetails();status('Position evaluated · depth '+lines[0].depth);}
  const settings=ChessilPreferences.get().analysis,side=perspective==='both'?current.split(' ')[1]:perspective,best=lines[0];
  const threatKey=current+'|'+side+'|'+best?.pv[0];if(settings.threat&&threatFor!==threatKey&&best?.pv[0]){threatFor=threatKey;const probe=ChessilAnalysisGuidance.probe(current,best.pv[0],side);if(probe){const threat=await evaluate(probe,{multiPV:1,nodes:50000,movetime:250});if(run!==token)return;if(epoch===viewEpoch&&ChessilAnalysisGuidance.improves(best,threat[0])){const move=threat[0].pv[0];threatArrows=[{from:best.pv[0].slice(0,2),to:best.pv[0].slice(2,4),type:'setup',label:'Setup '+san(best.pv[0],current)},{from:move.slice(0,2),to:move.slice(2,4),type:'threat',label:'Threat after '+san(best.pv[0],current)+': '+san(move,probe)}];guidance();}}}
- if(epoch===viewEpoch&&legal.length&&++refineRounds<10&&lines[0].depth<18){clearTimeout(refineTimer);refineTimer=setTimeout(evaluateStudy,scanning?400:250);} }
+ if(epoch===viewEpoch&&!scanning&&legal.length&&!studyQueued){status('Analyzing position…');await evaluate(current,{multiPV:ChessilPreferences.get().analysis.multiPV,infinite:true,onUpdate:lines=>progress(lines,true)});if(run!==token)return;} }
  }catch(error){if(run===token&&engineReady)status(error.message);}
  finally{studySearching=false;if(studyQueued&&engineReady&&opened)evaluateStudy();}
 }
-function stopEngine(){clearTimeout(planTimer);clearTimeout(refineTimer);studyQueued=false;boardView.setArrows([]);token++;viewEpoch++;engine?.close();engineReady=false;engineLoading=false;scanning=false;pause();status('Engine stopped. Book exploration and saved evaluations remain available.');controls();bookDisplay();}
+function stopEngine(message='Engine stopped. Book exploration and saved evaluations remain available.'){clearTimeout(engineLimitTimer);clearTimeout(threatRefreshTimer);threatRefreshTimer=null;clearTimeout(planTimer);studyQueued=false;boardView.setArrows([]);token++;viewEpoch++;engine?.close();engineReady=false;engineLoading=false;scanning=false;pause();status(message);controls();bookDisplay();}
 async function startEngine(){
  if(!opened||engineReady||engineLoading)return;
  const settings=ChessilPreferences.get().analysis,signature=engineSignature(settings);
  if(engineConfig&&signature!==engineConfig){scores.clear();moveScores.clear();bookEvaluated.clear();processed.clear();findings=[];selected=-1;movesList.querySelectorAll('.analysis-marker').forEach(el=>el.remove());movesList.querySelectorAll('[data-analysis]').forEach(el=>delete el.dataset.analysis);$('progress').value=0;clearGuide();annotate(null);}
  engineConfig=signature;const run=++token;engineLoading=true;engine=new ChessilLocalEngine();status('Starting local engine…');controls();
- try{const manifest=await engine.load(settings);if(run!==token)return;engineLoading=false;engineReady=true;renderDetails();
+ try{const manifest=await engine.load(settings);if(run!==token)return;engineLoading=false;engineReady=true;clearTimeout(engineLimitTimer);engineLimitTimer=setTimeout(()=>stopEngine('Analysis paused after 15 minutes. Press Start to continue.'),MAX_ANALYSIS_MS);updateEngineName();renderDetails();
   if(reviewGame)scan(run).catch(error=>{if(run===token&&engineReady){scanning=false;status(error.message);}});
   queuePosition();
  }catch(error){if(run===token){engineLoading=false;scanning=false;engineReady=false;status(error.message+' Press Start engine to retry.');pause();engine?.close();controls();}}
 }
 
-async function updateEngineName(){await ChessilPreferences.ready;const id=ChessilPreferences.get().analysis.engine;$('source').href='/'+(document.documentElement.lang||'en')+'/engine-source?engine='+encodeURIComponent(id);try{const catalog=await ChessilPreferences.engineCatalog();if(id!==ChessilPreferences.get().analysis.engine)return;const name=catalog.engines.find(engine=>engine.id===id)?.name||id;$('engine-name').textContent=name;$('engine-name').title=name;}catch(_){$('engine-name').textContent=id;}}
+async function updateEngineName(){await ChessilPreferences.ready;const id=ChessilPreferences.get().analysis.engine;$('source').href='/'+(document.documentElement.lang||'en')+'/engine-source?engine='+encodeURIComponent(id)+'&threads='+(engineReady?engine.settings.threads:ChessilPreferences.get().analysis.threads);try{const catalog=await ChessilPreferences.engineCatalog();if(id!==ChessilPreferences.get().analysis.engine)return;const name=catalog.engines.find(engine=>engine.id===id)?.name||id;$('engine-name').textContent=name;$('engine-name').title=name;}catch(_){$('engine-name').textContent=id;}}
 function loadBookNames(){if(Object.keys(book).length)return;fetch('/engine/openings.json',{cache:'force-cache'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{book=data;bookDisplay();}).catch(()=>{});}
 function returnToGame(){pause();exploring=false;const ply=explorationOrigin??(suggestionView?findings[selected].ply:a1ti);explorationOrigin=null;clearGuide();original(ply);}
 function update(){if(panel&&!opened&&ChessilStudy.ready)open(false);}
@@ -171,7 +178,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
  const review=document.createElement('section');review.className='review-tools';review.setAttribute('aria-label','Review controls');review.innerHTML=`<div class="analysis-controls">${iconButton('previous','previous','Previous review moment')}${iconButton('autoplay','play','Play backward')}${iconButton('next','next','Next review moment')}${iconButton('return','return','Return to game position')}</div><progress id="analysis-progress" class="ui-progress" max="1" value="0" aria-label="Review progress"></progress><div id="analysis-countdown" hidden><span data-countdown></span><div class="ui-meter"><span class="ui-meter-fill"></span></div></div><p id="analysis-explanation" class="analysis-sr-only"></p><div id="analysis-alternatives"></div>`;
  document.querySelector('.study-actions').prepend(review);
- const evaluation=document.createElement('div');evaluation.className='board-evaluation';evaluation.setAttribute('aria-label','Position evaluation');evaluation.innerHTML='<strong id="analysis-score">—</strong><span id="analysis-q" class="analysis-q">Q —</span><div id="analysis-eval" class="analysis-eval" role="img" aria-label="Position evaluation"><span id="analysis-eval-white"></span></div><div id="analysis-wdl"></div>';document.querySelector('.round__app').append(evaluation);
+ const evaluation=document.createElement('div');evaluation.className='board-evaluation';evaluation.setAttribute('aria-label','Position evaluation');evaluation.innerHTML='<strong id="analysis-score">—</strong><span id="analysis-q" class="analysis-q">—</span><div id="analysis-eval" class="analysis-eval" role="img" aria-label="Position evaluation"><span id="analysis-eval-white"></span></div><div id="analysis-wdl"></div>';document.querySelector('.round__app').append(evaluation);
  $('lines-toggle').onclick=()=>{linesExpanded=!linesExpanded;linesDisplay();};compactView.addEventListener('change',linesDisplay);document.getElementById('study-flip').onclick=()=>boardView.setOrientation(boardView.orientation==='w'?'b':'w');
  $('plan-toggle').onclick=()=>{ChessilPreferences.update({analysis:{plan:!ChessilPreferences.get().analysis.plan}});if(engineReady)queuePosition();};$('threat-toggle').onclick=()=>{threatFor='';ChessilPreferences.update({analysis:{threat:!ChessilPreferences.get().analysis.threat}});if(engineReady)queuePosition();};
  $('engine-toggle').onclick=()=>engineReady||engineLoading?stopEngine():startEngine();$('perspective').onchange=changePerspective;$('previous').onclick=()=>{pause();reveal(adjacent(-1));};$('next').onclick=()=>{pause();reveal(adjacent(1));};$('autoplay').onclick=()=>{if(autoplay)pause();else{autoplay=true;controls();if(a1ti===0)showActual(history.length);schedule();}};$('return').onclick=returnToGame;
@@ -202,5 +209,5 @@ document.addEventListener('keydown',event=>{
 document.addEventListener('click',event=>{
  if(freeStudy||ChessilStudy.inVariation()||!opened||panel.hidden)return;const button=event.target.closest('#sb,#fw');if(!button)return;event.preventDefault();event.stopPropagation();step(button.id==='fw'?1:-1);
 },true);
-window.addEventListener('pagehide',()=>{guide?.close();clearTimeout(planTimer);clearTimeout(refineTimer);token++;engine?.close();autoplayRun?.cancel();if(study){engineReady=false;engineLoading=false;controls();}});
+window.addEventListener('pagehide',()=>{guide?.close();clearTimeout(planTimer);clearTimeout(engineLimitTimer);clearTimeout(threatRefreshTimer);token++;engine?.close();autoplayRun?.cancel();if(study){engineReady=false;engineLoading=false;controls();}});
 })();

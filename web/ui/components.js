@@ -26,3 +26,6 @@ exports.historyRail = language => {
 
 // Shared accessible icon control; consumers supply state and the SVG path.
 exports.iconButton=({id,label,path,hidden=false,disabled=false})=>`<button type="button" id="${attribute(id)}" class="ui-button ui-icon-button" aria-label="${attribute(label)}" title="${attribute(label)}"${hidden?' hidden':''}${disabled?' disabled':''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${attribute(path)}"/></svg></button>`;
+
+// Shared, accessible code block. Copy behavior is delegated globally in ui.js.
+exports.codeSnippet=({code,label='',language='shell',copy='Copy code'})=>`<figure class="ui-code-snippet" data-code-snippet><figcaption><span>${attribute(label||language)}</span><button type="button" class="ui-icon-button ui-code-copy" data-copy-code aria-label="${attribute(copy)}" title="${attribute(copy)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h12v14H8zM4 8v14h12"/></svg></button></figcaption><pre><code>${attribute(code)}</code></pre><output class="ui-code-status" role="status" aria-live="polite"></output></figure>`;

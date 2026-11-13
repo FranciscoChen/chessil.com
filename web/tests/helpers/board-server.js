@@ -8,7 +8,7 @@ module.exports=async()=>{
  const game={id:'verify001',history:[],state:0,events:'',times:[],side:'w',snapshotAt:Date.now(),sockets:new Set()};
  const liveListeners=new Set();const liveFeed=require('../../live-stream')({intervalMs:50,index:{ids:async()=>game.state===0?[game.id]:[],read:async()=>new Map(game.state===0?[[game.id,{gameid:game.id,server:'ws0',fen:rules.ucifen(game.history.join(' ')).f,turn:game.history.length%2?'b':'w',whiteMs:299000,blackMs:299000,lastMoveAt:game.snapshotAt,plies:game.history.length,lastMove:game.history.at(-1)||'',clockRunning:game.history.length>=2}]]:[]),subscribe(fn){liveListeners.add(fn);return()=>liveListeners.delete(fn);}}});
  const server=http.createServer(async(req,res)=>{
-  const url=new URL(req.url,'http://localhost'),chunks=[];requests.push(url.pathname);for await(const chunk of req)chunks.push(chunk);const body=Buffer.concat(chunks).toString();
+  const url=new URL(req.url,'http://localhost'),chunks=[];for(const [name,value] of Object.entries(require('../../isolation')(req.url)))res.setHeader(name,value);requests.push(url.pathname);for await(const chunk of req)chunks.push(chunk);const body=Buffer.concat(chunks).toString();
   const send=data=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(data));};
   if(url.pathname==='/live/games')return liveFeed.open(req,res);
   if(url.pathname==='/lobby/list')return send(game.state===0?[{id:1,gameid:game.id,started:true,hasOpponent:true,username1:'White',username2:'Black',rating1:1500,rating2:1500,timecontrol1:'5+0',rated:false}]:[]);

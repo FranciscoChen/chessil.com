@@ -1,12 +1,28 @@
 {
-  "engines": [{
-    "id": "stockfish-lite",
-    "name": "Stockfish 19 Lite",
-    "manifest": "/engine/manifest.json",
-    "threads": [1],
-    "networks": [
-      {"id":"default","name":"NNUE · nn-61e7af4bb97d (external)","mode":"manifest"},
-      {"id":"embedded","name":"NNUE · bundled default","mode":"embedded"}
-    ]
-  }]
+  "engines": [
+    {
+      "id": "stockfish-lite",
+      "name": "Stockfish 19 Lite",
+      "manifest": "/engine/manifest.json",
+      "threads": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "networks": [
+        {
+          "id": "default",
+          "name": "NNUE \u00b7 bundled default",
+          "mode": "embedded"
+        },
+        {
+          "id": "external",
+          "name": "NNUE \u00b7 optional external override",
+          "mode": "manifest"
+        }
+      ],
+      "threadedManifest": "/engine/manifest-threaded.json"
+    }
+  ]
 }
