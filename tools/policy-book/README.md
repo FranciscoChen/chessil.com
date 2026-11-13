@@ -204,3 +204,24 @@ the same byte budget and keeps existing weights unchanged. Repeated requests are
 idempotent; their continuations are recorded in the expansion report. These
 explicit seeds are exceptions to frontier ranking, not a claim that all named
 openings or every path above a global probability threshold are covered.
+
+## Expressing coverage as parent-move probabilities
+
+Traversal priority and coverage reporting are separate. `coverage.py` examines
+moves from every retained parent and reports the highest conditional probability
+whose resulting position is absent, by parent ply. For example, a move made from
+ply 7 reaches a ply-8 position; its reported 16.8% is its local parent policy,
+not the probability product along the entire eight-move path. No inference or
+frontier ordering is changed by this report. High local probabilities can remain
+uncovered in rare paths even when likely complete lines have been expanded.
+
+```sh
+venv/bin/python coverage.py --checkpoint bt4-book-work/checkpoint.sqlite3 \
+  --report bt4_it332_policy.json
+```
+
+Use a completed book's matching checkpoint for a published report; a snapshot of
+an active checkpoint is only live progress. Reports use the stored minimum ply
+for transposed positions, and omit moves out of ply 16 because their ply-17
+positions are intentionally empty. They do not assert a global percentage cutoff
+or exhaustive coverage of every unvisited chess position.
