@@ -4,22 +4,24 @@ const publishLua=`
 local stamp=tonumber(ARGV[1])
 local previous=tonumber(redis.call('GET',KEYS[1]..':stamp') or '0')
 if previous > stamp then return 0 end
-local games=cjson.decode(ARGV[2]);local keep={};local changed=false
+local games=cjson.decode(ARGV[2]);local keep={};local changed=false;local membership=false
 for _,game in ipairs(games) do
  local id=game.gameid;keep[id]=true
  local key='lobby:game:'..id;local value=cjson.encode(game)
- if redis.call('GET',key) ~= value then changed=true end
+ local old=redis.call('GET',key)
+ if not old then membership=true end
+ if old ~= value then changed=true end
  redis.call('SET',key,value,'EX',ARGV[3]);redis.call('ZADD','lobby:live',stamp+tonumber(ARGV[3])*1000,id)
 end
 for _,id in ipairs(redis.call('SMEMBERS',KEYS[1]..':games')) do
- if not keep[id] then redis.call('DEL','lobby:game:'..id);redis.call('ZREM','lobby:live',id);changed=true end
+ if not keep[id] then redis.call('DEL','lobby:game:'..id);redis.call('ZREM','lobby:live',id);changed=true;membership=true end
 end
 redis.call('DEL',KEYS[1]..':games')
 for id,_ in pairs(keep) do redis.call('SADD',KEYS[1]..':games',id) end
 redis.call('EXPIRE',KEYS[1]..':games',120)
 redis.call('SET',KEYS[1]..':stamp',ARGV[1],'EX',120)
 redis.call('SET',KEYS[1]..':heartbeat',ARGV[1],'EX',ARGV[3])
-if changed then redis.call('PUBLISH','lobby:changed','live') end
+if changed then redis.call('PUBLISH','lobby:changed',membership and 'membership' or 'position') end
 return #games`;
 async function publish(client,region,games,stamp=Date.now()) {
  return client.eval(publishLua,1,'lobby:region:'+region,stamp,JSON.stringify(games),ttl);

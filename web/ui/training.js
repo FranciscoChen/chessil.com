@@ -89,6 +89,11 @@ exports.render = function(name, language) {
      <div><dt>${t.score}</dt><dd id="training-score">—</dd></div>
      <div><dt>${t.clock}</dt><dd id="training-clock">—</dd></div>
     </dl>
+     <div id="training-autoplay" class="training-autoplay" hidden>
+      <span id="training-autoplay-label" role="status" aria-live="polite"></span>
+      ${countdown()}
+      ${meter({id:'training-autoplay-progress',label:'Time until next lesson'})}
+     </div>
     <p id="training-board-help" class="ui-muted training-board-help ui-mobile-secondary">${t.boardHelp}</p>
 
    </section>
@@ -105,11 +110,7 @@ exports.render = function(name, language) {
      <p id="training-status" class="training-sr-only" role="status" aria-live="polite" aria-atomic="true">${t.status}</p>
      <label for="training-progress" class="ui-muted training-progress-label">${t.progress}</label>
      ${progress({id:'training-progress',label:t.progress})}
-     <div id="training-autoplay" class="training-autoplay" hidden>
-      <span id="training-autoplay-label" role="status" aria-live="polite"></span>
-      ${countdown()}
-      ${meter({id:'training-autoplay-progress',label:'Time until next lesson'})}
-     </div>
+
     </div>
 
     <div class="training-line-block">

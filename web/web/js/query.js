@@ -161,9 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
       row.append(node('td','lobby-time',game.timecontrol1))
       const modeCell = node('td','mode-cell'); modeCell.append(node('span','lobby-badge'+(game.rated?' is-rated':''),game.rated?text.rated:text.casual)); row.append(modeCell)
       if(mode==='watch') {
-        const liveCell=node('td','live-game-cell');
-        const live=node('span','lobby-live-clock');live.dataset.liveGame=game.gameid;
-        liveCell.append(live,node('small','',String(game.live?.plies || 0)+' '+text.movesPlayed+(game.live?.lastMove?' · '+game.live.lastMove:'')));
+        const liveCell=node('td','live-game-cell'),preview=node('a','live-board');preview.href='/game/'+game.gameid;preview.dataset.liveBoard=game.gameid;liveCell.append(preview);
         row.append(liveCell);
       }
       const actionCell = node('td','action-cell')
@@ -173,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
       actionButton.disabled = !!game.isOwn && !game.started
       actionCell.append(actionButton); row.append(actionCell); body.append(row)
     }
-    table.append(body); container.replaceChildren(table);paintLiveClocks()
+    table.append(body); container.replaceChildren(table);window.ChessilLiveGames?.hydrate(container)
     if (total > 1) {
       const previous = button(text.previous,'ui-secondary',()=>{page--;render()}); previous.disabled=page===1
       const next = button(text.next,'ui-secondary',()=>{page++;render()}); next.disabled=page===total
@@ -338,27 +336,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }
-  function paintLiveClocks() {
-    const format=value=>{const seconds=Math.max(0,Math.ceil(value/1000));return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');};
-    document.querySelectorAll('[data-live-game]').forEach(element=>{
-      const game=games.find(game=>game.gameid===element.dataset.liveGame),live=game?.live;if(!live)return;
-      const elapsed=live.clockRunning?Math.max(0,Date.now()-live.lastMoveAt):0;
-      element.textContent='♔ '+format(live.whiteMs-(live.turn==='w'?elapsed:0))+'  ·  ♚ '+format(live.blackMs-(live.turn==='b'?elapsed:0));
-      element.setAttribute('aria-label',text.whiteClock+' '+format(live.whiteMs-(live.turn==='w'?elapsed:0))+', '+text.blackClock+' '+format(live.blackMs-(live.turn==='b'?elapsed:0)));
-    });
-  }
   if(window.EventSource) {
     feed=new EventSource('/lobby/events');
     feed.onmessage=()=>{if(!feedRefresh)feedRefresh=setTimeout(()=>{feedRefresh=null;if(!document.hidden)loadLobby();},300);};
     feed.onopen=()=>loadLobby();
   }
   const heartbeatTimer=setInterval(heartbeatChallenge,20000);
-  const clockTimer=setInterval(paintLiveClocks,1000);
   const refreshTimer=setInterval(()=>{
     if (!document.hidden && !document.querySelector('dialog[open]') && $('lobby-results').getAttribute('aria-busy')!=='true') loadLobby()
   },10000)
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){loadLobby();heartbeatChallenge();}});
-  window.addEventListener('pagehide',()=>{stopRanked();clearInterval(refreshTimer);clearInterval(heartbeatTimer);clearInterval(clockTimer);clearTimeout(feedRefresh);feed?.close();if(events)events.close();if(pendingPoll)clearInterval(pendingPoll)})
+  window.addEventListener('pagehide',()=>{stopRanked();clearInterval(refreshTimer);clearInterval(heartbeatTimer);clearTimeout(feedRefresh);feed?.close();if(events)events.close();if(pendingPoll)clearInterval(pendingPoll)})
   loadLobby()
   if (params.get('match') === '1') rankedButton.click()
 })

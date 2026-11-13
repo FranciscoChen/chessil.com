@@ -20,7 +20,7 @@ window.ChessilHistory=class ChessilHistory {
  lock(value){this.locked=value;this.update();}
  update(){for(const id of ['rw','sb','fw','ff'])this.root.querySelector('#'+id).disabled=this.locked||(['rw','sb'].includes(id)?this.ply===0:this.ply===this.moves.length);
   this.list.querySelectorAll('[ply]').forEach(entry=>{const active=Number(entry.getAttribute('ply'))===this.ply;entry.classList.toggle('a1t',active);if(active)entry.setAttribute('aria-current','step');else entry.removeAttribute('aria-current');entry.setAttribute('aria-disabled',String(!!this.locked));});
-  const entry=this.list.querySelector('.a1t');if(entry){const outer=this.list.getBoundingClientRect(),inner=entry.getBoundingClientRect();if(inner.right>outer.right)this.list.scrollLeft+=inner.right-outer.right;if(inner.left<outer.left)this.list.scrollLeft+=inner.left-outer.left;}
+  window.ChessilHistoryFocus?.(this.list,this.list.querySelector('.a1t'));
   this.root.querySelector('#moves-empty').hidden=!!this.moves.length;
  }
 };

@@ -57,6 +57,7 @@ const lobbyWatchers = new Map();
 const liveRedis = require('../shared/lobby-redis')(config);
 const lobbyIndex = require('./lobby-index')({client:liveRedis,db:lobbyDb,notify:notifyLobbyWatchers});
 const lobbyStreams=new Set();
+const liveStream=require('./live-stream')({index:lobbyIndex});
 const gameMenu = require('./game-menu')({db:lobbyDb,index:lobbyIndex,redis:liveRedis,join:joinLobbyGame,create:createLobbyGame,notify:publishUserNotification});
 const gameStarts = require('./game-starts')({db:lobbyDb,start:startGameOnServer,notify:notifyLobbyWatchers,publish:publishUserNotification});
 
@@ -283,7 +284,7 @@ function shutdown(reason) {
   lobbyWatchers.clear();
   gameStarts.stop();
   for(const res of lobbyStreams)res.end();
-  lobbyIndex.stop();liveRedis.disconnect();
+  liveStream.close();lobbyIndex.stop();liveRedis.disconnect();
   lobbyDb.end().catch(err => console.error('lobby database shutdown error', err));
 
   redisSub.unsubscribe(lobbyChannel, () => {
@@ -643,9 +644,10 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
   if (req.url === '/matchmaking/find' && req.method === 'POST') {
     return handleRankedMatch(req, res, resHeaders, sessiondata);
   }
+  if (req.url.split('?')[0] === '/live/games' && req.method === 'GET') return liveStream.open(req,res,resHeaders);
   if (req.url === '/lobby/events' && req.method === 'GET') {
     res.writeHead(200,{...resHeaders,'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});
-    const update=()=>{if(res.writableLength>65536){res.end();return;}res.write('data: {"changed":true}\n\n');};
+    const update=type=>{if(type==='position')return;if(res.writableLength>65536){res.end();return;}res.write('data: {"changed":true}\n\n');};
     const unsubscribe=lobbyIndex.subscribe(update);lobbyStreams.add(res);
     const timer=setInterval(()=>res.write(': heartbeat\n\n'),15000);
     res.on('close',()=>{clearInterval(timer);unsubscribe();lobbyStreams.delete(res);});update();return;

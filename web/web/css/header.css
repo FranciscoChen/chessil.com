@@ -14,7 +14,7 @@
 .site-header .header-icon { position:relative;display:grid;place-items:center;flex:none;width:44px;height:44px;padding:0;border:1px solid transparent;border-radius:var(--radius);background:transparent;color:var(--text);filter:none;transform:none; }
 .site-header .header-icon:hover,.site-header .header-icon[aria-expanded="true"] { background:var(--hover);color:var(--link);border-color:var(--border); }
 .site-header .header-icon::before { content:'';position:absolute;inset:10px;background:currentColor;mask:var(--header-icon) center / 22px 22px no-repeat; }
-.icon-settings { --header-icon:url('/img/icons/settings.svg'); }.icon-search { --header-icon:url('/img/icons/search.svg'); }.icon-user { --header-icon:url('/img/icons/account.svg'); }.icon-games { --header-icon:url('/img/icons/quarterboard.svg'); }
+.icon-settings { --header-icon:url('/img/icons/settings.svg'); }.icon-search { --header-icon:url('/img/icons/search.svg'); }.icon-user { --header-icon:url('/img/icons/account.svg'); }.icon-games { --header-icon:url('/img/icons/quarterboard.svg?v=2'); }
 .site-header .r { display:none; }
 .site-header .dropdown { display:none;position:absolute;top:calc(100% + 8px);right:clamp(1rem,4vw,4rem);width:304px;max-width:calc(100vw - 16px);max-height:calc(100dvh - var(--header-height) - 24px);padding:8px;overflow:auto;overscroll-behavior:contain;z-index:var(--z-dropdown);border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);box-shadow:var(--panel-shadow); }
 .site-header .shown>.dropdown { display:block;animation:header-reveal .14s ease-out; }
@@ -69,8 +69,15 @@ header .game-menu-game .ui-button { height:32px;min-height:32px;padding:.3rem .6
 header .game-menu-invite input,header .game-menu-invite button { width:100%;min-height:36px;height:36px;font-size:.75rem;padding:.35rem .5rem; }
 /* Keep the game icon's full touch target; only its artwork is small. */
 header #challenge-toggle { transform:none;filter:none;background:none;position:relative; }
-header #challenge-toggle::before { content:'';position:absolute;inset:0;background:var(--text);mask:url('/img/icons/quarterboard.svg') center / 22px 22px no-repeat; }
+header #challenge-toggle::before { content:'';position:absolute;inset:0;background:var(--text);mask:url('/img/icons/quarterboard.svg?v=2') center / 22px 22px no-repeat; }
 header #challenge-toggle .data-count { position:static; }
 header #challenge-toggle .data-count::after { content:attr(data-count);position:absolute;top:4px;right:3px;min-width:15px;height:15px;padding:0 2px;display:grid;place-items:center;border-radius:8px;background:var(--link);color:var(--on-accent);font:700 10px/1 var(--sans-font); }
 header #challenge-toggle .data-count[data-count="0"]::after { display:none; }
 header #challenge-app { overflow:auto; }
+/* Anchor utility panels to their own controls on desktop. */
+@media(min-width:901px){.site-header .site-buttons>div,.site-header .header-account{position:relative}.site-header .dropdown{top:calc(100% + 9px);right:0;left:auto}}
+.site-header #challenge-app{left:auto;right:0;line-height:1.45}
+@media(max-width:900px){.site-header #challenge-app{right:8px}}
+.site-header .game-menu-title{padding:.35rem .5rem .6rem;border-bottom:1px solid var(--border)}
+.site-header .game-menu-status{margin:.5rem;padding:.25rem 0;line-height:1.5}
+.site-header .game-menu-list:empty{display:none}

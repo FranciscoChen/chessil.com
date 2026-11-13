@@ -158,3 +158,13 @@
 @media(max-width:900px) {
  .game-page:not(.study-page) .round__app { grid-template-areas:"moves" "opponent" "board" "player" "actions";grid-template-rows:40px auto auto auto auto; }
 }
+/* A bounded workspace owns desktop history height; only the list can grow. */
+@media(min-width:901px){
+ .game-page .round__app,.game-page.analysis-open .round__app{height:var(--chess-board-size);min-height:0}
+ .game-page moves-panel,.game-page .board-history{min-height:0;max-height:100%;overflow:hidden}
+ .game-page .board-history{height:100%;grid-template-rows:minmax(0,1fr) 40px}
+ .game-page .round__app .board-history moves-list{min-height:0;height:100%;overscroll-behavior:contain}
+}
+/* End padding allows the first/last selected move to be centered as well. */
+@media(min-width:901px){.game-page .board-history moves-list::before,.game-page .board-history moves-list::after{content:"";display:block;grid-column:1/-1;height:var(--history-block-pad,0px);pointer-events:none}}
+@media(max-width:900px){.game-page .board-history moves-list::before,.game-page .board-history moves-list::after{content:"";display:block;flex:0 0 max(0px,calc(50% - 18px));height:1px;pointer-events:none}}

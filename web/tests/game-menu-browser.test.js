@@ -5,6 +5,6 @@ test('global menu: invitation acceptance, active-game links, global settings and
  assert.ok(await p.$('a.game-menu-game[href="/game/verify001"]'));
  await p.screenshot({path:'/tmp/game-menu-mobile.png'});await Promise.all([p.waitForNavigation({waitUntil:'networkidle0'}),p.click('#challenge-app .game-menu-game button')]);assert.equal(f.game.inviteActions[0].action,'accept');assert.equal(new URL(p.url()).pathname,'/game/verify001');
  await p.click('.dasher > button');await p.click('#open-board-settings');assert.equal(await p.$$eval('#board-settings-dialog',els=>els.length),1);await p.keyboard.press('Escape');
- await p.goto(f.url+'/en/ongoing',{waitUntil:'networkidle0'});await p.waitForSelector('[data-my-games-list] a[href="/game/verify001"]');assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
+ await p.goto(f.url+'/en/ongoing',{waitUntil:'domcontentloaded'});await p.waitForSelector('[data-my-games-list] a[href="/game/verify001"]');assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
  }finally{await browser.close();await f.close();}
 });

@@ -4,7 +4,7 @@ Game pages contain no evaluation, WDL, engine or book UI. Their Analyze game lin
 appears only for finished games with moves (result codes 1–8), and navigates to
 `/analysis?game=ID&review=1`. The dedicated analysis page loads the recorded moves
 and player perspective before starting the existing backward review. A direct
-`?game=ID` link loads the same game without automatically starting the engine.
+`?game=ID` link starts the same engine and scan, with autoplay paused.
 Imports reject unfinished/unavailable games. Engine binaries and NNUE files download when engine analysis starts; the opening book loads with the analysis board; the small engine catalog is also used by settings.
 `src/analysis.js` composes the existing native board, move history, shared buttons,
 progress, and CSS countdown. `src/local-engine.js` serializes UCI searches in one
@@ -13,7 +13,8 @@ controls are shared SVG icons: Play starts, Stop retains output, and Options
 expands a CSS-animated panel inside the engine card. The selected engine name is
 visible; close/theme controls and the Explore preface are omitted. Engine,
 network, MultiPV, hash and thread fields use the same renderer and preference
-owner as general settings. Changes persist globally and apply on engine start. Original history, clocks, and stored game
+owner as general settings. Changes persist globally; changing engine configuration restarts a running engine,
+while a manually stopped engine stays stopped. Original history, clocks, and stored game
 data are not edited.
 
 The scan starts at the final position and moves backwards. Searches retain the
@@ -43,7 +44,7 @@ white pulse, and the shared floating explanation underneath the destination.
 Adjacent arrow/button navigation visits this step between the previous and
 actual move. Leaving it clears the guide. Clicking symbols directly does the
 same. Backward autoplay visits every ply, from the final position through the start.
-Ordinary steps use a two-second CSS countdown; review suggestions pause for five
+Ordinary steps use a 1.4-second CSS countdown; review suggestions pause for five
 seconds. Piece sliding uses the shared renderer and respects motion preferences. Manual
 navigation and exploration pause autoplay. Local variations never alter history.
 
@@ -52,8 +53,7 @@ with fixed navigation buttons at both ends. Desktop keeps the original side
 column with a two-column move list and navigation below it. A compact evaluation block gives the centipawn bar its full available width and
 puts the three-segment WDL bar with labeled percentages on its own row. Win uses
 the reviewing side’s piece color, Loss uses the opponent’s, and Draw is their
-50/50 color mix. Both-sides review labels these segments White, Draw and Black. Live games display unknown values,
-never engine assistance. Review defaults to the player’s side (both for spectators);
+50/50 color mix. Both-sides review labels these segments White, Draw and Black. Game pages never show these tools. Review defaults to the player’s side (both for spectators);
 White, Black and Both change marker visibility, board orientation, score and WDL
 perspective, without restarting the scan. All positions are analyzed once.
 
@@ -117,6 +117,40 @@ Shared highlight calls accept multiple `areas` and use a pointer-transparent
 8% dimming mask around them. The mask follows scroll/resize and is removed with
 the highlight; header stacking remains above board highlights.
 
+## Engine-fed book and optional guidance
+
+The engine starts by default on dedicated analysis boards. A selected position
+gets one wide MultiPV pass (all legal moves, up to 180,000 nodes / 900 ms) for
+per-move book evaluations, followed by the configured MultiPV. Refinement is
+bounded to ten rounds or depth 18. The foreground position and backward scan
+share one serial worker; navigation coalesces and stale results are ignored.
+Hidden pages stop the worker and resume on return if it was running. At most 128
+position move-score maps and book lookup requests are cached. Stop retains the
+book, existing evaluations, and review findings.
+
+`analysis-book.js` reuses keyed rows and ranks by policy before full move 9 when
+policy exists. From full move 9, or without policy, it ranks by mover-relative
+engine score. All legal moves remain selectable; absent policy displays a dash,
+not an invented prior. Engine fallback rows after source ply 16 are not additional
+book coverage. Each row shows policy percentage, pawn-equivalent score (or mate),
+and perspective-aware WDL. Rows update without resetting the scroll position and
+hold order while a row has keyboard focus.
+
+Plan and threat controls share the same global/inline preference store as other
+engine options, default off. `analysis-guidance.js` validates PV moves using the
+shared rules and picks up to four moves by the reviewed side. A plan requires
+depth 6, repeated agreement, and 650 ms stability; a bounded timer displays the
+last stable candidate even if the search has finished. Drawing stays independent
+of pointer handling. Flip reprojects the same SVG arrows.
+
+Threat probing plays the best move, then skips the opponent's turn, clears en
+passant, and advances the counters. It refuses checks, terminal positions, or
+the wrong perspective. A 50,000-node / 250 ms local search must improve the root
+score by at least 80 cp (or find a winning mate). Dashed setup and stronger red
+threat arrows show the conditional sequence. This is a hypothetical threat, not
+a legal continuation with an actual opponent reply. A changing best move clears
+stale threat arrows and triggers a fresh probe.
+
 ## Engine source and network builds
 
 The initial build is Stockfish 19 Lite, single threaded, based on
@@ -126,7 +160,7 @@ Stockfish to WebAssembly and runs UCI in a worker. The lite network is smaller
 and weaker than the full network; it makes a practical default for local review.
 Modern WebAssembly SIMD support is required. No SharedArrayBuffer or special
 cross-origin isolation headers are required. Failures appear in the panel and
-can be retried by closing/reopening it; there is no server-engine fallback.
+can be retried with Start; there is no server-engine fallback.
 
 Install/activate Emscripten **6.0.9**, then:
 

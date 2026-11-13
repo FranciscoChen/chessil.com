@@ -142,3 +142,8 @@
 #puzzle-app move-entry {cursor:pointer}
 #puzzle-app move-entry.a1t,#puzzle-app move-entry:hover {color:var(--link);background:var(--hover)}
 #puzzle-app .game-sr-only {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+/* Timed progression must remain rendered: CSS animationend owns completion. */
+#training-autoplay{display:flex;align-items:center;gap:.45rem;margin:.4rem 0 0;font-size:.75rem}
+#training-autoplay[hidden]{display:none}
+#training-autoplay .ui-meter{flex:1;margin:0;min-width:2rem}

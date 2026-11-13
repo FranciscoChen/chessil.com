@@ -1,7 +1,8 @@
 const {publish}=require('../shared/live-games');
+const {ucifen}=require('./chess');
 const fields=['f','m','t','l','n','s','botSide','createdAt'];
 module.exports=function livePublisher({redis,central,region,abortKey='game:timeouts:abort',finishKey='game:timeouts:finish',intervalMs=3000}) {
- let busy=false,closed=false,seeded=false;
+ let busy=false,closed=false,seeded=false,scheduled;const positions=new Map();
  async function seed() {
   let cursor='0';
   do {
@@ -34,14 +35,16 @@ module.exports=function livePublisher({redis,central,region,abortKey='game:timeo
      if(error)throw error;
      if(value[0]!=='0' || typeof value[1]!=='string'){stale.push(chunk[i]);return;}
      const plies=value[1]?value[1].split(' ').length:0;
-     games.push({gameid:chunk[i],server:region,turn:value[2],whiteMs:Number(value[3]),blackMs:Number(value[4]),
+     const cached=positions.get(chunk[i]);if(!cached||cached.moves!==value[1])positions.set(chunk[i],{moves:value[1],fen:ucifen(value[1])});
+     games.push({fen:positions.get(chunk[i]).fen,gameid:chunk[i],server:region,turn:value[2],whiteMs:Number(value[3]),blackMs:Number(value[4]),
       lastMoveAt:Number(value[5]),plies,lastMove:value[1]?value[1].split(' ').at(-1):'',clockRunning:plies>=2 || value[6]===value[2]});
     });
    }
+   const active=new Set(ids);for(const id of positions.keys())if(!active.has(id)||stale.includes(id))positions.delete(id);
    if(stale.length)await redis.srem('game:active',...stale);
    await publish(central,region,games);
   }catch(error){console.error('Live game publisher:',error.message);}finally{busy=false;}
  }
  const timer=setInterval(tick,intervalMs);timer.unref();
- return {tick,close(){closed=true;clearInterval(timer);}};
+ return {tick,schedule(){if(!scheduled&&!closed)scheduled=setTimeout(()=>{scheduled=null;tick();},250);},close(){closed=true;clearInterval(timer);clearTimeout(scheduled);}};
 };

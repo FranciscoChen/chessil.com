@@ -210,3 +210,11 @@ At 900px and below, both layouts use the same available-width rule. Training
 moves its library below the board when three columns would shrink it. Coordinate
 labels alternate light/dark ink according to the displayed square, independently
 of orientation, and use a stronger weight for small-board legibility.
+
+The shared context layer shows a crown for the player's color and a smaller
+triangle for the side to move. Their board edges follow orientation; spectators
+have no own-side crown. The arrival pulse animates only opacity and transform
+and respects reduced motion. `syncContext` caches orientation/side/turn so an
+unchanged render makes no DOM mutations. Coordinates move from right/bottom to
+left/top when flipped. `setArrows` owns a cached, pointer-transparent SVG layer
+for analysis plan, setup, and threat arrows; dragging never rebuilds it.

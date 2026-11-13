@@ -59,13 +59,15 @@ window.ChessilPreferences = (() => {
    const label=document.createElement('label'),input=document.createElement('select');label.className='ui-field';label.textContent=labels[index];input.dataset.preference='analysis.'+key;input.dataset.engineOption=key;label.append(input);host.append(label);fields[key]=input;
    input.onchange=()=>{if(key==='engine'){const chosen=catalog?.engines.find(engine=>engine.id===input.value);if(chosen)update({analysis:{engine:chosen.id,threads:chosen.threads[0],network:chosen.networks[0].id}});}else update({analysis:{[key]:['multiPV','hash','threads'].includes(key)?Number(input.value):input.value}});};
   }
+  const flags={};for(const [key,label] of [['plan',document.documentElement.lang==='es'?'Mostrar plan':document.documentElement.lang==='zh'?'显示计划':'Show plan'],['threat',document.documentElement.lang==='es'?'Mostrar amenaza':document.documentElement.lang==='zh'?'显示威胁':'Show immediate threat']]){const field=document.createElement('label'),input=document.createElement('input');field.className='board-settings-toggle';input.type='checkbox';input.dataset.preference='analysis.'+key;input.onchange=()=>update({analysis:{[key]:input.checked}});field.append(input,document.createTextNode(label));host.append(field);flags[key]=input;}
   const fill=(key,options)=>fields[key].replaceChildren(...options.map(([id,label])=>new Option(label,String(id))));
   fill('multiPV',Array.from({length:8},(_,i)=>[i+1,String(i+1)]));fill('hash',[8,16,32,64,128,256].map(n=>[n,n+' MB']));
   const hint=document.createElement('p');hint.className='ui-muted';if(!compact)host.append(hint);
   if(compact){const status=document.createElement('output');status.className='preference-status';status.dataset.preferenceStatus='';status.setAttribute('role','status');host.append(status);}
   const form={host,sync(){
    const config=value.analysis,chosen=catalog?.engines.find(engine=>engine.id===config.engine)||catalog?.engines[0];
-   if(chosen&&selectedId!==chosen.id){selectedId=chosen.id;fill('engine',catalog.engines.map(engine=>[engine.id,engine.name]));fill('threads',chosen.threads.map(n=>[n,String(n)]));fill('network',chosen.networks.map(network=>[network.id,network.name]));hint.textContent='Changes apply on engine start.'+(chosen.threads.length===1?' This build supports '+chosen.threads[0]+' thread.':'');}
+   if(chosen&&selectedId!==chosen.id){selectedId=chosen.id;fill('engine',catalog.engines.map(engine=>[engine.id,engine.name]));fill('threads',chosen.threads.map(n=>[n,String(n)]));fill('network',chosen.networks.map(network=>[network.id,network.name]));hint.textContent='Changes apply to analysis.'+(chosen.threads.length===1?' This build supports '+chosen.threads[0]+' thread.':'');}
+   for(const [key,input] of Object.entries(flags))input.checked=!!config[key];
    for(const [key,input] of Object.entries(fields)){input.disabled=!catalog&&['engine','network','threads'].includes(key);input.value=String(config[key]);if(!input.value&&input.options.length)input.selectedIndex=0;}
   }};engineForms.add(form);form.sync();
   return loadEngineCatalog().then(result=>{if(!host.isConnected)return false;catalog=result;form.sync();return true;}).catch(()=>{hint.textContent='Engine choices unavailable. Reopen options to retry.';if(compact){hint.setAttribute('role','status');host.append(hint);}return false;});

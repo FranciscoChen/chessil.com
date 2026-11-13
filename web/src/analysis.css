@@ -64,3 +64,12 @@ cg-board square.annotation-suggestion { --ui-highlight-fill:#ffffff26; }
 .wdl-labels { display:flex;justify-content:space-between;gap:3px;margin-top:3px;font:500 11px/1.2 var(--sans-font);color:var(--text); }
 .wdl-bar.is-unknown { opacity:.55; }
 @media(max-width:900px) { .game-page .round__app,.game-page.analysis-open .round__app { grid-template-rows:40px 46px auto auto auto auto auto; }.board-evaluation { grid-template-columns:auto minmax(0,1fr); }.board-evaluation #analysis-depth { display:none; } }
+.analysis-icon.is-active{color:var(--link);background:var(--hover)}
+.engine-toolbar .analysis-icon{width:28px;height:30px;padding:5px;flex:none}
+.book-move{display:grid;grid-template-columns:minmax(2.8rem,1fr) 3.4rem 3.4rem 46px;gap:.3rem;min-height:24px}
+.book-policy,.book-eval{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.book-policy{color:var(--text2)}
+.book-wdl{width:46px;display:block}
+.book-wdl .wdl-track{height:7px}
+.game-page .board-tools{min-height:0;max-height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+@media(max-width:900px){.game-page .board-tools{max-height:none;overflow:visible}.book-move{grid-template-columns:minmax(2.8rem,1fr) 3.4rem 3.4rem 46px}}

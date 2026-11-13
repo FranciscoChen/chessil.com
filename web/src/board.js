@@ -8,7 +8,7 @@ window.ChessilBoard = class ChessilBoard {
   this.pieces=new Map();this.position={};this.selected=null;this.keyboardMode=false;this.gesture=null;this.active='e2';
   this.orientation='w';this.pending=null;this.lastMove='';this.premove='';this.hover=null;this.guidance=null;this.overlay=new Map();
   root.tabIndex=0;root.setAttribute('role','application');root.setAttribute('aria-roledescription','chessboard');
-  this.announcement=document.createElement('span');this.announcement.className='game-sr-only';this.announcement.setAttribute('aria-live','polite');root.parentElement.append(this.announcement);
+  this.announcement=document.createElement('span');this.announcement.className='board-sr-only';this.announcement.setAttribute('aria-live','polite');root.parentElement.append(this.announcement);
   this.abort=new AbortController();const options={signal:this.abort.signal};
   root.addEventListener('pointerdown',event=>this.down(event),options);
   root.addEventListener('onpointerrawupdate' in window?'pointerrawupdate':'pointermove',event=>this.drag(event),options);
@@ -24,7 +24,7 @@ window.ChessilBoard = class ChessilBoard {
  }
  setOrientation(side) {
   if(!['w','b'].includes(side)||this.orientation===side)return;
-  this.cancel();this.orientation=side;
+  this.cancel();this.orientation=side;this.syncContext();this.drawArrows();
   for(const [square,element] of this.pieces){element.getAnimations().forEach(animation=>animation.cancel());element.style.transform=this.transform(square);}
   const wrap=this.root.parentElement;wrap.querySelectorAll('coords.files coord').forEach((el,i)=>el.textContent=String.fromCharCode(side==='w'?97+i:104-i));wrap.querySelectorAll('coords.ranks coord').forEach((el,i)=>el.textContent=side==='w'?8-i:i+1);this.drawOverlays();
  }
@@ -185,6 +185,19 @@ window.ChessilBoard = class ChessilBoard {
   }
  }
  pieceName(piece) {return piece?`${piece.c==='w'?'White':'Black'} ${{p:'pawn',n:'knight',b:'bishop',r:'rook',q:'queen',k:'king'}[piece.p]}`:'empty';}
+ setArrows(arrows=[]){this.arrows=arrows.slice(0,6);this.drawArrows();}
+ drawArrows(){const key=this.orientation+JSON.stringify(this.arrows||[]);if(key===this.arrowKey)return;this.arrowKey=key;this.arrowLayer?.remove();if(!this.arrows?.length)return;const ns='http://www.w3.org/2000/svg',svg=tag=>document.createElementNS(ns,tag),layer=svg('svg');layer.setAttribute('viewBox','0 0 8 8');layer.classList.add('board-arrows');layer.setAttribute('role','img');layer.setAttribute('aria-label','Analysis plan and threat arrows');const defs=svg('defs');layer.append(defs);const id='board-arrow-'+Math.random().toString(36).slice(2);
+  for(const type of ['plan','setup','threat']){const marker=svg('marker');marker.id=id+'-'+type;marker.setAttribute('viewBox','0 0 10 10');marker.setAttribute('refX','8');marker.setAttribute('refY','5');marker.setAttribute('markerWidth','3');marker.setAttribute('markerHeight','3');marker.setAttribute('orient','auto');const head=svg('path');head.setAttribute('d','M0 0 10 5 0 10z');head.classList.add('arrow-head-'+type);marker.append(head);defs.append(marker);}
+  this.arrows.forEach((arrow,index)=>{if(!/^[a-h][1-8]$/.test(arrow.from)||!/^[a-h][1-8]$/.test(arrow.to)||!['plan','setup','threat'].includes(arrow.type))return;const from=this.point(arrow.from),to=this.point(arrow.to),line=svg('line');line.setAttribute('x1',from[0]+.5);line.setAttribute('y1',from[1]+.5);line.setAttribute('x2',to[0]+.5);line.setAttribute('y2',to[1]+.5);line.setAttribute('marker-end','url(#'+id+'-'+arrow.type+')');line.classList.add('board-arrow',arrow.type);line.style.setProperty('--arrow-order',index);const title=svg('title');title.textContent=arrow.label||arrow.type;line.append(title);layer.append(line);});this.arrowLayer=layer;this.root.append(layer);
+ }
+ syncContext(){
+  const state=this.state(),side=this.contextSide===undefined?(state.watcher?null:state.side):this.contextSide,turn=this.positionTurn||state.turn||state.fen?.split(' ')[1];
+  const contextKey=[this.orientation,side,turn].join(':');if(this.contextKey===contextKey)return;this.contextKey=contextKey;
+  this.root.dataset.orientation=this.orientation;
+  const wrap=this.root.parentElement;wrap.querySelectorAll('coords.files coord').forEach((el,i)=>el.textContent=String.fromCharCode(this.orientation==='w'?97+i:104-i));wrap.querySelectorAll('coords.ranks coord').forEach((el,i)=>el.textContent=this.orientation==='w'?8-i:i+1);
+  if(!this.context){this.context=document.createElement('span');this.context.className='board-context';this.context.innerHTML='<span class="board-cue board-cue-own"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 8 4 3 4-6 4 6 4-3-2 11H6zM6 21h12M12 2v4M10 4h4"/></svg></span><span class="board-cue board-cue-turn"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 11 5-7 5 7z"/></svg></span>';this.root.append(this.context);}
+  const own=this.context.firstElementChild,indicator=this.context.lastElementChild;own.hidden=!['w','b'].includes(side);own.dataset.side=side||'';own.dataset.edge=side===this.orientation?'bottom':'top';own.setAttribute('aria-label',side==='b'?'Your side: Black':'Your side: White');own.title=own.getAttribute('aria-label');indicator.hidden=!['w','b'].includes(turn);indicator.dataset.side=turn||'';indicator.dataset.edge=turn===this.orientation?'bottom':'top';indicator.setAttribute('aria-label',turn==='b'?'Black to move':'White to move');indicator.title=indicator.getAttribute('aria-label');
+ }
  drawOverlays() {
   const wanted=new Set(),fragment=document.createDocumentFragment();
   const add=(square,type)=>{
@@ -243,8 +256,8 @@ window.ChessilBoard = class ChessilBoard {
    element.dataset.square=square;element.setAttribute('aria-hidden','true');const target=this.transform(square);element.style.transform=target;this.pieces.set(square,element);
    if(duration && moved)element.animate([{transform:origins.get(square)},{transform:target}],{duration,easing:'cubic-bezier(.22,.65,.3,1)'});
   }
-  this.position=next;this.lastMove=move || '';this.drawOverlays();
+  this.position=next;this.lastMove=move || '';this.syncContext();this.drawOverlays();
   if(move)this.announcement.textContent=move.slice(0,2)+' → '+move.slice(2,4);
  }
- destroy(){this.restorePreview();this.abort.abort();this.cancel(false);clearTimeout(this.pendingTimer);this.promotion?.close();this.announcement.remove();for(const element of this.pieces.values()){element.getAnimations().forEach(animation=>animation.cancel());element.remove();}for(const element of this.overlay.values())element.remove();this.pieces.clear();this.overlay.clear();}
+ destroy(){this.restorePreview();this.abort.abort();this.cancel(false);clearTimeout(this.pendingTimer);this.promotion?.close();this.announcement.remove();this.context?.remove();this.arrowLayer?.remove();for(const element of this.pieces.values()){element.getAnimations().forEach(animation=>animation.cancel());element.remove();}for(const element of this.overlay.values())element.remove();this.pieces.clear();this.overlay.clear();}
 };

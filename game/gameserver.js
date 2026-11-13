@@ -142,6 +142,7 @@ function deliverGameBroadcast(gameid, payload) {
 }
 
 function broadcastGameUpdate(gameid, messages, terminate) {
+  liveGames.schedule();
   const payload = {
     origin: serverId,
     messages: messages || {},

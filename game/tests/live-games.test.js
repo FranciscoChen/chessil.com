@@ -30,6 +30,8 @@ test('live registry and challenge leases with real Redis',async t=>{
    await service.tick();
    const games=await live.read(redis);
    assert.equal(games.size,1);assert.equal(games.get('testlive2').plies,2);
+   assert.equal(games.get('testlive2').fen,'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2');
+   assert.equal(games.get('testlive2').whiteMs,300000);assert.equal(games.get('testlive2').clockRunning,true);
    assert.equal(await redis.zscore('game:timeouts:finish','testlive2'),'42');
    assert.equal(await redis.sismember('game:active','testlive3'),0);
    await redis.hset('testlive2','f',7);await service.tick();

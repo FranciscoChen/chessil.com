@@ -35,13 +35,7 @@ function paintClocks() {
   if(active && side===playerside && !watcher && value>0 && value<=10000 && !lowClockPlayed){lowClockPlayed=true;ChessilSound.play('clock');}
  }
 }
-function scrollCurrentMove(){
- if(!movesList||!matchMedia('(max-width:900px)').matches)return;
- const entry=movesList.querySelector('.a1t');if(!entry)return;
- const outer=movesList.getBoundingClientRect(),inner=entry.getBoundingClientRect();
- if(inner.right>outer.right)movesList.scrollLeft+=inner.right-outer.right;
- else if(inner.left<outer.left)movesList.scrollLeft+=inner.left-outer.left;
-}
+function scrollCurrentMove(){window.ChessilHistoryFocus?.(movesList,movesList?.querySelector('.a1t'));}
 function appendNotation(move) {
  const side=fen.split(' ')[1],before=gensanbase(move,board,fen,moves);
  const position=ucifen(move,fen,boardgen(fen),{});
@@ -67,10 +61,10 @@ function receiveMove(raw) {
  const from=move.slice(0,2),to=move.slice(2,4),capture=board[to].p!==' ' || (board[from].p==='p' && from[0]!==to[0]);
  const reviewPly=a1ti<uci.length?a1ti:null;
  uci.push(move);appendNotation(move);boardView.premove='';
- if(reviewPly===null)boardView.render(board,move,true);else gamereplay(reviewPly);
+ if(reviewPly===null){boardView.positionTurn=turn;boardView.render(board,move,true);}else gamereplay(reviewPly);
  clock[side]=Number(remaining);allmovetimes.push(Number(remaining));lastmovetime=Number(timestamp);
  if(snapshotReady){if(ChessilPreferences.duration()>0)ChessilSound.play('slide');ChessilSound.play(capture?'capture':'move');if(incheck(fen))ChessilSound.play('check');}
- movesList.scrollTop=movesList.scrollHeight;paintClocks();
+ paintClocks();
  if(Number(finished)>0)displayTermination(Number(finished),true);
 }
 function showResult(code) {
@@ -98,7 +92,7 @@ function gamereplay(ply,animate=false) {
  const position=ucifen(uci.slice(0,a1ti).join(' '));
  const forward=a1ti===previousPly+1,backward=a1ti===previousPly-1;
  const transition=backward?uci[a1ti]?.slice(2,4)+uci[a1ti]?.slice(0,2):uci[a1ti-1]||'';
- boardView.render(position.b,transition,animate&&(forward||backward));
+ boardView.positionTurn=position.f.split(' ')[1];boardView.render(position.b,transition,animate&&(forward||backward));
  boardView.lastMove=uci[a1ti-1]||'';boardView.drawOverlays();
  movesList.querySelector('.a1t')?.classList.remove('a1t');movesList.querySelector(`[ply="${a1ti}"]`)?.classList.add('a1t');scrollCurrentMove();
  updateGameUi();document.dispatchEvent(new Event('chessil:review'));

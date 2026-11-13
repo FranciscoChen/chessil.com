@@ -4,7 +4,7 @@ module.exports=function lobbyIndex({client,db,notify}) {
  const events=new Set();let sweeping=false;
  const subscriber=client.duplicate();subscriber.on('error',error=>console.error('Lobby subscription:',error.message));
  subscriber.on('ready',()=>subscriber.subscribe(channel).catch(error=>console.error('Lobby subscribe:',error.message)));
- subscriber.on('message',()=>{for(const send of events)send();});
+ subscriber.on('message',(_channel,message)=>{for(const send of events)send(message);});
  async function openIds(ids){if(!ids.length)return new Set();const values=await client.mget(...ids.map(id=>'lobby:challenge:'+id));return new Set(ids.filter((_,i)=>!!values[i]));}
  async function changed(type){await client.publish(channel,type);}
  async function open(id,user,session){await client.set('lobby:challenge:'+id,owner(user,session),'EX',90);await changed('challenge');}

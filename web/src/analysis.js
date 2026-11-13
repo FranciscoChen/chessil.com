@@ -11,7 +11,11 @@ const magnitude=score=>score.kind==='mate'?(score.value>0?100000-Math.min(99,sco
 const whiteScore=(score,fen)=>magnitude(score)*(fen.split(' ')[1]==='w'?1:-1);
 const scoreText=(score,fen)=>{if(!score)return '—';const sign=fen.split(' ')[1]==='w'?1:-1;if(score.kind==='mate')return (whiteScore(score,fen)>=0?'':'−')+'M'+Math.abs(score.value);const value=score.value*sign/100;return (value>0?'+':'')+value.toFixed(2);};
 let panel,bookPanel,tools,engine,positions=[],history=[],scores=new Map(),findings=[],book={},opened=false,engineReady=false,token=0,selected=-1,position=initial,exploring=false,autoplay=true,autoplayRun=null,scanning=false,internal=false,viewEpoch=0,suggestionView=false,guide=null,perspective='both',engineLoading=false,processed=new Set(),engineConfig='',bookEpoch=0;
-const leelaBook=new ChessilOpeningBook();
+const leelaBook=new ChessilOpeningBook();let bookView,explorationOrigin=null,playing=false;
+const engineSignature=settings=>JSON.stringify(Object.fromEntries(['engine','network','multiPV','hash','threads'].map(key=>[key,settings[key]])));
+const moveScores=new Map(),bookEvaluated=new Set();
+const stablePlan=new ChessilStablePlan();let planArrows=[],threatArrows=[],guidancePosition='',planTimer;
+function original(ply){if(reviewGame)return ChessilStudy.selectOriginal(ply);gamereplay(ply,true);return true;}
 const $=id=>document.getElementById('analysis-'+id);
 const status=value=>{$('status').textContent=value;panel.classList.toggle('engine-error',/unavailable|timed out|retry|failed|could not/i.test(value));};
 function cancelCountdown(){autoplayRun?.cancel();autoplayRun=null;$('countdown').hidden=true;}
@@ -32,19 +36,19 @@ function schedule(){
   schedule();
  }});
 }
-function showActual(ply){clearGuide();internal=true;gamereplay(ply,true);internal=false;exploring=false;position=positions[a1ti];viewEpoch++;annotate(null);$('alternatives').replaceChildren();$('explanation').textContent=a1ti?'Position after move '+Math.ceil(a1ti/2)+'.':'Starting position. Review complete.';renderDetails();}
+function showActual(ply){clearGuide();internal=true;const restored=original(ply);internal=false;if(!restored)return;exploring=false;position=positions[a1ti];viewEpoch++;annotate(null);$('alternatives').replaceChildren();$('explanation').textContent=a1ti?'Position after move '+Math.ceil(a1ti/2)+'.':'Starting position. Review complete.';renderDetails();}
 function orientReview(side){
- boardView.setOrientation(side);if(study)return;
+ boardView.contextSide=perspective==='both'?(['w','b'].includes(playerside)?playerside:null):perspective;boardView.setOrientation(side);boardView.syncContext();if(study)return;
  const top=document.querySelector('.game-player--top'),bottom=document.querySelector('.game-player--bottom');
  const topIsWhite=!!top.querySelector('.player-mark--white');
  if(topIsWhite!==(side==='b'))for(const selector of ['.ruser','.rclock']){const first=top.querySelector(selector),second=bottom.querySelector(selector);top.append(second);bottom.append(first);}
  top.querySelector('.rclock').classList.replace('rclock-bottom','rclock-top');bottom.querySelector('.rclock').classList.replace('rclock-top','rclock-bottom');
 }
 function changePerspective(){
- perspective=$('perspective').value;pause();selected=-1;showActual(a1ti);
+ perspective=$('perspective').value;pause();selected=-1;if(ChessilStudy.inVariation())renderDetails();else showActual(a1ti);
  findings.forEach(item=>{const entry=movesList.querySelector(`move-entry[ply="${item.ply}"]`),marker=entry?.querySelector('.analysis-marker');if(marker)marker.hidden=!included(item);if(entry){if(included(item))entry.dataset.analysis=item.type;else delete entry.dataset.analysis;}});
  const orientation=perspective==='both'?(playerside==='b'?'b':'w'):perspective;
- orientReview(orientation);renderDetails();
+ orientReview(orientation);renderDetails();threatFor='';if(engineReady)queuePosition();
 }
 function san(move,fen){try{return gensanbase(move,boardgen(fen),fen,mg(fen));}catch(_){return move;}}
 function pvText(pv,fen){const out=[];for(const move of pv.slice(0,8)){if(!mg(fen).includes(move))break;out.push(san(move,fen));fen=ucifen(move,fen,boardgen(fen),{}).f;}return out.join(' ');}
@@ -66,19 +70,24 @@ function evalDisplay(){
  $('wdl').querySelectorAll('[data-wdl]').forEach((el,i)=>{el.style.flexBasis=(percentages?percentages[i]:[33,34,33][i])+'%';el.textContent='';$('wdl').querySelectorAll('.wdl-labels span')[i].textContent=labels[i]+' '+(percentages?percentages[i]+'%':'—');el.setAttribute('aria-hidden','true');});
 
 }
-function linesDisplay(){const lines=scores.get(position)||[];$('lines').replaceChildren();for(const line of lines){if(!line.pv.length)continue;const button=document.createElement('button'),score=document.createElement('strong'),moves=document.createElement('span');button.type='button';button.className='engine-line';score.textContent=scoreText(line,perspective==='b'?position.replace(/ [wb] /,position.split(' ')[1]==='w'?' b ':' w '):position);moves.textContent=pvText(line.pv,position);button.append(score,moves);button.title=score.textContent+' '+moves.textContent;button.onclick=()=>play(line.pv[0]);$('lines').append(button);}}
+function linesDisplay(){const lines=(scores.get(position)||[]).slice(0,ChessilPreferences.get().analysis.multiPV);$('lines').replaceChildren();for(const line of lines){if(!line.pv.length)continue;const button=document.createElement('button'),score=document.createElement('strong'),moves=document.createElement('span');button.type='button';button.className='engine-line';score.textContent=scoreText(line,perspective==='b'?position.replace(/ [wb] /,position.split(' ')[1]==='w'?' b ':' w '):position);moves.textContent=pvText(line.pv,position);button.append(score,moves);button.title=score.textContent+' '+moves.textContent;button.onclick=()=>play(line.pv[0]);$('lines').append(button);}}
 
 async function bookDisplay(){
- if(!bookPanel||bookPanel.hidden)return;
- const epoch=++bookEpoch,fen=position,entry=book[key(fen)];$('book-name').textContent=entry?.names?.map(n=>n.join(' · ')).slice(0,2).join(' / ')||'';$('book-moves').replaceChildren();$('book-note').textContent='';bookPanel.setAttribute('aria-busy','true');
- try{const result=await leelaBook.lookup(fen,a1ti);if(epoch!==bookEpoch||!opened||bookPanel.hidden)return;
-  const legal=mg(fen);for(const [move,label,weight,total] of result.moves){if(!legal.includes(move))continue;const probability=weight/total,b=document.createElement('button');b.type='button';b.className='book-move';b.style.setProperty('--book-prior',probability*100+'%');const name=document.createElement('strong'),prior=document.createElement('span');name.textContent=label;prior.textContent=(probability*100).toFixed(1)+'%';b.append(name,prior);b.setAttribute('aria-label',label+', book prior '+prior.textContent);b.onclick=()=>play(move);$('book-moves').append(b);}
-  bookPanel.classList.toggle('is-empty',!result.moves.length);bookPanel.setAttribute('aria-busy','false');bookPanel.title=result.name+' · normalized move priors';
- }catch(error){if(epoch===bookEpoch){bookPanel.setAttribute('aria-busy','false');$('book-note').textContent='Book unavailable';$('book-note').title=error.message;}}
+ if(!bookPanel||bookPanel.hidden||!bookView)return;
+ const epoch=++bookEpoch,fen=position,entry=book[key(fen)];$('book-name').textContent=entry?.names?.map(n=>n.join(' · ')).slice(0,2).join(' / ')||'';bookPanel.setAttribute('aria-busy','true');
+ try{const result=await bookView.render({fen,ply:a1ti,lines:moveScores.has(fen)?[...moveScores.get(fen).values()]:scores.get(fen)||[],perspective});if(epoch!==bookEpoch)return;bookPanel.classList.toggle('is-empty',!result.moves.length);bookPanel.setAttribute('aria-busy','false');bookPanel.title=result.name+' · '+($('book-moves').dataset.ranking==='policy'?'policy order':'engine order');$('book-note').textContent='';}catch(_){if(epoch===bookEpoch){bookPanel.setAttribute('aria-busy','false');$('book-note').textContent='Book unavailable';}}
 }
-function renderDetails(){evalDisplay();linesDisplay();bookDisplay();controls();}
-function setPosition(fen){clearGuide();position=fen;viewEpoch++;annotate(null);renderDetails();}
-function reveal(index){if(index<0||index>=findings.length)return;cancelCountdown();clearGuide();selected=index;const item=findings[index],move=history[item.ply-1];internal=true;gamereplay(item.ply-1,true);internal=false;position=positions[item.ply-1];exploring=false;viewEpoch++;annotate(item);
+function guidance(){
+ clearTimeout(planTimer);
+ const settings=ChessilPreferences.get().analysis,score=scores.get(position)?.[0],side=perspective==='both'?position.split(' ')[1]:perspective,identity=position+'|'+side;
+ if(guidancePosition!==identity){guidancePosition=identity;stablePlan.reset();planArrows=[];threatArrows=[];}
+ if(settings.plan&&score){const stable=stablePlan.observe(position,score.pv,side,score.depth);if(stable.length)planArrows=stable;else if(engineReady&&stablePlan.wait)planTimer=setTimeout(guidance,stablePlan.wait);}else planArrows=[];
+ if(!settings.threat||threatArrows.length&&threatArrows[0].from+threatArrows[0].to!==score?.pv[0])threatArrows=[];boardView.setArrows([...planArrows,...threatArrows]);
+ for(const [id,enabled] of [['plan-toggle',settings.plan],['threat-toggle',settings.threat]])if($(id)){$(id).setAttribute('aria-pressed',String(enabled));$(id).classList.toggle('is-active',enabled);}
+}
+function decorateHistory(){for(const item of findings){const entry=movesList?.querySelector(`move-entry[ply="${item.ply}"]`);if(!entry)continue;if(included(item))entry.dataset.analysis=item.type;else delete entry.dataset.analysis;if(entry.querySelector('.analysis-marker'))continue;const marker=document.createElement('button');marker.type='button';marker.className='analysis-marker';marker.dataset.ply=item.ply;marker.textContent=item.symbol;marker.title=item.description;marker.hidden=!included(item);marker.setAttribute('aria-label','Review suggestion before '+san(history[item.ply-1],positions[item.ply-1]));marker.onclick=event=>{event.stopPropagation();pause();reveal(findings.indexOf(item));};entry.append(marker);}}
+function renderDetails(){decorateHistory();evalDisplay();linesDisplay();bookDisplay();controls();guidance();}
+function reveal(index){if(index<0||index>=findings.length)return;cancelCountdown();clearGuide();selected=index;const item=findings[index],move=history[item.ply-1];internal=true;const restored=original(item.ply-1);internal=false;if(!restored)return;position=positions[item.ply-1];exploring=false;viewEpoch++;annotate(item);
  suggestionView=true;
  const explanation=`${Math.ceil(item.ply/2)}${item.ply%2?'.':'…'} ${san(move,position)} ${item.symbol} — ${item.description} Try ${san(item.alternatives[0].pv[0],position)}.`;
  $('explanation').textContent=explanation;
@@ -87,7 +96,7 @@ function reveal(index){if(index<0||index>=findings.length)return;cancelCountdown
  guide=ChessilHighlight.show(target,{text:explanation,actions:false,placement:'bottom',subtle:true,areas:[...document.querySelectorAll('cg-board square.annotation-suggestion')]});
  $('alternatives').replaceChildren();for(const line of item.alternatives){const b=document.createElement('button');b.type='button';b.className='engine-line';b.textContent=pvText(line.pv,position);b.onclick=()=>play(line.pv[0]);$('alternatives').append(b);}renderDetails();schedule();}
 async function evaluate(fen,options){const legal=mg(fen);if(!legal.length)return [{kind:incheck(fen)?'mate':'cp',value:0,depth:0,pv:[]}];return engine.search(fen,options);}
-async function play(move){if(freeStudy){ChessilStudy.play(move);return;}if(!opened||!mg(position).includes(move)){boardView.acknowledge();return;}pause();clearGuide();position=ucifen(move,position,boardgen(position),{}).f;exploring=true;annotate(null);boardView.render(boardgen(position),move,true);$('explanation').textContent='Exploring an alternative. Return to the game to continue review.';const mine=++viewEpoch,run=token;renderDetails();if(!engineReady)return;try{const lines=await evaluate(position);if(run!==token||mine!==viewEpoch)return;scores.set(position,lines);renderDetails();}catch(error){if(run===token)status(error.message);}}
+async function play(move){if(!opened)return;pause();clearGuide();if(reviewGame&&explorationOrigin===null)explorationOrigin=a1ti;playing=true;try{ChessilStudy.play(move);}finally{playing=false;}}
 async function scan(run){
  scanning=true;let after=scores.get(positions.at(-1))||await evaluate(positions.at(-1),{history});if(run!==token)return;scores.set(positions.at(-1),after);
  for(let ply=history.length;ply>0;ply--){if(run!==token)return;const beforeFen=positions[ply-1];if(processed.has(ply)){after=scores.get(beforeFen);continue;}const before=scores.get(beforeFen)||await evaluate(beforeFen,{history:history.slice(0,ply-1)});if(run!==token)return;scores.set(beforeFen,before);
@@ -111,48 +120,57 @@ async function open(review=true){
  if(!ChessilStudy.ready)return;
  if(opened){if(review){autoplay=!freeStudy;await startEngine();}return;}
  if(!study&&(!gamefinished||stat<1||stat>8||!uci.length))return;
- opened=true;engineReady=false;exploring=false;const run=++token;history=uci.slice();positions=[initial];for(const move of history)positions.push(ucifen(move,positions.at(-1),boardgen(positions.at(-1)),{}).f);
+ opened=true;engineReady=false;exploring=false;const run=++token;history=reviewGame?ChessilStudy.source().moves:uci.slice();positions=[initial];for(const move of history)positions.push(ucifen(move,positions.at(-1),boardgen(positions.at(-1)),{}).f);
  processed=new Set();scores=new Map();findings=[];movesList.querySelectorAll('.analysis-marker').forEach(el=>el.remove());movesList.querySelectorAll('[data-analysis]').forEach(entry=>{delete entry.dataset.analysis;entry.removeAttribute('title');entry.removeAttribute('aria-label');});selected=-1;autoplay=review&&!freeStudy;scanning=review&&!freeStudy;perspective=playerside==='w'||playerside==='b'?playerside:'both';$('perspective').value=perspective;orientReview(perspective==='both'?(playerside==='b'?'b':'w'):perspective);position=positions[a1ti];panel.hidden=false;bookPanel.hidden=false;tools.hidden=false;document.body.classList.add('analysis-open');
- boardView.state=()=>({fen:position,moves:mg(position),turn:position.split(' ')[1],side:position.split(' ')[1],connected:opened,finished:false,watcher:false});boardView.submit=move=>{queueMicrotask(()=>play(move));return true;};
+ boardView.state=()=>({fen:ChessilStudy.position(),moves:mg(ChessilStudy.position()),turn:ChessilStudy.position().split(' ')[1],side:playerside,connected:opened,finished:false,watcher:false});boardView.submit=move=>{queueMicrotask(()=>play(move));return true;};
  showActual(review&&!freeStudy?history.length:a1ti);$('progress').max=history.length;$('progress').value=0;$('explanation').textContent='Reviewing from the end. Review moments appear between the recorded moves.';$('alternatives').replaceChildren();status('Loading local Stockfish and neural network…');controls();
- loadBookNames();if(review)await startEngine();
+ loadBookNames();await startEngine();
 
 }
-let studySearching=false,studyQueued=false;
+let studySearching=false,studyQueued=false,refineTimer,refineRounds=0,threatFor='';
+function queuePosition(){clearTimeout(refineTimer);refineRounds=0;studyQueued=true;evaluateStudy();}
 async function evaluateStudy(){
- if(!engineReady||!opened)return;studyQueued=true;if(studySearching)return;studySearching=true;const run=token;
- try{while(studyQueued&&engineReady&&opened&&run===token){studyQueued=false;const current=position,epoch=viewEpoch;status('Evaluating position…');const lines=await evaluate(current);if(run!==token)return;if(epoch!==viewEpoch)continue;scores.set(current,lines);renderDetails();status('Position evaluated · depth '+lines[0].depth);}}
- catch(error){if(run===token&&engineReady)status(error.message);}
+ if(!engineReady||!opened||document.hidden)return;studyQueued=true;if(studySearching)return;studySearching=true;const run=token;
+ try{while(studyQueued&&engineReady&&opened&&run===token){studyQueued=false;const current=position,epoch=viewEpoch,legal=mg(current);status('Evaluating position…');
+ const retain=lines=>{if(!moveScores.has(current)){if(moveScores.size>=128){const oldest=moveScores.keys().next().value;moveScores.delete(oldest);bookEvaluated.delete(oldest);}moveScores.set(current,new Map());}const saved=moveScores.get(current);for(const line of lines)if(line.pv[0])saved.set(line.pv[0],line);};
+ const progress=lines=>{if(run!==token||epoch!==viewEpoch)return;retain(lines);scores.set(current,lines);renderDetails();};
+ const lines=await evaluate(current,{multiPV:bookEvaluated.has(current)?ChessilPreferences.get().analysis.multiPV:Math.max(1,legal.length),nodes:180000,movetime:900,onUpdate:progress});if(run!==token)return;if(epoch!==viewEpoch)continue;retain(lines);if(moveScores.get(current).size>=legal.length)bookEvaluated.add(current);scores.set(current,lines);renderDetails();status('Position evaluated · depth '+lines[0].depth);
+ const settings=ChessilPreferences.get().analysis,side=perspective==='both'?current.split(' ')[1]:perspective,best=lines[0];
+ const threatKey=current+'|'+side+'|'+best?.pv[0];if(settings.threat&&threatFor!==threatKey&&best?.pv[0]){threatFor=threatKey;const probe=ChessilAnalysisGuidance.probe(current,best.pv[0],side);if(probe){const threat=await evaluate(probe,{multiPV:1,nodes:50000,movetime:250});if(run!==token)return;if(epoch===viewEpoch&&ChessilAnalysisGuidance.improves(best,threat[0])){const move=threat[0].pv[0];threatArrows=[{from:best.pv[0].slice(0,2),to:best.pv[0].slice(2,4),type:'setup',label:'Setup '+san(best.pv[0],current)},{from:move.slice(0,2),to:move.slice(2,4),type:'threat',label:'Threat after '+san(best.pv[0],current)+': '+san(move,probe)}];guidance();}}}
+ if(epoch===viewEpoch&&legal.length&&++refineRounds<10&&lines[0].depth<18){clearTimeout(refineTimer);refineTimer=setTimeout(evaluateStudy,scanning?400:250);} }
+ }catch(error){if(run===token&&engineReady)status(error.message);}
  finally{studySearching=false;if(studyQueued&&engineReady&&opened)evaluateStudy();}
 }
-function stopEngine(){studyQueued=false;token++;viewEpoch++;engine?.close();engineReady=false;engineLoading=false;scanning=false;pause();status('Engine stopped. Book exploration and saved evaluations remain available.');controls();}
+function stopEngine(){clearTimeout(planTimer);clearTimeout(refineTimer);studyQueued=false;boardView.setArrows([]);token++;viewEpoch++;engine?.close();engineReady=false;engineLoading=false;scanning=false;pause();status('Engine stopped. Book exploration and saved evaluations remain available.');controls();}
 async function startEngine(){
  if(!opened||engineReady||engineLoading)return;
- const settings=ChessilPreferences.get().analysis,signature=JSON.stringify(settings);
- if(engineConfig&&signature!==engineConfig){scores.clear();processed.clear();findings=[];selected=-1;movesList.querySelectorAll('.analysis-marker').forEach(el=>el.remove());movesList.querySelectorAll('[data-analysis]').forEach(el=>delete el.dataset.analysis);$('progress').value=0;clearGuide();annotate(null);}
+ const settings=ChessilPreferences.get().analysis,signature=engineSignature(settings);
+ if(engineConfig&&signature!==engineConfig){scores.clear();moveScores.clear();bookEvaluated.clear();processed.clear();findings=[];selected=-1;movesList.querySelectorAll('.analysis-marker').forEach(el=>el.remove());movesList.querySelectorAll('[data-analysis]').forEach(el=>delete el.dataset.analysis);$('progress').value=0;clearGuide();annotate(null);}
  engineConfig=signature;const run=++token;engineLoading=true;engine=new ChessilLocalEngine();status('Starting local engine…');controls();
  try{const manifest=await engine.load(settings);if(run!==token)return;engineLoading=false;engineReady=true;$('source').href=manifest.source;renderDetails();
-  if(freeStudy){await evaluateStudy();return;}
-  if(exploring){const current=position,epoch=viewEpoch,lines=await evaluate(current);if(run!==token)return;if(epoch===viewEpoch){scores.set(current,lines);renderDetails();}}
-  await scan(run);
+  if(reviewGame)scan(run).catch(error=>{if(run===token&&engineReady){scanning=false;status(error.message);}});
+  queuePosition();
  }catch(error){if(run===token){engineLoading=false;scanning=false;engineReady=false;status(error.message+' Press Start engine to retry.');pause();engine?.close();controls();}}
 }
 
 async function updateEngineName(){await ChessilPreferences.ready;const id=ChessilPreferences.get().analysis.engine;try{const catalog=await ChessilPreferences.engineCatalog();if(id!==ChessilPreferences.get().analysis.engine)return;const name=catalog.engines.find(engine=>engine.id===id)?.name||id;$('engine-name').textContent=name;$('engine-name').title=name;}catch(_){$('engine-name').textContent=id;}}
 function loadBookNames(){if(Object.keys(book).length)return;fetch('/engine/openings.json',{cache:'force-cache'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{book=data;bookDisplay();}).catch(()=>{});}
-function returnToGame(){pause();exploring=false;const ply=suggestionView?findings[selected].ply:a1ti;clearGuide();gamereplay(ply);}
+function returnToGame(){pause();exploring=false;const ply=explorationOrigin??(suggestionView?findings[selected].ply:a1ti);explorationOrigin=null;clearGuide();original(ply);}
 function update(){if(panel&&!opened&&ChessilStudy.ready)open(false);}
 
 document.addEventListener('DOMContentLoaded',()=>{
  if(!document.querySelector('moves-panel'))return;
  const iconButton=(id,name,label)=>`<button id="analysis-${id}" type="button" class="ui-icon-button analysis-icon" aria-label="${label}" title="${label}">${ChessilIcons.svg(name)}</button>`;
- panel=document.createElement('section');panel.id='analysis-panel';panel.className='analysis-panel engine-card';panel.setAttribute('aria-label','Engine');panel.innerHTML=`<div class="engine-toolbar">${iconButton('engine-toggle','play','Start engine')}<span id="analysis-engine-name" class="engine-name"></span><a id="analysis-source" class="ui-icon-button analysis-icon" href="/engine/manifest.json" aria-label="Engine source and license" title="Engine source and license">${ChessilIcons.svg('source')}</a><button id="analysis-options-toggle" type="button" class="ui-icon-button analysis-icon" aria-label="Engine options" title="Engine options" aria-expanded="false" aria-controls="analysis-options">${ChessilIcons.svg('options')}</button></div><div id="analysis-options" class="engine-options-reveal" inert><div class="engine-options-clip"><div id="analysis-options-fields"></div></div></div><p id="analysis-status" class="analysis-sr-only" role="status"></p><div id="analysis-lines" aria-label="Engine variations"></div>`;
+ panel=document.createElement('section');panel.id='analysis-panel';panel.className='analysis-panel engine-card';panel.setAttribute('aria-label','Engine');panel.innerHTML=`<div class="engine-toolbar">${iconButton('engine-toggle','play','Start engine')}${iconButton('plan-toggle','plan','Show stable plan')}${iconButton('threat-toggle','threat','Show immediate threat')}<span id="analysis-engine-name" class="engine-name"></span><a id="analysis-source" class="ui-icon-button analysis-icon" href="/engine/manifest.json" aria-label="Engine source and license" title="Engine source and license">${ChessilIcons.svg('source')}</a><button id="analysis-options-toggle" type="button" class="ui-icon-button analysis-icon" aria-label="Engine options" title="Engine options" aria-expanded="false" aria-controls="analysis-options">${ChessilIcons.svg('options')}</button></div><div id="analysis-options" class="engine-options-reveal" inert><div class="engine-options-clip"><div id="analysis-options-fields"></div></div></div><p id="analysis-status" class="analysis-sr-only" role="status"></p><div id="analysis-lines" aria-label="Engine variations"></div>`;
  let optionsRendered=false;
  bookPanel=document.createElement('section');bookPanel.id='analysis-book-panel';bookPanel.className='book-panel';bookPanel.setAttribute('aria-label','Opening book');bookPanel.innerHTML='<p id="analysis-book-name"></p><div id="analysis-book-moves" aria-label="Book moves"></div><small id="analysis-book-note" role="status"></small>';
  tools=document.createElement('div');tools.className='board-tools';tools.hidden=true;tools.append(panel,bookPanel);document.querySelector('.round__app').append(tools);
+ bookView=new ChessilAnalysisBook($('book-moves'),leelaBook,{play,scoreText:(score,fen,side)=>scoreText(score,side==='b'?fen.replace(/ [wb] /,fen.split(' ')[1]==='w'?' b ':' w '):fen)});
+
  const review=document.createElement('section');review.className='review-tools';review.setAttribute('aria-label','Review controls');review.innerHTML=`<div class="analysis-controls">${iconButton('previous','previous','Previous review moment')}${iconButton('autoplay','play','Play backward')}${iconButton('next','next','Next review moment')}${iconButton('return','return','Return to game position')}</div><select id="analysis-perspective" aria-label="Review perspective"><option value="w">White</option><option value="b">Black</option><option value="both">Both sides</option></select><progress id="analysis-progress" class="ui-progress" max="1" value="0" aria-label="Review progress"></progress><div id="analysis-countdown" hidden><span data-countdown></span><div class="ui-meter"><span class="ui-meter-fill"></span></div></div><p id="analysis-explanation" class="analysis-sr-only"></p><div id="analysis-alternatives"></div><div class="analysis-evaluation"><strong id="analysis-score">—</strong><div id="analysis-wdl" class="wdl-bar" role="img" aria-label="Win, draw, loss estimates unavailable"><div class="wdl-track"><span data-wdl="win"></span><span data-wdl="draw"></span><span data-wdl="loss"></span></div><div class="wdl-labels" aria-hidden="true"><span>Win —</span><span>Draw —</span><span>Loss —</span></div></div><span id="analysis-depth"></span></div><div id="analysis-eval" class="analysis-eval" role="img" aria-label="Position evaluation"><span id="analysis-eval-white"></span></div>`;
  document.querySelector('.study-actions').prepend(review);
  const evaluation=document.createElement('div');evaluation.className='board-evaluation';evaluation.setAttribute('aria-label','Position evaluation');evaluation.append($('score'),$('eval'),$('wdl'),$('depth'));document.querySelector('.round__app').append(evaluation);
+ $('plan-toggle').onclick=()=>{ChessilPreferences.update({analysis:{plan:!ChessilPreferences.get().analysis.plan}});if(engineReady)queuePosition();};$('threat-toggle').onclick=()=>{threatFor='';ChessilPreferences.update({analysis:{threat:!ChessilPreferences.get().analysis.threat}});if(engineReady)queuePosition();};
  $('engine-toggle').onclick=()=>engineReady||engineLoading?stopEngine():startEngine();$('perspective').onchange=changePerspective;$('previous').onclick=()=>{pause();reveal(adjacent(-1));};$('next').onclick=()=>{pause();reveal(adjacent(1));};$('autoplay').onclick=()=>{if(autoplay)pause();else{autoplay=true;controls();if(a1ti===0)showActual(history.length);schedule();}};$('return').onclick=returnToGame;
  $('options-toggle').disabled=true;ChessilPreferences.ready.then(()=>{$('options-toggle').disabled=false;});
  $('options-toggle').onclick=()=>{const expanded=$('options-toggle').getAttribute('aria-expanded')!=='true';$('options-toggle').setAttribute('aria-expanded',String(expanded));$('options').classList.toggle('is-expanded',expanded);$('options').inert=!expanded;if(expanded&&!optionsRendered){optionsRendered=true;ChessilPreferences.renderEngineOptions($('options-fields'),{compact:true}).then(success=>{if(!success)optionsRendered=false;});}};
@@ -162,21 +180,24 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 document.addEventListener('chessil:game-state',update);
 document.addEventListener('chessil:study-loaded',()=>{history=uci.slice();positions=ChessilStudy.positions();position=positions[a1ti];update();renderDetails();if(new URLSearchParams(location.search).get('review')==='1')open();});
-document.addEventListener('chessil:preferences',()=>{if(panel)updateEngineName();if(opened&&engineConfig!==JSON.stringify(ChessilPreferences.get().analysis)){stopEngine();status('Engine settings changed. Press Start engine to apply.');}});
-document.addEventListener('chessil:review',()=>{if(internal||!panel)return;if(study&&(!opened||freeStudy)){history=uci.slice();positions=ChessilStudy.positions();position=positions[a1ti];viewEpoch++;exploring=false;clearGuide();annotate(null);renderDetails();if(engineReady&&freeStudy)evaluateStudy();return;}if(!opened){if(positions[a1ti]&&gamefinished){position=positions[a1ti];evalDisplay();}return;}pause();exploring=false;setPosition(positions[a1ti]);$('explanation').textContent='Game position after move '+a1ti+'.';$('alternatives').replaceChildren();controls();});
+let guidanceSettings='';
+document.addEventListener('chessil:preferences',()=>{const settings=ChessilPreferences.get().analysis,flags=JSON.stringify([settings.plan,settings.threat]),changed=guidanceSettings!==flags;guidanceSettings=flags;if(panel){updateEngineName();if(opened)guidance();}if(opened&&engineConfig!==engineSignature(settings)){const running=engineReady||engineLoading;stopEngine();if(running)startEngine();}else if(opened&&engineReady&&changed){threatFor='';queuePosition();}});
+document.addEventListener('chessil:review',()=>{if(internal||!panel)return;if(!opened){if(freeStudy){history=uci.slice();positions=ChessilStudy.positions();}position=ChessilStudy.position();return;}pause();if(!playing)explorationOrigin=null;exploring=ChessilStudy.inVariation();if(freeStudy){history=uci.slice();positions=ChessilStudy.positions();}position=ChessilStudy.position();viewEpoch++;clearGuide();annotate(null);$('alternatives').replaceChildren();renderDetails();if(engineReady)queuePosition();});
+document.addEventListener('chessil:history-rendered',()=>{decorateHistory();if(suggestionView&&findings[selected])movesList.querySelector(`.analysis-marker[data-ply="${findings[selected].ply}"]`)?.setAttribute('aria-current','step');guide?.update();});
+let resumeAfterHidden=false;document.addEventListener('visibilitychange',()=>{if(document.hidden){resumeAfterHidden=engineReady||engineLoading;if(resumeAfterHidden)stopEngine();}else if(resumeAfterHidden){resumeAfterHidden=false;startEngine();}});
 
 function step(direction){
  pause();
- if(suggestionView){const ply=findings[selected].ply;clearGuide();gamereplay(direction>0?ply:ply-1);return;}
+ if(suggestionView){const ply=findings[selected].ply;clearGuide();original(direction>0?ply:ply-1);return;}
  const target=direction>0?a1ti+1:a1ti,index=findings.findIndex(item=>item.ply===target&&included(item));
- if(index>=0)reveal(index);else gamereplay(a1ti+direction);
+ if(index>=0)reveal(index);else original(a1ti+direction);
 }
 document.addEventListener('keydown',event=>{
- if(freeStudy||!opened||panel.hidden||event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||document.querySelector('dialog[open]')||event.target.closest?.('input,textarea,select,[contenteditable]'))return;
+ if(freeStudy||ChessilStudy.inVariation()||!opened||panel.hidden||event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||document.querySelector('dialog[open]')||event.target.closest?.('input,textarea,select,[contenteditable]'))return;
  if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();event.stopImmediatePropagation();step(event.key==='ArrowRight'?1:-1);}
 },true);
 document.addEventListener('click',event=>{
- if(freeStudy||!opened||panel.hidden)return;const button=event.target.closest('#sb,#fw');if(!button)return;event.preventDefault();event.stopPropagation();step(button.id==='fw'?1:-1);
+ if(freeStudy||ChessilStudy.inVariation()||!opened||panel.hidden)return;const button=event.target.closest('#sb,#fw');if(!button)return;event.preventDefault();event.stopPropagation();step(button.id==='fw'?1:-1);
 },true);
-window.addEventListener('pagehide',()=>{guide?.close();token++;engine?.close();autoplayRun?.cancel();if(study){engineReady=false;engineLoading=false;controls();}});
+window.addEventListener('pagehide',()=>{guide?.close();clearTimeout(planTimer);clearTimeout(refineTimer);token++;engine?.close();autoplayRun?.cancel();if(study){engineReady=false;engineLoading=false;controls();}});
 })();

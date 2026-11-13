@@ -1,32 +1,43 @@
 # Standalone analysis board
 
-Explore links to `/en/analysis`, `/es/analysis`, or `/zh/analysis`. No game or account
-is required. `ui/study.js` renders the shared history rail, native board and
-coordinates. `src/study.css` composes the existing game layout without player
-cards or clocks. Mobile keeps history and evaluations above the board. There is no Explore
-preface or header row above the workspace. The named engine card expands its
-shared engine options in place without opening a dialog or changing pages.
+Explore links to `/en/analysis`, `/es/analysis`, or `/zh/analysis`. No game or
+account is required. `ui/study.js` composes the shared native board, history rail,
+evaluations, and compact Engine/Book cards. Desktop keeps a bounded side column;
+mobile keeps one scrollable history line above the board. Navigation buttons stay
+outside that scroll area. `ChessilHistoryFocus` centers each new displayed move
+once and leaves subsequent manual scrolling alone.
 
-`src/study.js` owns an in-memory variation tree. Each node stores its FEN, SAN,
-parent and children; revisiting an earlier position and choosing another move
-preserves the previous continuation. Continuation buttons appear when multiple
-branches exist. Reset starts a new tree; Flip only changes board orientation.
-The adapter exposes the small board/history interface already used by game.js
-(`boardView`, `movesList`, `uci`, `a1ti`, `gamereplay`) plus `ChessilStudy.play` and
-`ChessilStudy.positions`, so `src/analysis.js` supplies the same engine, book,
-evaluation, settings and Start/Stop controls as game review.
+`src/variations.js` owns the independent tree model. Ordered children define the
+main line; selecting a node never changes this order. Each node stores FEN, SAN,
+parent and children. Defaults bound the complete tree to 2,048 nodes (including
+root), 12 alternatives per position, eight nested variations, and 1,024 plies.
+Rejected additions leave existing branches intact. Deleting removes the complete
+subtree. Promotion and sibling reordering validate the resulting nesting before
+committing. Reset starts a new tree; Flip changes orientation and coordinate edges.
 
-In study mode, the engine evaluates the selected position rather than scanning
-backward for mistakes. Rapid changes coalesce into the most recent pending
-position; stale scores cannot replace a newer view. Book and engine-line moves
-become local study variations. Both compact tool cards are visible by default;
-the book loads automatically and the engine starts only when requested. Free analysis needs no game IDs or game API calls. A finished game can be loaded
-read-only with `?game=ID`; `&review=1` automatically starts the backward game
-review after import. Metadata and moves come from the existing game read APIs.
-Neither mode creates a game, connects to a game server, or writes game data.
-The tree lasts for the current page visit; saved studies and position imports
-are separate future features.
+`src/study.js` adapts this model to the existing board/history interface:
+`boardView`, `movesList`, `uci`, `a1ti`, and `gamereplay`. `uci` is the selected
+continuation. Desktop displays inline variation groups; the branch icon opens the
+same tree renderer in a dialog on either viewport. Branch controls select, promote,
+reorder, or delete. The mobile rail always stays flat and compact.
 
-Build with `node web/scripts/build-board.js`. Verify with
-`node --test web/tests/study-browser.test.js`; existing board and review browser
-suites cover the shared renderer, compositor/pointer behavior and review tools.
+`ChessilStudy.play`, `position`, and `positions` describe the selected variation.
+For imported games, `source()` returns copies of the immutable recorded moves and
+positions; `selectOriginal(ply)` returns to that record even after local branch
+editing. Imported nodes can be restored after deletion, subject to tree capacity.
+Game review annotations and background searches use the source, not the variation.
+
+The engine starts automatically, evaluates the selected position, and feeds the
+book. Rapid navigation coalesces to the latest pending position; stale results
+cannot replace a newer view. Searches share one serial local worker. See
+`ANALYSIS.md` for ordering, optional plan/threat arrows, and resource bounds.
+
+A finished game loads read-only with `?game=ID`; `&review=1` enables backward
+autoplay. Both import routes start the engine and review all recorded positions.
+Unfinished games are rejected. Neither mode creates a game or writes game data.
+The variation tree lasts for the current page visit; saved studies and custom FEN
+imports remain separate features.
+
+Build with `node web/scripts/build-board.js`. Tests include
+`variation-model.test.js`, `study-browser.test.js`, and the real-WASM engine/review
+browser suites. Shared pointer/compositor regression checks remain required.
