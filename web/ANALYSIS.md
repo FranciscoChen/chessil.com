@@ -70,14 +70,18 @@ precompressed gzip asset using native DecompressionStream. Lookup uses exact
 64-bit Polyglot hashes and binary search. The original manifest and JSON shards
 remain available to cached older clients.
 
-The book contains 4,281 positions / 130,045 moves. Every legal move is retained
+The default 4.16 MB book contains 8,258 positions / 260,030 moves, including
+518 positions at source ply 16. Its gzip download is 1,246,660 bytes.
+The separate `bt4-it332-4mb-manifest.json` preserves this edition for reuse. Every legal move is retained
 at selected positions, including every position through source ply 2. Moves are
 available from positions through ply 16; the client requires the actual game ply
 and suppresses lookup from ply 17, including repetitions/transpositions. Raw
 weights are quantized temperature-1 BT4-it332 policy priors, not human move
 frequency or win rates. Coverage includes named samples and frequent histories
 in 89,558 accepted public human games, with separate Lichess rating cohorts.
-Exact sampling windows and limitations are in the versioned JSON report.
+The added policy expansion prioritizes deep positions by Leela path likelihood
+and preserves all original positions and weights. Exact sampling windows, depth
+counts, preservation checks and limitations are in the versioned JSON report.
 `tools/policy-book/README.md` documents generation, checkpointing, independent
 UCI verification and packaging. The client caches 128 notation results and uses
 the shared chess rules for legal moves and SAN.
