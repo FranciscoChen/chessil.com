@@ -6,5 +6,10 @@ test('published BT4 artifact and gzip match verified report and retain full shal
  const book=new context.Book(raw.buffer.slice(raw.byteOffset,raw.byteOffset+raw.byteLength)),start='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';let checked=0;
  function check(fen,ply){assert.deepEqual(Array.from(book.lookup(fen,ply),m=>m.uci).sort(),Array.from(context.mg(fen)).sort());checked++;}
  check(start,0);for(const first of context.mg(start)){const fen=context.ucifen(first,start,context.boardgen(start),{}).f;check(fen,1);for(const second of context.mg(fen))check(context.ucifen(second,fen,context.boardgen(fen),{}).f,2);}
- assert.equal(checked,421);assert.equal(book.lookup(start,17).length,0);assert.ok(Object.values(report.positions_by_minimum_ply).length===17);
+ const archived=JSON.parse(fs.readFileSync(path.join(publicRoot,'engine/book/bt4-it332-4mb-manifest.json'))),previous=fs.readFileSync(path.join(publicRoot,archived.url));
+ assert.equal(archived.bytes,4160480);assert.equal(crypto.createHash('sha256').update(previous).digest('hex'),archived.sha256);assert.ok(manifest.bytes<=archived.bytes*2);assert.ok(manifest.bytes>archived.bytes);
+ assert.equal(report.policy_expansion.preservation_verification.existing_positions_preserved,archived.positions);assert.equal(report.policy_expansion.preservation_verification.old_bytes,archived.bytes);
+ assert.equal(report.mainline_verification.reserved_lines,17);assert.ok(report.conditional_move_coverage);assert.ok(report.positions_by_minimum_ply['16']>518);
+ for(const line of Object.values(report.policy_expansion.reserved_opening_continuations)){assert.equal(line.split(' ').length,16);let fen=start,ply=0;check(fen,ply);for(const move of line.split(' ')){fen=context.ucifen(move,fen,context.boardgen(fen),{}).f;check(fen,++ply);}}
+ assert.equal(checked,421+17*17);assert.equal(book.lookup(start,17).length,0);assert.ok(Object.values(report.positions_by_minimum_ply).length===17);
 });

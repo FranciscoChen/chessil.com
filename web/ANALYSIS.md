@@ -70,21 +70,31 @@ precompressed gzip asset using native DecompressionStream. Lookup uses exact
 64-bit Polyglot hashes and binary search. The original manifest and JSON shards
 remain available to cached older clients.
 
-The default 4.16 MB book contains 8,258 positions / 260,030 moves, including
-518 positions at source ply 16. Its gzip download is 1,246,660 bytes.
-The separate `bt4-it332-4mb-manifest.json` preserves this edition for reuse. Every legal move is retained
-at selected positions, including every position through source ply 2. Moves are
-available from positions through ply 16; the client requires the actual game ply
-and suppresses lookup from ply 17, including repetitions/transpositions. Raw
-weights are quantized temperature-1 BT4-it332 policy priors, not human move
-frequency or win rates. Coverage includes named samples and frequent histories
-in 89,558 accepted public human games, with separate Lichess rating cohorts.
-The added policy expansion prioritizes deep positions by Leela path likelihood
-and preserves all original positions and weights. Exact sampling windows, depth
-counts, preservation checks and limitations are in the versioned JSON report.
-`tools/policy-book/README.md` documents generation, checkpointing, independent
-UCI verification and packaging. The client caches 128 notation results and uses
-the shared chess rules for legal moves and SAN.
+The default 8.32 MB book contains 15,994 positions / 520,011 moves, including
+1,644 positions at source ply 16. Its gzip download is 2,465,144 bytes. Every
+legal move is retained at each selected position, including all positions through
+source ply 2. Lookup stops from ply 17, including repetitions/transpositions.
+The previous 4,160,480-byte edition is preserved with its own binary, gzip,
+report and `bt4-it332-4mb-manifest.json`; its 8,258 positions and all their weights
+are unchanged in the larger edition. `bt4-it332-8mb-manifest.json` also pins the
+new edition separately from the default selector.
+
+Raw weights are quantized temperature-1 BT4-it332 policy priors, not human move
+frequency or win rates. Coverage retains the frequent histories sampled from
+89,558 accepted human games and adds high path-probability lines with larger
+quotas at plies 12–16. Priority uses the product of move probabilities along a
+path. Coverage reporting separately expresses conditional move probabilities
+from each stored parent, by parent ply; neither is a universal completeness
+threshold. The versioned report contains those figures and their scope.
+
+Seventeen explicit opening continuations (Ragozin plus sixteen representative
+main lines) are verified through source ply 16, with complete legal-move policies
+at every position. The representatives come from the project's CC0 ECO source;
+after the named position, Leela chooses the highest-policy continuation. These
+coverage reservations do not imply exhaustive coverage of all main-line branches.
+Generation, checkpointing, preservation, UCI verification and packaging are
+documented in `tools/policy-book/README.md`. The browser caches 128 notation
+results and uses the shared chess rules for legal moves and SAN.
 
 The book card is always visible on analysis
 pages and starts no engine. It shows the current opening name and compact move

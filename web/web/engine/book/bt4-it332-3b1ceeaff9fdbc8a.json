@@ -1,0 +1,1331 @@
+{
+  "bytes": 8320176,
+  "gzip_bytes": 2465144,
+  "entries": 520011,
+  "sha256": "3b1ceeaff9fdbc8a338d37f769792d3493bf77e148e1d58419964855136d1255",
+  "positions_by_minimum_ply": {
+    "0": 1,
+    "1": 20,
+    "2": 400,
+    "3": 693,
+    "4": 857,
+    "5": 904,
+    "6": 875,
+    "7": 779,
+    "8": 954,
+    "9": 816,
+    "10": 698,
+    "11": 650,
+    "12": 1696,
+    "13": 1674,
+    "14": 1690,
+    "15": 1643,
+    "16": 1644
+  },
+  "full_legal_policy_per_selected_position": true,
+  "history_policy": "reach-weighted mixture over evaluated histories, not all possible histories",
+  "max_source_ply": 16,
+  "history_samples_per_position_max": 4,
+  "configuration": {
+    "algorithm": "depth-balanced-all-legal-v1",
+    "backend": "blas",
+    "backend_options": "batch_size=1,threads=1,policy_head=vanilla",
+    "full_coverage_through_source_ply": 2,
+    "lc0_revision": "d91bd1443ac1a4f367de96d3569dce7bbd35920a",
+    "max_bytes": 599984,
+    "max_histories_per_position": 4,
+    "max_source_ply": 16,
+    "network_sha256": "e6ada9d6c4a769bfab3aa0848d82caeb809aa45f83e6c605fc58a31d21bdd618",
+    "temperature": 1
+  },
+  "binding_sha256": "2dd263228c716e3e9580c455770fcf5defe9c5532be5454aef8783dbae367f09",
+  "samples": {
+    "startpos": [
+      [
+        "d4",
+        0.16202
+      ],
+      [
+        "Nf3",
+        0.1543
+      ],
+      [
+        "c4",
+        0.1286
+      ],
+      [
+        "g3",
+        0.09015
+      ],
+      [
+        "e3",
+        0.08277
+      ],
+      [
+        "e4",
+        0.06883
+      ],
+      [
+        "b3",
+        0.06038
+      ],
+      [
+        "Nc3",
+        0.04592
+      ],
+      [
+        "c3",
+        0.03809
+      ],
+      [
+        "h3",
+        0.03809
+      ],
+      [
+        "a3",
+        0.03423
+      ],
+      [
+        "d3",
+        0.02785
+      ],
+      [
+        "a4",
+        0.01576
+      ],
+      [
+        "b4",
+        0.01386
+      ],
+      [
+        "f4",
+        0.01032
+      ],
+      [
+        "Nh3",
+        0.00749
+      ],
+      [
+        "Na3",
+        0.00699
+      ],
+      [
+        "f3",
+        0.00627
+      ],
+      [
+        "h4",
+        0.00484
+      ],
+      [
+        "g4",
+        0.00325
+      ]
+    ],
+    "e4": [
+      [
+        "e5",
+        0.87674
+      ],
+      [
+        "c6",
+        0.03157
+      ],
+      [
+        "c5",
+        0.02051
+      ],
+      [
+        "Nc6",
+        0.01152
+      ],
+      [
+        "Nf6",
+        0.00758
+      ],
+      [
+        "d6",
+        0.00723
+      ],
+      [
+        "e6",
+        0.00664
+      ],
+      [
+        "d5",
+        0.00574
+      ],
+      [
+        "g6",
+        0.0045
+      ],
+      [
+        "a6",
+        0.00374
+      ],
+      [
+        "Na6",
+        0.00291
+      ],
+      [
+        "f6",
+        0.00279
+      ],
+      [
+        "Nh6",
+        0.00276
+      ],
+      [
+        "h6",
+        0.0027
+      ],
+      [
+        "b6",
+        0.0025
+      ],
+      [
+        "a5",
+        0.00235
+      ],
+      [
+        "h5",
+        0.00218
+      ],
+      [
+        "f5",
+        0.00217
+      ],
+      [
+        "b5",
+        0.002
+      ],
+      [
+        "g5",
+        0.00186
+      ]
+    ],
+    "d4": [
+      [
+        "d5",
+        0.47523
+      ],
+      [
+        "Nf6",
+        0.40766
+      ],
+      [
+        "c6",
+        0.03795
+      ],
+      [
+        "f5",
+        0.01105
+      ],
+      [
+        "e6",
+        0.00908
+      ],
+      [
+        "d6",
+        0.00719
+      ],
+      [
+        "Nc6",
+        0.00607
+      ],
+      [
+        "g6",
+        0.00555
+      ],
+      [
+        "f6",
+        0.00504
+      ],
+      [
+        "a6",
+        0.00464
+      ],
+      [
+        "Na6",
+        0.00392
+      ],
+      [
+        "c5",
+        0.00362
+      ],
+      [
+        "Nh6",
+        0.0036
+      ],
+      [
+        "h6",
+        0.00314
+      ],
+      [
+        "b6",
+        0.00299
+      ],
+      [
+        "a5",
+        0.00291
+      ],
+      [
+        "h5",
+        0.00278
+      ],
+      [
+        "b5",
+        0.00273
+      ],
+      [
+        "e5",
+        0.00246
+      ],
+      [
+        "g5",
+        0.0024
+      ]
+    ],
+    "c4": [
+      [
+        "e5",
+        0.45562
+      ],
+      [
+        "c5",
+        0.14556
+      ],
+      [
+        "Nf6",
+        0.10883
+      ],
+      [
+        "c6",
+        0.08576
+      ],
+      [
+        "e6",
+        0.05911
+      ],
+      [
+        "g6",
+        0.03528
+      ],
+      [
+        "d6",
+        0.01752
+      ],
+      [
+        "a6",
+        0.01694
+      ],
+      [
+        "Nc6",
+        0.01184
+      ],
+      [
+        "b6",
+        0.01143
+      ],
+      [
+        "h6",
+        0.01025
+      ],
+      [
+        "f5",
+        0.00809
+      ],
+      [
+        "f6",
+        0.00594
+      ],
+      [
+        "Na6",
+        0.00499
+      ],
+      [
+        "a5",
+        0.00494
+      ],
+      [
+        "Nh6",
+        0.00439
+      ],
+      [
+        "d5",
+        0.00424
+      ],
+      [
+        "h5",
+        0.00328
+      ],
+      [
+        "g5",
+        0.00313
+      ],
+      [
+        "b5",
+        0.00287
+      ]
+    ],
+    "Nf3": [
+      [
+        "d5",
+        0.45507
+      ],
+      [
+        "Nf6",
+        0.21191
+      ],
+      [
+        "e6",
+        0.13153
+      ],
+      [
+        "c6",
+        0.09833
+      ],
+      [
+        "c5",
+        0.01729
+      ],
+      [
+        "Nc6",
+        0.01309
+      ],
+      [
+        "g6",
+        0.0112
+      ],
+      [
+        "f5",
+        0.00984
+      ],
+      [
+        "a6",
+        0.00967
+      ],
+      [
+        "d6",
+        0.00595
+      ],
+      [
+        "f6",
+        0.00493
+      ],
+      [
+        "b6",
+        0.00476
+      ],
+      [
+        "Na6",
+        0.00409
+      ],
+      [
+        "Nh6",
+        0.00394
+      ],
+      [
+        "h6",
+        0.0036
+      ],
+      [
+        "h5",
+        0.00327
+      ],
+      [
+        "b5",
+        0.00322
+      ],
+      [
+        "a5",
+        0.00302
+      ],
+      [
+        "g5",
+        0.00269
+      ],
+      [
+        "e5",
+        0.00261
+      ]
+    ],
+    "Najdorf": [
+      [
+        "f3",
+        0.58671
+      ],
+      [
+        "Be3",
+        0.11765
+      ],
+      [
+        "Bg5",
+        0.04086
+      ],
+      [
+        "Be2",
+        0.03542
+      ],
+      [
+        "Bc4",
+        0.02704
+      ],
+      [
+        "Bd3",
+        0.02069
+      ],
+      [
+        "Nb3",
+        0.02063
+      ],
+      [
+        "h3",
+        0.01798
+      ],
+      [
+        "g3",
+        0.01129
+      ],
+      [
+        "Qf3",
+        0.01062
+      ],
+      [
+        "Nf3",
+        0.01035
+      ],
+      [
+        "a3",
+        0.0076
+      ],
+      [
+        "a4",
+        0.00702
+      ],
+      [
+        "Qd3",
+        0.00667
+      ],
+      [
+        "Bd2",
+        0.00604
+      ],
+      [
+        "f4",
+        0.00586
+      ],
+      [
+        "h4",
+        0.00586
+      ],
+      [
+        "Rg1",
+        0.00557
+      ],
+      [
+        "Qe2",
+        0.00517
+      ],
+      [
+        "Nde2",
+        0.00407
+      ],
+      [
+        "b3",
+        0.00311
+      ],
+      [
+        "Qd2",
+        0.00299
+      ],
+      [
+        "Rb1",
+        0.00279
+      ],
+      [
+        "Ke2",
+        0.00278
+      ],
+      [
+        "Nce2",
+        0.00272
+      ],
+      [
+        "Na4",
+        0.00238
+      ],
+      [
+        "Nd5",
+        0.00218
+      ],
+      [
+        "Nf5",
+        0.00217
+      ],
+      [
+        "Kd2",
+        0.00208
+      ],
+      [
+        "Bxa6",
+        0.00201
+      ],
+      [
+        "Nb1",
+        0.00195
+      ],
+      [
+        "b4",
+        0.00192
+      ],
+      [
+        "Bh6",
+        0.00179
+      ],
+      [
+        "Ndb5",
+        0.00179
+      ],
+      [
+        "Nc6",
+        0.00175
+      ],
+      [
+        "Ne6",
+        0.00175
+      ],
+      [
+        "Bb5+",
+        0.00169
+      ],
+      [
+        "Qh5",
+        0.00168
+      ],
+      [
+        "Bf4",
+        0.00165
+      ],
+      [
+        "e5",
+        0.00159
+      ],
+      [
+        "Ncb5",
+        0.00153
+      ],
+      [
+        "Qg4",
+        0.00146
+      ],
+      [
+        "g4",
+        0.00114
+      ]
+    ],
+    "Ruy Lopez": [
+      [
+        "a6",
+        0.48199
+      ],
+      [
+        "Nf6",
+        0.37467
+      ],
+      [
+        "Be7",
+        0.04138
+      ],
+      [
+        "Bc5",
+        0.01596
+      ],
+      [
+        "Nge7",
+        0.01125
+      ],
+      [
+        "f5",
+        0.00922
+      ],
+      [
+        "g6",
+        0.00806
+      ],
+      [
+        "f6",
+        0.0042
+      ],
+      [
+        "Nd4",
+        0.00418
+      ],
+      [
+        "Qf6",
+        0.00407
+      ],
+      [
+        "Ke7",
+        0.00337
+      ],
+      [
+        "d6",
+        0.00288
+      ],
+      [
+        "Qe7",
+        0.00282
+      ],
+      [
+        "Nce7",
+        0.00276
+      ],
+      [
+        "Nh6",
+        0.00275
+      ],
+      [
+        "Nb8",
+        0.00229
+      ],
+      [
+        "Rb8",
+        0.00229
+      ],
+      [
+        "Bd6",
+        0.00229
+      ],
+      [
+        "Na5",
+        0.00215
+      ],
+      [
+        "h6",
+        0.00215
+      ],
+      [
+        "b6",
+        0.00214
+      ],
+      [
+        "Bb4",
+        0.00214
+      ],
+      [
+        "d5",
+        0.00206
+      ],
+      [
+        "a5",
+        0.00197
+      ],
+      [
+        "Ba3",
+        0.00194
+      ],
+      [
+        "Nb4",
+        0.00191
+      ],
+      [
+        "Qg5",
+        0.00185
+      ],
+      [
+        "g5",
+        0.0018
+      ],
+      [
+        "Qh4",
+        0.00177
+      ],
+      [
+        "h5",
+        0.00171
+      ]
+    ]
+  },
+  "human_coverage": {
+    "source": "https://database.lichess.org/",
+    "type": "prefix samples of public monthly rated standard PGN streams",
+    "sample_windows": [
+      {
+        "month": "2026-08",
+        "games": 30000,
+        "accepted": 29887,
+        "complete_month": 0,
+        "first_utc": "2026.08.01 00:00:01",
+        "last_utc": "2026.08.01 00:21:02"
+      },
+      {
+        "month": "2026-09",
+        "games": 30000,
+        "accepted": 29816,
+        "complete_month": 0,
+        "first_utc": "2026.09.01 00:00:20",
+        "last_utc": "2026.09.01 00:23:12"
+      },
+      {
+        "month": "2026-10",
+        "games": 30000,
+        "accepted": 29855,
+        "complete_month": 0,
+        "first_utc": "2026.10.01 00:00:25",
+        "last_utc": "2026.10.01 00:24:17"
+      }
+    ],
+    "cohorts": {
+      "1600to2199": 42878,
+      "below1600": 39105,
+      "2200plus": 7575
+    },
+    "minimum_occurrences_in_any_cohort": 10,
+    "qualified_history_paths": 4239,
+    "new_positions_this_run": 2975,
+    "max_source_ply": 16,
+    "preserves_existing_positions": true,
+    "weights": "Lc0 policy only; human counts select coverage"
+  },
+  "coverage_pass": {
+    "reserved_samples": [
+      "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3 a7a6",
+      "e2e4 e7e5 g1f3 b8c6 f1b5"
+    ],
+    "added_paths": [
+      "e2e4 c7c5 g1f3",
+      "e2e4 c7c5 g1f3 d7d6",
+      "e2e4 c7c5 g1f3 d7d6 d2d4",
+      "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4",
+      "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4",
+      "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6",
+      "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3",
+      "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3 a7a6"
+    ],
+    "additional_entries": 261,
+    "preserves_existing_positions": true
+  },
+  "complete": true,
+  "previous_policy_expansions": [
+    {
+      "max_bytes": 4161440,
+      "initial_entries": 130045,
+      "initial_bytes": 2080720,
+      "initial_positions_by_ply": {
+        "0": 1,
+        "1": 20,
+        "2": 400,
+        "3": 339,
+        "4": 523,
+        "5": 592,
+        "6": 575,
+        "7": 496,
+        "8": 401,
+        "9": 272,
+        "10": 164,
+        "11": 126,
+        "12": 96,
+        "13": 75,
+        "14": 70,
+        "15": 66,
+        "16": 65
+      },
+      "depth_weights": {
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 2,
+        "9": 2,
+        "10": 2,
+        "11": 2,
+        "12": 4,
+        "13": 4,
+        "14": 4,
+        "15": 4,
+        "16": 4
+      },
+      "algorithm": "policy-depth-weighted-additions-v1",
+      "preserves_existing_entries": true,
+      "added_positions_by_ply": {
+        "3": 154,
+        "4": 148,
+        "5": 138,
+        "6": 131,
+        "7": 123,
+        "8": 246,
+        "9": 240,
+        "10": 237,
+        "11": 235,
+        "12": 467,
+        "13": 468,
+        "14": 472,
+        "15": 465,
+        "16": 453
+      },
+      "preservation_verification": {
+        "existing_positions_preserved": 4281,
+        "existing_entries_preserved": 130045,
+        "old_bytes": 2080720,
+        "new_bytes": 4160480,
+        "max_bytes": 4161440
+      }
+    }
+  ],
+  "policy_expansion": {
+    "max_bytes": 8320960,
+    "initial_entries": 260030,
+    "initial_bytes": 4160480,
+    "initial_positions_by_ply": {
+      "0": 1,
+      "1": 20,
+      "2": 400,
+      "3": 493,
+      "4": 671,
+      "5": 730,
+      "6": 706,
+      "7": 619,
+      "8": 647,
+      "9": 512,
+      "10": 401,
+      "11": 361,
+      "12": 563,
+      "13": 543,
+      "14": 542,
+      "15": 531,
+      "16": 518
+    },
+    "depth_weights": {
+      "3": 1,
+      "4": 1,
+      "5": 1,
+      "6": 1,
+      "7": 1,
+      "8": 2,
+      "9": 2,
+      "10": 2,
+      "11": 2,
+      "12": 8,
+      "13": 8,
+      "14": 8,
+      "15": 8,
+      "16": 8
+    },
+    "algorithm": "policy-depth-weighted-additions-v1",
+    "preserves_existing_entries": true,
+    "reserved_opening_continuations": {
+      "d2d4 g8f6 c2c4 e7e6 g1f3 d7d5 b1c3 f8b4": "d2d4 g8f6 c2c4 e7e6 g1f3 d7d5 b1c3 f8b4 c1g5 h7h6 g5f6 d8f6 e2e3 e8g8 a1c1 b8d7",
+      "e2e4 e7e5 g1f3 b8c6 f1b5 a7a6 b5a4 g8f6 e1g1 f8e7": "e2e4 e7e5 g1f3 b8c6 f1b5 a7a6 b5a4 g8f6 e1g1 f8e7 f1e1 b7b5 a4b3 e8g8 h2h3 c8b7",
+      "e2e4 e7e5 g1f3 b8c6 f1b5 g8f6": "e2e4 e7e5 g1f3 b8c6 f1b5 g8f6 e1g1 f6e4 f1e1 e4d6 f3e5 c6e5 b5f1 f8e7 e1e5 e8g8",
+      "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3 a7a6": "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3 a7a6 f2f3 e7e5 d4b3 c8e6 c1e3 f8e7",
+      "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3 g7g6": "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3 g7g6 f2f3 b8c6 c1e3 f8g7 d1d2 e8g8",
+      "e2e4 e7e5 g1f3 b8c6 f1c4 f8c5": "e2e4 e7e5 g1f3 b8c6 f1c4 f8c5 d2d3 d7d6 c2c3 g8f6 e1g1 h7h6 f1e1 a7a6 b1d2 e8g8",
+      "d2d4 g8f6 c2c4 e7e6 g1f3 d7d5 b1c3 f8e7 c1g5 e8g8 e2e3 b8d7": "d2d4 g8f6 c2c4 e7e6 g1f3 d7d5 b1c3 f8e7 c1g5 e8g8 e2e3 b8d7 a1c1 h7h6 g5h4 c7c5",
+      "d2d4 g8f6 c2c4 e7e6 b1c3 f8b4 e2e3": "d2d4 g8f6 c2c4 e7e6 b1c3 f8b4 e2e3 e8g8 f1d3 d7d5 a2a3 d5c4 d3c4 b4e7 g1f3 c7c5",
+      "d2d4 d7d5 c2c4 c7c6 b1c3 g8f6 e2e3 e7e6 g1f3 b8d7 f1d3 d5c4 d3c4 b7b5": "d2d4 d7d5 c2c4 c7c6 b1c3 g8f6 e2e3 e7e6 g1f3 b8d7 f1d3 d5c4 d3c4 b7b5 c4d3 a7a6",
+      "e2e4 c7c6 d2d4 d7d5 b1d2 d5e4 d2e4 c8f5 e4g3 f5g6 h2h4": "e2e4 c7c6 d2d4 d7d5 b1d2 d5e4 d2e4 c8f5 e4g3 f5g6 h2h4 h7h6 g1f3 b8d7 h4h5 g6h7",
+      "e2e4 e7e6 d2d4 d7d5 b1c3 f8b4 e4e5": "e2e4 e7e6 d2d4 d7d5 b1c3 f8b4 e4e5 g8e7 a2a3 b4c3 b2c3 c7c5 d1g4 c5d4 g4g7 h8g8",
+      "d2d4 g8f6 c2c4 g7g6 b1c3 f8g7 e2e4 d7d6 g1f3 e8g8 f1e2 e7e5": "d2d4 g8f6 c2c4 g7g6 b1c3 f8g7 e2e4 d7d6 g1f3 e8g8 f1e2 e7e5 e1g1 e5d4 f3d4 b8c6",
+      "d2d4 g8f6 c2c4 g7g6 b1c3 d7d5 c4d5 f6d5": "d2d4 g8f6 c2c4 g7g6 b1c3 d7d5 c4d5 f6d5 e2e4 d5c3 b2c3 f8g7 g1f3 c7c5 c1e3 d8a5",
+      "d2d4 g8f6 c2c4 e7e6 g2g3 d7d5 f1g2 d5c4": "d2d4 g8f6 c2c4 e7e6 g2g3 d7d5 f1g2 d5c4 g1f3 a7a6 e1g1 b8c6 e2e3 c8d7 d1e2 f8d6",
+      "c2c4 c7c5 g1f3": "c2c4 c7c5 g1f3 g8f6 b1c3 e7e6 g2g3 b7b6 f1g2 c8b7 e1g1 f8e7 d2d4 c5d4 d1d4 d7d6",
+      "d2d4 d7d5 c2c4 c7c6 g1f3": "d2d4 d7d5 c2c4 c7c6 g1f3 g8f6 b1c3 e7e6 c1g5 h7h6 g5h4 d5c4 e2e4 g7g5 h4g3 b7b5",
+      "e2e4 d7d5 e4d5 d8d5 b1c3 d5a5": "e2e4 d7d5 e4d5 d8d5 b1c3 d5a5 g1f3 g8f6 d2d4 c8f5 f3e5 c7c6 f1c4 e7e6 g2g4 f5g6"
+    },
+    "representative_mainlines": {
+      "source": "Project CC0 chess-openings TSVs in web/assets/openings",
+      "description": "Representative opening positions; each receives its highest-policy continuation through source ply 16. Not an exhaustive repertoire.",
+      "lines": [
+        {
+          "name": "Ruy Lopez: Closed",
+          "eco": "C84",
+          "pgn": "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7",
+          "uci": "e2e4 e7e5 g1f3 b8c6 f1b5 a7a6 b5a4 g8f6 e1g1 f8e7"
+        },
+        {
+          "name": "Ruy Lopez: Berlin Defense",
+          "eco": "C65",
+          "pgn": "1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6",
+          "uci": "e2e4 e7e5 g1f3 b8c6 f1b5 g8f6"
+        },
+        {
+          "name": "Sicilian Defense: Najdorf Variation",
+          "eco": "B90",
+          "pgn": "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6",
+          "uci": "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3 a7a6"
+        },
+        {
+          "name": "Sicilian Defense: Dragon Variation",
+          "eco": "B70",
+          "pgn": "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 g6",
+          "uci": "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3 g7g6"
+        },
+        {
+          "name": "Italian Game: Giuoco Piano",
+          "eco": "C50",
+          "pgn": "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5",
+          "uci": "e2e4 e7e5 g1f3 b8c6 f1c4 f8c5"
+        },
+        {
+          "name": "Queen's Gambit Declined: Orthodox Defense",
+          "eco": "D60",
+          "pgn": "1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 Be7 5. Bg5 O-O 6. e3 Nbd7",
+          "uci": "d2d4 g8f6 c2c4 e7e6 g1f3 d7d5 b1c3 f8e7 c1g5 e8g8 e2e3 b8d7"
+        },
+        {
+          "name": "Nimzo-Indian Defense: Rubinstein System",
+          "eco": "E40",
+          "pgn": "1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3",
+          "uci": "d2d4 g8f6 c2c4 e7e6 b1c3 f8b4 e2e3"
+        },
+        {
+          "name": "Semi-Slav Defense: Meran Variation",
+          "eco": "D47",
+          "pgn": "1. d4 d5 2. c4 c6 3. Nc3 Nf6 4. e3 e6 5. Nf3 Nbd7 6. Bd3 dxc4 7. Bxc4 b5",
+          "uci": "d2d4 d7d5 c2c4 c7c6 b1c3 g8f6 e2e3 e7e6 g1f3 b8d7 f1d3 d5c4 d3c4 b7b5"
+        },
+        {
+          "name": "Caro-Kann Defense: Classical Variation, Main Line",
+          "eco": "B18",
+          "pgn": "1. e4 c6 2. d4 d5 3. Nd2 dxe4 4. Nxe4 Bf5 5. Ng3 Bg6 6. h4",
+          "uci": "e2e4 c7c6 d2d4 d7d5 b1d2 d5e4 d2e4 c8f5 e4g3 f5g6 h2h4"
+        },
+        {
+          "name": "French Defense: Winawer Variation, Advance Variation",
+          "eco": "C16",
+          "pgn": "1. e4 e6 2. d4 d5 3. Nc3 Bb4 4. e5",
+          "uci": "e2e4 e7e6 d2d4 d7d5 b1c3 f8b4 e4e5"
+        },
+        {
+          "name": "King's Indian Defense: Orthodox Variation",
+          "eco": "E92",
+          "pgn": "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5",
+          "uci": "d2d4 g8f6 c2c4 g7g6 b1c3 f8g7 e2e4 d7d6 g1f3 e8g8 f1e2 e7e5"
+        },
+        {
+          "name": "Gr\u00fcnfeld Defense: Exchange Variation",
+          "eco": "D85",
+          "pgn": "1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. cxd5 Nxd5",
+          "uci": "d2d4 g8f6 c2c4 g7g6 b1c3 d7d5 c4d5 f6d5"
+        },
+        {
+          "name": "Catalan Opening: Open Defense",
+          "eco": "E02",
+          "pgn": "1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 dxc4",
+          "uci": "d2d4 g8f6 c2c4 e7e6 g2g3 d7d5 f1g2 d5c4"
+        },
+        {
+          "name": "English Opening: Symmetrical Variation",
+          "eco": "A30",
+          "pgn": "1. c4 c5 2. Nf3",
+          "uci": "c2c4 c7c5 g1f3"
+        },
+        {
+          "name": "Slav Defense: Modern Line",
+          "eco": "D11",
+          "pgn": "1. d4 d5 2. c4 c6 3. Nf3",
+          "uci": "d2d4 d7d5 c2c4 c7c6 g1f3"
+        },
+        {
+          "name": "Scandinavian Defense: Main Line",
+          "eco": "B01",
+          "pgn": "1. e4 d5 2. exd5 Qxd5 3. Nc3 Qa5",
+          "uci": "e2e4 d7d5 e4d5 d8d5 b1c3 d5a5"
+        }
+      ]
+    },
+    "added_positions_by_ply": {
+      "3": 200,
+      "4": 186,
+      "5": 174,
+      "6": 169,
+      "7": 160,
+      "8": 307,
+      "9": 304,
+      "10": 297,
+      "11": 289,
+      "12": 1133,
+      "13": 1131,
+      "14": 1148,
+      "15": 1112,
+      "16": 1126
+    },
+    "preservation_verification": {
+      "existing_positions_preserved": 8258,
+      "existing_entries_preserved": 260030,
+      "old_bytes": 4160480,
+      "new_bytes": 8320176,
+      "max_bytes": 8320960
+    }
+  },
+  "uci_verification": {
+    "startpos": {
+      "moves": 20,
+      "max_absolute_error": 5.8859777450556705e-05
+    },
+    "e2e4": {
+      "moves": 20,
+      "max_absolute_error": 0.00010810689926143979
+    },
+    "d2d4": {
+      "moves": 20,
+      "max_absolute_error": 4.8964333534240456e-05
+    },
+    "c2c4": {
+      "moves": 20,
+      "max_absolute_error": 4.701800346373908e-05
+    },
+    "g1f3": {
+      "moves": 20,
+      "max_absolute_error": 6.486654281617765e-05
+    }
+  },
+  "native_policy_verification": {
+    "startpos": {
+      "ideal_softmax_max_error": 0.00029077312890705975
+    },
+    "e2e4": {
+      "ideal_softmax_max_error": 8.288822620604319e-05
+    },
+    "d2d4": {
+      "ideal_softmax_max_error": 0.0006456960994476457
+    },
+    "c2c4": {
+      "ideal_softmax_max_error": 0.00019386121157524694
+    },
+    "g1f3": {
+      "ideal_softmax_max_error": 0.000391693575977875
+    }
+  },
+  "conditional_move_coverage": {
+    "probability_definition": "Conditional probability of the move in its stored parent policy; never multiplied along the path. Reporting only; traversal still uses path probability.",
+    "scope": "Moves from retained parent positions at their recorded minimum ply; all possible unvisited chess positions are not enumerated.",
+    "depths": [
+      {
+        "parent_ply": 0,
+        "covered_parents": 1,
+        "moves": 20,
+        "missing_resulting_positions": 0,
+        "highest_missing_parent_probability": null,
+        "example": null
+      },
+      {
+        "parent_ply": 1,
+        "covered_parents": 20,
+        "moves": 400,
+        "missing_resulting_positions": 0,
+        "highest_missing_parent_probability": null,
+        "example": null
+      },
+      {
+        "parent_ply": 2,
+        "covered_parents": 400,
+        "moves": 8902,
+        "missing_resulting_positions": 7700,
+        "highest_missing_parent_probability": 0.9609028085167693,
+        "example": {
+          "parent_fen": "rnbqkb1r/pppppppp/5n2/8/6P1/8/PPPPPP1P/RNBQKBNR w KQkq -",
+          "move": "g4g5",
+          "san": "g5",
+          "resulting_ply": 3
+        }
+      },
+      {
+        "parent_ply": 3,
+        "covered_parents": 693,
+        "moves": 16791,
+        "missing_resulting_positions": 15492,
+        "highest_missing_parent_probability": 0.9659515399950679,
+        "example": {
+          "parent_fen": "rnbqkbnr/ppppp1pp/8/5p2/3PP3/8/PPP2PPP/RNBQKBNR b KQkq -",
+          "move": "f5e4",
+          "san": "fxe4",
+          "resulting_ply": 4
+        }
+      },
+      {
+        "parent_ply": 4,
+        "covered_parents": 857,
+        "moves": 24487,
+        "missing_resulting_positions": 22982,
+        "highest_missing_parent_probability": 0.9792634180977748,
+        "example": {
+          "parent_fen": "rnbqk1nr/pppp1ppp/8/4p3/1b1PP3/8/PPP2PPP/RNBQKBNR w KQkq -",
+          "move": "c2c3",
+          "san": "c3",
+          "resulting_ply": 5
+        }
+      },
+      {
+        "parent_ply": 5,
+        "covered_parents": 904,
+        "moves": 25953,
+        "missing_resulting_positions": 24709,
+        "highest_missing_parent_probability": 0.9597870231443619,
+        "example": {
+          "parent_fen": "rn1qkbnr/pbpppppp/1p6/8/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq -",
+          "move": "b7e4",
+          "san": "Bxe4",
+          "resulting_ply": 6
+        }
+      },
+      {
+        "parent_ply": 6,
+        "covered_parents": 875,
+        "moves": 27756,
+        "missing_resulting_positions": 26711,
+        "highest_missing_parent_probability": 0.9769901664766085,
+        "example": {
+          "parent_fen": "r1bqk1nr/pppp1ppp/2n5/4p3/1b1PP3/5N2/PPP2PPP/RNBQKB1R w KQkq -",
+          "move": "c2c3",
+          "san": "c3",
+          "resulting_ply": 7
+        }
+      },
+      {
+        "parent_ply": 7,
+        "covered_parents": 779,
+        "moves": 24367,
+        "missing_resulting_positions": 23275,
+        "highest_missing_parent_probability": 0.9565769892809568,
+        "example": {
+          "parent_fen": "rnbqkbnr/ppp3pp/3p1p2/4P3/4P3/5N2/PPP2PPP/RNBQKB1R b KQkq -",
+          "move": "d6e5",
+          "san": "dxe5",
+          "resulting_ply": 8
+        }
+      },
+      {
+        "parent_ply": 8,
+        "covered_parents": 954,
+        "moves": 31431,
+        "missing_resulting_positions": 30447,
+        "highest_missing_parent_probability": 0.9503768398934797,
+        "example": {
+          "parent_fen": "r1bqkb1r/pppp1ppp/5n2/4n3/4P3/2N5/PPPP1PPP/R1BQKB1R w KQkq -",
+          "move": "d2d4",
+          "san": "d4",
+          "resulting_ply": 9
+        }
+      },
+      {
+        "parent_ply": 9,
+        "covered_parents": 816,
+        "moves": 26382,
+        "missing_resulting_positions": 25591,
+        "highest_missing_parent_probability": 0.9903869272505482,
+        "example": {
+          "parent_fen": "r1bqkbnr/ppp2ppp/2B5/4p3/3p4/2N1PP2/PPPP2PP/R1BQK1NR b KQkq -",
+          "move": "b7c6",
+          "san": "bxc6",
+          "resulting_ply": 10
+        }
+      },
+      {
+        "parent_ply": 10,
+        "covered_parents": 698,
+        "moves": 23632,
+        "missing_resulting_positions": 22920,
+        "highest_missing_parent_probability": 1.0,
+        "example": {
+          "parent_fen": "rnb1kbnr/ppp2ppp/8/4p3/4N3/4PN2/PPP2PPP/R1BqKB1R w KQkq -",
+          "move": "e1d1",
+          "san": "Kxd1",
+          "resulting_ply": 11
+        }
+      },
+      {
+        "parent_ply": 11,
+        "covered_parents": 650,
+        "moves": 21760,
+        "missing_resulting_positions": 19999,
+        "highest_missing_parent_probability": 0.9534381124436608,
+        "example": {
+          "parent_fen": "r1bqkbnr/p2ppp1p/2p3p1/8/3QP3/8/PPP2PPP/RNB1KB1R b KQkq -",
+          "move": "g8f6",
+          "san": "Nf6",
+          "resulting_ply": 12
+        }
+      },
+      {
+        "parent_ply": 12,
+        "covered_parents": 1696,
+        "moves": 58448,
+        "missing_resulting_positions": 56591,
+        "highest_missing_parent_probability": 0.9882134418539659,
+        "example": {
+          "parent_fen": "rnbq1rk1/ppp2ppp/4pn2/3p4/2PP4/P1bBP3/1P3PPP/R1BQK1NR w KQ -",
+          "move": "b2c3",
+          "san": "bxc3",
+          "resulting_ply": 13
+        }
+      },
+      {
+        "parent_ply": 13,
+        "covered_parents": 1674,
+        "moves": 57554,
+        "missing_resulting_positions": 55667,
+        "highest_missing_parent_probability": 0.9624775981763322,
+        "example": {
+          "parent_fen": "r1bq1b1r/ppp2kpp/2n5/3np3/2B5/5Q2/PPPP1PPP/RNB1K2R b KQ -",
+          "move": "f7e6",
+          "san": "Ke6",
+          "resulting_ply": 14
+        }
+      },
+      {
+        "parent_ply": 14,
+        "covered_parents": 1690,
+        "moves": 57539,
+        "missing_resulting_positions": 55715,
+        "highest_missing_parent_probability": 0.9417921404856282,
+        "example": {
+          "parent_fen": "r1bqk2r/p1pp2pp/2p2n2/2b1p3/4P3/5N2/PPP2PPP/RNBQ1RK1 w kq -",
+          "move": "f3e5",
+          "san": "Nxe5",
+          "resulting_ply": 15
+        }
+      },
+      {
+        "parent_ply": 15,
+        "covered_parents": 1643,
+        "moves": 57225,
+        "missing_resulting_positions": 55453,
+        "highest_missing_parent_probability": 0.9568381500905231,
+        "example": {
+          "parent_fen": "r1bqkb1r/p4ppp/2p2n2/n3p1N1/B7/8/PPPP1PPP/RNBQK2R b KQkq -",
+          "move": "h7h6",
+          "san": "h6",
+          "resulting_ply": 16
+        }
+      }
+    ]
+  },
+  "mainline_verification": {
+    "reserved_lines": 17,
+    "representative_opening_names": [
+      "Ruy Lopez: Closed",
+      "Ruy Lopez: Berlin Defense",
+      "Sicilian Defense: Najdorf Variation",
+      "Sicilian Defense: Dragon Variation",
+      "Italian Game: Giuoco Piano",
+      "Queen's Gambit Declined: Orthodox Defense",
+      "Nimzo-Indian Defense: Rubinstein System",
+      "Semi-Slav Defense: Meran Variation",
+      "Caro-Kann Defense: Classical Variation, Main Line",
+      "French Defense: Winawer Variation, Advance Variation",
+      "King's Indian Defense: Orthodox Variation",
+      "Gr\u00fcnfeld Defense: Exchange Variation",
+      "Catalan Opening: Open Defense",
+      "English Opening: Symmetrical Variation",
+      "Slav Defense: Modern Line",
+      "Scandinavian Defense: Main Line"
+    ],
+    "unique_positions_verified": 223,
+    "source_plies": "0 through 16 inclusive",
+    "full_legal_move_policy_at_every_position": true
+  },
+  "positions": 15994
+}
