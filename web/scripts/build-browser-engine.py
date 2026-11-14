@@ -6,7 +6,8 @@ compatible replacement NNUE, and --package-only to package a previously complete
 import argparse, hashlib, json, pathlib, shutil, subprocess, tempfile, zipfile, re
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 REV='0dc3d0ac03705353dad6659c0dad4597cdee4021'
-p=argparse.ArgumentParser();p.add_argument('--source',type=pathlib.Path);p.add_argument('--network',type=pathlib.Path);p.add_argument('--package-only',action='store_true');p.add_argument('--full',action='store_true');p.add_argument('--threaded',action='store_true');args=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--source',type=pathlib.Path);p.add_argument('--network',type=pathlib.Path);p.add_argument('--package-only',action='store_true');p.add_argument('--full',action='store_true');p.add_argument('--threaded',action='store_true');p.add_argument('--scalar',action='store_true',help='Portable single-threaded build without WebAssembly SIMD');args=p.parse_args()
+if args.scalar and args.threaded: p.error('--scalar is a single-threaded compatibility build')
 source=args.source
 if source is None:
  source=pathlib.Path(tempfile.mkdtemp(prefix='chessil-stockfish-'))
@@ -31,6 +32,7 @@ if args.network and not args.package_only:
 if not args.package_only:
  command=['node','build.js','--no-split','--basename=chessil-stockfish','--force']
  if not args.threaded: command.append('--single-threaded')
+ if args.scalar: command.append('--no-simd')
  if not args.full: command.append('--lite')
  subprocess.run(command,cwd=source,check=True)
 worker=source/'src/chessil-stockfish.js';wasm=source/'src/chessil-stockfish.wasm'
@@ -51,8 +53,9 @@ with zipfile.ZipFile(release/'source.zip','w',zipfile.ZIP_DEFLATED) as archive:
  archive.write(network,'stockfish/src/'+network.name)
  archive.write(__file__,'chessil/build-browser-engine.py')
  archive.write(ROOT/'engine-build/browser.patch','chessil/browser.patch')
- archive.writestr('BUILD.txt','Source: nmrugg/stockfish.js '+REV+' plus included browser.patch.\nEmscripten 6.0.9; node build.js '+('--lite ' if not args.full else '')+('' if args.threaded else '--single-threaded ')+'--no-split --basename=chessil-stockfish --force\nThe stockfish directory already contains the patch. Network architecture must match the selected build.\n')
+ archive.writestr('BUILD.txt','Source: nmrugg/stockfish.js '+REV+' plus included browser.patch.\nEmscripten 6.0.9; node build.js '+('--lite ' if not args.full else '')+('' if args.threaded else '--single-threaded ')+('--no-simd ' if args.scalar else '')+'--no-split --basename=chessil-stockfish --force\nThe stockfish directory already contains the patch. Network architecture must match the selected build.\n')
 manifest={'name':'Stockfish 19 '+('Full' if args.full else 'Lite')+' · local analysis','revision':subprocess.check_output(['git','rev-parse','HEAD'],cwd=source).decode().strip(),'release':digest,'worker':'/engine/'+digest+'/'+worker.name,'source':'/engine/'+digest+'/source.zip','license':'/engine/'+digest+'/LICENSE.txt','networks':[{'option':'EvalFile','name':network.name,'url':'/engine/'+str(network_asset.relative_to(public)),'sha256':hashlib.sha256(network.read_bytes()).hexdigest()}]}
 manifest['threaded']=args.threaded
+manifest['simd']=not args.scalar
 manifest['embeddedNetwork']=hashlib.sha256(network.read_bytes()).hexdigest()
-(public/('manifest-threaded.json' if args.threaded else 'manifest.json')).write_text(json.dumps(manifest,indent=2)+'\n');print(json.dumps(manifest,indent=2))
+(public/('manifest-scalar.json' if args.scalar else 'manifest-threaded.json' if args.threaded else 'manifest.json')).write_text(json.dumps(manifest,indent=2)+'\n');print(json.dumps(manifest,indent=2))

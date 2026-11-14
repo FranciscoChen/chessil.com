@@ -174,7 +174,10 @@ https://github.com/nmrugg/stockfish.js at
 `0dc3d0ac03705353dad6659c0dad4597cdee4021`. Like the Lichess approach it compiles
 Stockfish to WebAssembly and runs UCI in a worker. The lite network is smaller
 and weaker than the full network; it makes a practical default for local review.
-Modern WebAssembly SIMD support is required. Multi-threaded analysis additionally
+The optimized builds use WebAssembly SIMD. A portable scalar build is selected
+when the instruction probe fails, or when optimized workers cannot initialize.
+Startup falls back from threaded SIMD to single-threaded SIMD to scalar, cleaning
+up failed workers without changing saved preferences. Multi-threaded analysis additionally
 requires SharedArrayBuffer and cross-origin isolation. `web/isolation.js` applies
 COOP/COEP to analysis and settings pages, and COEP/CORP to engine worker/assets.
 Other pages keep their existing policy. The single-threaded build works without
@@ -191,7 +194,8 @@ This checks out pinned source, applies `engine-build/browser.patch`, builds with
 one compiler job, and publishes content-addressed JS/WASM/network files plus
 `engine/manifest.json`. `--source /path/to/patched-source` builds our own edited
 source tree. `--network /path/to/matching.nnue` selects the external network.
-`--full --network /path/to/full.nnue` builds the full architecture. Network
+`--scalar` publishes `manifest-scalar.json`, a single-threaded build without SIMD
+intrinsics or auto-vectorization. `--full --network /path/to/full.nnue` builds the full architecture. Network
 architecture must match the engine; a policy network requires corresponding
 C++ architecture/search changes, not just a renamed NNUE file.
 
@@ -264,3 +268,8 @@ leaving an empty dash below View source.
 Optional threat guidance rechecks a changed best move after it stays stable for
 one second. It briefly interrupts the continuous search for its bounded probe,
 then resumes; ordinary continuous analysis has no periodic search restart.
+
+When a book row has no valid engine WDL, its shared bar renders the book policy
+probability instead, labeled as policy probability (not a win estimate). It
+switches to perspective-aware WDL as soon as valid engine values are available.
+Rows without either source retain the unavailable state.

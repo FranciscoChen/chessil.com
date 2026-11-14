@@ -19,7 +19,7 @@ window.ChessilAnalysisBook=class{
    const score=scores.get(move),probability=weight===null?null:weight/total,isFresh=!!score&&fresh.has(move);
    row.name.textContent=label;row.prior.hidden=probability===null;row.prior.textContent=probability===null?'':(probability*100).toFixed(1)+'%';row.prior.title='Policy probability';row.button.classList.toggle('no-policy',probability===null);row.button.classList.toggle('is-stale',!!score&&!isFresh);row.button.dataset.fresh=String(isFresh);
    row.evaluation.textContent=score?this.scoreText(score,fen,perspective):'';row.evaluation.title=score?(isFresh?'Current search':'Previous search')+' · depth '+score.depth:'Engine evaluation';
-   ChessilWdl.render(row.wdl,{score,fen,perspective});row.button.setAttribute('aria-label',label+(probability===null?'':', policy '+row.prior.textContent)+(score?', '+row.evaluation.title+', evaluation '+row.evaluation.textContent:'')+', '+row.wdl.getAttribute('aria-label'));
+   ChessilWdl.render(row.wdl,{score,fen,perspective,probability});row.button.setAttribute('aria-label',label+(probability===null?'':', policy '+row.prior.textContent)+(score?', '+row.evaluation.title+', evaluation '+row.evaluation.textContent:'')+', '+row.wdl.getAttribute('aria-label'));
   }
   // Move keyed rows without losing focus. Pointer/touch hover does not freeze ranking.
   let before=this.host.firstElementChild;for(const [move] of ordered){const button=this.rows.get(move).button;if(button===before)before=before.nextElementSibling;else this.host.insertBefore(button,before);}

@@ -22,7 +22,8 @@
           "mode": "manifest"
         }
       ],
-      "threadedManifest": "/engine/manifest-threaded.json"
+      "threadedManifest": "/engine/manifest-threaded.json",
+      "scalarManifest": "/engine/manifest-scalar.json"
     }
   ]
 }

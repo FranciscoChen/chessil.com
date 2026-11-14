@@ -11,3 +11,5 @@
 .wdl-percent{position:absolute;inset:0;display:none;align-items:center;justify-content:center;white-space:nowrap;font:600 10px/1 var(--sans-font);font-variant-numeric:tabular-nums}
 @container(min-width:30px){.wdl-percent{display:flex}}
 .wdl-bar.is-unknown{opacity:.45}
+.wdl-bar.is-probability [data-wdl="win"]{background:var(--link);color:var(--bg)}
+.wdl-bar.is-probability [data-wdl="loss"]{background:var(--hover)}

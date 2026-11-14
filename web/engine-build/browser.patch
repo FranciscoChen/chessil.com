@@ -1,8 +1,16 @@
 diff --git a/build.js b/build.js
-index beed34a..9aa13e2 100755
+index beed34a..fcd64b7 100755
 --- a/build.js
 +++ b/build.js
-@@ -14,7 +14,7 @@ var params = getParams({booleans: [
+@@ -7,14 +7,14 @@
+ var runSpawnSync = require("child_process").spawnSync;
+ var runExecFileSync = require("child_process").execFileSync;
+ var params = getParams({booleans: [
+-    "no-chesscom", "h", "help", "help-all", "f", "force", "force-linking", "s", "silent", "bin", "colors", "no-color", "no-minify", "v", "verbose", "debug-wasm", "all",
++    "no-simd", "no-chesscom", "h", "help", "help-all", "f", "force", "force-linking", "s", "silent", "bin", "colors", "no-color", "no-minify", "v", "verbose", "debug-wasm", "all",
+     "skip-em-check", "strict-em-check", "single-threaded", "lite", "ultra-lite", "wasm-debug", "asm-js", "keep-syzygy", "hash", "no-split",
+     "skip-asm", "skip-single", "skip-lite", "skip-single-lite", "skip-lite-single", "skip-standard",
+     "only-asm", "only-single", "only-lite", "only-single-lite", "only-lite-single", "only-standard",
      "debug", "do-not-verify-nets",
      
  ]});
@@ -11,6 +19,15 @@ index beed34a..9aa13e2 100755
  var fs = require("fs");
  var p = require("path");
  var srcPath = p.join(__dirname, "src");
+@@ -890,6 +890,8 @@ if (params["ultra-lite"]) {
+     }
+ }
+ 
++if (params["no-simd"]) args.push("WASM_SIMD=no");
++
+ if (params["single-threaded"]) {
+     buildingSingleThreaded = true;
+     args.push("WASM_SINGLE_THREADED=yes");
 diff --git a/src/emscripten/extern-post.js b/src/emscripten/extern-post.js
 index 440a239..450d365 100644
 --- a/src/emscripten/extern-post.js
@@ -36,10 +53,26 @@ index 440a239..450d365 100644
                          } else if (event.data.progressPort) {
                              progressPort = event.data.progressPort;
 diff --git a/src/emscripten/wasm-makefile.mk b/src/emscripten/wasm-makefile.mk
-index cd9103f..1672f4f 100644
+index cd9103f..b7fcf03 100644
 --- a/src/emscripten/wasm-makefile.mk
 +++ b/src/emscripten/wasm-makefile.mk
-@@ -83,7 +83,7 @@ EM_LDFLAGS  += -s EXPORT_NAME="Stockfish"
+@@ -14,6 +14,15 @@ ifeq ($(ASMJS),yes)
+ 	sse2 = no
+ 	ssse3 = no
+ 	sse41 = no
++else ifeq ($(WASM_SIMD),no)
++	# Portable fallback: no SIMD intrinsics or auto-vectorized instructions.
++	EM_CXXFLAGS += -mno-simd128 -fno-vectorize -fno-slp-vectorize
++	EM_LDFLAGS += -mno-simd128 -sMIN_SAFARI_VERSION=150000
++	popcnt = no
++	sse = no
++	sse2 = no
++	ssse3 = no
++	sse41 = no
+ else
+ 	EM_CXXFLAGS += -msimd128
+ 	# CPU settings
+@@ -83,7 +92,7 @@ EM_LDFLAGS  += -s EXPORT_NAME="Stockfish"
  #EM_LDFLAGS  += -s NO_FILESYSTEM=1
  #EM_LDFLAGS  += -s EXPORTED_FUNCTIONS="['_main','_command']"
  
