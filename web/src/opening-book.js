@@ -1,10 +1,10 @@
 /* One cached Polyglot buffer; shared legal-move/SAN rules. Legacy shard
  * manifests remain readable while cached clients/assets finish deployment. */
 window.ChessilOpeningBook=class {
- constructor(){this.shards=new Map();this.positions=new Map();}
+ constructor(manifestUrl='/engine/book/polyglot-manifest.json'){this.manifestUrl=manifestUrl;this.shards=new Map();this.positions=new Map();}
  async lookup(fen,ply=0){
   const fields=fen.split(' ').slice(0,4);if(fields[3]!=='-'&&!mg(fen).some(move=>move.slice(2,4)===fields[3]&&boardgen(fen)[move.slice(0,2)].p==='p'&&move[0]!==move[2]))fields[3]='-';const key=fields.join(' ');
-  if(!this.manifest)this.manifest=fetch('/engine/book/polyglot-manifest.json').then(r=>{if(!r.ok)throw Error('Opening book unavailable');return r.json();}).catch(error=>{this.manifest=null;throw error;});
+  if(!this.manifest)this.manifest=fetch(this.manifestUrl).then(r=>{if(!r.ok)throw Error('Opening book unavailable');return r.json();}).catch(error=>{this.manifest=null;throw error;});
   const manifest=await this.manifest;
   if(ply>=17)return {name:manifest.name,moves:[]};
   if(manifest.format==='polyglot'){

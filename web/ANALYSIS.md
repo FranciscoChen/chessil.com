@@ -144,8 +144,8 @@ Hidden pages stop the worker and resume on return if it was running. At most 128
 position move-score maps and book lookup requests are cached. Stop retains the
 book, existing evaluations, and review findings.
 
-`analysis-book.js` reuses keyed rows and ranks by policy before full move 9 when
-policy exists. From full move 9, or without policy, it ranks by mover-relative
+`analysis-book.js` reuses keyed rows and ranks by policy wherever priors exist,
+including White to move at full move 9 (source ply 16). Without priors it ranks by mover-relative
 engine score. All legal moves remain selectable; absent policy displays a dash,
 not an invented prior. Engine fallback rows after source ply 16 are not additional
 book coverage. Each row shows the move, a flexible WDL bar, an optional policy percentage, and
@@ -276,3 +276,9 @@ When a book row has no valid engine WDL, its shared bar renders the book policy
 probability instead, labeled as policy probability (not a win estimate). It
 switches to perspective-aware WDL as soon as valid engine values are available.
 Rows without either source retain the unavailable state.
+
+Book choices are installed in `engine/catalog.json` under `books` (id, name,
+manifest), selected through the shared analysis preference renderer and stored as
+`analysis.book`. Changing books replaces only book caches, without restarting
+the engine. The current choice is Lc0 BT4-it332. Column labels distinguish Lc0
+policy from the installed Stockfish version; Lc0 dims outside policy coverage.

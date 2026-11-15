@@ -5,7 +5,7 @@ window.ChessilAnalysisBook=class{
   const epoch=++this.epoch,key=fen+'@'+ply;let request=this.cache.get(key);
   if(!request){request=this.book.lookup(fen,ply).then(result=>{const pieces=boardgen(fen),legal=mg(fen),policy=new Map(result.moves.map(row=>[row[0],row]));return {...result,hasPolicy:policy.size>0,moves:legal.map(move=>policy.get(move)||[move,gensanbase(move,pieces,fen,legal),null,null])};}).catch(error=>{this.cache.delete(key);throw error;});if(this.cache.size>=128)this.cache.delete(this.cache.keys().next().value);this.cache.set(key,request);}
   const result=await request;if(epoch!==this.epoch)return result;
-  const scores=new Map(lines.filter(line=>line.pv[0]).map(line=>[line.pv[0],line])),fresh=new Set(current.map(line=>line.pv[0])),best=current[0]?.pv[0],policyOrder=result.hasPolicy&&Number(fen.split(' ')[5])<9;
+  const scores=new Map(lines.filter(line=>line.pv[0]).map(line=>[line.pv[0],line])),fresh=new Set(current.map(line=>line.pv[0])),best=current[0]?.pv[0],policyOrder=result.hasPolicy;
   const magnitude=line=>!line?-Infinity:line.kind==='mate'?(line.value>0?100000-Math.abs(line.value):-100000+Math.abs(line.value)):line.value;
   const ordered=result.moves.slice().sort((a,b)=>{
    if(policyOrder)return (b[2]||0)-(a[2]||0);

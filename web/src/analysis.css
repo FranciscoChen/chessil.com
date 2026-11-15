@@ -82,3 +82,6 @@ cg-board square.annotation-suggestion{z-index:3;--ui-highlight-fill:#ffffff26}
 .engine-options-reveal.is-expanded~#analysis-lines,.engine-options-reveal.is-expanded~.engine-expand{display:none}
 
 #analysis-book-moves::-webkit-scrollbar,.game-page #analysis-panel::-webkit-scrollbar{display:none}
+.book-columns{display:grid;grid-template-columns:minmax(0,1fr) 3.1rem 3.2rem;gap:.35rem;padding:0 2px .2rem;color:var(--text2);font:600 .68rem/1.4 var(--sans-font);text-align:right}
+.book-columns .is-unavailable{opacity:.4}
+@media(min-width:901px){.book-columns{grid-template-columns:minmax(0,1fr) 3.5rem 3.6rem;font-size:.75rem}}
