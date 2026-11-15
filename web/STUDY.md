@@ -20,7 +20,9 @@ an analysis control; a new page visit starts a new local tree.
 `src/study.js` adapts this model to the existing board/history interface:
 `boardView`, `movesList`, `uci`, `a1ti`, and `gamereplay`. `uci` is the selected
 continuation. Desktop and mobile show only that continuation, with `(…)` at
-branch points. Parenthesized variation groups belong to the dialog. Double-click/double-tap or
+branch points. Clicking or tapping an ancestor in the selected line only changes
+the displayed ply, just like arrow navigation; it preserves the selected
+continuation. Selecting a different branch explicitly changes that continuation. Parenthesized variation groups belong to the dialog. Double-click/double-tap or
 press and hold the history rail to open the same tree renderer in a dialog;
 keyboard V or Shift+F10 also opens it. Movement cancels a hold so scrolling remains
 normal. Black variation entries include a full prefix such as `3. ... Nf6`. Branch controls select, promote,
