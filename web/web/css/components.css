@@ -111,3 +111,5 @@ button:disabled, .disabled { opacity: .5; cursor: not-allowed; }
 @keyframes ui-copy-confirm{50%{scale:1.12}}
 @media(max-width:900px){.ui-article-layout{grid-template-columns:minmax(0,1fr);gap:2rem}.ui-article-aside{position:static}.ui-source-header{margin-bottom:1.5rem}.ui-article-body>section+section{margin-top:1.5rem}}
 @media(prefers-reduced-motion:reduce){.ui-code-copy.is-copied{animation:none}}
+.ui-tooltip{position:fixed;z-index:var(--z-dropdown,30);max-width:min(24rem,calc(100vw - 16px));padding:.5rem .65rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);box-shadow:var(--panel-shadow);font:.8rem/1.45 var(--sans-font);overflow-wrap:anywhere}
+[data-tap-tooltip][role="button"]{cursor:help}

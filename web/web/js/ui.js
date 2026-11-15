@@ -55,3 +55,12 @@ document.addEventListener('click',async event=>{
  const button=event.target.closest?.('[data-copy-code]');if(!button)return;const snippet=button.closest('[data-code-snippet]'),status=snippet.querySelector('.ui-code-status');
  try{await navigator.clipboard.writeText(snippet.querySelector('code').textContent);button.classList.add('is-copied');status.textContent=document.documentElement.lang==='es'?'Copiado':document.documentElement.lang==='zh'?'已复制':'Copied';setTimeout(()=>{button.classList.remove('is-copied');status.textContent='';},2000);}catch(_){status.textContent=document.documentElement.lang==='es'?'No se pudo copiar':document.documentElement.lang==='zh'?'无法复制':'Could not copy';}
 });
+/* One touch/keyboard tooltip for any titled element opting into tap support. */
+window.ChessilTooltip=(()=>{
+ let owner,bubble,observer;
+ function close(target){if(target&&target!==owner)return;observer?.disconnect();if(owner){owner.removeAttribute('aria-describedby');owner.setAttribute('aria-expanded','false');}bubble?.remove();owner=bubble=null;}
+ function toggle(target){if(owner===target){close();return;}close();if(!target.title)return;owner=target;bubble=document.createElement('div');bubble.id='ui-tap-tooltip';bubble.className='ui-tooltip';bubble.setAttribute('role','tooltip');bubble.textContent=target.title;document.body.append(bubble);target.setAttribute('aria-describedby',bubble.id);target.setAttribute('aria-expanded','true');const r=target.getBoundingClientRect(),b=bubble.getBoundingClientRect();bubble.style.left=Math.max(8,Math.min(r.left,innerWidth-b.width-8))+'px';bubble.style.top=Math.max(8,r.bottom+b.height+8<=innerHeight?r.bottom+6:r.top-b.height-6)+'px';observer=new MutationObserver(()=>close());observer.observe(target,{attributes:true,attributeFilter:['title'],childList:true,subtree:true});}
+ document.addEventListener('click',event=>{const target=event.target.closest?.('[data-tap-tooltip]');if(target)toggle(target);else if(!bubble?.contains(event.target))close();});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape')close();else if((event.key==='Enter'||event.key===' ')&&event.target.matches?.('[data-tap-tooltip][role="button"]')){event.preventDefault();toggle(event.target);}});
+ addEventListener('scroll',()=>close(),true);addEventListener('resize',()=>close());addEventListener('pagehide',()=>close());return {close};
+})();
