@@ -128,7 +128,7 @@ await t.test('shared board has stable DOM and follows the pointer synchronously 
   view.drag({pointerId:1,clientX:x,clientY:y,getCoalescedEvents:()=>[{clientX:x+55,clientY:y-55}]});
   const moving=view.pieces.get('e2'),painted=moving.getBoundingClientRect();
   const error=Math.hypot(painted.left+painted.width/2-(x+55),painted.top+painted.height/2-(y-55));
-  const focus=originalStyle(root,'::after'),focusBorder=originalStyle(root).outlineStyle==='none' && (!root.matches(':focus-visible') || focus.borderTopWidth==='3px');
+  const focus=originalStyle(root,'::after'),focusBorder=originalStyle(root).outlineStyle==='none' && (!root.matches(':focus-visible') || focus.borderTopWidth==='1px');
   const transition=originalStyle(moving).transitionDuration,pixelDrag=moving.style.transform.includes('px'),composited=originalStyle(moving).willChange==='transform';
   view.cancel();const restored=moving.style.transform.replaceAll(' ','')===view.transform('e2').replaceAll(' ','');window.requestAnimationFrame=originalFrame;await new Promise(requestAnimationFrame);
   const cancelled=!root.querySelector('.dragging') && restored;view.destroy();

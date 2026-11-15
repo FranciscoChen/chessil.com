@@ -20,7 +20,7 @@ a { color: var(--link); }
 a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button, input, select, textarea { font: inherit; }
 button, a, input, select, textarea { touch-action: manipulation; }
-:focus-visible { outline: 2px solid var(--link); outline-offset: 4px; }
+:focus-visible { outline:var(--focus-ring-width,1px) solid var(--link);outline-offset:var(--focus-ring-offset,-1px); }
 button:disabled, .disabled { opacity: .5; cursor: not-allowed; }
 .main-wrap { width: 100%; min-width: 0; }
 .box, .auth, .menu-box-pop, .round__side, .round__under, .round__app__table {

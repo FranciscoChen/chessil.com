@@ -222,3 +222,7 @@ and respects reduced motion. `syncContext` caches orientation/side/turn so an
 unchanged render makes no DOM mutations. Coordinates move from right/bottom to
 left/top when flipped. `setArrows` owns a cached, pointer-transparent SVG layer
 for analysis plan, setup, and threat arrows; dragging never rebuilds it.
+
+Shared keyboard focus uses `--focus-ring-width:1px` and
+`--focus-ring-offset:-1px`. The native board uses a matching one-pixel internal
+pseudo-element border to preserve compositor behavior while dragging.
