@@ -211,13 +211,18 @@ main elements keep the footer below the initial viewport; they do not subtract
 footer height from board space. At 900px and below, boards retain their shared
 available-width rule. The training library is a dialog. Coordinate
 labels alternate light/dark ink according to the displayed square, independently
-of orientation, and use a stronger weight for small-board legibility.
+of orientation. Their font scales from the existing .7rem mobile minimum to
+1rem on larger boards. With Black at the bottom, file letters occupy square
+upper-right corners and rank numbers occupy lower-left corners.
 
 The shared context layer shows a crown for the player's color and a smaller
 triangle for the side to move. The user-side crown uses a theme-accent
 backplate and a glyph matching the user’s piece color. The turn indicator uses
 the moving side’s piece color for both its backplate and glyph, with the theme
-accent (`--link`) for its border and glyph outline. Their board edges follow orientation; spectators
+accent (`--link`) for its border and glyph outline. Both badges anchor to h1 for White and a8 for Black. They stack inward from
+the board edge (turn above crown at the bottom, below crown at the top), with
+responsive sizes that fit the home square even on narrow mobile boards. Their
+board edges follow orientation; spectators
 have no own-side crown. The arrival pulse animates only opacity and transform
 and respects reduced motion. `syncContext` caches orientation/side/turn so an
 unchanged render makes no DOM mutations. Coordinates move from right/bottom to

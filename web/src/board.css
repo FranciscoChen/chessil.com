@@ -29,10 +29,10 @@ cg-board square.ui-highlight { z-index:4; }
 cg-board square.current-premove { background:#788ce766;box-shadow:inset 0 0 0 2px #788ce7; }
 cg-board square.keyboard-square { display:none;z-index:4;box-shadow:inset 0 0 0 3px var(--link); }
 cg-board:focus-visible square.keyboard-square { display:block; }
-coords { position:absolute;inset:0;pointer-events:none;z-index:6;font:700 .7rem/1 var(--sans-font); }
+coords { position:absolute;inset:0;pointer-events:none;z-index:6;font:700 clamp(.7rem,calc(var(--chess-board-size)*.016),1rem)/1 var(--sans-font); }
 coords.ranks { display:flex;flex-direction:column;align-items:flex-end; }
 coords.files { display:flex;flex-direction:row;align-items:flex-end; }
-coords.ranks coord { flex:1;width:1rem;text-align:right;padding:.3rem .25rem; }
+coords.ranks coord { flex:1;display:flex;align-items:flex-start;justify-content:flex-end;width:1.8em;text-align:right;padding:.3rem .25rem; }
 coords.files coord { flex:1;padding:.3rem; }
 /* Rank labels sit at the right edge, file labels along the bottom. In either
  * orientation their first label is on a dark square; alternate by screen index. */
@@ -45,19 +45,20 @@ html[data-board] cg-board { background-image:conic-gradient(var(--board-dark) 25
 /* Flipping moves coordinate labels to the opposite edges, not just their order. */
 cg-container:has(cg-board[data-orientation="b"]) coords.ranks,.training-board-wrap:has(cg-board[data-orientation="b"]) coords.ranks{align-items:flex-start}
 cg-container:has(cg-board[data-orientation="b"]) coords.files,.training-board-wrap:has(cg-board[data-orientation="b"]) coords.files{align-items:flex-start}
-cg-container:has(cg-board[data-orientation="b"]) coords.ranks coord,.training-board-wrap:has(cg-board[data-orientation="b"]) coords.ranks coord{text-align:left}
+cg-container:has(cg-board[data-orientation="b"]) coords.ranks coord,.training-board-wrap:has(cg-board[data-orientation="b"]) coords.ranks coord{text-align:left;justify-content:flex-start;align-items:flex-end}
+cg-container:has(cg-board[data-orientation="b"]) coords.files coord,.training-board-wrap:has(cg-board[data-orientation="b"]) coords.files coord{text-align:right}
 cg-board[data-orientation="b"]~coords coord:nth-child(odd){color:var(--coord-on-light,#1d2a32);text-shadow:0 1px 1px #ffffff70}
 cg-board[data-orientation="b"]~coords coord:nth-child(even){color:var(--coord-on-dark,#f8f1e0);text-shadow:0 1px 2px #132129b0}
-.board-context{position:absolute;inset:0;pointer-events:none;z-index:6}
+.board-context{--cue-own-size:min(22px,5.3%);--cue-turn-size:min(14px,3.3%);position:absolute;inset:0;pointer-events:none;z-index:6}
 .board-cue{--cue-outline:var(--piece-black);position:absolute;display:grid;place-items:center;box-sizing:border-box;color:var(--piece-white);background:var(--link);border:1px solid var(--link2);border-radius:50%;box-shadow:0 1px 4px #0006}
 .board-cue[data-side="b"]{--cue-outline:var(--piece-white);color:var(--piece-black)}
-.board-cue-own{width:22px;height:22px;right:4px}
-.board-cue-own[data-edge="bottom"]{bottom:4px}.board-cue-own[data-edge="top"]{top:4px}
-.board-cue svg{width:16px;height:16px;fill:currentColor;stroke:var(--cue-outline);stroke-width:1;stroke-linejoin:round;stroke-linecap:round}
-.board-cue-turn{width:14px;height:14px;left:4px;background:currentColor;border-color:var(--link);transition:top .18s,bottom .18s}
-.board-cue-turn[data-edge="top"]{top:4px;transform:rotate(180deg)}
-.board-cue-turn[data-edge="bottom"]{bottom:4px}
-.board-cue-turn svg{width:10px;height:10px;stroke:var(--link)}
+.board-cue-own{width:var(--cue-own-size);height:var(--cue-own-size)}
+.board-cue-own[data-edge="bottom"]{bottom:2px;right:calc(6.25% - 2px - var(--cue-own-size)/2)}.board-cue-own[data-edge="top"]{top:2px;left:calc(6.25% - 2px - var(--cue-own-size)/2)}
+.board-cue svg{width:70%;height:70%;fill:currentColor;stroke:var(--cue-outline);stroke-width:1;stroke-linejoin:round;stroke-linecap:round}
+.board-cue-turn{width:var(--cue-turn-size);height:var(--cue-turn-size);background:currentColor;border-color:var(--link)}
+.board-cue-turn[data-edge="top"]{top:calc(4px + var(--cue-own-size));left:calc(6.25% - 2px - var(--cue-turn-size)/2);transform:rotate(180deg)}
+.board-cue-turn[data-edge="bottom"]{bottom:calc(4px + var(--cue-own-size));right:calc(6.25% - 2px - var(--cue-turn-size)/2)}
+.board-cue-turn svg{stroke:var(--link)}
 .board-context [hidden]{display:none!important}
 .board-cue-own::after{content:"";position:absolute;inset:-4px;border:2px solid #fff;border-radius:50%;pointer-events:none;animation:board-side-arrive 1.8s ease-out 2}
 @keyframes board-side-arrive{0%,100%{opacity:0;transform:scale(.9)}45%{opacity:.9;transform:scale(1.3)}}
