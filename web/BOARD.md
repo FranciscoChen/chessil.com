@@ -204,10 +204,12 @@ Shared board consumers may override `state().autoQueen` for a move-specific
 promotion lesson. When absent, the saved user preference remains authoritative.
 This lets an underpromotion exercise show the chooser without changing settings.
 
-Game and training layouts consume `--chess-board-size` from `src/board.css`.
-Desktop boards are capped at 46rem with viewport-height and sidebar constraints.
-At 900px and below, both layouts use the same available-width rule. Training
-moves its library below the board when three columns would shrink it. Coordinate
+Game, analysis and training consume `--chess-board-size` from `src/board.css`.
+Desktop boards use the viewport height with a 64rem upper bound and reserve
+`--board-rail-size` plus `--board-workspace-gap` for the adjacent tools. Workspace
+main elements keep the footer below the initial viewport; they do not subtract
+footer height from board space. At 900px and below, boards retain their shared
+available-width rule. The training library is a dialog. Coordinate
 labels alternate light/dark ink according to the displayed square, independently
 of orientation, and use a stronger weight for small-board legibility.
 

@@ -23,10 +23,7 @@
 <body class="game-page">
   <!-- component:header -->
   <main class="game-shell">
-    <div class="game-heading">
-      <div><p class="eyebrow">EN EL TABLERO</p><h1>Partida de ajedrez</h1><p class="setup" data-game-field="setup">Cargando partida…</p></div>
-      <div class="game-heading-actions"><a class="ui-button ui-quiet" href="/lobby">← Sala</a><button class="ui-button ui-secondary" id="share-game" aria-label="Share game" title="Share game" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M5 13v7h14v-7"/></svg></button><span id="share-status" class="game-sr-only" role="status"></span></div>
-    </div>
+    <p class="setup game-sr-only" data-game-field="setup">Cargando partida…</p>
     <div class="round">
       <div class="round__app">
         <section class="game-player game-player--top" aria-label="Negras">
@@ -48,6 +45,7 @@
           <div class="rclock rclock-bottom"><div class="bar"></div><div class="time hour">—:—</div></div>
         </section>
         <!-- ui:game-history -->
+        <div class="game-result-actions" hidden><button class="ui-button ui-secondary" id="share-game" aria-label="Share game" title="Share game" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M5 13v7h14v-7"/></svg></button><span id="share-status" class="game-sr-only" role="status"></span></div>
         <div class="rcontrols game-actions"><div class="ricons"><button type="button" class="fbt draw-yes" disabled><span>Ofrecer tablas</span></button><button type="button" class="fbt resign" disabled><span>Rendirse</span></button></div><div class="game-followup" hidden><a class="ui-button ui-primary" href="/lobby">Nueva partida</a><a class="ui-button ui-secondary" href="/easy">Jugar con IA</a></div></div>
       </div>
       <p class="round__underboard game-guidance" id="game-guidance">Arrastra una pieza o toca la pieza y su destino.</p>

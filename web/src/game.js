@@ -68,13 +68,13 @@ function receiveMove(raw) {
  if(Number(finished)>0)displayTermination(Number(finished),true);
 }
 function showResult(code) {
- movesList.querySelector('.result-wrap')?.remove();
+ const previous=movesList.querySelector('.result-wrap'),savedActions=previous?.querySelector('.game-result-actions');if(savedActions)document.querySelector('.round__app').append(savedActions);previous?.remove();
  let result='½–½';
  if(code===9 || code===10)result='—';
  if(code===1)result=turn==='w'?'0–1':'1–0';
  if(code===7){const resigned=events.at(-1)?.[0];result=resigned==='w'?'0–1':'1–0';}
  if(code===6){const material=turn==='w'?bpiececount(fen.split(' ')[0]):wpiececount(fen.split(' ')[0]);if(material>1)result=turn==='w'?'0–1':'1–0';}
- const wrapper=document.createElement('div'),label=document.createElement('p');wrapper.className='result-wrap';label.className='result';label.textContent=result;wrapper.append(label);movesList.append(wrapper);
+ const wrapper=document.createElement('div'),label=document.createElement('p');wrapper.className='result-wrap';label.className='result';label.textContent=result;wrapper.append(label);const actions=document.querySelector('.game-result-actions');if(actions){actions.hidden=false;wrapper.append(actions);}movesList.append(wrapper);
 }
 function displayTermination(code,audible=false) {
  code=Number(code);if(gamefinished && stat===code)return;

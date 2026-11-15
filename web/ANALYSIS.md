@@ -130,8 +130,11 @@ The engine starts by default on dedicated analysis boards. A selected position
 gets one wide MultiPV pass (all legal moves, up to 180,000 nodes / 900 ms) for
 per-move book evaluations, followed by the configured MultiPV. After this
 initialization, the selected position uses `go infinite`: no UCI
-depth, node or move-time limit. Stop terminates the worker. A visible activation is
-bounded to 15 minutes; the user can start a new activation. Position changes send
+depth, node or move-time limit. Stop terminates the worker. Analysis pauses after 15 minutes without a board-position change by default.
+The shared engine options offer 5, 10, 15, 30 minutes or Never. Engine output,
+mouse movement, orientation and option changes do not reset position inactivity.
+Changing the timeout reschedules against the last position change without
+restarting the worker. Infinite searches have no transport lifetime timeout. Position changes send
 Stop to the old continuous search before starting the latest position. The
 foreground position and backward scan share one serial worker. Batch review
 keeps its bounded per-position searches so the entire game can finish; continuous

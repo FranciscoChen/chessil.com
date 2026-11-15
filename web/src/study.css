@@ -1,5 +1,5 @@
 /* Shared board workspace. The rail stays flat on mobile; parentheses own nesting. */
-.study-page .round__app,.study-page.analysis-open .round__app{grid-template-areas:"board moves" "board evaluation" "board analysis" "board actions";grid-template-rows:minmax(8rem,1fr) 31px minmax(0,2fr) auto}
+.study-page .round__app,.study-page.analysis-open .round__app{grid-template-areas:"board moves" "board evaluation" "board analysis" "board actions";grid-template-rows:clamp(12rem,25dvh,20rem) 31px minmax(0,1fr) auto}
 .study-actions{grid-area:actions;min-width:0}
 .study-page .board-tools{max-height:none}
 .study-page .board-history move-number::after{content:none}
@@ -37,3 +37,20 @@
 .study-tree-dialog #study-tree-content{min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
 
 .board-settings-dialog.study-tree-dialog{width:min(40rem,calc(100vw - 1rem));max-width:calc(100vw - 1rem);max-height:min(80dvh,44rem);padding:.85rem;overflow:hidden}
+
+/* A growing desktop rail keeps notation, engine and book aligned to the board. */
+@media(min-width:901px){
+ .study-page .board-tools{align-self:stretch;min-height:0;max-height:100%;grid-template-rows:auto minmax(0,1fr);align-content:stretch;overflow:hidden;padding-bottom:0}
+ .study-page #analysis-panel{max-height:none;overflow:auto;scrollbar-width:none}
+ .study-page .book-panel{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+ .study-page #analysis-book-moves{flex:1;min-height:0;max-height:none}
+ .study-page .engine-line{height:28px;min-height:28px;font-size:.85rem;line-height:22px}
+ .study-page #analysis-lines{height:calc(var(--engine-visible-lines,3)*28px);min-height:calc(var(--engine-visible-lines,3)*28px)}
+ .study-page .book-move{min-height:30px;font-size:.85rem;grid-template-columns:minmax(3rem,auto) minmax(0,1fr) 3.5rem 3.6rem}
+ .study-page .book-move.no-policy{grid-template-columns:minmax(3rem,auto) minmax(0,1fr) 3.6rem}
+ .study-page .book-policy,.study-page .book-eval{font-size:.8rem}
+ .study-page .engine-name{font-size:.85rem}
+ .study-page .round__app .board-history moves-list>move-entry,.study-page .round__app .board-history moves-list>move-number{font-size:.9rem}
+ .study-page:not(:has(.study-actions>:not([hidden]))) .round__app{grid-template-areas:"board moves" "board evaluation" "board analysis";grid-template-rows:clamp(12rem,25dvh,20rem) 31px minmax(0,1fr)}
+ .study-page .study-actions:not(:has(>:not([hidden]))){display:none}
+}

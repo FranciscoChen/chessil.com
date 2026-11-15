@@ -147,3 +147,6 @@
 #training-autoplay{display:flex;align-items:center;gap:.45rem;margin:.4rem 0 0;font-size:.75rem}
 #training-autoplay[hidden]{display:none}
 #training-autoplay .ui-meter{flex:1;margin:0;min-width:2rem}
+
+/* Training shares the same board size; its library remains a dialog. */
+@media(min-width:901px){.ui-page.training-page{width:var(--chess-board-size);padding-bottom:2rem}}

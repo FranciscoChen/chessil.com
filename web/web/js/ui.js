@@ -41,13 +41,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (_) { /* The sign-in entry remains available if the session cannot be read. */ }
 });
-/* Center only when the displayed move changes; scrolling stays under user control. */
+/* Follow changed moves within real content bounds; manual scrolling stays put. */
 window.ChessilHistoryFocus=(()=>{
- const pending=new WeakMap(),sizing=new ResizeObserver(entries=>entries.forEach(({target})=>size(target)));
- function size(list){const value=Math.max(0,list.clientHeight/2-18)+'px';if(list.style.getPropertyValue('--history-block-pad')!==value)list.style.setProperty('--history-block-pad',value);}
+ const pending=new WeakMap();
  return (list,entry)=>{if(!list)return;const previous=pending.get(list),identity=entry?(entry.dataset.node||entry.getAttribute('ply')||entry):'root';
-  if(previous?.identity===identity)return;if(previous?.frame)cancelAnimationFrame(previous.frame);if(!previous)sizing.observe(list);
-  const state={identity};pending.set(list,state);state.frame=requestAnimationFrame(()=>{state.frame=0;if(!entry){list.scrollTop=0;list.scrollLeft=0;return;}if(!entry.isConnected)return;size(list);const outer=list.getBoundingClientRect(),inner=entry.getBoundingClientRect();if(list.scrollHeight>list.clientHeight+1)list.scrollTop+=inner.top+inner.height/2-outer.top-list.clientHeight/2;if(list.scrollWidth>list.clientWidth+1)list.scrollLeft+=inner.left+inner.width/2-outer.left-list.clientWidth/2;});
+  if(previous?.identity===identity)return;if(previous?.frame)cancelAnimationFrame(previous.frame);
+  const state={identity};pending.set(list,state);state.frame=requestAnimationFrame(()=>{state.frame=0;if(!entry){list.scrollTop=0;list.scrollLeft=0;return;}if(!entry.isConnected)return;const outer=list.getBoundingClientRect(),inner=entry.getBoundingClientRect();if(list.scrollHeight>list.clientHeight+1)list.scrollTop+=inner.top+inner.height/2-outer.top-list.clientHeight/2;if(list.scrollWidth>list.clientWidth+1)list.scrollLeft+=inner.left+inner.width/2-outer.left-list.clientWidth/2;});
  };
 })();
 

@@ -54,15 +54,16 @@ window.ChessilPreferences = (() => {
  function renderEngineOptions(host,{compact=false}={}){
   for(const form of engineForms)if(form.host===host||!form.host.isConnected)engineForms.delete(form);
   host.replaceChildren();host.classList.add('engine-option-fields');
-  const labels={en:['Engine','Network','Lines (MultiPV)','Hash memory','Threads'],es:['Motor','Red','Líneas (MultiPV)','Memoria hash','Hilos'],zh:['引擎','网络','变化 (MultiPV)','哈希内存','线程']}[document.documentElement.lang]||['Engine','Network','Lines (MultiPV)','Hash memory','Threads'];
+  const labels={en:['Engine','Network','Lines (MultiPV)','Hash memory','Threads','Stop after inactivity'],es:['Motor','Red','Líneas (MultiPV)','Memoria hash','Hilos','Detener tras inactividad'],zh:['引擎','网络','变化 (MultiPV)','哈希内存','线程','无操作后停止']}[document.documentElement.lang]||['Engine','Network','Lines (MultiPV)','Hash memory','Threads','Stop after inactivity'];
   const fields={};let catalog,selectedId;
-  for(const [index,key] of ['engine','network','multiPV','hash','threads'].entries()){
+  for(const [index,key] of ['engine','network','multiPV','hash','threads','idleMinutes'].entries()){
    const label=document.createElement('label'),input=document.createElement('select');label.className='ui-field';label.textContent=labels[index];input.dataset.preference='analysis.'+key;input.dataset.engineOption=key;label.append(input);host.append(label);fields[key]=input;
-   input.onchange=()=>{if(key==='engine'){const chosen=catalog?.engines.find(engine=>engine.id===input.value);if(chosen)update({analysis:{engine:chosen.id,threads:chosen.threads[0],network:chosen.networks[0].id}});}else update({analysis:{[key]:['multiPV','hash','threads'].includes(key)?Number(input.value):input.value}});};
+   input.onchange=()=>{if(key==='engine'){const chosen=catalog?.engines.find(engine=>engine.id===input.value);if(chosen)update({analysis:{engine:chosen.id,threads:chosen.threads[0],network:chosen.networks[0].id}});}else update({analysis:{[key]:['multiPV','hash','threads','idleMinutes'].includes(key)?Number(input.value):input.value}});};
   }
   const guidanceOptions=document.createElement('div');guidanceOptions.className='engine-guidance-options';host.append(guidanceOptions);
   const flags={};for(const [key,label] of [['plan',document.documentElement.lang==='es'?'Mostrar plan':document.documentElement.lang==='zh'?'显示计划':'Show plan'],['threat',document.documentElement.lang==='es'?'Mostrar amenaza':document.documentElement.lang==='zh'?'显示威胁':'Show immediate threat']]){const field=document.createElement('label'),input=document.createElement('input');field.className='board-settings-toggle';input.type='checkbox';input.dataset.preference='analysis.'+key;input.onchange=()=>update({analysis:{[key]:input.checked}});field.append(input,document.createTextNode(label));guidanceOptions.append(field);flags[key]=input;}
   const fill=(key,options)=>fields[key].replaceChildren(...options.map(([id,label])=>new Option(label,String(id))));
+  fill('idleMinutes',[5,10,15,30,0].map(n=>[n,n?n+' '+({es:'minutos',zh:'分钟'}[document.documentElement.lang]||'minutes'):({es:'Nunca',zh:'永不'}[document.documentElement.lang]||'Never')]));
   fill('multiPV',Array.from({length:8},(_,i)=>[i+1,String(i+1)]));fill('hash',[8,16,32,64,128,256].map(n=>[n,n+' MB']));
   const hint=document.createElement('p');hint.className='ui-muted';if(!compact)host.append(hint);
   if(compact){const status=document.createElement('output');status.className='preference-status';status.dataset.preferenceStatus='';status.setAttribute('role','status');host.append(status);}

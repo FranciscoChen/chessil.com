@@ -1,6 +1,9 @@
-/* Shared board sizing for game and training layouts. Room for a 20rem sidebar
- * plus its gap is reserved on desktop; smaller screens use a single column. */
-:root { --chess-board-size:min(46rem,max(24rem,calc(100dvh - 11rem)),calc(100vw - 24.5rem)); }
+/* One desktop size for operational boards; the footer follows the workspace.
+ * Rail width grows with the viewport without squeezing the board. */
+:root { --board-rail-size:clamp(20rem,28vw,30rem);--board-workspace-gap:1.5rem;--chess-board-size:min(64rem,max(24rem,calc(100dvh - var(--header-height,64px) - 1.5rem)),calc(100vw - var(--board-rail-size) - 4.5rem)); }
+@media(min-width:901px){
+ .game-page .game-shell,.ui-page.training-page{box-sizing:border-box;min-height:calc(100dvh - var(--header-height));}
+}
 @media(max-width:900px) { :root { --chess-board-size:min(46rem,calc(100vw - 2rem)); } }
 @media(max-width:480px) { :root { --chess-board-size:calc(100vw - 1rem); } }
 /* Board geometry has one owner. Positions are percentage transforms; changing

@@ -4,8 +4,9 @@ Explore links to `/en/analysis`, `/es/analysis`, or `/zh/analysis`. No game or
 account is required. `ui/study.js` composes the shared native board, history rail,
 evaluations, and compact Engine/Book cards. Desktop keeps a bounded side column;
 mobile keeps one scrollable history line above the board. Navigation buttons stay
-outside that scroll area. `ChessilHistoryFocus` centers each new displayed move
-once and leaves subsequent manual scrolling alone.
+outside that scroll area. `ChessilHistoryFocus` scrolls each newly displayed move
+within the real list bounds and leaves subsequent manual scrolling alone. No
+start/end padding shifts move one into the middle of the container.
 
 `src/variations.js` owns the independent tree model. Ordered children define the
 main line; selecting a node never changes this order. Each node stores FEN, SAN,
@@ -18,7 +19,8 @@ an analysis control; a new page visit starts a new local tree.
 
 `src/study.js` adapts this model to the existing board/history interface:
 `boardView`, `movesList`, `uci`, `a1ti`, and `gamereplay`. `uci` is the selected
-continuation. Desktop displays parenthesized variation groups. Double-click/double-tap or
+continuation. Desktop and mobile show only that continuation, with `(…)` at
+branch points. Parenthesized variation groups belong to the dialog. Double-click/double-tap or
 press and hold the history rail to open the same tree renderer in a dialog;
 keyboard V or Shift+F10 also opens it. Movement cancels a hold so scrolling remains
 normal. Black variation entries include a full prefix such as `3. ... Nf6`. Branch controls select, promote,
@@ -46,7 +48,7 @@ Build with `node web/scripts/build-board.js`. Tests include
 browser suites. Shared pointer/compositor regression checks remain required.
 
 The model exposes a monotonic revision for structural edits. Selecting a move
-preserves the existing history nodes unless the selected mobile path changes.
+preserves the existing history nodes unless the selected path changes.
 This keeps double-click targets intact and avoids rebuilding the tree during
 ordinary navigation. `history-gestures.js` owns the shared pointer/keyboard gesture
 boundary and cleans up its timer and listeners on teardown.

@@ -36,9 +36,11 @@
 .engine-expand[aria-expanded="true"] svg{transform:rotate(180deg)}
 .engine-expand:hover,.engine-expand:focus-visible{color:var(--link);border-color:var(--link)}
 .engine-card.engine-error #analysis-status{position:static;width:auto;height:auto;margin:.2rem 0;clip-path:none;white-space:normal;color:var(--attention);font-size:.7rem}
-#analysis-book-name{margin:0 0 .2rem;color:var(--text2);font-size:.7rem}
+.book-header{display:flex;align-items:baseline;gap:.5rem;min-width:0;padding:.15rem 0 .4rem;margin-bottom:.15rem;border-bottom:1px solid var(--border);font:.75rem/1.4 var(--sans-font)}
+#analysis-book-eco{flex:none;color:var(--link);font-weight:600}
+#analysis-book-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)}
 #analysis-book-name:empty,#analysis-book-note:empty{display:none}
-#analysis-book-moves{display:grid;gap:0;max-height:9rem;overflow:auto;scrollbar-width:thin}
+#analysis-book-moves{display:grid;gap:0;max-height:9rem;overflow:auto;scrollbar-width:none}
 .book-move{display:grid;grid-template-columns:minmax(2.8rem,auto) minmax(0,1fr) 3.1rem 3.2rem;align-items:center;gap:.35rem;width:100%;padding:3px 2px;min-height:26px;border:0;border-radius:0;background:transparent;color:var(--text);font:.75rem/1.4 var(--sans-font);cursor:pointer;text-align:start}
 .book-move.no-policy{grid-template-columns:minmax(2.8rem,auto) minmax(0,1fr) 3.2rem}
 .book-move:hover{background:var(--hover)}
@@ -78,3 +80,5 @@ cg-board square.annotation-suggestion{z-index:3;--ui-highlight-fill:#ffffff26}
 @media(prefers-reduced-motion:reduce){.engine-options-reveal{transition:none}}
 
 .engine-options-reveal.is-expanded~#analysis-lines,.engine-options-reveal.is-expanded~.engine-expand{display:none}
+
+#analysis-book-moves::-webkit-scrollbar,.game-page #analysis-panel::-webkit-scrollbar{display:none}

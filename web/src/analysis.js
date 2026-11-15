@@ -76,7 +76,7 @@ function linesDisplay(){
 
 async function bookDisplay(){
  if(!bookPanel||bookPanel.hidden||!bookView)return;
- const epoch=++bookEpoch,fen=position,entry=book[key(fen)];$('book-name').textContent=entry?.names?.map(n=>n.join(' · ')).slice(0,2).join(' / ')||'';bookPanel.setAttribute('aria-busy','true');
+ const epoch=++bookEpoch,fen=position;let names=book[key(fen)]?.names;const ancestry=ChessilStudy.positions();for(let ply=a1ti-1;!names?.length&&ply>=0;ply--)names=book[key(ancestry[ply])]?.names;const opening=names?.[0];$('book-eco').textContent=opening?.[0]||'';$('book-name').textContent=opening?.[1]||'';$('book-header').hidden=!opening;$('book-header').title=opening?opening.join(' · '):'';bookPanel.setAttribute('aria-busy','true');
  try{const result=await bookView.render({fen,ply:a1ti,lines:moveScores.has(fen)?[...moveScores.get(fen).values()]:scores.get(fen)||[],current:engineReady&&freshSearch?.fen===fen&&freshSearch.epoch===viewEpoch&&freshSearch.run===token?freshSearch.lines:[],perspective});if(epoch!==bookEpoch)return;bookPanel.classList.toggle('is-empty',!result.moves.length);bookPanel.setAttribute('aria-busy','false');bookPanel.title=result.name+' · '+($('book-moves').dataset.ranking==='policy'?'policy order':'engine order');$('book-note').textContent='';}catch(_){if(epoch===bookEpoch){bookPanel.setAttribute('aria-busy','false');$('book-note').textContent='Book unavailable';}}
 }
 function guidance(){
@@ -129,9 +129,17 @@ async function open(review=true){
  loadBookNames();await startEngine();
 
 }
-const MAX_ANALYSIS_MS=15*60*1000;let engineLimitTimer;
+let engineLimitTimer,idlePosition='',idleSince=0,idleMinutes;
+// Only a changed board position resets inactivity; engine updates and pointer
+// motion do not keep a forgotten search alive. General and inline options agree.
+function armEngineIdle(reset=false){
+ clearTimeout(engineLimitTimer);const minutes=ChessilPreferences.get().analysis.idleMinutes;
+ if(reset||idlePosition!==position){idleSince=Date.now();idlePosition=position;}
+ idleMinutes=minutes;if(!engineReady||!minutes)return;
+ engineLimitTimer=setTimeout(()=>stopEngine('Analysis paused after '+minutes+' minutes without a position change. Press Start to continue.'),Math.max(0,minutes*60000-(Date.now()-idleSince)));
+}
 let studySearching=false,studyQueued=false,threatFor='',threatRefreshTimer,threatCandidate='';
-function queuePosition(){clearTimeout(threatRefreshTimer);threatRefreshTimer=null;engine?.interruptContinuous();studyQueued=true;evaluateStudy();}
+function queuePosition(){armEngineIdle();clearTimeout(threatRefreshTimer);threatRefreshTimer=null;engine?.interruptContinuous();studyQueued=true;evaluateStudy();}
 function refreshThreat(fen,lines,epoch,run){
  const settings=ChessilPreferences.get().analysis,side=perspective==='both'?fen.split(' ')[1]:perspective,move=lines[0]?.pv[0],candidate=fen+'|'+side+'|'+move;
  if(!settings.threat||!move||lines[0].depth<8||candidate===threatFor)return;
@@ -156,7 +164,7 @@ async function startEngine(){
  const settings=ChessilPreferences.get().analysis,signature=engineSignature(settings);
  if(engineConfig&&signature!==engineConfig){scores.clear();moveScores.clear();bookEvaluated.clear();processed.clear();findings=[];selected=-1;movesList.querySelectorAll('.analysis-marker').forEach(el=>el.remove());movesList.querySelectorAll('[data-analysis]').forEach(el=>delete el.dataset.analysis);$('progress').value=0;clearGuide();annotate(null);}
  engineConfig=signature;const run=++token;engineLoading=true;engine=new ChessilLocalEngine();status('Starting local engine…');controls();
- try{const manifest=await engine.load(settings);if(run!==token)return;engineLoading=false;engineReady=true;clearTimeout(engineLimitTimer);engineLimitTimer=setTimeout(()=>stopEngine('Analysis paused after 15 minutes. Press Start to continue.'),MAX_ANALYSIS_MS);updateEngineName();renderDetails();
+ try{const manifest=await engine.load(settings);if(run!==token)return;engineLoading=false;engineReady=true;armEngineIdle(true);updateEngineName();renderDetails();
   if(reviewGame)scan(run).catch(error=>{if(run===token&&engineReady){scanning=false;status(error.message);}});
   queuePosition();
  }catch(error){if(run===token){engineLoading=false;scanning=false;engineReady=false;status(error.message+' Press Start engine to retry.');pause();engine?.close();controls();}}
@@ -172,7 +180,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const iconButton=(id,name,label)=>`<button id="analysis-${id}" type="button" class="ui-icon-button analysis-icon" aria-label="${label}" title="${label}">${ChessilIcons.svg(name)}</button>`;
  panel=document.createElement('section');panel.id='analysis-panel';panel.className='analysis-panel engine-card';panel.setAttribute('aria-label','Engine');panel.innerHTML=`<div class="engine-toolbar">${iconButton('engine-toggle','play','Start engine')}${iconButton('plan-toggle','plan','Show stable plan')}${iconButton('threat-toggle','threat','Show immediate threat')}<span class="engine-identity"><span id="analysis-engine-name" class="engine-name"></span><span id="analysis-metrics" class="engine-metrics"></span></span><button id="analysis-options-toggle" type="button" class="ui-icon-button analysis-icon" aria-label="Analysis options" title="Analysis options" aria-expanded="false" aria-controls="analysis-options">${ChessilIcons.svg('options')}</button></div><div id="analysis-options" class="engine-options-reveal" inert><div class="engine-options-clip"><div class="analysis-view-options"><label class="ui-field" for="analysis-perspective">Point of view<select id="analysis-perspective" aria-label="Point of view"><option value="w">White</option><option value="b">Black</option><option value="both">Both sides</option></select></label><button id="study-flip" type="button" class="ui-icon-button analysis-icon" aria-label="Flip board" title="Flip board">${ChessilIcons.svg('flip')}</button></div><div id="analysis-options-fields"></div><a id="analysis-source" class="analysis-source-link" href="/en/engine-source">View source</a></div></div><p id="analysis-status" class="analysis-sr-only" role="status"></p><div id="analysis-lines" aria-label="Engine variations"></div><button id="analysis-lines-toggle" type="button" class="engine-expand ui-icon-button" aria-label="Expand engine variations" aria-expanded="false" aria-controls="analysis-lines">${ChessilIcons.svg('chevron')}</button>`;
  let optionsRendered=false;
- bookPanel=document.createElement('section');bookPanel.id='analysis-book-panel';bookPanel.className='book-panel';bookPanel.setAttribute('aria-label','Opening book');bookPanel.innerHTML='<p id="analysis-book-name"></p><div id="analysis-book-moves" aria-label="Book moves"></div><small id="analysis-book-note" role="status"></small>';
+ bookPanel=document.createElement('section');bookPanel.id='analysis-book-panel';bookPanel.className='book-panel';bookPanel.setAttribute('aria-label','Opening book');bookPanel.innerHTML='<header id="analysis-book-header" class="book-header" hidden><span id="analysis-book-eco"></span><span id="analysis-book-name"></span></header><div id="analysis-book-moves" aria-label="Book moves"></div><small id="analysis-book-note" role="status"></small>';
  tools=document.createElement('div');tools.className='board-tools';tools.hidden=true;tools.append(panel,bookPanel);document.querySelector('.round__app').append(tools);
  bookView=new ChessilAnalysisBook($('book-moves'),leelaBook,{play,scoreText:(score,fen,side)=>scoreText(score,side==='b'?fen.replace(/ [wb] /,fen.split(' ')[1]==='w'?' b ':' w '):fen)});
 
@@ -191,7 +199,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 document.addEventListener('chessil:game-state',update);
 document.addEventListener('chessil:study-loaded',()=>{history=uci.slice();positions=ChessilStudy.positions();position=positions[a1ti];update();renderDetails();if(new URLSearchParams(location.search).get('review')==='1')open();});
 let guidanceSettings='';
-document.addEventListener('chessil:preferences',()=>{const settings=ChessilPreferences.get().analysis,flags=JSON.stringify([settings.plan,settings.threat]),changed=guidanceSettings!==flags;guidanceSettings=flags;if(panel){updateEngineName();if(opened)guidance();}if(opened&&engineConfig!==engineSignature(settings)){const running=engineReady||engineLoading;stopEngine();if(running)startEngine();}else if(opened&&engineReady&&changed){threatFor='';queuePosition();}});
+document.addEventListener('chessil:preferences',()=>{const settings=ChessilPreferences.get().analysis,flags=JSON.stringify([settings.plan,settings.threat]),changed=guidanceSettings!==flags;guidanceSettings=flags;if(panel){updateEngineName();if(opened)guidance();}if(opened&&idleMinutes!==settings.idleMinutes)armEngineIdle();if(opened&&engineConfig!==engineSignature(settings)){const running=engineReady||engineLoading;stopEngine();if(running)startEngine();}else if(opened&&engineReady&&changed){threatFor='';queuePosition();}});
 document.addEventListener('chessil:review',()=>{if(internal||!panel)return;if(!opened){if(freeStudy){history=uci.slice();positions=ChessilStudy.positions();}position=ChessilStudy.position();return;}pause();if(!playing)explorationOrigin=null;exploring=ChessilStudy.inVariation();if(freeStudy){history=uci.slice();positions=ChessilStudy.positions();}position=ChessilStudy.position();viewEpoch++;clearGuide();annotate(null);$('alternatives').replaceChildren();renderDetails();if(engineReady)queuePosition();});
 document.addEventListener('chessil:history-rendered',()=>{decorateHistory();if(suggestionView&&findings[selected])movesList.querySelector(`.analysis-marker[data-ply="${findings[selected].ply}"]`)?.setAttribute('aria-current','step');guide?.update();});
 let resumeAfterHidden=false;document.addEventListener('visibilitychange',()=>{if(document.hidden){resumeAfterHidden=engineReady||engineLoading;if(resumeAfterHidden)stopEngine();}else if(resumeAfterHidden){resumeAfterHidden=false;startEngine();}});

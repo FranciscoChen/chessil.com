@@ -165,6 +165,18 @@
  .game-page .board-history{height:100%;grid-template-rows:minmax(0,1fr) 40px}
  .game-page .round__app .board-history moves-list{min-height:0;height:100%;overscroll-behavior:contain}
 }
-/* End padding allows the first/last selected move to be centered as well. */
-@media(min-width:901px){.game-page .board-history moves-list::before,.game-page .board-history moves-list::after{content:"";display:block;grid-column:1/-1;height:var(--history-block-pad,0px);pointer-events:none}}
-@media(max-width:900px){.game-page .board-history moves-list::before,.game-page .board-history moves-list::after{content:"";display:block;flex:0 0 max(0px,calc(50% - 18px));height:1px;pointer-events:none}}
+/* History starts at move one; selected rows scroll within real content bounds. */
+.game-page .board-history moves-list::before,.game-page .board-history moves-list::after{content:none!important}
+.game-page .board-history moves-list{scrollbar-width:none}
+.game-page .board-history moves-list::-webkit-scrollbar{display:none}
+.game-result-actions{display:flex;justify-content:center;align-items:center;gap:.4rem;margin-top:.5rem}
+.game-result-actions .ui-button{min-height:32px;padding:.35rem .55rem;font-size:.75rem}
+.game-result-actions #share-game{display:grid;place-items:center;width:32px;height:32px;padding:6px}
+.game-result-actions svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.game-page .board-history .result-wrap{display:block;flex:0 0 auto}
+@media(min-width:901px){
+ .game-page .game-shell{min-height:calc(100dvh - var(--header-height));width:min(calc(100% - 3rem),calc(var(--chess-board-size) + var(--board-rail-size) + var(--board-workspace-gap)));padding-top:.75rem;padding-bottom:2rem}
+ .game-page .round__app{grid-template-columns:var(--chess-board-size) minmax(0,var(--board-rail-size));column-gap:var(--board-workspace-gap)}
+ .game-page moves-panel .game-empty{flex:none;min-height:0}
+}
+@media(max-width:900px){.game-page .board-history .result-wrap{padding:.15rem .4rem}.game-page .board-history .result{font-size:1rem}.game-result-actions{display:inline-flex;margin:0 0 0 .3rem}.game-page .board-history .result-wrap{display:flex;align-items:center}}

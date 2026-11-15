@@ -10,6 +10,8 @@ module.exports=async()=>{
  const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost'),chunks=[];for(const [name,value] of Object.entries(require('../../isolation')(req.url)))res.setHeader(name,value);requests.push(url.pathname);for await(const chunk of req)chunks.push(chunk);const body=Buffer.concat(chunks).toString();
   const send=data=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(data));};
+  if(url.pathname==='/api/training/curriculum')return send(require('../../training/curriculum'));
+  if(url.pathname==='/api/training/progress')return send({account:false,progress:{}});
   if(url.pathname==='/live/games')return liveFeed.open(req,res);
   if(url.pathname==='/lobby/list')return send(game.state===0?[{id:1,gameid:game.id,started:true,hasOpponent:true,username1:'White',username2:'Black',rating1:1500,rating2:1500,timecontrol1:'5+0',rated:false}]:[]);
   if(url.pathname==='/lobby/events'){res.writeHead(200,{'Content-Type':'text/event-stream'});res.write(': connected\n\n');return;}

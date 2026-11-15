@@ -7,7 +7,7 @@ let tree,line=[],current,original=[],originalMoves=[],originalPositions=[],rende
 const $=id=>document.getElementById('study-'+id);
 function status(message=''){for(const id of ['load-status','tree-error'])if($(id)){$(id).hidden=!message;$(id).textContent=message;}}
 function reset(ready=true){ChessilStudy.ready=ready;tree=new ChessilVariationTree(initial);current=tree.root;line=[current];original=[];originalMoves=[];originalPositions=[];uci=[];a1ti=0;renderHistory();gamereplay(0);}
-function choose(node,animate=true){const next=tree.continuation(node),pathChanged=next.length!==line.length||next.some((item,i)=>item!==line[i]);line=next;uci=line.slice(1).map(item=>item.move);if(renderedRevision!==tree.revision||pathChanged&&matchMedia('(max-width:900px)').matches)renderHistory();gamereplay(node.ply,animate);}
+function choose(node,animate=true){const next=tree.continuation(node),pathChanged=next.length!==line.length||next.some((item,i)=>item!==line[i]);line=next;uci=line.slice(1).map(item=>item.move);if(renderedRevision!==tree.revision||pathChanged)renderHistory();gamereplay(node.ply,animate);}
 function play(move){if(!ChessilStudy.ready){boardView.acknowledge();return false;}try{const pieces=boardgen(current.fen),capture=pieces[move.slice(2,4)]?.p!==' '||pieces[move.slice(0,2)]?.p==='p'&&move[0]!==move[2];choose(tree.add(current,move));window.ChessilSound?.play(capture?'capture':'move');status();return true;}catch(error){boardView.acknowledge();status(error.message);return false;}}
 function icon(action,label,path,node){const button=document.createElement('button');button.type='button';button.className='variation-control';button.dataset.branchAction=action;button.dataset.node=node.id;button.setAttribute('aria-label',label);button.title=label;button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+path+'"/></svg>';return button;}
 function renderHistory(){
@@ -24,7 +24,7 @@ function renderHistory(){
    parent=first;
   }
  }
- const full=$('tree-content');full.replaceChildren();chain(tree.root,full,true);if(matchMedia('(max-width:900px)').matches)for(const node of line.slice(1))entry(node,movesList,true);else chain(tree.root,movesList,true);
+ const full=$('tree-content');full.replaceChildren();chain(tree.root,full,true);for(const node of line.slice(1))entry(node,movesList,true);
 }
 window.gamereplay=(ply,animate=false,notify=true)=>{const previous=current;a1ti=Math.max(0,Math.min(uci.length,ply));current=line[a1ti];const adjacent=previous?.parent===current||current.parent===previous,move=previous?.parent===current?previous.move.slice(2,4)+previous.move.slice(0,2):current.move||'';boardView.positionTurn=current.fen.split(' ')[1];boardView.render(boardgen(current.fen),move,animate&&adjacent);boardView.lastMove=current.move||'';boardView.drawOverlays();
  for(const node of $('tree-content').querySelectorAll('move-entry'))node.classList.toggle('a1t',Number(node.dataset.node)===current.id);

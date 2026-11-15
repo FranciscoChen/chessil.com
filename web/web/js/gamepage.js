@@ -22,7 +22,7 @@ function gameUiState() {
   const draw = document.querySelector('.game-actions .draw-yes span')
   if (draw) draw.textContent = ownOffer ? text.offered : otherOffer && !watcher ? text.accept : text.draw
   document.querySelector('.game-actions .draw-yes')?.classList.toggle('is-offered', !!(ownOffer || otherOffer))
-  document.querySelectorAll('moves-panel .board-history button').forEach(button => { button.disabled = waiting || !uci.length || ((button.id==='rw' || button.id==='sb')?a1ti===0:a1ti===uci.length) })
+  document.querySelectorAll('moves-panel .board-history > button').forEach(button => { button.disabled = waiting || !uci.length || ((button.id==='rw' || button.id==='sb')?a1ti===0:a1ti===uci.length) })
   const perspective = document.getElementById('game-perspective')
   if (perspective) perspective.textContent = state===10?text.unavailable:waiting ? document.querySelector('[data-game-field="state"]').textContent : !live ? text.review : !connected ? (wsc && wsc.readyState === WebSocket.CLOSED ? text.disconnected : text.connecting) : watcher ? text.watching : playerside === 'b' ? text.black : text.white
   const hint = document.getElementById('history-hint')
@@ -43,16 +43,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const text = gameUiMessages[document.documentElement.lang] || gameUiMessages.en
   const share = document.getElementById('share-game')
   share?.addEventListener('click', async () => {
-    const original = share.textContent
+    const original = share.getAttribute('aria-label')
     try {
       await navigator.clipboard.writeText(location.origin+location.pathname)
-      share.textContent = text.copied
+      share.setAttribute('aria-label',text.copied)
+      share.title=text.copied
       document.getElementById('share-status').textContent = text.copied
-      setTimeout(() => {share.textContent=original},2000)
+      setTimeout(() => {share.setAttribute('aria-label',original);share.title=original},2000)
     } catch (_) {
       document.getElementById('share-status').textContent=text.copyError
-      share.textContent=text.copyFailed
-      setTimeout(() => {share.textContent=original},2000)
+      share.setAttribute('aria-label',text.copyFailed)
+      share.title=text.copyFailed
+      setTimeout(() => {share.setAttribute('aria-label',original);share.title=original},2000)
     }
   })
   const promotion = document.querySelector('.material-bottom')
