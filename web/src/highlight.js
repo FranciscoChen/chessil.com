@@ -6,7 +6,7 @@ let current=null;
 const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const words={en:{next:'Next',done:'Done',skip:'Skip tour'},es:{next:'Siguiente',done:'Listo',skip:'Omitir guía'},zh:{next:'下一步',done:'完成',skip:'跳过引导'}};
 const copy=()=>words[document.documentElement.lang]||words.en;
-function show(target,{text='',step='',nextLabel=copy().next,onNext,onClose,actions=true,placement='auto',subtle=false,areas=[],container=null,highlight=true}={}){
+function show(target,{text='',step='',nextLabel=copy().next,onNext,onClose,actions=true,placement='auto',subtle=false,areas=[],container=null,highlight=true,boundary=null,dismissible=true}={}){
  current?.close();target=typeof target==='string'?document.querySelector(target):target;
  if(!target)return null;
  const abort=new AbortController(),overlay=document.createElement('div');overlay.className='ui-highlight ui-highlight-overlay'+(subtle?' ui-highlight-subtle':'');overlay.setAttribute('aria-hidden','true');document.body.append(overlay);
@@ -28,11 +28,12 @@ function show(target,{text='',step='',nextLabel=copy().next,onNext,onClose,actio
  const dismiss=()=>{close();onClose?.();};
  function position(){if(!target.isConnected){dismiss();return;}const r=target.getBoundingClientRect(),visible=r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;shade.hidden=!visible;for(const {element,rect} of holes){const bounds=element.getBoundingClientRect();for(const [key,value] of Object.entries({x:bounds.left,y:bounds.top,width:bounds.width,height:bounds.height}))rect.setAttribute(key,String(value));}overlay.hidden=!visible;if(box)box.hidden=container?false:!visible;if(!visible)return;
   Object.assign(overlay.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',borderRadius:getComputedStyle(target).borderRadius});
-  if(box&&!container){const height=box.offsetHeight,left=Math.max(16,Math.min(innerWidth-box.offsetWidth-16,r.left));const top=placement==='bottom'||r.bottom+12+height<innerHeight?r.bottom+12:Math.max(16,r.top-height-12);Object.assign(box.style,{left:left+'px',top:top+'px'});}
+  if(box&&!container&&boundary){const bounds=boundary.getBoundingClientRect();box.style.width=Math.min(320,bounds.width-16)+'px';box.style.maxHeight=Math.max(80,bounds.height-16)+'px';box.style.overflow='auto';const height=box.offsetHeight,left=Math.max(bounds.left+8,Math.min(bounds.right-box.offsetWidth-8,r.left));const below=r.bottom+8,top=below+height<=bounds.bottom-8?below:Math.max(bounds.top+8,r.top-height-8);Object.assign(box.style,{left:left+'px',top:top+'px'});}
+  if(box&&!container&&!boundary){const height=box.offsetHeight,left=Math.max(16,Math.min(innerWidth-box.offsetWidth-16,r.left));const top=placement==='bottom'||r.bottom+12+height<innerHeight?r.bottom+12:Math.max(16,r.top-height-12);Object.assign(box.style,{left:left+'px',top:top+'px'});}
  }
  if(text){box=document.createElement('aside');box.className='ui-guide';box.style.zIndex=String(layer+1);box.setAttribute('role','region');box.setAttribute('aria-label',text);const p=document.createElement('p');p.setAttribute('aria-hidden','true');const actionRow=document.createElement('div');actionRow.className='ui-guide-actions';const label=document.createElement('small');label.textContent=step;const skip=document.createElement('button');skip.type='button';skip.className='ui-button ui-quiet';skip.textContent=copy().skip;skip.onclick=dismiss;const next=document.createElement('button');next.type='button';next.className='ui-button ui-primary';next.textContent=nextLabel;next.onclick=()=>{next.disabled=true;skip.disabled=true;type(-1,()=>{close();onNext?.();});};actionRow.append(label,skip,next);box.append(p);if(actions)box.append(actionRow);else box.classList.add('ui-guide-label');if(container){box.classList.add('ui-guide-inline');container.append(box);}else document.body.append(box);type(1);}
- const handle={close,update:position,element:overlay};current=handle;
- window.addEventListener('resize',position,{signal:abort.signal});window.addEventListener('scroll',position,{signal:abort.signal,capture:true,passive:true});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!container)dismiss();},{signal:abort.signal});
+ const handle={close,update:position,element:overlay,box};current=handle;
+ window.addEventListener('resize',position,{signal:abort.signal});window.addEventListener('scroll',position,{signal:abort.signal,capture:true,passive:true});document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!container&&dismissible)dismiss();},{signal:abort.signal});
  observer=new ResizeObserver(position);holes.forEach(({element})=>observer.observe(element));if(box)observer.observe(box);position();return handle;
 }
 function tour(id,steps,{force=false}={}){

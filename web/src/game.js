@@ -74,7 +74,7 @@ function showResult(code) {
  if(code===1)result=turn==='w'?'0–1':'1–0';
  if(code===7){const resigned=events.at(-1)?.[0];result=resigned==='w'?'0–1':'1–0';}
  if(code===6){const material=turn==='w'?bpiececount(fen.split(' ')[0]):wpiececount(fen.split(' ')[0]);if(material>1)result=turn==='w'?'0–1':'1–0';}
- const wrapper=document.createElement('div'),label=document.createElement('p');wrapper.className='result-wrap';label.className='result';label.textContent=result;wrapper.append(label);const actions=document.querySelector('.game-result-actions');if(actions){actions.hidden=false;wrapper.append(actions);}movesList.append(wrapper);
+ const wrapper=document.createElement('div'),label=document.createElement('p');wrapper.className='result-wrap';label.className='result';label.textContent=result;label.tabIndex=0;label.setAttribute('role','button');label.setAttribute('aria-label','Game result');label.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();label.click();}};wrapper.append(label);const actions=document.querySelector('.game-result-actions');if(actions){actions.hidden=false;wrapper.append(actions);}movesList.append(wrapper);
 }
 function displayTermination(code,audible=false) {
  code=Number(code);if(gamefinished && stat===code)return;
@@ -82,7 +82,7 @@ function displayTermination(code,audible=false) {
  if(!gamefinished)return;
  boardView.cancel();boardView.acknowledge();boardView.promotion?.close();clearInterval(clocktick);paintClocks();
  const status=document.querySelector('[data-game-field="state"]');status.dataset.state=String(code);status.textContent=(gameDescriptions[document.documentElement.lang] || gameDescriptions.en)[code] || 'Finished';
- showResult(code);if(active && audible)ChessilSound.play('end');updateGameUi();
+ showResult(code);if(active && audible)ChessilSound.play('end');updateGameUi();if(active&&audible&&code<=8)document.dispatchEvent(new Event('chessil:game-finished'));
 }
 function gamereplay(ply,animate=false) {
  const previousPly=a1ti;

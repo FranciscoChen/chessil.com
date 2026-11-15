@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 'use strict';
 const root=document.querySelector('#puzzle-app');if(!root)return;
 const $=id=>document.getElementById('puzzle-'+id);
+let level=root.dataset.curated==='true'?'beginner':null;
+const groups={beginner:['fork','skewer','discoveredAttack','pin'],intermediate:['overloading','xRayAttack','doubleCheck','capturingDefender']};
 let queue,current,fen='8/8/8/8/8/8/4k3/6K1 w - - 0 1',side='w',index=0,busy=false,done=false,assisted=false,timer,theme='mixed';
 const label=id=>id.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/([a-zA-Z])(\d)/g,'$1 $2').replace(/^./,c=>c.toUpperCase());
 const message=value=>{$('status').textContent=value;};
@@ -20,7 +22,7 @@ const history=new ChessilHistory(root.querySelector('moves-panel'),{signal:board
 history.reset(fen);
 function paint(move='',animate=false){board.render(boardgen(fen),move,animate);}
 function cancel(){clearTimeout(timer);busy=false;board.cancel();board.acknowledge();board.guidance=null;}
-function controls(){for(const id of ['hint','restart','solution'])$(id).disabled=!current||(id!=='restart'&&(busy||done||history.ply!==index));$('next').disabled=!current;history.lock(busy);}
+function controls(){for(const id of ['mobile-hint','mobile-restart'])if($(id))$(id).disabled=!current||busy||done;for(const id of ['hint','restart','solution'])$(id).disabled=!current||(id!=='restart'&&(busy||done||history.ply!==index));$('next').disabled=!current;history.lock(busy);}
 function apply(move,animate=true){
  const san=gensanbase(move,boardgen(fen),fen,mg(fen));fen=ucifen(move,fen,boardgen(fen),{}).f;index++;
  history.push(move,fen,san);
@@ -29,6 +31,7 @@ function apply(move,animate=true){
 function finished(revealed=false){done=true;busy=false;board.guidance=null;board.drawOverlays();controls();$('progress').value=$('progress').max;
  message(revealed?'Solution shown. Restart to practise it.':assisted?'Solved with a hint.':'Puzzle solved.');
  $('themes').textContent=current.themes.map(label).join(' · ');
+ ChessilResult?.show({outcome:revealed?'draw':'success',title:revealed?'Solution shown':'Puzzle solved',reason:assisted&&!revealed?'Solved with a hint.':'',actions:[{label:'Retry',run:()=>start(current)},{label:'Continue',primary:true,disabled:revealed,run:()=>$('next').click()}]});
 }
 function attempt(move){
  if(!current||busy||done||history.ply!==index){board.acknowledge();return;}
@@ -42,7 +45,7 @@ function attempt(move){
  timer=setTimeout(()=>{apply(current.moves[index]);busy=false;controls();if(index>=current.moves.length)finished();else message(side==='w'?'White to move.':'Black to move.');},450);
 }
 function start(puzzle){
- cancel();current=puzzle;done=false;assisted=false;index=0;
+ ChessilResult?.close();cancel();current=puzzle;done=false;assisted=false;index=0;
  history.reset(fen);$('themes').textContent='';
  if(!current){controls();paint();return;}
  // Validate the complete line before allowing interaction, including the setup move.
@@ -64,11 +67,13 @@ function changed(){
 function select(value){
  queue?.destroy();cancel();current=null;theme=value;done=false;$('rating').textContent='';history.reset(fen);$('themes').textContent='';$('progress').value=0;
  try{localStorage.setItem('chessil.puzzle-type',theme);}catch(_){}
- queue=new ChessilBuffer({key:'chessil.puzzles.v1.'+theme,validate:valid,onChange:changed,
-  fetchBatch:async(exclude,signal)=>{const params=new URLSearchParams({theme,exclude:exclude.join(',')});const r=await fetch('/api/training/puzzles?'+params,{signal});if(!r.ok)throw Error('Load failed');return (await r.json()).puzzles;}
+ queue=new ChessilBuffer({key:level?'chessil.puzzles.v2.'+level+'.'+theme:'chessil.puzzles.v1.'+theme,validate:valid,onChange:changed,
+  fetchBatch:async(exclude,signal)=>{const params=new URLSearchParams({theme,exclude:exclude.join(',')});if(level)params.set('level',level);const r=await fetch('/api/training/puzzles?'+params,{signal});if(!r.ok)throw Error('Load failed');return (await r.json()).puzzles;}
  });
  if(queue.peek())start(queue.peek());else{controls();paint();}changed();queue.fill();
 }
+if($('level'))$('level').onchange=()=>{level=$('level').value;$('type').value='mixed';select('mixed');loadThemes();};
+if($('library-open')){const media=matchMedia('(max-width:900px)'),rail=root.querySelector('moves-panel');const place=()=>{if(media.matches)root.querySelector('.learning-board-area').insertBefore(rail,root.querySelector('.learning-board-wrap'));else $('sidebar').insertBefore(rail,$('sidebar').querySelector('.ui-actions'));};media.addEventListener('change',place);place();ChessilLearningNavigation.mount(root,'puzzle');$('mobile-hint').onclick=()=>$('hint').click();$('mobile-restart').onclick=()=>$('restart').click();}
 $('type').onchange=()=>select($('type').value);
 $('hint').onclick=()=>{if(!current||done||busy)return;assisted=true;const move=current.moves[index];board.guidance={from:move.slice(0,2),to:move.slice(2,4)};board.active=move.slice(0,2);board.drawOverlays();message(`Try ${gensanbase(move,boardgen(fen),fen,mg(fen))}.`);};
 $('restart').onclick=()=>start(current);
@@ -82,7 +87,7 @@ async function loadThemes(){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);
  try{const r=await fetch('/api/training/puzzle-themes',{signal:controller.signal});if(!r.ok)throw Error();const data=await r.json();
  const previous=$('type').value;$('type').querySelectorAll('option:not([value="mixed"])').forEach(el=>el.remove());
- data.themes.sort((a,b)=>label(a.id).localeCompare(label(b.id))).forEach(t=>{if(!/^[a-zA-Z][a-zA-Z0-9]{0,47}$/.test(t.id))return;const option=document.createElement('option');option.value=t.id;option.textContent=label(t.id);$('type').append(option);});
+ data.themes.filter(t=>!level||(level==='advanced'?![...groups.beginner,...groups.intermediate].includes(t.id):groups[level].includes(t.id))).sort((a,b)=>label(a.id).localeCompare(label(b.id))).forEach(t=>{if(!/^[a-zA-Z][a-zA-Z0-9]{0,47}$/.test(t.id))return;const option=document.createElement('option');option.value=t.id;option.textContent=label(t.id);$('type').append(option);});
  $('type').value=[...$('type').options].some(o=>o.value===previous)?previous:'mixed';
  try{localStorage.setItem('chessil.puzzle-themes',JSON.stringify(data.themes));}catch(_){}
  }catch(_){/* Mixed and previously cached types remain usable offline. */}finally{clearTimeout(timeout);}
@@ -92,8 +97,8 @@ window.addEventListener('offline',changed);
 window.addEventListener('pagehide',event=>{cancel();if(!event.persisted){queue?.destroy();board.destroy();}});
 window.addEventListener('pageshow',event=>{if(event.persisted){if(current)start(current);queue?.fill();}});
 (async()=>{
- await ChessilPreferences.ready;
- try{const types=JSON.parse(localStorage.getItem('chessil.puzzle-themes')||'[]');types.forEach(t=>{if(!/^[a-zA-Z][a-zA-Z0-9]{0,47}$/.test(t.id))return;const o=document.createElement('option');o.value=t.id;o.textContent=label(t.id);$('type').append(o);});const saved=localStorage.getItem('chessil.puzzle-type');if([...$('type').options].some(o=>o.value===saved))$('type').value=saved;}catch(_){}
+ await ChessilPreferences.ready;if($('library-open'))$('library-open').disabled=false;
+ try{const types=JSON.parse(localStorage.getItem('chessil.puzzle-themes')||'[]');types.forEach(t=>{if(level)return;if(!/^[a-zA-Z][a-zA-Z0-9]{0,47}$/.test(t.id))return;const o=document.createElement('option');o.value=t.id;o.textContent=label(t.id);$('type').append(o);});const saved=level?'mixed':localStorage.getItem('chessil.puzzle-type');if([...$('type').options].some(o=>o.value===saved))$('type').value=saved;}catch(_){}
  select($('type').value);loadThemes();
 })();
 },{once:true});

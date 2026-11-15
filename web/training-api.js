@@ -274,7 +274,7 @@ function createTrainingApi({ db, origin, curriculum = () => require('./training/
         return send(405, { error: 'Method not allowed' }, { Allow: allowed.join(', ') });
       }
       for (const key of url.searchParams.keys()) {
-        if (!(route === 'tablebase' && key === 'fen' || route === 'puzzles' && ['theme', 'exclude'].includes(key)) || url.searchParams.getAll(key).length !== 1) throw fail(400, 'Unexpected query parameters');
+        if (!(route === 'tablebase' && key === 'fen' || route === 'puzzles' && ['theme', 'exclude', 'level'].includes(key)) || url.searchParams.getAll(key).length !== 1) throw fail(400, 'Unexpected query parameters');
       }
       if (req.method === 'POST') {
         if (req.headers['sec-fetch-site'] === 'cross-site' ||

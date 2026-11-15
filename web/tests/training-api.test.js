@@ -285,3 +285,10 @@ test('puzzle batches validate filters, parameterize theme/exclusions and wrap at
   assert.equal(calls.length,2);assert.equal((await call('puzzles',{method:'POST'})).status,405);
   assert.deepEqual((await call('puzzle-themes')).body,{themes:[{id:'fork',count:42}]});
 });
+
+
+test('curated tactics filters remain parameterized and bound popularity, length and rating',async()=>{
+ const {puzzleBatch}=require('../puzzle-api');const calls=[];const db={query:async(sql,values)=>{calls.push({sql,values});return {rows:[]};}};
+ await puzzleBatch(db,new URLSearchParams({level:'beginner',theme:'fork'}));assert.ok(calls.length);assert.match(calls[0].sql,/popularity >= 85/);assert.match(calls[0].sql,/nb_plays >= 100/);assert.match(calls[0].sql,/rating <= 1500/);assert.match(calls[0].sql,/<= 7/);assert.ok(calls[0].values.at(-1).includes('fork'));assert.doesNotMatch(calls[0].sql,/fork/);
+ await assert.rejects(puzzleBatch(db,new URLSearchParams({level:'bogus'})),{status:400});
+});

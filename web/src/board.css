@@ -75,3 +75,7 @@ cg-board[data-orientation="b"]~coords coord:nth-child(even){color:var(--coord-on
 .board-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 .board-arrows,.board-arrows *{pointer-events:none}
+
+/* Check and teaching overlays share the native board's keyed square layer. */
+cg-board square.king-in-check{z-index:1;background:radial-gradient(ellipse at center,#e52b2bdd 0%,#d91e2877 42%,#c8122233 60%,transparent 75%)}
+cg-board square.guide-area{z-index:4}

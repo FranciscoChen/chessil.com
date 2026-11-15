@@ -5,9 +5,10 @@ module.exports=({db,index,redis,join,create,notify=()=>{}})=>{
  const own=(row,user,session,n)=>user!=='0'&&String(row['userid'+n])===user||row['sessionid'+n]===session;
  const pending=row=>!row.started&&!row.finished&&!(Number(row.state)>0)&&row.userid2==null&&row.sessionid2==null;
  const key=user=>'ui:invites:'+user;
- async function incoming(user){if(user==='0')return [];await redis.zremrangebyscore(key(user),'-inf',Date.now()-300000);return redis.zrange(key(user),0,-1);}
+ const recipient=(user,session)=>user==='0'?'guest:'+session:user;
+ async function incoming(user,session){const id=recipient(user,session);await redis.zremrangebyscore(key(id),'-inf',Date.now()-300000);return redis.zrange(key(id),0,-1);}
  async function list(user,session){
-  const invited=await incoming(user);
+  const invited=await incoming(user,session);
   const {rows}=await db.query(`SELECT g.id,g.gameid,g.userid1,g.userid2,g.sessionid1,g.sessionid2,g.color1,g.color2,g.started,g.finished,g.state,g.initialtime,g.increment,g.timecontrol1,g.rated,g.bot_program,g.bot_difficulty,u1.username AS username1,u2.username AS username2
    FROM games g LEFT JOIN users u1 ON u1.id=g.userid1 LEFT JOIN users u2 ON u2.id=g.userid2
    WHERE g.finished IS NULL AND (g.state IS NULL OR g.state<=0) AND
@@ -34,10 +35,10 @@ module.exports=({db,index,redis,join,create,notify=()=>{}})=>{
    await redis.zadd(key(recipient.id),Date.now(),gameid);await redis.expire(key(recipient.id),300);notify(String(recipient.id),{type:'game_invitation'});return {success:true,gameid};
   }
   if(!['accept','decline'].includes(data.action)||typeof data.gameid!=='string'||!/^[a-zA-Z0-9]{9}$/.test(data.gameid))fail(400,'Invalid invitation.');
-  if(!(await incoming(user)).includes(data.gameid))fail(403,'This invitation is not addressed to you.');
-  if(data.action==='decline'){await redis.zrem(key(user),data.gameid);return {success:true};}
+  if(!(await incoming(user,session)).includes(data.gameid))fail(403,'This invitation is not addressed to you.');
+  if(data.action==='decline'){await redis.zrem(key(recipient(user,session)),data.gameid);return {success:true};}
   const {rows:[game]}=await db.query('SELECT id FROM games WHERE gameid=$1',[data.gameid]);if(!game)fail(410,'Invitation expired.');
-  const result=await join({id:game.id,action:'join'},req,sessiondata);await redis.zrem(key(user),data.gameid);return result;
+  const result=await join({id:game.id,action:'join'},req,sessiondata);await redis.zrem(key(recipient(user,session)),data.gameid);return result;
  }
  return {list,action};
 };

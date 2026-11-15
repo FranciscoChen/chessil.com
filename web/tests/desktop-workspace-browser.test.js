@@ -5,7 +5,7 @@ test('desktop board workspaces use available space, top-align history and keep f
   const p=await browser.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));
   for(const viewport of [{width:1440,height:1000},{width:1366,height:768},{width:1920,height:1440}]){
    await p.setViewport(viewport);const sizes=[];
-   for(const [name,path] of [['game','/game/verify001'],['analysis','/en/analysis'],['training','/en/training']]){
+   for(const [name,path] of [['game','/game/verify001'],['analysis','/en/analysis'],['training','/en/training/tutorial']]){
     await p.goto(f.url+path,{waitUntil:'networkidle0'});await p.waitForFunction(()=>document.querySelector('cg-board piece'));
     if(name==='analysis')await p.waitForSelector('.book-move');
     if(name==='training')await p.waitForSelector('square.guide-source');

@@ -8,7 +8,7 @@ window.ChessilPreferences = (() => {
   const root=document.documentElement;
   root.dataset.board=value.board;root.dataset.pieces=value.pieces;
   root.style.setProperty('--piece-slide',duration()+'ms');
-  syncEngineOptions();
+  syncEngineOptions();document.querySelectorAll('[data-quick-preference]').forEach(input=>input.checked=!!value[input.dataset.quickPreference]);
   document.dispatchEvent(new CustomEvent('chessil:preferences',{detail:get()}));
  }
  function get(){return structuredClone(value);}
@@ -75,6 +75,9 @@ window.ChessilPreferences = (() => {
   }};engineForms.add(form);form.sync();
   return loadEngineCatalog().then(result=>{if(!host.isConnected)return false;catalog=result;form.sync();return true;}).catch(()=>{hint.textContent='Engine choices unavailable. Reopen options to retry.';if(compact){hint.setAttribute('role','status');host.append(hint);}return false;});
  }
+ function renderToggle(key,label,className='board-settings-toggle'){
+  const field=document.createElement('label'),input=document.createElement('input');field.className=className;input.type='checkbox';input.dataset.quickPreference=key;input.dataset.preference=key;input.checked=!!value[key];input.onchange=()=>update({[key]:input.checked});field.append(input,document.createTextNode(label));return field;
+ }
  function render(host) {
   const t=words();host.replaceChildren();
   function el(tag,className,text){const e=document.createElement(tag);if(className)e.className=className;if(text)e.textContent=text;return e;}
@@ -92,8 +95,7 @@ window.ChessilPreferences = (() => {
   select(grid,t.pieces,'pieces',[['classic',t.classic],['sculpted',t.sculpted]]);
   select(grid,t.slide,'slide',[[0,t.none],[100,t.fast],[180,t.normal],[320,t.slow]]);
   select(grid,t.sound,'sound',[['auto',t.auto],['ivory',t.ivory],['midnight',t.midnight]]);
-  const queenField=el('label','board-settings-toggle'),queen=el('input');queen.type='checkbox';queen.checked=value.autoQueen;queen.dataset.preference='autoQueen';queenField.append(queen,document.createTextNode(t.autoQueen));grid.append(queenField);
-  queen.addEventListener('change',()=>update({autoQueen:queen.checked}));
+  grid.append(renderToggle('autoQueen',t.autoQueen),renderToggle('checkIndicator',{en:'Highlight a king in check',es:'Resaltar el rey en jaque',zh:'高亮被将军的王'}[document.documentElement.lang]||'Highlight a king in check'));
   const volumeField=el('label','ui-field',t.volume),volume=el('input');volume.type='range';volume.min=0;volume.max=100;volume.value=value.volume;volume.dataset.preference='volume';volumeField.append(volume);grid.append(volumeField);
   volume.addEventListener('input',()=>update({volume:Number(volume.value)}));
   const muteField=el('label','board-settings-toggle'),mute=el('input');mute.type='checkbox';mute.checked=value.muted;mute.dataset.preference='muted';muteField.append(mute,document.createTextNode(t.mute));grid.append(muteField);
@@ -113,6 +115,7 @@ window.ChessilPreferences = (() => {
  document.addEventListener('DOMContentLoaded',async()=>{
   await ready;
   document.querySelectorAll('[data-board-settings]').forEach(host=>{if(!host.closest('dialog'))render(host);});
+  const quick=document.querySelector('[data-header-quick-preferences]');if(quick)quick.append(renderToggle('autoQueen',words().autoQueen,'header-row header-preference'));
   const dialog=document.querySelector('#board-settings-dialog');
   if(dialog) {
    const open=document.querySelector('#open-board-settings');open.textContent=words().title;
@@ -121,5 +124,5 @@ window.ChessilPreferences = (() => {
    dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left || event.clientX>r.right || event.clientY<r.top || event.clientY>r.bottom)dialog.close();}});
   }
  });
- return {ready,get,update,duration,renderEngineOptions,engineThreads,engineCatalog:loadEngineCatalog};
+ return {ready,get,update,duration,renderToggle,renderEngineOptions,engineThreads,engineCatalog:loadEngineCatalog};
 })();

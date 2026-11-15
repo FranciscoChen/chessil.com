@@ -63,7 +63,7 @@ await t.test('production page: click, drag, illegal drop, last move, premove, ke
  await new Promise(resolve=>setTimeout(resolve,350));assert.equal(await page.$eval('[data-preference-status]',e=>e.textContent),'');
  assert.equal(fixture.preferences.autoQueen,true);assert.equal(fixture.preferences.pieces,'sculpted');assert.equal(fixture.preferences.slide,0);assert.equal(fixture.preferences.events.capture,'ivory');
  fixture.move('e5d4');await waitMoves(8);
- await page.click('.resign');await page.waitForFunction(()=>gamefinished);
+ await page.click('.resign');await page.waitForFunction(()=>gamefinished);await page.waitForSelector('.ui-result-dialog[open]');await page.click('.ui-result-dialog .dialog-close');
  await page.click('#rw');assert.equal(await page.evaluate(()=>a1ti),0);assert.equal(await page.$$eval('cg-board piece',nodes=>nodes.length),32);
  await page.click('#ff');assert.equal(await page.evaluate(()=>a1ti),8);assert.equal(await page.$$eval('cg-board piece',nodes=>nodes.length),31);
  await page.reload({waitUntil:'networkidle0'});await page.waitForFunction(()=>gamefinished);
@@ -83,7 +83,7 @@ await t.test('arrows review live and finished games without changing authoritati
  await page.click('.dasher > button');await page.click('#open-board-settings');await page.keyboard.press('ArrowLeft');assert.equal(await page.evaluate(()=>a1ti),3);await page.keyboard.press('Escape');
  await page.evaluate(()=>{const input=document.createElement('input');input.id='navigation-input';document.body.append(input);input.focus();});
  await page.keyboard.press('ArrowLeft');assert.equal(await page.evaluate(()=>a1ti),3);await page.evaluate(()=>document.querySelector('#navigation-input').remove());
- await page.click('.resign');await page.waitForFunction(()=>gamefinished);await page.keyboard.press('Home');assert.equal(await page.evaluate(()=>a1ti),0);
+ await page.click('.resign');await page.waitForFunction(()=>gamefinished);await page.waitForSelector('.ui-result-dialog[open]');await page.click('.ui-result-dialog .dialog-close');await page.keyboard.press('Home');assert.equal(await page.evaluate(()=>a1ti),0);
  await page.keyboard.press('ArrowRight');assert.equal(await page.evaluate(()=>a1ti),1);await page.keyboard.press('End');assert.equal(await page.evaluate(()=>a1ti),3);
 });
 await t.test('auto queen persists and recapture premoves can target an owned piece',async()=>{

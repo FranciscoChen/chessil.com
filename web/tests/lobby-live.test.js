@@ -23,3 +23,10 @@ test('joining again cannot resume a lost game through a stale invitation',async(
  vm.runInContext(source.slice(source.indexOf('async function joinLobbyGame('),source.indexOf('function handleLobbyCreate(')),c);
  await assert.rejects(c.joinLobbyGame({id:1,action:'join'},{headers:{cookie:'s=joining'}},[]),{status:410});
 });
+
+
+test('a public join cannot steal a reserved rematch',async()=>{
+ const c=context({validLobbyId:()=>true,lobbyDb:{query:async()=>({rows:[{id:1,gameid:'abcdef123',userid1:'7',sessionid1:'creator',timecontrol1:'5+0'}]})},liveRedis:{get:async()=>JSON.stringify({user:'8',session:'opponent'})},lobbyIndex:{openIds:async()=>new Set(['abcdef123'])},lobbyError:(status,message)=>Object.assign(new Error(message),{status})});
+ vm.runInContext(source.slice(source.indexOf('async function joinLobbyGame('),source.indexOf('function handleLobbyCreate(')),c);
+ await assert.rejects(c.joinLobbyGame({id:1,action:'join'},{headers:{cookie:'s=intruder'}},[null,'9']),{status:403});
+});

@@ -76,7 +76,7 @@ window.ChessilBoard = class ChessilBoard {
   }
   if(redraw)this.clear();else {this.selected=null;this.keyboardMode=false;this.drawOverlays();}
  }
- select(square){this.selected=square;this.active=square;this.drawOverlays();}
+ select(square){this.selected=square;this.active=square;this.drawOverlays();this.root.dispatchEvent(new CustomEvent('chessil:board-selection',{detail:{square}}));}
  down(event) {
   if(event.button!==0 || !event.isPrimary || !this.canInput())return;
   const rect=this.root.getBoundingClientRect(),square=this.at(event,rect);if(!square)return;
@@ -166,7 +166,7 @@ window.ChessilBoard = class ChessilBoard {
    const image=document.createElement('piece');image.className=side+' '+classes[piece];piecePreview.append(image);button.append(piecePreview);
    button.addEventListener('click',()=>{dialog.close();this.propose(from+to+piece,preview);});choices.append(button);
   });
-  dialog.append(choices);
+  dialog.append(choices);if(window.ChessilPreferences?.renderToggle)dialog.append(ChessilPreferences.renderToggle('autoQueen',{en:'Automatically promote to queen',es:'Promocionar automáticamente a dama',zh:'自动升变为后'}[document.documentElement.lang]||'Automatically promote to queen'));
   dialog.addEventListener('close',()=>{dialog.remove();this.promotion=null;this.root.focus({preventScroll:true});},{once:true});
   document.body.append(dialog);dialog.showModal();
  }
@@ -206,6 +206,8 @@ window.ChessilBoard = class ChessilBoard {
    if(!node){node=document.createElement('square');node.className=type;node.dataset.square=square;this.overlay.set(key,node);fragment.append(node);}
    const transform=this.transform(square);if(node.style.transform!==transform)node.style.transform=transform;
   };
+  if(this.checkedKing&&window.ChessilPreferences?.get().checkIndicator!==false)add(this.checkedKing,'king-in-check');
+  for(const square of this.guideSquares||[])add(square,'guide-area ui-highlight');
   for(const annotation of this.annotations||[])if(['error','suggestion'].includes(annotation.type))add(annotation.square,'annotation-'+annotation.type+(annotation.type==='suggestion'?' ui-highlight':''));
   if(this.lastMove){add(this.lastMove.slice(0,2),'last-move');add(this.lastMove.slice(2,4),'last-move');}
   if(this.selected){add(this.selected,'selected');for(const move of this.candidates(this.selected))add(move.slice(2,4),this.position[move.slice(2,4)]?'move-dest capture-dest':'move-dest');}
@@ -256,6 +258,7 @@ window.ChessilBoard = class ChessilBoard {
    element.dataset.square=square;element.setAttribute('aria-hidden','true');const target=this.transform(square);element.style.transform=target;this.pieces.set(square,element);
    if(duration && moved)element.animate([{transform:origins.get(square)},{transform:target}],{duration,easing:'cubic-bezier(.22,.65,.3,1)'});
   }
+  this.checkedKing=null;const checkSide=this.positionTurn||this.state().turn||this.state().fen?.split(' ')[1];if(['w','b'].includes(checkSide)&&Object.values(next).filter(p=>p.p==='k').length===2){let flat='';for(let rank=8;rank>=1;rank--)for(const file of 'abcdefgh'){const p=next[file+rank];flat+=p?(p.c==='w'?p.p.toUpperCase():p.p):' ';}if(ic(flat,checkSide))this.checkedKing=Object.keys(next).find(s=>next[s].p==='k'&&next[s].c===checkSide);}
   this.position=next;this.lastMove=move || '';this.syncContext();this.drawOverlays();
   if(move)this.announcement.textContent=move.slice(0,2)+' → '+move.slice(2,4);
  }

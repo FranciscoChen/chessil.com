@@ -10,6 +10,8 @@ module.exports=async()=>{
  const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost'),chunks=[];for(const [name,value] of Object.entries(require('../../isolation')(req.url)))res.setHeader(name,value);requests.push(url.pathname);for await(const chunk of req)chunks.push(chunk);const body=Buffer.concat(chunks).toString();
   const send=data=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(data));};
+  if(url.pathname==='/api/training/puzzles')return send({puzzles:Array.from({length:16},(_,i)=>({id:String(i+1).padStart(5,'0'),fen:'r6k/pp2r2p/4Rp1Q/3p4/8/1N1P2R1/PqP2bPP/7K b - - 0 24',moves:['f2g3','e6e7','b2b1','b3c1','b1c1','h6c1'],rating:1819,themes:['crushing','long'],gameUrl:''}))});
+  if(url.pathname==='/api/training/puzzle-themes')return send({themes:['fork','pin','overloading','xRayAttack','capturingDefender','mateIn1'].map(id=>({id,count:1000}))});
   if(url.pathname==='/api/training/curriculum')return send(require('../../training/curriculum'));
   if(url.pathname==='/api/training/progress')return send({account:false,progress:{}});
   if(url.pathname==='/live/games')return liveFeed.open(req,res);

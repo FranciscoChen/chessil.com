@@ -5,12 +5,14 @@ const root=path.resolve(__dirname,'..');
 async function build(){
  for(const [output,inputs] of Object.entries({
   'board.min.js':['chess-rules.js','board.js'],
+  'results.min.js':['chess-outcome.js','results.js'],
   'wdl.min.js':['wdl.js'],
   'game.min.js':['game.js'],
   'study.min.js':['variations.js','history-gestures.js','study.js'],
   'analysis.min.js':['local-engine.js','../../tools/policy-book/polyglot-random.js','../../tools/policy-book/polyglot.js','opening-book.js','analysis-judgment.js','analysis-guidance.js','analysis-book.js','analysis.js'],
   'training.min.js':['training.js'],
-  'puzzles.min.js':['buffer.js','history.js','puzzles.js'],
+  'learning.min.js':['local-engine.js','../../tools/policy-book/polyglot-random.js','../../tools/policy-book/polyglot.js','opening-book.js','learning-navigation.js','learning.js'],
+  'puzzles.min.js':['buffer.js','history.js','learning-navigation.js','puzzles.js'],
   'highlight.min.js':['highlight.js'],
   'timing.min.js':['timing.js'],
   'preferences.min.js':['sounds.js','preferences.js']
@@ -33,6 +35,8 @@ async function build(){
  fs.writeFileSync(path.join(root,'web/css/timing.min.css'),timing.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').trim()+'\n');
  const highlight=fs.readFileSync(path.join(root,'src/highlight.css'),'utf8');
  fs.writeFileSync(path.join(root,'web/css/highlight.min.css'),highlight.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').trim()+'\n');
+ const learning=fs.readFileSync(path.join(root,'src/learning.css'),'utf8');
+ fs.writeFileSync(path.join(root,'web/css/learning.min.css'),learning.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').trim()+'\n');
  const training=fs.readFileSync(path.join(root,'src/training.css'),'utf8');
  fs.writeFileSync(path.join(root,'web/css/training.min.css'),training.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\n\s*/g,'').trim()+'\n');
  const preferences=fs.readFileSync(path.join(root,'src/preferences.css'),'utf8');
