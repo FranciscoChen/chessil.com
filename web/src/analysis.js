@@ -58,6 +58,8 @@ function annotate(finding){boardView.annotations=finding?[{square:history[findin
 function evalDisplay(){
  const score=scores.get(position)?.[0],white=score?whiteScore(score,position):0,sign=perspective==='b'?-1:1;
  $('score').textContent=score?scoreText(score,sign===1?position:position.replace(/ [wb] /,position.split(' ')[1]==='w'?' b ':' w ')):'—';
+ const explanation=score?.kind==='mate'?'Forced checkmate (M shows the number of moves).':'Advantage in pawn equivalents. Positive favors '+(perspective==='b'?'Black':'White')+'; negative favors '+(perspective==='b'?'White':'Black')+'.';
+ $('score').title=explanation;$('eval').title=explanation;
  const percent=score?Math.max(1,Math.min(99,50+50*Math.tanh(white/500))):50;$('eval-white').style.width=(sign===1?percent:100-percent)+'%';$('eval-white').style.background=perspective==='b'?'var(--piece-black)':'var(--piece-white)';$('eval').style.background=perspective==='b'?'var(--piece-white)':'var(--piece-black)';$('eval').setAttribute('aria-label',score?(perspective==='b'?'Black':'White')+' evaluation '+$('score').textContent:'Evaluation available after the game');
  const result=ChessilWdl.render($('wdl'),{score,fen:position,perspective});
  $('q').textContent=result.q===null?'—':(result.q>0?'+':'')+result.q.toFixed(2);
