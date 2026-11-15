@@ -54,10 +54,10 @@ cg-board[data-orientation="b"]~coords coord:nth-child(even){color:var(--coord-on
 .board-cue-own{width:22px;height:22px;right:4px}
 .board-cue-own[data-edge="bottom"]{bottom:4px}.board-cue-own[data-edge="top"]{top:4px}
 .board-cue svg{width:16px;height:16px;fill:currentColor;stroke:var(--cue-outline);stroke-width:1;stroke-linejoin:round;stroke-linecap:round}
-.board-cue-turn{width:14px;height:14px;left:4px;transition:top .18s,bottom .18s}
+.board-cue-turn{width:14px;height:14px;left:4px;background:currentColor;border-color:var(--link);transition:top .18s,bottom .18s}
 .board-cue-turn[data-edge="top"]{top:4px;transform:rotate(180deg)}
 .board-cue-turn[data-edge="bottom"]{bottom:4px}
-.board-cue-turn svg{width:10px;height:10px}
+.board-cue-turn svg{width:10px;height:10px;stroke:var(--link)}
 .board-context [hidden]{display:none!important}
 .board-cue-own::after{content:"";position:absolute;inset:-4px;border:2px solid #fff;border-radius:50%;pointer-events:none;animation:board-side-arrive 1.8s ease-out 2}
 @keyframes board-side-arrive{0%,100%{opacity:0;transform:scale(.9)}45%{opacity:.9;transform:scale(1.3)}}

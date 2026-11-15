@@ -214,9 +214,10 @@ labels alternate light/dark ink according to the displayed square, independently
 of orientation, and use a stronger weight for small-board legibility.
 
 The shared context layer shows a crown for the player's color and a smaller
-triangle for the side to move. Both backplates use the theme accent (`--link`),
-never either playing color. Glyph fills match the represented side, with a thin
-contrasting glyph outline for legibility. Their board edges follow orientation; spectators
+triangle for the side to move. The user-side crown uses a theme-accent
+backplate and a glyph matching the user’s piece color. The turn indicator uses
+the moving side’s piece color for both its backplate and glyph, with the theme
+accent (`--link`) for its border and glyph outline. Their board edges follow orientation; spectators
 have no own-side crown. The arrival pulse animates only opacity and transform
 and respects reduced motion. `syncContext` caches orientation/side/turn so an
 unchanged render makes no DOM mutations. Coordinates move from right/bottom to
