@@ -40,7 +40,7 @@
 #analysis-book-eco{flex:none;color:var(--link);font-weight:600}
 #analysis-book-name{flex:0 1 auto;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;color:var(--text2)}
 #analysis-book-name:empty,#analysis-book-note:empty{display:none}
-#analysis-book-moves{display:grid;gap:0;max-height:9rem;overflow:auto;scrollbar-width:none}
+#analysis-book-moves{display:grid;align-content:start;grid-auto-rows:max-content;gap:0;max-height:9rem;overflow:auto;scrollbar-width:none}
 .book-move{display:grid;grid-template-columns:minmax(2.8rem,auto) minmax(0,1fr) 3.1rem 3.2rem;align-items:center;gap:.35rem;width:100%;padding:3px 2px;min-height:26px;border:0;border-radius:0;background:transparent;color:var(--text);font:.75rem/1.4 var(--sans-font);cursor:pointer;text-align:start}
 .book-move.no-policy{grid-template-columns:minmax(2.8rem,auto) minmax(0,1fr) 3.2rem}
 .book-move:hover{background:var(--hover)}
