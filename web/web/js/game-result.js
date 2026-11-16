@@ -19,7 +19,7 @@
   if(!['w','b'].includes(metadata.side))return;
   const score=document.querySelector('.result-wrap .result')?.textContent||'½–½',winner=score==='1–0'?'w':score==='0–1'?'b':null;
   const difference=Number(metadata.side==='w'?metadata.ratingdiff1:metadata.ratingdiff2),hasRating=metadata.rated&&(metadata.side==='w'?metadata.ratingdiff1:metadata.ratingdiff2)!=null;
-  ChessilResult.show({outcome:winner===null?'draw':winner===metadata.side?'win':'loss',score,reason:document.querySelector('[data-game-field="state"]')?.textContent||'',rating:hasRating?'Rating '+(difference>=0?'+':'')+Math.round(difference):'',actions:[{label:'Rematch',primary:true,close:false,run:()=>playAgain(true)},{label:'New game',close:false,run:()=>playAgain(false)}]});
+  ChessilResult.show({outcome:winner===null?'draw':winner===metadata.side?'win':'loss',score,reason:document.querySelector('[data-game-field="state"]')?.textContent||'',rating:hasRating?'Rating '+(difference>=0?'+':'')+Math.round(difference):'',actions:[{label:'Rematch',pendingLabel:'Requesting rematch…',primary:true,close:false,run:()=>playAgain(true)},{label:'New game',pendingLabel:'Finding a game…',close:false,run:()=>playAgain(false)}]});
  }
  document.addEventListener('chessil:game-finished',()=>{if(!shown){shown=true;show();}});
  // Historical games remain readable; their result can reopen the dialog.

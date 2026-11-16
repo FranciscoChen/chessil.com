@@ -113,5 +113,22 @@ button:disabled, .disabled { opacity: .5; cursor: not-allowed; }
 @media(prefers-reduced-motion:reduce){.ui-code-copy.is-copied{animation:none}}
 .ui-tooltip{position:fixed;z-index:var(--z-dropdown,30);max-width:min(24rem,calc(100vw - 16px));padding:.5rem .65rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);box-shadow:var(--panel-shadow);font:.8rem/1.45 var(--sans-font);overflow-wrap:anywhere}
 [data-tap-tooltip][role="button"]{cursor:help}
-.ui-result-dialog{box-sizing:border-box;width:min(28rem,calc(100vw - 2rem));padding:1.5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);box-shadow:var(--panel-shadow)}
-.ui-result-dialog::backdrop{background:#0008}.ui-result-dialog h2{margin:0 2rem .6rem 0;font-size:1.5rem}.ui-result-dialog .ui-actions{margin-top:1.1rem;flex-wrap:wrap}.ui-result-dialog .ui-actions>*{flex:1}.ui-result-score{font:600 1.6rem var(--serif-font)}.ui-result-dialog p:empty{display:none}.ui-result-reason,.ui-result-rating,.ui-result-status{font-size:.85rem;margin-top:.5rem}.ui-result-rating{font-variant-numeric:tabular-nums;color:var(--link)}.ui-result-status{color:var(--attention)}
+/* Shared outcome presentation: score first, clear actions, quiet supporting detail. */
+.ui-result-dialog{box-sizing:border-box;position:fixed;inset:0;margin:auto;width:min(32rem,calc(100vw - 2rem));max-height:calc(100dvh - 2rem);overflow:auto;padding:2.25rem 2rem 1.75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);box-shadow:0 24px 80px #0004}
+.ui-result-dialog::backdrop{background:#07121b99}
+.ui-result-dialog>.dialog-close{position:absolute;inset:.65rem .65rem auto auto;width:2.75rem;height:2.75rem;min-height:2.75rem;border:0;border-radius:var(--radius);background:transparent}
+.ui-result-body{text-align:center;padding:.5rem .5rem 1.5rem}
+.ui-result-emblem{display:grid;place-items:center;width:3rem;height:3rem;margin:0 auto .85rem;border:1px solid var(--border);border-radius:50%;color:var(--link);background:var(--hover)}
+.ui-result-emblem svg{width:1.5rem;height:1.5rem;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ui-result-dialog[data-outcome=loss] .ui-result-emblem{color:var(--text2)}
+.ui-result-dialog h2{margin:0;font:var(--heading-weight,500) 1.65rem/1.25 var(--serif-font)}
+.ui-result-dialog .ui-result-score{margin:.8rem 0 0;font:500 clamp(2.5rem,10vw,3.5rem)/1.15 var(--sans-font);font-variant-numeric:tabular-nums;letter-spacing:-.04em}
+.ui-result-dialog .ui-result-reason{margin:.65rem 0 0;color:var(--text2);font-size:.9rem;line-height:1.5;text-wrap:balance}
+.ui-result-dialog .ui-result-rating{display:inline-block;margin:.85rem 0 0;padding:.25rem .65rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);font:600 .85rem/1.4 var(--sans-font);font-variant-numeric:tabular-nums}
+.ui-result-dialog .ui-actions{display:flex;gap:.65rem;padding-top:1rem;margin:0;border-top:1px solid var(--border);flex-wrap:wrap}
+.ui-result-dialog .ui-actions>*{flex:1 1 8rem;min-height:2.8rem;margin:0}
+.ui-result-dialog .ui-button:disabled{cursor:not-allowed}
+.ui-result-dialog .ui-button[aria-busy=true]{cursor:progress}
+.ui-result-dialog .ui-result-status{font-size:.85rem;line-height:1.5;margin:.85rem 0 0;text-align:center;color:var(--attention);overflow-wrap:anywhere}
+.ui-result-dialog p:empty{display:none}
+@media(max-width:480px){.ui-result-dialog{padding:1.5rem 1rem 1rem}.ui-result-body{padding:1rem .5rem 1.25rem}}

@@ -16,7 +16,7 @@ body.site-dialog-open { overflow:hidden; }
 .dialog-header { display:flex; flex-shrink:0; align-items:flex-start; justify-content:space-between; gap:1rem; padding:1.5rem 1.5rem 1rem; border-bottom:1px solid var(--border); }
 .dialog-header .eyebrow { margin-bottom:.35rem; }
 .dialog-header h2 { margin:0; font:600 1.4rem/1.3 var(--sans-font); color:var(--text); }
-.dialog-close { display:flex; align-items:center; justify-content:center; flex:0 0 2.75rem; width:2.75rem; height:2.75rem; border:1px solid var(--border); border-radius:50%; background:transparent; color:var(--text2); font-size:1.6rem; cursor:pointer; }
+.dialog-close { display:grid; place-items:center; padding:0; line-height:1; flex:0 0 2.75rem; width:2.75rem; height:2.75rem; border:1px solid var(--border); border-radius:50%; background:transparent; color:var(--text2); font-size:1.6rem; cursor:pointer; }
 .dialog-close:hover { color:var(--text); background:var(--hover); }
 .dialog-body { padding:1.25rem 1.5rem; overflow-y:auto; overscroll-behavior:contain; }
 .dialog-intro { margin:0 0 1.5rem; color:var(--text2); font-size:.9rem; line-height:1.6; }
@@ -51,3 +51,5 @@ body.site-dialog-open { overflow:hidden; }
 @media(prefers-reduced-motion:reduce) { .ui-button { transition:none; } }
 /* Native dialogs form a separate layout root; size controls including their borders. */
 .site-dialog, .site-dialog * { box-sizing:border-box; }
+
+.dialog-close svg{display:block;width:1.2rem;height:1.2rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}

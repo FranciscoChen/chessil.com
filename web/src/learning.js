@@ -59,6 +59,7 @@ function result(outcome){
 function terminal(){if(lesson.mode==='coordinates')return false;const outcome=ChessilPosition.outcome(fen,counts.get(ChessilPosition.key(fen)));if(!outcome)return false;
  const token=generation;
  if(lesson.teachCheck&&outcome.reason==='Checkmate'&&outcome.winner===side){callout(king(side==='w'?'b':'w'),'Checkmate: the king is attacked and no legal move can make it safe. You win here; in chess we never actually capture the king.',{ack:()=>result(outcome)});}
+ else if(section==='tutorial'&&outcome.reason==='Stalemate'){callout(king(fen.split(' ')[1]),'Stalemate: the king is not in check, but this side has no legal move. The game is a draw, regardless of the material advantage. Leave the king a safe square until you can deliver checkmate.',{ack:()=>result(outcome)});}
  else if(lesson.captureText&&outcome.winner===null&&outcome.reason==='Insufficient material'){callout(king(),lesson.captureText,{ack:()=>result(outcome)});}
  else result(outcome);return true;
 }
