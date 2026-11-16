@@ -79,9 +79,3 @@ cg-board[data-orientation="b"]~coords coord:nth-child(even){color:var(--coord-on
 /* Check and teaching overlays share the native board's keyed square layer. */
 cg-board square.king-in-check{z-index:1;background:radial-gradient(ellipse at center,#e52b2bdd 0%,#d91e2877 42%,#c8122233 60%,transparent 75%)}
 cg-board square.guide-area{z-index:4}
-
-/* Corner cues hug the outer edge. Keep the nearby coordinate labels on the
- * inward side of their squares so neither label is covered on small boards. */
-cg-board[data-orientation="w"]~coords.ranks coord:last-child{width:12.5%;justify-content:flex-start;text-align:left}
-cg-board[data-orientation="b"]~coords.ranks coord:first-child{width:12.5%;justify-content:flex-end;text-align:right}
-cg-board[data-orientation="b"]~coords.files coord:last-child{text-align:left}
