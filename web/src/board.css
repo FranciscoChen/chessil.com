@@ -43,21 +43,21 @@ html[data-theme][data-board="midnight"],html[data-board="auto"][data-theme="dark
 html[data-theme][data-board="walnut"] { --board-light:#eddbc1;--board-dark:#9d7255;--last-square:#ecbf3f88;--hint-square:#57382088;--board-hover-border:#a83e32; }
 html[data-board] cg-board { background-image:conic-gradient(var(--board-dark) 25%,var(--board-light) 0 50%,var(--board-dark) 0 75%,var(--board-light) 0);background-size:25% 25%; }
 /* Flipping moves coordinate labels to the opposite edges, not just their order. */
-cg-container:has(cg-board[data-orientation="b"]) coords.ranks,.training-board-wrap:has(cg-board[data-orientation="b"]) coords.ranks{align-items:flex-start}
-cg-container:has(cg-board[data-orientation="b"]) coords.files,.training-board-wrap:has(cg-board[data-orientation="b"]) coords.files{align-items:flex-start}
-cg-container:has(cg-board[data-orientation="b"]) coords.ranks coord,.training-board-wrap:has(cg-board[data-orientation="b"]) coords.ranks coord{text-align:left;justify-content:flex-start;align-items:flex-end}
-cg-container:has(cg-board[data-orientation="b"]) coords.files coord,.training-board-wrap:has(cg-board[data-orientation="b"]) coords.files coord{text-align:right}
+cg-board[data-orientation="b"]~coords.ranks{align-items:flex-start}
+cg-board[data-orientation="b"]~coords.files{align-items:flex-start}
+cg-board[data-orientation="b"]~coords.ranks coord{text-align:left;justify-content:flex-start;align-items:flex-end}
+cg-board[data-orientation="b"]~coords.files coord{text-align:right}
 cg-board[data-orientation="b"]~coords coord:nth-child(odd){color:var(--coord-on-light,#1d2a32);text-shadow:0 1px 1px #ffffff70}
 cg-board[data-orientation="b"]~coords coord:nth-child(even){color:var(--coord-on-dark,#f8f1e0);text-shadow:0 1px 2px #132129b0}
 .board-context{--cue-own-size:min(22px,5.3%);--cue-turn-size:min(14px,3.3%);position:absolute;inset:0;pointer-events:none;z-index:6}
 .board-cue{--cue-outline:var(--piece-black);position:absolute;display:grid;place-items:center;box-sizing:border-box;color:var(--piece-white);background:var(--link);border:1px solid var(--link2);border-radius:50%;box-shadow:0 1px 4px #0006}
 .board-cue[data-side="b"]{--cue-outline:var(--piece-white);color:var(--piece-black)}
 .board-cue-own{width:var(--cue-own-size);height:var(--cue-own-size)}
-.board-cue-own[data-edge="bottom"]{bottom:2px;right:calc(6.25% - 2px - var(--cue-own-size)/2)}.board-cue-own[data-edge="top"]{top:2px;left:calc(6.25% - 2px - var(--cue-own-size)/2)}
+.board-cue-own[data-edge="bottom"]{bottom:2px;right:2px}.board-cue-own[data-edge="top"]{top:2px;left:2px}
 .board-cue svg{width:70%;height:70%;fill:currentColor;stroke:var(--cue-outline);stroke-width:1;stroke-linejoin:round;stroke-linecap:round}
 .board-cue-turn{width:var(--cue-turn-size);height:var(--cue-turn-size);background:currentColor;border-color:var(--link)}
-.board-cue-turn[data-edge="top"]{top:calc(4px + var(--cue-own-size));left:calc(6.25% - 2px - var(--cue-turn-size)/2);transform:rotate(180deg)}
-.board-cue-turn[data-edge="bottom"]{bottom:calc(4px + var(--cue-own-size));right:calc(6.25% - 2px - var(--cue-turn-size)/2)}
+.board-cue-turn[data-edge="top"]{top:calc(4px + var(--cue-own-size));left:calc(2px + (var(--cue-own-size) - var(--cue-turn-size))/2);transform:rotate(180deg)}
+.board-cue-turn[data-edge="bottom"]{bottom:calc(4px + var(--cue-own-size));right:calc(2px + (var(--cue-own-size) - var(--cue-turn-size))/2)}
 .board-cue-turn svg{stroke:var(--link)}
 .board-context [hidden]{display:none!important}
 .board-cue-own::after{content:"";position:absolute;inset:-4px;border:2px solid #fff;border-radius:50%;pointer-events:none;animation:board-side-arrive 1.8s ease-out 2}
@@ -79,3 +79,9 @@ cg-board[data-orientation="b"]~coords coord:nth-child(even){color:var(--coord-on
 /* Check and teaching overlays share the native board's keyed square layer. */
 cg-board square.king-in-check{z-index:1;background:radial-gradient(ellipse at center,#e52b2bdd 0%,#d91e2877 42%,#c8122233 60%,transparent 75%)}
 cg-board square.guide-area{z-index:4}
+
+/* Corner cues hug the outer edge. Keep the nearby coordinate labels on the
+ * inward side of their squares so neither label is covered on small boards. */
+cg-board[data-orientation="w"]~coords.ranks coord:last-child{width:12.5%;justify-content:flex-start;text-align:left}
+cg-board[data-orientation="b"]~coords.ranks coord:first-child{width:12.5%;justify-content:flex-end;text-align:right}
+cg-board[data-orientation="b"]~coords.files coord:last-child{text-align:left}
