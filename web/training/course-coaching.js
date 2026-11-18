@@ -5,21 +5,33 @@
 const lessons = {
  'endgame-queen-net': [
   ['King and queen', 'Rey y dama', '王后对单王'],
-  ['Capablanca begins by taking away space. Your queen can guard a whole row or column without giving check. Keep her beyond the black king’s reach, then bring your own king closer to cover the last escape squares.',
-   'Capablanca empieza por quitarle espacio al rey rival. Tu dama puede vigilar una fila o columna entera sin dar jaque. Déjala fuera de su alcance y acerca tu rey para cubrir las últimas casillas de escape.',
-   '卡帕布兰卡先缩小对方王的活动范围。后不用将军，也能封住整行或整列。让后待在黑王够不到的地方，再把白王带过来，守住最后几个逃生格。']
+  ['Capablanca moves the queen from h1 to c6. Trace the squares she covers from there. The black king has less room even though it is not in check. This gives your king time to come closer.',
+   'Capablanca mueve la dama de h1 a c6. Fíjate en las casillas que domina desde allí. El rey negro tiene menos espacio aunque no esté en jaque. Así, tu rey gana tiempo para acercarse.',
+   '卡帕布兰卡先把后从 h1 走到 c6。看看后从那里守住了哪些格子。黑王虽然没有被将军，能走的地方却少了。白王就有时间靠近。'],
+  {line:['h1c6','e5d4'], square:'e1', text:[
+   'The queen is already doing her job. In the book White brings the king to d2 instead of giving another queen move. The two pieces can take away more squares together.',
+   'La dama ya cumple su tarea. En el libro, las blancas acercan el rey a d2 en vez de volver a mover la dama. Juntas, las dos piezas pueden quitarle más salidas al rey negro.',
+   '后已经守住了许多格子。书里接着把白王走到 d2，让后留在原处。王和后一起，能封住更多的逃生格。']}
  ],
  'endgame-rook-box': [
   ['King and rook', 'Rey y torre', '王车对单王'],
-  ['The black king is already on the edge. Put your rook on the seventh rank to keep it there. Then walk your king up the board. When the kings face one another with one square between them, your king covers the escapes and the rook can give the final check.',
-   'El rey negro ya está en el borde. Coloca tu torre en la séptima fila para mantenerlo allí. Luego acerca tu rey. Cuando los reyes queden frente a frente con una casilla entre ellos, tu rey cortará la huida y la torre podrá dar el jaque final.',
-   '黑王已经在棋盘边缘。把车放到第七横线，封住它回来的路，再一步步走近白王。两王正对、中间隔一格时，白王守住逃生格，车就可以送出最后一将。']
+  ['Put the rook on a7. The black king can still walk along the top row, but it cannot cross the seventh rank. Bring your king forward while the rook holds that line.',
+   'Pon la torre en a7. El rey negro aún puede caminar por la última fila, pero no puede cruzar la séptima. Acerca tu rey mientras la torre vigila esa línea.',
+   '把车摆到 a7。黑王还能沿最上面一行走，却过不了第七横线。让车守住这条线，白王趁机靠近。'],
+  {line:['a1a7','h8g8'], square:'h1', text:[
+   'The black king went to g8. Capablanca replies by moving the white king to g2. Working up the same file helps the white king get close enough to cover escapes when the rook gives check.',
+   'El rey negro fue a g8. Capablanca responde llevando el rey blanco a g2. Subir por la misma columna ayuda al rey blanco a acercarse lo suficiente para cubrir las salidas cuando la torre dé jaque.',
+   '黑王走到 g8。卡帕布兰卡把白王走到 g2，沿同一条纵线靠近。等车将军时，白王就能守住黑王的逃生格。']}
  ],
  'endgame-key-squares': [
   ['The king leads the pawn', 'El rey guía al peón', '王在兵前开路'],
-  ['Count the space between your king on e6 and your pawn on e4. That spare square is useful: you can advance the pawn once without moving your king away. If Black steps to one side, lead your pawn forward from the other.',
-   'Cuenta el espacio entre tu rey en e6 y tu peón en e4. Esa casilla libre te permite avanzar el peón una vez sin apartar al rey. Si el rey negro se desplaza hacia un lado, abre camino para tu peón por el otro.',
-   '看看 e6 的白王和 e4 的白兵之间：还空着一格。你可以先推进一步兵，让白王留在前面。黑王往一边让开时，白王就从另一边给兵开路。']
+  ['Your pawn on e2 is safe behind your king. Start by moving the king from f4 to e4. Capablanca advances the king as far as it can safely go while the pawn is still protected. Then the pawn can catch up.',
+   'Tu peón de e2 está seguro detrás del rey. Empieza llevando el rey de f4 a e4. Capablanca adelanta el rey todo lo posible mientras el peón está a salvo. Después avanza el peón.',
+   'e2 的白兵在王身后很安全。先把王从 f4 走到 e4。只要兵还是安全的，卡帕布兰卡就尽量让王先往前走，再让兵跟上。'],
+  {line:['f4e4','f6e6'], square:'e2', text:[
+   'The kings face each other across e5, so your king cannot go straight ahead. Move the pawn one square to e3. That hands Black the move without giving up your king’s place in front.',
+   'Los reyes están frente a frente, con e5 en medio. Tu rey no puede seguir de frente. Avanza el peón una casilla hasta e3. Así les toca mover a las negras y tu rey sigue delante.',
+   '两王隔着 e5 正对，白王不能再直走。把兵推进一格到 e3。这样轮到黑方走，而白王还能留在前面。']}
  ],
  'endgame-rook-pawn-draw': [
   ['The pawn on the edge', 'El peón del borde', '边兵与角落'],
@@ -53,15 +65,19 @@ const lessons = {
  ],
  'endgame-two-bishops': [
   ['King and two bishops', 'Rey y dos alfiles', '王与双象'],
-  ['One bishop stays on light squares and one stays on dark squares. Set them on neighboring diagonals so the black king cannot slip between them. Bring your king forward before moving that barrier closer to a corner.',
-   'Un alfil recorre casillas claras y el otro, oscuras. Ponlos en diagonales vecinas para que el rey negro no pueda pasar entre ellos. Acerca tu rey antes de empujar esa barrera hacia una esquina.',
-   '一只象走浅色格，另一只走深色格。让它们守住相邻的斜线，黑王就不能从中间穿过。先让白王靠近，再把这道屏障往角落推进。']
+  ['Move the bishop from f1 to h3. After Black’s king steps to e7 in the book, the bishop from c1 goes to f4. Trace their neighboring diagonals. The black king cannot cross them, so your own king can walk up to help.',
+   'Mueve el alfil de f1 a h3. En el libro, tras ir el rey negro a e7, el alfil de c1 va a f4. Sigue las dos diagonales vecinas: el rey negro no puede cruzarlas, así que tu rey puede acercarse para ayudar.',
+   '先把 f1 的象走到 h3。书里黑王走到 e7 后，c1 的象再走到 f4。看看这两条相邻的斜线：黑王过不来，白王就能一步步靠近。']
  ],
  'endgame-bishop-knight': [
   ['King, bishop and knight', 'Rey, alfil y caballo', '王、象与马'],
-  ['Look at your bishop on b1. The mating corners are a8 and h1, where the corner square matches the bishop’s color. Use the knight to cover squares the bishop cannot reach, and bring your king up to keep Black from slipping back to the middle.',
-   'Mira tu alfil de b1. Busca las esquinas del mismo color: en a8 y h1 puedes forzar el mate. Usa el caballo para cubrir casillas que el alfil no alcanza y acerca tu rey para impedir que el negro vuelva al centro.',
-   '看看 b1 的象。与它同色的角是 a8 和 h1，把黑王赶到这样的角才能强制将杀。用马补上象守不到的格，再让白王靠近，拦住黑王返回中央的路。']
+  ['The black king is already on the edge near h8. That corner is dark, but your bishop moves on light squares. Send the bishop from f5 to h7 to keep the king from going toward h8. Your aim is to guide it toward a8, where the bishop can help give mate.',
+   'El rey negro ya está en el borde, cerca de h8. Esa esquina es oscura y tu alfil va por casillas claras. Lleva el alfil de f5 a h7 para cerrar el camino hacia h8. Guía al rey hacia a8, donde el alfil sí podrá ayudar a dar mate.',
+   '黑王已在边上，靠近深色角 h8，你的象却只走浅色格。先把象从 f5 走到 h7，堵住通往 h8 的路。争取把黑王赶到浅色角 a8，象才帮得上忙。'],
+  {line:['f5h7','f8e8'],square:'f7',text:[
+   'The black king has started moving left. Jump the knight to e5 to cover d7. That closes a route back toward the middle while you guide the king along the edge.',
+   'El rey negro ha empezado a ir hacia la izquierda. Salta con el caballo a e5 para vigilar d7. Así cierras un camino hacia el centro mientras llevas al rey por el borde.',
+   '黑王开始往左走了。把马跳到 e5，守住 d7。这样就能堵住黑王返回中央的一条路，继续沿着边线赶它。']}
  ],
  'endgames-direct-opposition': [
   ['Face the other king', 'Frente al otro rey', '两王对峙'],

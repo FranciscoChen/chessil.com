@@ -45,9 +45,9 @@ game histories are replayed by the shared rules in `learning-data.test.js`.
 
 The Lucena and Philidor seeds were transcribed from the supplied Müller/Lamprecht
 PDF (diagrams 6.35 and 6.33). Their win/draw outcomes, and the key-squares pawn
-ending, were independently checked against the seven-piece Syzygy API. Other
-Capablanca/Müller teaching positions are explicitly identified as original practice
-positions. Strategy histories were transcribed and legally replayed from the
+ending, were independently checked against the seven-piece Syzygy API. The queen, rook and pawn endings use Capablanca’s examples 4, 1 and 6. The two
+bishops and bishop-and-knight lessons use diagrams 1.03 and 1.04 from
+Müller/Lamprecht. Original practice positions identify their own provenance. Strategy histories were transcribed and legally replayed from the
 supplied Game Changer PDF: AlphaZero–Stockfish 8, London 2018, Carlsbad, Python
 squeeze and king-attack examples. Explanations are original, not copied book text.
 The PDFs are not application assets and are not included in the build.
