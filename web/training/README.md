@@ -15,7 +15,7 @@ library rail moves into a modal on mobile; it is never rendered twice.
 - `src/learning-navigation.js`: responsive library behavior shared with tactics.
 - `src/local-engine.js`: one serial browser Stockfish worker per workspace,
   configured through the global engine/network/hash/thread preferences. Training
-  replies and assistance request full strength, MultiPV 1, 100ms. Searches include
+  replies and assistance request full strength, MultiPV 1, 700 ms. Searches include
   the custom starting FEN and move history, or actual startpos history for the
   AlphaZero game positions. No engine-server work is requested.
 - `src/chess-outcome.js`: local terminal rules. Server games remain authoritative.
@@ -28,7 +28,7 @@ A generation invalidates asynchronous work when restarting/changing lessons or
 changing engine configuration. Workers close on navigation. Acknowledgements
 lock board input, while allowing settings and library navigation. Guidance uses
 `ChessilHighlight` with a board boundary and the board's existing CSS pulse/ripple;
-only engine-assisted source/destination selection changes the callout anchor.
+routine hints use square highlights. Course notes live in `course-coaching.js` and can be tied to a specific move sequence.
 No polling/animation loop is added to pointer movement.
 
 Opening practice permits any legal move, either side, and 1–8 complete moves.

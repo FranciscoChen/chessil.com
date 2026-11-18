@@ -16,3 +16,27 @@ test('outcome rules distinguish mate, stalemate, dead material, repetition and f
  assert.equal(rules.outcome('7k/8/8/8/4K3/8/R7/8 w - - 100 60').reason,'50-move rule');
  assert.equal(rules.outcome('7k/8/8/8/4K3/8/R7/8 w - - 10 6',3).reason,'Threefold repetition');
 });
+
+test('every course note has distinct English, Spanish and Chinese copy and fires after legal moves', () => {
+ const seen = new Set();
+ for (const lesson of Object.values(courses).flat()) {
+  const { titles, intro, cues } = lesson.coaching;
+  for (const strings of [titles, intro, ...cues.map(cue => cue.text)]) {
+   assert.equal(new Set(strings).size, 3, lesson.id);
+   assert.ok(strings.every(text => typeof text === 'string' && text.length > 2));
+   assert.match(strings[2], /\p{Script=Han}/u);
+  }
+  for (const text of [...intro, ...cues.flatMap(cue => cue.text)]) {
+   assert.ok(!seen.has(text), lesson.id);
+   seen.add(text);
+  }
+  for (const cue of cues) {
+   let position = lesson.fen;
+   for (const move of cue.line) {
+    assert.ok(context.mg(position).includes(move), lesson.id + ': ' + move);
+    position = context.ucifen(move, position, context.boardgen(position), {}).f;
+   }
+   assert.notEqual(context.boardgen(position)[cue.square].p, ' ', lesson.id);
+  }
+ }
+});

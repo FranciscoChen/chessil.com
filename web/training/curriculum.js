@@ -2151,3 +2151,11 @@ module.exports = {
 module.exports.courses=require('./courses');
 
 module.exports.courses.endgames=[...module.exports.courses.endgames,...module.exports.endgames.map(lesson=>({...lesson,goal:['endgames-support-promotion','endgames-promotion-tempo'].includes(lesson.id)?'win':'draw',intro:lesson.concept,piece:lesson.id.includes('rook')?'r':lesson.id.includes('bishop')?'b':lesson.id.includes('knight')?'n':'k',source:'Verified Syzygy teaching seed'}))];
+
+const courseCoaching = require('./course-coaching');
+for (const lessons of Object.values(module.exports.courses)) {
+  for (const lesson of lessons) {
+    const [titles, intro, ...cues] = courseCoaching[lesson.id];
+    lesson.coaching = { titles, intro, cues };
+  }
+}

@@ -75,7 +75,7 @@ function select(value){
 if($('level'))$('level').onchange=()=>{level=$('level').value;$('type').value='mixed';select('mixed');loadThemes();};
 if($('library-open')){const media=matchMedia('(max-width:900px)'),rail=root.querySelector('moves-panel');const place=()=>{if(media.matches)root.querySelector('.learning-board-area').insertBefore(rail,root.querySelector('.learning-board-wrap'));else $('sidebar').insertBefore(rail,$('sidebar').querySelector('.ui-actions'));};media.addEventListener('change',place);place();ChessilLearningNavigation.mount(root,'puzzle');$('mobile-hint').onclick=()=>$('hint').click();$('mobile-restart').onclick=()=>$('restart').click();}
 $('type').onchange=()=>select($('type').value);
-$('hint').onclick=()=>{if(!current||done||busy)return;assisted=true;const move=current.moves[index];board.guidance={from:move.slice(0,2),to:move.slice(2,4)};board.active=move.slice(0,2);board.drawOverlays();message(`Try ${gensanbase(move,boardgen(fen),fen,mg(fen))}.`);};
+$('hint').onclick=()=>{if(!current||done||busy)return;assisted=true;const move=current.moves[index];board.guidance={from:move.slice(0,2),to:move.slice(2,4)};board.active=move.slice(0,2);board.drawOverlays();message('');};
 $('restart').onclick=()=>start(current);
 $('next').onclick=()=>{cancel();current=null;$('rating').textContent='';history.reset(fen);$('themes').textContent='';queue.advance();if(!current){controls();paint();}};
 $('solution').onclick=()=>{
