@@ -41,6 +41,41 @@ test('playable learning: real local engine, coordinates, guided rules, responsiv
  assert.equal((await snapshot()).moves.at(-1),'g2g1');
  assert.match(await page.evaluate(()=>trainingSearchCommand),/movetime 700$/);
  });
+ await t.test('Retry from the result immediately restores board input',async()=>{
+ await load('tutorial','learn-stalemate');await ack();await move('b6c7');await ack();
+ await page.click('.ui-result-dialog .ui-secondary');
+ assert.equal((await snapshot()).awaiting,false);
+ assert.equal((await snapshot()).moves.length,0);
+ await move('b6c7');
+ assert.deepEqual((await snapshot()).moves,['b6c7']);
+ });
+ await t.test('Restart ignores a stale opponent reply and Retry engine resumes the same position',async()=>{
+ await load('endgames','endgame-lucena');await ack();
+ await page.evaluate(()=>{
+  let searches=0;
+  ChessilLocalEngine.prototype.bestMove=async function(){
+   searches++;
+   if(searches===1)return new Promise(resolve=>{window.finishOldReply=resolve;});
+   if(searches===2)throw Error('Simulated worker failure');
+   return 'd7c7';
+  };
+ });
+ // Submit by pointer without waiting for the blocked Stockfish search.
+ const pending=move('e1d1');
+ await page.waitForFunction(()=>typeof window.finishOldReply==='function');
+ await page.click('#learning-restart');
+ await pending;
+ assert.equal((await snapshot()).awaiting,false);
+ await page.evaluate(()=>finishOldReply('d7c7'));
+ assert.equal((await snapshot()).moves.length,0);
+ await move('e1d1');
+ await page.waitForSelector('#learning-reconnect',{visible:true});
+ assert.deepEqual((await snapshot()).moves,['e1d1']);
+ await page.click('#learning-reconnect');
+ await page.waitForFunction(()=>ChessilLearning.snapshot().moves.length===2);
+ assert.deepEqual((await snapshot()).moves,['e1d1','d7c7']);
+ assert.equal(await page.$eval('#learning-reconnect',el=>el.hidden),true);
+ });
  await t.test('winning queen lesson can be completed against the actual browser engine',async()=>{
  await load('tutorial','learn-queen-and-mate');await ack();await page.evaluate(async()=>{window.solver=new ChessilLocalEngine();await solver.load();});
  for(let i=0;i<20;i++){const s=await snapshot();if(s.ended)break;if(s.awaiting){if(await page.evaluate(()=>incheck(ChessilLearning.snapshot().fen))){assert.ok(await page.$('square.king-in-check'));await page.evaluate(()=>ChessilPreferences.update({checkIndicator:false}));assert.equal(await page.$('square.king-in-check'),null);await page.evaluate(()=>ChessilPreferences.update({checkIndicator:true}));}await ack();continue;}const m=await page.evaluate(async()=>{const lines=await solver.search(ChessilLearning.snapshot().fen,{multiPV:1,nodes:1000000,movetime:100});return lines[0].pv[0];});await move(m);}

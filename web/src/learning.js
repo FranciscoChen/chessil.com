@@ -14,7 +14,19 @@ let lessons=[],lesson,fen=initial,side='w',moves=[],counts=new Map(),humanMoves=
 let teachingDefense=false;
 const boardRoot=app.querySelector('cg-board'),anchor=app.querySelector('.learning-anchor'),storage='chessil.training.v1';
 function status(message=''){$('status').textContent=message;}
-const view=new ChessilBoard(boardRoot,{state:()=>({fen,side,turn:fen.split(' ')[1],moves:lesson&&!busy&&!ended&&!awaiting?mg(fen):[],connected:!!lesson&&!busy&&!awaiting,finished:ended,watcher:false}),submit:move=>{queueMicrotask(()=>attempt(move));return true;},cancelPremove(){}});
+const view=new ChessilBoard(boardRoot,{
+ state:()=>{
+  const turn=fen.split(' ')[1];
+  const connected=!!lesson&&!busy&&!ended&&!awaiting&&turn===side;
+  return {fen,side,turn,moves:connected?mg(fen):[],connected,finished:ended,watcher:false};
+ },
+ submit:move=>{
+  const token=generation;
+  queueMicrotask(()=>{if(token===generation)attempt(move);});
+  return true;
+ },
+ cancelPremove(){}
+});
 function paint(move='',animate=false){view.positionTurn=fen.split(' ')[1];view.render(boardgen(fen),move,animate);}
 function king(color=side){return Object.keys(boardgen(fen)).find(s=>boardgen(fen)[s].p==='k'&&boardgen(fen)[s].c===color);}
 function focus(){const pieces=boardgen(fen);return lesson.focus||Object.keys(pieces).find(s=>pieces[s].p===lesson.piece&&pieces[s].c===side)||king();}
@@ -39,15 +51,39 @@ function signature(){const p=ChessilPreferences.get().analysis;return JSON.strin
 function dropEngine(){engine?.close();engine=null;engineReady=null;engineSignature='';}
 async function getEngine(){const key=signature();if(engine&&key===engineSignature&&!engine.closed)return engineReady;dropEngine();engineSignature=key;engine=new ChessilLocalEngine();const instance=engine;engineReady=engine.load({...ChessilPreferences.get().analysis,multiPV:1}).then(()=>instance).catch(error=>{if(engine===instance){engine=null;engineReady=null;}throw error;});return engineReady;}
 async function search(playMove=false,searchmoves=[]){
- const instance=await getEngine();
+ clearEngineFailure();
+ const position=fen,token=generation;
  const options={
-  history:lesson.history?[...lesson.history,...moves]:moves,
+  history:lesson.history?[...lesson.history,...moves]:moves.slice(),
   startFen:lesson.history?null:lesson.fen||initial,
   multiPV:1,nodes:1000000000,movetime:700,searchmoves
  };
- return playMove?instance.bestMove(fen,options):instance.search(fen,options);
+ const instance=await getEngine();
+ if(token!==generation||position!==fen)throw Error('Position changed');
+ return playMove?instance.bestMove(position,options):instance.search(position,options);
 }
-function failure(error){busy=false;view.acknowledge();status('The local engine could not run. '+error.message);$('reconnect').hidden=false;}
+let retryEngine;
+function failure(error,retry){
+ busy=false;
+ view.acknowledge();
+ retryEngine=retry;
+ status('The local engine could not run. '+error.message);
+ $('reconnect').hidden=false;
+}
+function clearEngineFailure(){
+ if(!retryEngine)return;
+ retryEngine=null;
+ $('reconnect').hidden=true;
+ status('');
+}
+function reconnect(){
+ const retry=retryEngine;
+ if(!retry)return;
+ clearEngineFailure();
+ generation++;
+ dropEngine();
+ retry();
+}
 function remember(){const key=ChessilPosition.key(fen);counts.set(key,(counts.get(key)||0)+1);}
 function apply(move){const pieces=boardgen(fen),capture=pieces[move.slice(2,4)]?.p!==' '||pieces[move.slice(0,2)]?.p==='p'&&move[0]!==move[2];fen=ucifen(move,fen,pieces,{}).f;moves.push(move);remember();clearGuide();paint(move,true);ChessilSound?.play(capture?'capture':'move');}
 function title(item) { return localize(item.coaching?.titles) || item.title; }
@@ -69,20 +105,24 @@ function teachPosition() {
 }
 function library(){if(!$('lessons'))return;const query=$('search').value.toLowerCase();$('lessons').replaceChildren(...lessons.filter(item=>(title(item)+' '+intro(item)).toLowerCase().includes(query)).map((item)=>{const button=document.createElement('button');button.type='button';button.className='learning-lesson';button.setAttribute('aria-current',String(item.id===lesson?.id));const number=document.createElement('span');number.textContent=progress[item.id]?.completed?'✓':String(lessons.indexOf(item)+1).padStart(2,'0');button.append(number,document.createTextNode(title(item)));button.onclick=()=>{if($('library-dialog').open)$('library-dialog').close();select(item);};return button;}));}
 function save(){if(!lesson||section==='openings')return;progress[lesson.id]={stage:3,completed:true,updatedAt:Date.now()};library();if(account===false){try{localStorage.setItem(storage,JSON.stringify(progress));}catch(_){status('Browser storage is unavailable; progress lasts for this visit.');}}else if(account===true){const record={lessonId:lesson.id,...progress[lesson.id]};saving=saving.catch(()=>{}).then(async()=>{const response=await fetch('/api/training/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});if(!response.ok)throw Error('Progress could not sync.');}).catch(error=>status(error.message));}else status('Progress could not sync; it is kept for this visit.');}
-function select(item){
- if(!item)return;generation++;autoplay?.cancel();if($('autoplay'))$('autoplay').hidden=true;clearTimeout(openingTimer);dropEngine();view.cancel();view.acknowledge();clearGuide();ChessilResult.close();lesson=item;teachingDefense=item.id==='endgame-lucena';fen=item.fen||initial;side=section==='openings'?$('side').value:item.side||fen.split(' ')[1];moves=[];counts=new Map();remember();humanMoves=0;busy=false;ended=false;awaiting=null;target=null;coordinatePhase='free';seenCheck=false;seenCues=new Set();lastResult=null;$('result').hidden=true;$('reconnect').hidden=true;
+function select(item,{restart=false}={}){
+ if(!item)return;
+ if(!restart||busy||engine?.active)dropEngine();
+ generation++;retryEngine=null;autoplay?.cancel();if($('autoplay'))$('autoplay').hidden=true;clearTimeout(openingTimer);view.cancel();view.acknowledge();clearGuide();ChessilResult.close();lesson=item;teachingDefense=item.id==='endgame-lucena';fen=item.fen||initial;side=section==='openings'?$('side').value:item.side||fen.split(' ')[1];moves=[];counts=new Map();remember();humanMoves=0;busy=false;ended=false;awaiting=null;target=null;coordinatePhase='free';seenCheck=false;seenCues=new Set();lastResult=null;$('result').hidden=true;$('reconnect').hidden=true;
  view.setOrientation(side);paint();$('title').textContent=title(item);$('mobile-title').textContent=title(item);$('source').textContent=item.source||'';status('');library();if(section!=='openings'){const url=new URL(location.href);url.searchParams.set('lesson',item.id);history.replaceState(null,'',url);}
  // Preload immediately; no search or server engine runs while reading the intro.
- const selectedGeneration=generation;getEngine().catch(error=>{if(generation===selectedGeneration&&!ended)failure(error);});
+ if(item.mode!=='guided')getEngine().catch(()=>{});
  if(section==='openings'){$('book').replaceChildren();$('engine-lines').textContent='';turn();updateTools();return;}
+ if(restart){turn();return;}
  const begin=()=>{if(item.secondIntro)callout(item.secondIntro.square,localize(coaching.diagonal),{ack:()=>turn()});else turn();};
  callout(focus(),intro(item)||title(item),{ack:begin});
 }
+function restartLesson(){select(lesson,{restart:true});}
 function next(){const index=lessons.indexOf(lesson);if(index+1<lessons.length)select(lessons[index+1]);else{ChessilResult.show({outcome:'success',title:'Collection complete',reason:'You can revisit any lesson from the library.',actions:[{label:words.retry,run:()=>select(lessons[0])},{label:'Training',primary:true,run:()=>location.assign('/'+lang+'/training')}]});}}
 function result(outcome){
  const won=outcome.winner===side,draw=outcome.winner===null,success=lesson.mode==='guided'||(lesson.goal==='hold'?(won||draw):lesson.goal==='draw'?draw:won);
  ended=true;busy=false;awaiting=null;clearGuide();if(success)save();ChessilSound?.play('end');
- lastResult=()=>ChessilResult.show({outcome:outcome.reason==='Concept practised'?'success':won?'win':draw?'draw':'loss',reason:outcome.reason,score:outcome.reason==='Concept practised'?'':draw?'½–½':outcome.winner==='w'?'1–0':'0–1',actions:[{label:words.retry,run:()=>select(lesson)},{label:words.next,primary:true,disabled:!success,run:next}]});$('result').hidden=false;lastResult();
+ lastResult=()=>ChessilResult.show({outcome:outcome.reason==='Concept practised'?'success':won?'win':draw?'draw':'loss',reason:outcome.reason,score:outcome.reason==='Concept practised'?'':draw?'½–½':outcome.winner==='w'?'1–0':'0–1',actions:[{label:words.retry,run:restartLesson},{label:words.next,primary:true,disabled:!success,run:next}]});$('result').hidden=false;lastResult();
 }
 function terminal(){if(lesson.mode==='coordinates')return false;const outcome=ChessilPosition.outcome(fen,counts.get(ChessilPosition.key(fen)));if(!outcome)return false;
  if(lesson.teachCheck&&outcome.reason==='Checkmate'&&outcome.winner===side){callout(king(side==='w'?'b':'w'),localize(coaching.mate),{ack:()=>result(outcome)});}
@@ -109,7 +149,7 @@ async function turn(){
   const reply=await search(true,candidates);
   if(token!==generation||position!==fen)return;
   if(!mg(fen).includes(reply)||(candidates.length&&!candidates.includes(reply)))throw Error('No legal engine reply.');
-  apply(reply);busy=false;turn();updateTools();}catch(error){if(token===generation)failure(error);}
+  apply(reply);busy=false;turn();updateTools();}catch(error){if(token===generation)failure(error,turn);}
 }
 function attempt(move){
  if(busy||ended||awaiting||fen.split(' ')[1]!==side||!mg(fen).includes(move)){view.acknowledge();return;}
@@ -127,16 +167,21 @@ function attempt(move){
 }
 async function hint(){if(!lesson||busy||ended||awaiting||fen.split(' ')[1]!==side)return;if(lesson.mode==='guided'){guided();return;}if(lesson.mode==='coordinates'){if(target)cueMove(target);return;}
  busy=true;const token=generation,position=fen;try{const move=await search(true);if(token!==generation||fen!==position)return;busy=false;if(!mg(fen).includes(move))throw Error('No legal suggestion.');cueMove(move);
- }catch(error){if(token===generation)failure(error);}}
-function openingComplete(){ended=true;busy=false;clearGuide();$('autoplay').hidden=false;autoplay=ChessilTiming.start($('autoplay'),{seconds:4,format:n=>n+'s',label:'Next round',onFinish:()=>select(lesson)});lastResult=()=>select(lesson);$('result').hidden=false;}
+ }catch(error){if(token===generation)failure(error,hint);}}
+function openingComplete(){ended=true;busy=false;clearGuide();$('autoplay').hidden=false;autoplay=ChessilTiming.start($('autoplay'),{seconds:4,format:n=>n+'s',label:'Next round',onFinish:restartLesson});lastResult=restartLesson;$('result').hidden=false;}
 async function updateTools(){if(section!=='openings'||!$('tools').open||busy||ended)return;const token=generation,position=fen;try{if(!book){const catalog=await (await fetch('/engine/catalog.json')).json();const id=ChessilPreferences.get().analysis.book;book=new ChessilOpeningBook(catalog.books.find(b=>b.id===id)?.manifest);}
  const found=await book.lookup(position,moves.length);if(token!==generation||position!==fen)return;$('book').replaceChildren(...found.moves.slice().sort((a,b)=>b[2]-a[2]).map(([move,san,weight,total])=>{const button=document.createElement('button');button.type='button';button.className='learning-book-move';const name=document.createElement('span'),prior=document.createElement('span');name.textContent=san;prior.textContent=(weight/total*100).toFixed(1)+'%';button.append(name,prior);button.onclick=()=>{if(!busy&&!awaiting&&!ended&&fen.split(' ')[1]===side)attempt(move);};return button;}));if(!found.moves.length)$('book').textContent='No book moves in this position.';
  // Optional suggestions share the existing worker, serial with opponent replies.
  const lines=await search();if(token!==generation||position!==fen)return;$('engine-lines').textContent=lines.map(line=>{let position=fen;const notation=[];for(const move of line.pv.slice(0,8)){if(!mg(position).includes(move))break;notation.push(gensanbase(move,boardgen(position),position,mg(position)));position=ucifen(move,position,boardgen(position),{}).f;}return (line.kind==='mate'?'#'+line.value:(line.value/100).toFixed(2))+' · '+notation.join(' ');}).join('\n');
  }catch(error){if(token===generation)$('engine-lines').textContent=error.message;}}
-$('hint').onclick=hint;$('mobile-hint').onclick=hint;$('restart').onclick=()=>select(lesson);$('mobile-restart').onclick=()=>select(lesson);$('result').onclick=()=>lastResult?.();$('reconnect').onclick=()=>{dropEngine();$('reconnect').hidden=true;status('');if(awaiting)getEngine().catch(failure);else turn();};
+$('hint').onclick=hint;
+$('mobile-hint').onclick=hint;
+$('restart').onclick=restartLesson;
+$('mobile-restart').onclick=restartLesson;
+$('result').onclick=()=>lastResult?.();
+$('reconnect').onclick=reconnect;
 if($('search'))$('search').oninput=library;
-if(section==='openings'){for(const id of ['side','depth'])$(id).onchange=()=>select(lesson);$('tools').ontoggle=()=>updateTools();$('autoplay-stop').onclick=()=>{autoplay?.cancel();$('autoplay').hidden=true;status('Round complete. Restart when ready.');};}
+if(section==='openings'){for(const id of ['side','depth'])$(id).onchange=restartLesson;$('tools').ontoggle=()=>updateTools();$('autoplay-stop').onclick=()=>{autoplay?.cancel();$('autoplay').hidden=true;status('Round complete. Restart when ready.');};}
 ChessilLearningNavigation.mount(app,'learning');
 document.addEventListener('chessil:preferences',()=>{view.drawOverlays();if(engineSignature&&signature()!==engineSignature){generation++;dropEngine();busy=false;if(!awaiting&&!ended)turn();}book=null;});
 window.addEventListener('pagehide',()=>{autoplay?.cancel();generation++;clearTimeout(openingTimer);dropEngine();clearGuide();view.cancel();});window.addEventListener('pageshow',event=>{if(event.persisted&&lesson)select(lesson);});
