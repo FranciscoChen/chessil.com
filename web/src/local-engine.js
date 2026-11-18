@@ -27,6 +27,8 @@ window.ChessilLocalEngine=class {
      const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',data)),n=>n.toString(16).padStart(2,'0')).join('');if(digest!==network.sha256)throw Error('Neural network checksum mismatch');
      await this.command({type:'loadNetwork',name:network.name,option:network.option||'EvalFile',data},line=>line==='networkready',15000);
     }
+    if(options.has('Skill Level'))this.worker.postMessage('setoption name Skill Level value 20');
+    if(options.has('UCI_LimitStrength'))this.worker.postMessage('setoption name UCI_LimitStrength value false');
     this.worker.postMessage('setoption name UCI_ShowWDL value true');this.worker.postMessage('setoption name Hash value '+this.settings.hash);if(options.has('Threads'))this.worker.postMessage('setoption name Threads value '+this.settings.threads);this.worker.postMessage('setoption name UCI_AnalyseMode value true');await this.command('isready',line=>line==='readyok');return this.manifest;
    }catch(error){
     this.fail(error);if(this.stopped||i===variants.length-1)throw error;
@@ -36,10 +38,20 @@ window.ChessilLocalEngine=class {
  }
  line(line){if(/networkerror|ERROR:|Aborted\(/.test(line)){this.fail(Error(line));return;}const p=this.pending;if(!p)return;p.onLine?.(line);if(p.match(line)){clearTimeout(p.timer);this.pending=null;p.resolve(line);}}
  command(message,match,timeout=15000,onLine){return new Promise((resolve,reject)=>{if(this.closed)return reject(Error('Analysis stopped'));if(this.pending)return reject(Error('Engine command overlap'));const timer=timeout?setTimeout(()=>this.fail(Error('Browser analysis timed out. Try restarting.')),timeout):null;this.pending={resolve,reject,match,onLine,timer};this.worker.postMessage(message);});}
- search(position,{multiPV=this.settings?.multiPV||3,nodes=120000,movetime=700,searchmoves=[],history,startFen,onUpdate,infinite=false}={}){
+ async search(position,options){
+  const {lines,stopped}=await this.runSearch(position,options);
+  if(!lines.length&&!stopped)throw Error('Engine returned no evaluation');
+  return lines;
+ }
+ async bestMove(position,options){
+  const {move}=await this.runSearch(position,{...options,multiPV:1});
+  if(!move)throw Error('Engine returned no legal move');
+  return move;
+ }
+ runSearch(position,{multiPV=this.settings?.multiPV||3,nodes=120000,movetime=700,searchmoves=[],history,startFen,onUpdate,infinite=false}={}){
   const task=async()=>{if(this.closed)throw Error('Analysis stopped');this.worker.postMessage('setoption name MultiPV value '+multiPV);this.worker.postMessage(history?(startFen?'position fen '+startFen:'position startpos')+(history.length?' moves '+history.join(' '):''):'position fen '+position);const lines=new Map(),job={infinite,stopped:false};this.active=job;let lastUpdate=0;
-   await this.command((infinite?'go infinite':`go nodes ${nodes} movetime ${movetime}`)+(searchmoves.length?' searchmoves '+searchmoves.join(' '):''),line=>line.startsWith('bestmove '),infinite?0:15000,line=>{const score=line.match(/\bscore (cp|mate) (-?\d+)/),pv=line.match(/\bpv (.+)/),depth=line.match(/\bdepth (\d+)/),rank=line.match(/\bmultipv (\d+)/);if(!score||!pv||!depth||/\b(?:upperbound|lowerbound)\b/.test(line))return;const moves=pv[1].trim().split(/\s+/);if(!moves.every(m=>/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(m)))return;lines.set(Number(rank?.[1]||1),{kind:score[1],value:Number(score[2]),depth:Number(depth[1]),nodes:Number(line.match(/\bnodes (\d+)/)?.[1]||0),pv:moves,wdl:line.match(/\bwdl (\d+) (\d+) (\d+)/)?.slice(1).map(Number)});if(onUpdate&&Date.now()-lastUpdate>=100){lastUpdate=Date.now();onUpdate([...lines].sort((a,b)=>a[0]-b[0]).map(pair=>pair[1]));}});
-   const seen=new Set(),result=[...lines].sort((a,b)=>a[0]-b[0]).map(pair=>pair[1]).filter(line=>{const move=line.pv[0];if(seen.has(move))return false;seen.add(move);return true;});if(this.active===job)this.active=null;if(!result.length&&!job.stopped)throw Error('Engine returned no evaluation');return result;};
+   const best=await this.command((infinite?'go infinite':`go nodes ${nodes} movetime ${movetime}`)+(searchmoves.length?' searchmoves '+searchmoves.join(' '):''),line=>line.startsWith('bestmove '),infinite?0:15000,line=>{const score=line.match(/\bscore (cp|mate) (-?\d+)/),pv=line.match(/\bpv (.+)/),depth=line.match(/\bdepth (\d+)/),rank=line.match(/\bmultipv (\d+)/);if(!score||!pv||!depth||/\b(?:upperbound|lowerbound)\b/.test(line))return;const moves=pv[1].trim().split(/\s+/);if(!moves.every(m=>/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(m)))return;lines.set(Number(rank?.[1]||1),{kind:score[1],value:Number(score[2]),depth:Number(depth[1]),nodes:Number(line.match(/\bnodes (\d+)/)?.[1]||0),pv:moves,wdl:line.match(/\bwdl (\d+) (\d+) (\d+)/)?.slice(1).map(Number)});if(onUpdate&&Date.now()-lastUpdate>=100){lastUpdate=Date.now();onUpdate([...lines].sort((a,b)=>a[0]-b[0]).map(pair=>pair[1]));}});
+   const seen=new Set(),result=[...lines].sort((a,b)=>a[0]-b[0]).map(pair=>pair[1]).filter(line=>{const move=line.pv[0];if(seen.has(move))return false;seen.add(move);return true;});if(this.active===job)this.active=null;return {lines:result,move:best.match(/^bestmove ([a-h][1-8][a-h][1-8][qrbn]?)(?: |$)/)?.[1],stopped:job.stopped};};
   const result=this.queue.then(task);this.queue=result.catch(()=>{});return result;
  }
  interruptContinuous(){if(this.active?.infinite&&!this.active.stopped&&!this.closed){this.active.stopped=true;this.worker.postMessage('stop');return true;}return false;}

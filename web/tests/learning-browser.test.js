@@ -20,10 +20,19 @@ test('playable learning: real local engine, coordinates, guided rules, responsiv
  await page.waitForFunction(()=>window.ChessilLearning?.snapshot().lesson==='endgame-lucena');
  assert.equal(await page.$eval('#learning-title',el=>el.textContent),'卢塞纳局面');
  assert.match(await page.$eval('.learning-callout',el=>el.getAttribute('aria-label')),/f7/);
- await page.evaluate(()=>{ChessilLocalEngine.prototype.search=async (_fen,options)=>{window.trainingSearchBudget=options.movetime;return [{pv:['d7c7']}];};});
+ await page.evaluate(()=>{
+  const command=ChessilLocalEngine.prototype.command;
+  ChessilLocalEngine.prototype.command=function(message,match,timeout,onLine){
+   if(!String(message).startsWith('go '))return command.call(this,message,match,timeout,onLine);
+   window.trainingSearchCommand=message;
+   onLine('info depth 20 multipv 1 score cp -500 pv d7c6');
+   return Promise.resolve('bestmove d7c7');
+  };
+ });
  await ack();assert.equal(await page.$('.learning-callout'),null);
  await move('e1d1');
- assert.equal(await page.evaluate(()=>trainingSearchBudget),700);
+ assert.match(await page.evaluate(()=>trainingSearchCommand),/movetime 700/);
+ assert.equal((await snapshot()).moves.at(-1),'d7c7');
  assert.match(await page.$eval('.learning-callout',el=>el.getAttribute('aria-label')),/搭桥/);
  assert.ok(await page.$('square.guide-source[data-square="d1"]'));
  await ack();assert.equal(await page.$('.learning-callout'),null);

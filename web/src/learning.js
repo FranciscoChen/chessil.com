@@ -37,7 +37,15 @@ document.addEventListener('keydown',()=>keyAcknowledgement=awaiting,true);
 function signature(){const p=ChessilPreferences.get().analysis;return JSON.stringify([p.engine,p.network,p.hash,p.threads]);}
 function dropEngine(){engine?.close();engine=null;engineReady=null;engineSignature='';}
 async function getEngine(){const key=signature();if(engine&&key===engineSignature&&!engine.closed)return engineReady;dropEngine();engineSignature=key;engine=new ChessilLocalEngine();const instance=engine;engineReady=engine.load({...ChessilPreferences.get().analysis,multiPV:1}).then(()=>instance).catch(error=>{if(engine===instance){engine=null;engineReady=null;}throw error;});return engineReady;}
-async function search(){const instance=await getEngine();return instance.search(fen,{history:lesson.history?[...lesson.history,...moves]:moves,startFen:lesson.history?null:lesson.fen||initial,multiPV:1,nodes:1000000000,movetime:700});}
+async function search(playMove=false){
+ const instance=await getEngine();
+ const options={
+  history:lesson.history?[...lesson.history,...moves]:moves,
+  startFen:lesson.history?null:lesson.fen||initial,
+  multiPV:1,nodes:1000000000,movetime:700
+ };
+ return playMove?instance.bestMove(fen,options):instance.search(fen,options);
+}
 function failure(error){busy=false;view.acknowledge();status('The local engine could not run. '+error.message);$('reconnect').hidden=false;}
 function remember(){const key=ChessilPosition.key(fen);counts.set(key,(counts.get(key)||0)+1);}
 function apply(move){const pieces=boardgen(fen),capture=pieces[move.slice(2,4)]?.p!==' '||pieces[move.slice(0,2)]?.p==='p'&&move[0]!==move[2];fen=ucifen(move,fen,pieces,{}).f;moves.push(move);remember();clearGuide();paint(move,true);ChessilSound?.play(capture?'capture':'move');}
@@ -94,7 +102,7 @@ async function turn(){
  if(section==='openings'&&moves.length>=Number($('depth').value)*2){openingComplete();return;}
  if(fen.split(' ')[1]===side){busy=false;if(lesson.mode==='coordinates')coordinateLesson();else if(humanMoves>=(lesson.assistAfter||30))hint();return;}
  busy=true;const token=generation,position=fen;
- try{const lines=await search();if(token!==generation||position!==fen)return;const reply=lines[0]?.pv[0];if(!mg(fen).includes(reply))throw Error('No legal engine reply.');apply(reply);busy=false;turn();updateTools();}catch(error){if(token===generation)failure(error);}
+ try{const reply=await search(true);if(token!==generation||position!==fen)return;if(!mg(fen).includes(reply))throw Error('No legal engine reply.');apply(reply);busy=false;turn();updateTools();}catch(error){if(token===generation)failure(error);}
 }
 function attempt(move){
  if(busy||ended||awaiting||fen.split(' ')[1]!==side||!mg(fen).includes(move)){view.acknowledge();return;}
@@ -111,7 +119,7 @@ function attempt(move){
  turn();updateTools();
 }
 async function hint(){if(!lesson||busy||ended||awaiting||fen.split(' ')[1]!==side)return;if(lesson.mode==='guided'){guided();return;}if(lesson.mode==='coordinates'){if(target)cueMove(target);return;}
- busy=true;const token=generation,position=fen;try{const lines=await search();if(token!==generation||fen!==position)return;busy=false;const move=lines[0]?.pv[0];if(!mg(fen).includes(move))throw Error('No legal suggestion.');cueMove(move);
+ busy=true;const token=generation,position=fen;try{const move=await search(true);if(token!==generation||fen!==position)return;busy=false;if(!mg(fen).includes(move))throw Error('No legal suggestion.');cueMove(move);
  }catch(error){if(token===generation)failure(error);}}
 function openingComplete(){ended=true;busy=false;clearGuide();$('autoplay').hidden=false;autoplay=ChessilTiming.start($('autoplay'),{seconds:4,format:n=>n+'s',label:'Next round',onFinish:()=>select(lesson)});lastResult=()=>select(lesson);$('result').hidden=false;}
 async function updateTools(){if(section!=='openings'||!$('tools').open||busy||ended)return;const token=generation,position=fen;try{if(!book){const catalog=await (await fetch('/engine/catalog.json')).json();const id=ChessilPreferences.get().analysis.book;book=new ChessilOpeningBook(catalog.books.find(b=>b.id===id)?.manifest);}
