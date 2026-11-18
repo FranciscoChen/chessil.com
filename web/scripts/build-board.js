@@ -11,7 +11,7 @@ async function build(){
   'study.min.js':['variations.js','history-gestures.js','study.js'],
   'analysis.min.js':['local-engine.js','../../tools/policy-book/polyglot-random.js','../../tools/policy-book/polyglot.js','opening-book.js','analysis-judgment.js','analysis-guidance.js','analysis-book.js','analysis.js'],
   'training.min.js':['training.js'],
-  'learning.min.js':['local-engine.js','../../tools/policy-book/polyglot-random.js','../../tools/policy-book/polyglot.js','opening-book.js','learning-navigation.js','learning-copy.js','learning.js'],
+  'learning.min.js':['local-engine.js','../../tools/policy-book/polyglot-random.js','../../tools/policy-book/polyglot.js','opening-book.js','learning-navigation.js','learning-copy.js','lucena-defense.js','learning.js'],
   'puzzles.min.js':['buffer.js','history.js','learning-navigation.js','puzzles.js'],
   'highlight.min.js':['highlight.js'],
   'timing.min.js':['timing.js'],

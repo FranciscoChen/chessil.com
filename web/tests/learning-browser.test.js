@@ -25,17 +25,21 @@ test('playable learning: real local engine, coordinates, guided rules, responsiv
   ChessilLocalEngine.prototype.command=function(message,match,timeout,onLine){
    if(!String(message).startsWith('go '))return command.call(this,message,match,timeout,onLine);
    window.trainingSearchCommand=message;
+   if(!message.includes('searchmoves'))return Promise.resolve('bestmove g2g1');
    onLine('info depth 20 multipv 1 score cp -500 pv d7c6');
    return Promise.resolve('bestmove d7c7');
   };
  });
  await ack();assert.equal(await page.$('.learning-callout'),null);
  await move('e1d1');
- assert.match(await page.evaluate(()=>trainingSearchCommand),/movetime 700/);
+ assert.match(await page.evaluate(()=>trainingSearchCommand),/movetime 700 searchmoves (d7c[78] ?){2}$/);
  assert.equal((await snapshot()).moves.at(-1),'d7c7');
  assert.match(await page.$eval('.learning-callout',el=>el.getAttribute('aria-label')),/搭桥/);
  assert.ok(await page.$('square.guide-source[data-square="d1"]'));
  await ack();assert.equal(await page.$('.learning-callout'),null);
+ await move('d1g1');
+ assert.equal((await snapshot()).moves.at(-1),'g2g1');
+ assert.match(await page.evaluate(()=>trainingSearchCommand),/movetime 700$/);
  });
  await t.test('winning queen lesson can be completed against the actual browser engine',async()=>{
  await load('tutorial','learn-queen-and-mate');await ack();await page.evaluate(async()=>{window.solver=new ChessilLocalEngine();await solver.load();});

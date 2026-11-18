@@ -40,3 +40,17 @@ test('every course note has distinct English, Spanish and Chinese copy and fires
   }
  }
 });
+
+test('Lucena keeps the g-file, returns to the king posts, and checks down the file', () => {
+ vm.runInContext(fs.readFileSync(require.resolve('../src/lucena-defense'),'utf8'),context);
+ const defense = fen => Array.from(context.window.ChessilLucenaDefense(fen));
+ const start = courses.endgames.find(lesson => lesson.id === 'endgame-lucena').fen;
+ const after = move => context.ucifen(move,start,context.boardgen(start),{}).f;
+ assert.deepEqual(defense(after('e1d1')).sort(), ['d7c7','d7c8']);
+ const guards = defense(after('e1h1'));
+ assert.ok(guards.includes('g2g3'));
+ assert.ok(guards.every(move => move === 'd7d8' || /^g2g[3-6]$/.test(move)));
+ assert.deepEqual(defense('5K2/2k2P2/8/8/8/6R1/7r/8 b - - 0 1').sort(), ['c7d7','c7d8']);
+ assert.deepEqual(defense('8/2k1KP2/8/8/3R4/8/6r1/8 b - - 0 1'), ['g2e2']);
+ assert.deepEqual(defense('5Q2/2k1K3/8/8/3R4/8/6r1/8 b - - 0 1'), []);
+});

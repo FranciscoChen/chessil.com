@@ -11,6 +11,7 @@ const locale = { en: 0, es: 1, zh: 2 }[lang] ?? 0;
 const localize = translations => translations?.[locale];
 const coaching = window.ChessilLearningCopy;
 let lessons=[],lesson,fen=initial,side='w',moves=[],counts=new Map(),humanMoves=0,generation=0,busy=false,ended=false,awaiting=null,guide=null,engine=null,engineReady=null,engineSignature='',coordinatePhase='free',target=null,seenCheck=false,seenCues=new Set(),progress={},account=null,saving=Promise.resolve(),lastResult=null,book=null,openingTimer,autoplay;
+let teachingDefense=false;
 const boardRoot=app.querySelector('cg-board'),anchor=app.querySelector('.learning-anchor'),storage='chessil.training.v1';
 function status(message=''){$('status').textContent=message;}
 const view=new ChessilBoard(boardRoot,{state:()=>({fen,side,turn:fen.split(' ')[1],moves:lesson&&!busy&&!ended&&!awaiting?mg(fen):[],connected:!!lesson&&!busy&&!awaiting,finished:ended,watcher:false}),submit:move=>{queueMicrotask(()=>attempt(move));return true;},cancelPremove(){}});
@@ -37,12 +38,12 @@ document.addEventListener('keydown',()=>keyAcknowledgement=awaiting,true);
 function signature(){const p=ChessilPreferences.get().analysis;return JSON.stringify([p.engine,p.network,p.hash,p.threads]);}
 function dropEngine(){engine?.close();engine=null;engineReady=null;engineSignature='';}
 async function getEngine(){const key=signature();if(engine&&key===engineSignature&&!engine.closed)return engineReady;dropEngine();engineSignature=key;engine=new ChessilLocalEngine();const instance=engine;engineReady=engine.load({...ChessilPreferences.get().analysis,multiPV:1}).then(()=>instance).catch(error=>{if(engine===instance){engine=null;engineReady=null;}throw error;});return engineReady;}
-async function search(playMove=false){
+async function search(playMove=false,searchmoves=[]){
  const instance=await getEngine();
  const options={
   history:lesson.history?[...lesson.history,...moves]:moves,
   startFen:lesson.history?null:lesson.fen||initial,
-  multiPV:1,nodes:1000000000,movetime:700
+  multiPV:1,nodes:1000000000,movetime:700,searchmoves
  };
  return playMove?instance.bestMove(fen,options):instance.search(fen,options);
 }
@@ -69,7 +70,7 @@ function teachPosition() {
 function library(){if(!$('lessons'))return;const query=$('search').value.toLowerCase();$('lessons').replaceChildren(...lessons.filter(item=>(title(item)+' '+intro(item)).toLowerCase().includes(query)).map((item)=>{const button=document.createElement('button');button.type='button';button.className='learning-lesson';button.setAttribute('aria-current',String(item.id===lesson?.id));const number=document.createElement('span');number.textContent=progress[item.id]?.completed?'✓':String(lessons.indexOf(item)+1).padStart(2,'0');button.append(number,document.createTextNode(title(item)));button.onclick=()=>{if($('library-dialog').open)$('library-dialog').close();select(item);};return button;}));}
 function save(){if(!lesson||section==='openings')return;progress[lesson.id]={stage:3,completed:true,updatedAt:Date.now()};library();if(account===false){try{localStorage.setItem(storage,JSON.stringify(progress));}catch(_){status('Browser storage is unavailable; progress lasts for this visit.');}}else if(account===true){const record={lessonId:lesson.id,...progress[lesson.id]};saving=saving.catch(()=>{}).then(async()=>{const response=await fetch('/api/training/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});if(!response.ok)throw Error('Progress could not sync.');}).catch(error=>status(error.message));}else status('Progress could not sync; it is kept for this visit.');}
 function select(item){
- if(!item)return;generation++;autoplay?.cancel();if($('autoplay'))$('autoplay').hidden=true;clearTimeout(openingTimer);dropEngine();view.cancel();view.acknowledge();clearGuide();ChessilResult.close();lesson=item;fen=item.fen||initial;side=section==='openings'?$('side').value:item.side||fen.split(' ')[1];moves=[];counts=new Map();remember();humanMoves=0;busy=false;ended=false;awaiting=null;target=null;coordinatePhase='free';seenCheck=false;seenCues=new Set();lastResult=null;$('result').hidden=true;$('reconnect').hidden=true;
+ if(!item)return;generation++;autoplay?.cancel();if($('autoplay'))$('autoplay').hidden=true;clearTimeout(openingTimer);dropEngine();view.cancel();view.acknowledge();clearGuide();ChessilResult.close();lesson=item;teachingDefense=item.id==='endgame-lucena';fen=item.fen||initial;side=section==='openings'?$('side').value:item.side||fen.split(' ')[1];moves=[];counts=new Map();remember();humanMoves=0;busy=false;ended=false;awaiting=null;target=null;coordinatePhase='free';seenCheck=false;seenCues=new Set();lastResult=null;$('result').hidden=true;$('reconnect').hidden=true;
  view.setOrientation(side);paint();$('title').textContent=title(item);$('mobile-title').textContent=title(item);$('source').textContent=item.source||'';status('');library();if(section!=='openings'){const url=new URL(location.href);url.searchParams.set('lesson',item.id);history.replaceState(null,'',url);}
  // Preload immediately; no search or server engine runs while reading the intro.
  const selectedGeneration=generation;getEngine().catch(error=>{if(generation===selectedGeneration&&!ended)failure(error);});
@@ -102,7 +103,13 @@ async function turn(){
  if(section==='openings'&&moves.length>=Number($('depth').value)*2){openingComplete();return;}
  if(fen.split(' ')[1]===side){busy=false;if(lesson.mode==='coordinates')coordinateLesson();else if(humanMoves>=(lesson.assistAfter||30))hint();return;}
  busy=true;const token=generation,position=fen;
- try{const reply=await search(true);if(token!==generation||position!==fen)return;if(!mg(fen).includes(reply))throw Error('No legal engine reply.');apply(reply);busy=false;turn();updateTools();}catch(error){if(token===generation)failure(error);}
+ try{
+  const candidates=teachingDefense?ChessilLucenaDefense(position):[];
+  if(!candidates.length)teachingDefense=false;
+  const reply=await search(true,candidates);
+  if(token!==generation||position!==fen)return;
+  if(!mg(fen).includes(reply)||(candidates.length&&!candidates.includes(reply)))throw Error('No legal engine reply.');
+  apply(reply);busy=false;turn();updateTools();}catch(error){if(token===generation)failure(error);}
 }
 function attempt(move){
  if(busy||ended||awaiting||fen.split(' ')[1]!==side||!mg(fen).includes(move)){view.acknowledge();return;}
