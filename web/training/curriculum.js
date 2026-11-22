@@ -2160,3 +2160,28 @@ for (const lessons of Object.values(module.exports.courses)) {
     lesson.coaching = { titles, intro, cues };
   }
 }
+
+const strategyGroups = {
+  5: ['The 14 middlegame ideas', 'Las 14 ideas del medio juego', '十四个中局思路'],
+  7: ['Outposts', 'Casillas avanzadas', '棋子的据点'],
+  8: ['Activity and restriction', 'Actividad y restricción', '活跃与限制'],
+  9: ['Blueprints for attacking the king', 'Planes para atacar al rey', '攻王的典型阵形'],
+  10: ['Color complexes', 'Control de casillas de un color', '同色格控制'],
+  11: ['Sacrifices', 'Sacrificios', '弃子与弃兵'],
+  12: ['Opposite-side castling', 'Enroques opuestos', '异侧易位'],
+  13: ['Defense and counterplay', 'Defensa y contrajuego', '防守与反击'],
+};
+const strategy = require('./course-alphazero').map(({ title, intro, note, cueSquare, ...lesson }) => ({
+  ...lesson,
+  title: title[0],
+  intro: intro[0],
+  mode: 'guided',
+  group: strategyGroups[lesson.chapter],
+  source: `Sadler & Regan, Game Changer (2019) · ${lesson.source}`,
+  coaching: { titles: title, intro, cues: [{ line: lesson.moves, square: cueSquare, text: note }] },
+}));
+const previousStrategy = ['More strategy practice', 'Más práctica de estrategia', '更多战略练习'];
+module.exports.courses.strategy = [
+  ...strategy,
+  ...module.exports.courses.strategy.map(lesson => ({ ...lesson, group: previousStrategy })),
+];

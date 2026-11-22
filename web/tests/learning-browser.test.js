@@ -94,6 +94,42 @@ test('playable learning: real local engine, coordinates, guided rules, responsiv
  await load('tutorial','learn-queen-and-mate');await ack();for(let i=0;i<12;i++){const state=await snapshot();if(state.ended)break;if(state.awaiting){await ack();continue;}const m=await page.evaluate(()=>{const fen=ChessilLearning.snapshot().fen,p=boardgen(fen),queen=Object.keys(p).find(s=>p[s].p==='q'&&p[s].c==='w'),king=Object.keys(p).find(s=>p[s].p==='k'&&p[s].c==='b'),options=mg(fen).filter(m=>m.startsWith(queen));const sacrifice=options.find(m=>{const after=ucifen(m,fen,p,{}).f;return mg(after).some(reply=>reply.slice(2,4)===m.slice(2,4));});return sacrifice||options.sort((a,b)=>{const d=m=>Math.max(Math.abs(m.charCodeAt(2)-king.charCodeAt(0)),Math.abs(Number(m[3])-Number(king[1])));return d(a)-d(b);})[0];});if(m)await move(m);}
  if((await snapshot()).awaiting)await ack();await page.waitForSelector('.ui-result-dialog[open]');assert.equal(await page.$eval('.ui-result-dialog',el=>el.dataset.outcome),'draw');assert.equal(await page.$eval('.ui-result-dialog .ui-primary',el=>el.disabled),true);
  });
+ await t.test('strategy shows the final coaching note even after a checkmate', async () => {
+  await load('strategy', 'strategy-az-h-file-trap');
+  await page.waitForSelector('.learning-continue');
+  assert.ok(await page.$('square.last-move[data-square="g5"]'));
+  await ack();
+  await move('h4g5');
+  assert.deepEqual((await snapshot()).moves, ['h4g5', 'f6d5']);
+  await move('c2h7');
+  assert.match(await page.$eval('.learning-callout', el => el.getAttribute('aria-label')), /rook guards h7/);
+  assert.equal(await page.$('.ui-result-dialog[open]'), null);
+  await ack();
+  await page.waitForSelector('.ui-result-dialog[open]');
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('chessil.training.v1'))[
+   'strategy-az-h-file-trap'].completed), true);
+ });
+ await t.test('mobile Strategy library filters by chapter and loads a Black exercise', async () => {
+  await page.setViewport({ width: 390, height: 844 });
+  await page.goto(fixture.url + '/es/training/strategy', { waitUntil: 'networkidle0' });
+  await page.waitForFunction(() => window.ChessilLearning?.snapshot().lesson === 'strategy-az-king-target');
+  await page.click('#learning-library-open');
+  await page.waitForSelector('#learning-library-dialog[open]');
+  await page.type('#learning-search', 'planes para atacar');
+  assert.deepEqual(await page.$$eval('.learning-lesson-group', headings => headings.map(el => el.textContent)),
+   ['Planes para atacar al rey']);
+  assert.equal(await page.$$eval('.learning-lesson', buttons => buttons.length), 10);
+  await page.screenshot({ path: '/tmp/strategy-library-mobile.png' });
+  await page.evaluate(() => [...document.querySelectorAll('.learning-lesson')]
+   .find(button => button.textContent.includes('Con negras, rompe contra h3')).click());
+  assert.equal(await page.$eval('cg-board', el => el.dataset.orientation), 'b');
+  await ack();
+  await move('g5g4');
+  await move('e6g4');
+  assert.match(await page.$eval('.learning-callout', el => el.getAttribute('aria-label')), /dama toma el lugar/);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  await page.screenshot({ path: '/tmp/strategy-black-mobile.png' });
+ });
  await t.test('mobile library retains the same controls and stays within the viewport',async()=>{await page.setViewport({width:390,height:844});await load('endgames','endgame-philidor');assert.equal(await page.$eval('cg-board',el=>el.dataset.orientation),'b');await page.click('#learning-library-open');await page.waitForSelector('#learning-library-dialog[open]');assert.equal(await page.$$eval('#learning-sidebar',els=>els.length),1);await page.click('#learning-library-close');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.screenshot({path:'/tmp/training-new-mobile.png'});});
  await t.test('opening practice supports Black and independent round depth',async()=>{await page.setViewport({width:1440,height:1000});await load('openings');await page.select('#learning-depth','1');await page.select('#learning-side','b');await page.waitForFunction(()=>ChessilLearning.snapshot().moves.length===1&&!ChessilLearning.snapshot().busy,{timeout:30000});const legal=await page.evaluate(()=>mg(ChessilLearning.snapshot().fen)[0]);await move(legal);await page.waitForSelector('#learning-autoplay:not([hidden])');assert.equal((await snapshot()).side,'b');await page.waitForFunction(()=>ChessilLearning.snapshot().moves.length===1&&!ChessilLearning.snapshot().ended,{timeout:8000});});
  await t.test('tactics selects curated levels without duplicating mobile controls',async()=>{await page.goto(fixture.url+'/en/training/tactics',{waitUntil:'networkidle0'});await page.waitForFunction(()=>!document.querySelector('#puzzle-hint').disabled);assert.equal(await page.$eval('#puzzle-app',el=>el.dataset.curated),'true');assert.ok(await page.evaluate(()=>{const board=document.querySelector('cg-board').getBoundingClientRect(),rail=document.querySelector('#puzzle-sidebar').getBoundingClientRect();return rail.left>=board.right&&Math.abs(rail.top-board.top)<2&&rail.right<=innerWidth;}));assert.deepEqual(await page.$$eval('#puzzle-type option',els=>els.map(el=>el.value)),['discoveredAttack','fork','pin','skewer','mixed']);assert.equal(await page.$eval('#puzzle-type',el=>el.value),'discoveredAttack');await page.select('#puzzle-level','intermediate');await page.waitForFunction(()=>document.querySelector('#puzzle-type option[value="overloading"]'));assert.equal(await page.$('#puzzle-type option[value="fork"]'),null);await page.screenshot({path:'/tmp/training-tactics-desktop.png'});await page.setViewport({width:390,height:844});await page.click('#puzzle-library-open');await page.waitForSelector('#puzzle-library-dialog[open]');assert.equal(await page.$$eval('#puzzle-sidebar',els=>els.length),1);await page.screenshot({path:'/tmp/training-tactics-mobile.png'});});

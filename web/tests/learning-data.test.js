@@ -4,7 +4,31 @@ test('new course seeds are legal, nonterminal (except intentional bare kings), a
  const ids=new Set();for(const [section,lessons] of Object.entries(courses))for(const lesson of lessons){assert.ok(!ids.has(lesson.id));ids.add(lesson.id);let fen=lesson.fen;const board=context.boardgen(fen);assert.equal(Object.values(board).filter(p=>p.p==='k').length,2,lesson.id);const opposite=fen.split(' ');opposite[1]=opposite[1]==='w'?'b':'w';assert.equal(context.incheck(opposite.join(' ')),false,lesson.id);assert.ok(context.mg(fen).length,lesson.id);
  if(lesson.mode!=='coordinates')assert.equal(context.window.ChessilPosition.outcome(fen),null,lesson.id);
  if(lesson.mode==='guided'){for(const move of lesson.moves){assert.ok(context.mg(fen).includes(move),lesson.id+': '+move);fen=context.ucifen(move,fen,context.boardgen(fen),{}).f;}}
- if(section==='strategy'){fen=lesson.history.reduce((f,m)=>{assert.ok(context.mg(f).includes(m));return context.ucifen(m,f,context.boardgen(f),{}).f;},'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');assert.equal(fen,lesson.fen);}
+ if(lesson.history){fen=lesson.history.reduce((f,m)=>{assert.ok(context.mg(f).includes(m));return context.ucifen(m,f,context.boardgen(f),{}).f;},'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');assert.equal(fen,lesson.fen);}
+ }
+});
+
+test('Game Changer covers all fourteen points and each castled-king blueprint', () => {
+ const strategy = courses.strategy.filter(lesson => lesson.chapter);
+ assert.deepEqual(strategy.filter(lesson => lesson.chapter === 5).map(lesson => lesson.point),
+  Array.from({ length: 14 }, (_, index) => index + 1));
+ assert.deepEqual([...new Set(strategy.map(lesson => lesson.chapter))].sort((a, b) => a - b),
+  [5, 7, 8, 9, 10, 11, 12, 13]);
+ const blueprints = strategy.filter(lesson => lesson.chapter === 9);
+ for (const id of ['pawn-h6', 'pawn-h6-g6', 'pawn-h6-capture', 'block-h5', 'block-h6', 'block-h3',
+  'block-h6-rook', 'capture-on-g6', 'h-file-trap', 'rook-lift-a3']) {
+  assert.ok(blueprints.some(lesson => lesson.id === 'strategy-az-' + id), id);
+ }
+ for (const lesson of strategy) {
+  assert.equal(lesson.side, lesson.fen.split(' ')[1]);
+  assert.equal(lesson.focus, lesson.moves[0].slice(0, 2));
+  for (const cue of lesson.coaching.cues) {
+   assert.deepEqual(cue.line, lesson.moves.slice(0, cue.line.length), lesson.id);
+  }
+  if (!lesson.setup) continue;
+  const { fen, move } = lesson.setup;
+  assert.ok(context.mg(fen).includes(move), lesson.id);
+  assert.equal(context.ucifen(move, fen, context.boardgen(fen), {}).f, lesson.fen);
  }
 });
 test('outcome rules distinguish mate, stalemate, dead material, repetition and fifty moves',()=>{

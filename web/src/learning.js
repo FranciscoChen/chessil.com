@@ -103,7 +103,37 @@ function teachPosition() {
  }
  return false;
 }
-function library(){if(!$('lessons'))return;const query=$('search').value.toLowerCase();$('lessons').replaceChildren(...lessons.filter(item=>(title(item)+' '+intro(item)).toLowerCase().includes(query)).map((item)=>{const button=document.createElement('button');button.type='button';button.className='learning-lesson';button.setAttribute('aria-current',String(item.id===lesson?.id));const number=document.createElement('span');number.textContent=progress[item.id]?.completed?'✓':String(lessons.indexOf(item)+1).padStart(2,'0');button.append(number,document.createTextNode(title(item)));button.onclick=()=>{if($('library-dialog').open)$('library-dialog').close();select(item);};return button;}));}
+function library() {
+ const list = $('lessons');
+ if (!list) return;
+ const query = $('search').value.trim().toLocaleLowerCase(lang);
+ const contents = document.createDocumentFragment();
+ let previousGroup;
+ lessons.forEach((item, index) => {
+  const group = localize(item.group);
+  if (![title(item), intro(item), group].join(' ').toLocaleLowerCase(lang).includes(query)) return;
+  if (group && group !== previousGroup) {
+   const heading = document.createElement('h2');
+   heading.className = 'learning-lesson-group';
+   heading.textContent = group;
+   contents.append(heading);
+  }
+  previousGroup = group;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'learning-lesson';
+  if (item.id === lesson?.id) button.setAttribute('aria-current', 'true');
+  const number = document.createElement('span');
+  number.textContent = progress[item.id]?.completed ? '✓' : String(index + 1).padStart(2, '0');
+  button.append(number, document.createTextNode(title(item)));
+  button.onclick = () => {
+   if ($('library-dialog').open) $('library-dialog').close();
+   select(item);
+  };
+  contents.append(button);
+ });
+ list.replaceChildren(contents);
+}
 function save(){if(!lesson||section==='openings')return;progress[lesson.id]={stage:3,completed:true,updatedAt:Date.now()};library();if(account===false){try{localStorage.setItem(storage,JSON.stringify(progress));}catch(_){status('Browser storage is unavailable; progress lasts for this visit.');}}else if(account===true){const record={lessonId:lesson.id,...progress[lesson.id]};saving=saving.catch(()=>{}).then(async()=>{const response=await fetch('/api/training/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});if(!response.ok)throw Error('Progress could not sync.');}).catch(error=>status(error.message));}else status('Progress could not sync; it is kept for this visit.');}
 function select(item,{restart=false}={}){
  if(!item)return;
@@ -153,7 +183,7 @@ function coordinateLesson(){
  else hint();
 }
 async function turn(){
- if(ended||awaiting)return;if(terminal()||teachPosition())return;
+ if(ended||awaiting)return;if(teachPosition()||terminal())return;
  if(lesson.mode==='guided'){guided();return;}
  if(section==='openings'&&moves.length>=Number($('depth').value)*2){openingComplete();return;}
  if(fen.split(' ')[1]===side){busy=false;if(lesson.mode==='coordinates')coordinateLesson();else hint();return;}
@@ -173,7 +203,7 @@ function attempt(move){
  const coordinateTarget=lesson.mode==='coordinates'&&target&&move===target;
  apply(move);humanMoves++;
  if(coordinateTarget){target=null;if(coordinatePhase==='target')coordinatePhase='recall-ready';else{result({winner:side,reason:'Concept practised'});return;}}
- if(terminal())return;
+ if(lesson.mode!=='guided'&&terminal())return;
  if(lesson.teachCheck&&!seenCheck&&incheck(fen)){
   const queen=Object.keys(boardgen(fen)).find(s=>boardgen(fen)[s].p==='q'&&boardgen(fen)[s].c===side),safe=queen&&!mg(fen).some(m=>m.slice(2,4)===queen);
   if(safe){seenCheck=true;callout(king(side==='w'?'b':'w'),localize(coaching.check),{ack:()=>turn()});return;}
