@@ -16,7 +16,7 @@ const board=new ChessilBoard(root.querySelector('cg-board'),{
 const history=new ChessilHistory(root.querySelector('moves-panel'),{signal:board.abort.signal,onSelect:(ply,previous)=>{
  board.guidance=null;const move=ply<previous?history.moves[ply]?.slice(2,4)+history.moves[ply]?.slice(0,2):history.moves[ply-1]||'';
  board.render(boardgen(history.positions[ply]),move,Math.abs(ply-previous)===1);
- board.lastMove=history.moves[ply-1]||'';board.drawOverlays();controls();
+ board.lastMove=history.moves[ply-1]||'';updateHint();controls();
  message(ply<index?'Reviewing puzzle moves.':done?'Puzzle complete.':side==='w'?'White to move.':'Black to move.');
 }});
 history.reset(fen);
@@ -42,7 +42,7 @@ function attempt(move){
  board.guidance=null;apply(move);window.ChessilSound?.play('move');
  if(index>=current.moves.length||alternativeMate){finished();return;}
  busy=true;controls();message('Correct.');
- timer=setTimeout(()=>{apply(current.moves[index]);busy=false;controls();if(index>=current.moves.length)finished();else message(side==='w'?'White to move.':'Black to move.');},450);
+ timer=setTimeout(()=>{apply(current.moves[index]);busy=false;controls();if(index>=current.moves.length)finished();else{updateHint();message(side==='w'?'White to move.':'Black to move.');}},450);
 }
 function start(puzzle){
  ChessilResult?.close();cancel();current=puzzle;done=false;assisted=false;index=0;
@@ -54,7 +54,7 @@ function start(puzzle){
  fen=current.fen;side=fen.split(' ')[1]==='w'?'b':'w';board.setOrientation(side);
  history.reset(fen);$('progress').max=current.moves.length-1;$('progress').value=0;
  paint();$('rating').textContent=String(current.rating);busy=true;controls();message('');
- timer=setTimeout(()=>{apply(current.moves[0]);timer=setTimeout(()=>{busy=false;controls();message(side==='w'?'White to move.':'Black to move.');},ChessilPreferences.duration()+40);},180);
+ timer=setTimeout(()=>{apply(current.moves[0]);timer=setTimeout(()=>{busy=false;controls();updateHint();message(side==='w'?'White to move.':'Black to move.');},ChessilPreferences.duration()+40);},180);
 }
 function changed(){
  if(!queue)return;
@@ -66,16 +66,34 @@ function changed(){
 }
 function select(value){
  queue?.destroy();cancel();current=null;theme=value;done=false;$('rating').textContent='';history.reset(fen);$('themes').textContent='';$('progress').value=0;
- try{localStorage.setItem('chessil.puzzle-type',theme);}catch(_){}
+ try{localStorage.setItem('chessil.puzzle-type.'+(level||'all'),theme);}catch(_){}
  queue=new ChessilBuffer({key:level?'chessil.puzzles.v2.'+level+'.'+theme:'chessil.puzzles.v1.'+theme,validate:valid,onChange:changed,
   fetchBatch:async(exclude,signal)=>{const params=new URLSearchParams({theme,exclude:exclude.join(',')});if(level)params.set('level',level);const r=await fetch('/api/training/puzzles?'+params,{signal});if(!r.ok)throw Error('Load failed');return (await r.json()).puzzles;}
  });
  if(queue.peek())start(queue.peek());else{controls();paint();}changed();queue.fill();
 }
-if($('level'))$('level').onchange=()=>{level=$('level').value;$('type').value='mixed';select('mixed');loadThemes();};
-if($('library-open')){const media=matchMedia('(max-width:900px)'),rail=root.querySelector('moves-panel');const place=()=>{if(media.matches)root.querySelector('.learning-board-area').insertBefore(rail,root.querySelector('.learning-board-wrap'));else $('sidebar').insertBefore(rail,$('sidebar').querySelector('.ui-actions'));};media.addEventListener('change',place);place();ChessilLearningNavigation.mount(root,'puzzle');$('mobile-hint').onclick=()=>$('hint').click();$('mobile-restart').onclick=()=>$('restart').click();}
+if($('level'))$('level').onchange=()=>{
+ level=$('level').value;
+ renderTypes(false);
+};
+if($('library-open')){
+ const media=matchMedia('(max-width:900px)'),rail=root.querySelector('moves-panel');
+ const place=()=>{
+  if(media.matches)root.querySelector('.learning-board-area').insertBefore(rail,root.querySelector('.learning-board-wrap'));
+  else $('sidebar').insertBefore(rail,$('sidebar').querySelector('.ui-actions'));
+ };
+ media.addEventListener('change',place);place();
+ ChessilLearningNavigation.mount(root,'puzzle');
+ $('mobile-restart').onclick=()=>$('restart').click();
+}
 $('type').onchange=()=>select($('type').value);
-$('hint').onclick=()=>{if(!current||done||busy)return;assisted=true;const move=current.moves[index];board.guidance={from:move.slice(0,2),to:move.slice(2,4)};board.active=move.slice(0,2);board.drawOverlays();message('');};
+const hintsEnabled=ChessilHintToggle([$('hint'),$('mobile-hint')],()=>updateHint());
+function updateHint(){
+ const move=hintsEnabled()&&current&&!done&&!busy&&history.ply===index&&current.moves[index];
+ if(move)assisted=true;
+ board.guidance=move?{from:move.slice(0,2),to:move.slice(2,4)}:null;
+ board.drawOverlays();
+}
 $('restart').onclick=()=>start(current);
 $('next').onclick=()=>{cancel();current=null;$('rating').textContent='';history.reset(fen);$('themes').textContent='';queue.advance();if(!current){controls();paint();}};
 $('solution').onclick=()=>{
@@ -83,14 +101,38 @@ $('solution').onclick=()=>{
  const step=()=>{apply(current.moves[index]);timer=setTimeout(()=>{if(index<current.moves.length)step();else finished(true);},Math.max(650,ChessilPreferences.duration()+200));};step();
 };
 $('reload').onclick=()=>{queue.fill();loadThemes();};
+const mixedOption=$('type').querySelector('option[value="mixed"]');
+let availableTypes=[],themesLoaded=false;
+function renderTypes(preserve=true){
+ const menu=$('type');
+ const group=groups[level];
+ const types=group||availableTypes.filter(id=>level!=='advanced'||!Object.values(groups).flat().includes(id));
+ if(!types.length&&!themesLoaded)return;
+ const sorted=types.slice().sort((a,b)=>label(a).localeCompare(label(b)));
+ let preferred=preserve&&queue?theme:null;
+ if(!preferred){try{preferred=localStorage.getItem('chessil.puzzle-type.'+(level||'all'));}catch(_){}}
+ menu.replaceChildren();
+ for(const id of sorted){
+  const option=document.createElement('option');
+  option.value=id;
+  option.textContent=label(id);
+  menu.append(option);
+ }
+ menu.append(mixedOption);
+ menu.value=preferred&&(preferred==='mixed'||sorted.includes(preferred))?preferred:sorted[0]||'mixed';
+ if(!queue||!preserve||theme!==menu.value)select(menu.value);
+}
 async function loadThemes(){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);
- try{const r=await fetch('/api/training/puzzle-themes',{signal:controller.signal});if(!r.ok)throw Error();const data=await r.json();
- const previous=$('type').value;$('type').querySelectorAll('option:not([value="mixed"])').forEach(el=>el.remove());
- data.themes.filter(t=>!level||(level==='advanced'?![...groups.beginner,...groups.intermediate].includes(t.id):groups[level].includes(t.id))).sort((a,b)=>label(a.id).localeCompare(label(b.id))).forEach(t=>{if(!/^[a-zA-Z][a-zA-Z0-9]{0,47}$/.test(t.id))return;const option=document.createElement('option');option.value=t.id;option.textContent=label(t.id);$('type').append(option);});
- $('type').value=[...$('type').options].some(o=>o.value===previous)?previous:'mixed';
- try{localStorage.setItem('chessil.puzzle-themes',JSON.stringify(data.themes));}catch(_){}
- }catch(_){/* Mixed and previously cached types remain usable offline. */}finally{clearTimeout(timeout);}
+ try{
+  const response=await fetch('/api/training/puzzle-themes',{signal:controller.signal});
+  if(!response.ok)throw Error();
+  const data=await response.json();
+  availableTypes=data.themes.map(t=>t.id).filter(id=>/^[a-zA-Z][a-zA-Z0-9]{0,47}$/.test(id));
+  try{localStorage.setItem('chessil.puzzle-themes',JSON.stringify(data.themes));}catch(_){}
+ }catch(_){/* Built-in groups and cached types remain available offline. */}
+ finally{clearTimeout(timeout);themesLoaded=true;}
+ renderTypes();
 }
 window.addEventListener('online',loadThemes);
 window.addEventListener('offline',changed);
@@ -98,7 +140,11 @@ window.addEventListener('pagehide',event=>{cancel();if(!event.persisted){queue?.
 window.addEventListener('pageshow',event=>{if(event.persisted){if(current)start(current);queue?.fill();}});
 (async()=>{
  await ChessilPreferences.ready;if($('library-open'))$('library-open').disabled=false;
- try{const types=JSON.parse(localStorage.getItem('chessil.puzzle-themes')||'[]');types.forEach(t=>{if(level)return;if(!/^[a-zA-Z][a-zA-Z0-9]{0,47}$/.test(t.id))return;const o=document.createElement('option');o.value=t.id;o.textContent=label(t.id);$('type').append(o);});const saved=level?'mixed':localStorage.getItem('chessil.puzzle-type');if([...$('type').options].some(o=>o.value===saved))$('type').value=saved;}catch(_){}
- select($('type').value);loadThemes();
+ try{
+  const types=JSON.parse(localStorage.getItem('chessil.puzzle-themes')||'[]');
+  availableTypes=types.map(t=>t.id).filter(id=>/^[a-zA-Z][a-zA-Z0-9]{0,47}$/.test(id));
+ }catch(_){}
+ if(groups[level]||availableTypes.length)renderTypes();
+ loadThemes();
 })();
 },{once:true});

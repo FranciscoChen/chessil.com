@@ -10,3 +10,14 @@
 .learning-autoplay{display:flex;align-items:center;gap:.5rem;font-size:.8rem;margin-top:.45rem}.learning-autoplay[hidden]{display:none}.learning-autoplay .ui-meter{flex:1}.learning-autoplay .ui-icon-button{width:2rem;min-height:2rem}.learning-autoplay svg{width:1rem;height:1rem;fill:none;stroke:currentColor;stroke-width:2}
 /* Legacy puzzle styles name a grid area; this two-column shell owns placement. */
 .learning-workspace>.learning-sidebar{grid-area:auto}
+
+.learning-workspace button[aria-pressed="true"] {
+ background: var(--link);
+ border-color: var(--link);
+ color: var(--bg);
+}
+.learning-workspace button[aria-pressed="false"].ui-icon-button {
+ background: var(--bg);
+ border-color: var(--border);
+ color: var(--text2);
+}

@@ -79,47 +79,47 @@ const lessons = {
    'El rey negro ha empezado a ir hacia la izquierda. Salta con el caballo a e5 para vigilar d7. Así cierras un camino hacia el centro mientras llevas al rey por el borde.',
    '黑王开始往左走了。把马跳到 e5，守住 d7。这样就能堵住黑王返回中央的一条路，继续沿着边线赶它。']}
  ],
- 'endgames-direct-opposition': [
-  ['Face the other king', 'Frente al otro rey', '两王对峙'],
-  ['Move your king to f4. The kings will face one another across f3, and White must move first. Because kings cannot touch, White has to give way. Capablanca calls this arrangement direct opposition.',
-   'Lleva tu rey a f4. Los reyes quedarán enfrentados, con f3 en medio, y le tocará mover a las blancas. Como los reyes no pueden estar juntos, el blanco tendrá que ceder. Capablanca llama a esto oposición directa.',
-   '把黑王走到 f4。两王隔着 f3 正对，接下来轮到白方走。王不能紧挨着对方的王，所以白王必须让开。卡帕布兰卡把这种站位称为「直接对王」。']
+ 'endgame-rook-bishop-vs-rook-knight': [
+  ['Bishop against knight with rooks', 'Alfil contra caballo con torres', '车象对车马'],
+  ['Black’s b3-pawn is close to promotion. Try Be5. Your bishop can cover squares on both wings while the knight at the edge of the board has trouble finding a useful post. Hold the position.',
+   'El peón negro de b3 está cerca de coronar. Prueba Ae5. Tu alfil puede cubrir casillas en ambos flancos, mientras al caballo del borde le cuesta encontrar una casilla útil. Mantén la posición.',
+   'b3 的黑兵快要升变了。试走象到 e5。白象能兼顾两翼，边线上的黑马却很难找到好位置。目标是守住局面。']
  ],
- 'endgames-support-promotion': [
-  ['Guard the promotion square', 'Protege la casilla de coronación', '守住升变格'],
-  ['If you turn the pawn into a queen now, the black king can take it. Bring your king to c7 first. From there it guards b8, the square where the pawn becomes a queen.',
-   'Si conviertes el peón en dama ahora, el rey negro podrá capturarla. Lleva primero tu rey a c7. Desde allí protege b8, la casilla donde coronará el peón.',
-   '如果现在升后，黑王就能吃掉新后。先让白王走到 c7，守住白兵要升变的 b8。']
+ 'endgame-rooks-pawn-majority': [
+  ['Rook ending with an extra pawn', 'Final de torres con un peón de más', '多一兵的车残局'],
+  ['White has two pawns to one, but the black king is already in front of them. Start with Rb6+ to push it away. Keep the rook active and look for a chance for your king to advance.',
+   'Las blancas tienen dos peones contra uno, pero el rey negro ya está delante de ellos. Empieza con Tb6+ para apartarlo. Mantén la torre activa y busca una oportunidad para avanzar con el rey.',
+   '白方二兵对一兵，但黑王已经挡在兵前。先车到 b6 将军，赶开黑王。保持车的活跃，再找机会推进白王。']
  ],
- 'endgames-king-catches-runner': [
-  ['Catch the pawn in time', 'Alcanza el peón a tiempo', '及时追上兵'],
-  ['The pawn on g2 only needs one more step. Your king can take it now. With only two kings left, neither side can give checkmate, so the game is drawn.',
-   'Al peón de g2 le falta un solo paso. Tu rey puede tomarlo ahora. Con solo dos reyes, ninguno puede dar mate y la partida acaba en tablas.',
-   'g2 的黑兵只差一步就能升变。白王现在就能吃掉它。棋盘上只剩两个王时，双方都无法将杀，结果是和棋。']
+ 'endgame-double-rooks-seventh': [
+  ['Double rooks on the seventh rank', 'Dos torres en séptima', '双车占据第七横线'],
+  ['Your rook on d7 already reaches behind Black’s pawns. Bring the second rook to e7. The two rooks can work together against the king on the back rank, even while Black’s rook attacks your pawns.',
+   'Tu torre de d7 ya está detrás de los peones negros. Lleva la segunda torre a e7. Las dos pueden coordinarse contra el rey de la última fila aunque la torre negra ataque tus peones.',
+   'd7 的白车已经深入黑兵后方，把另一辆车也调到 e7。即使黑车在攻击你的兵，双车也能配合威胁底线上的黑王。']
  ],
- 'endgames-rook-behind-runner': [
-  ['Get behind the pawn', 'Ponte detrás del peón', '到兵的后方'],
-  ['Move the rook to a4, behind the pawn on a2. From there it can follow the pawn down the a-file, with enough room to give checks if the black king steps away.',
-   'Lleva la torre a a4, detrás del peón de a2. Desde allí puede seguirlo por la columna a y conserva espacio para dar jaques si el rey negro se aparta.',
-   '把白车走到 a4，站在 a2 黑兵的后方。黑兵再往前也逃不出这条纵线；黑王一旦离开，白车还有距离可以将军。']
+ 'endgame-bishop-against-knight': [
+  ['Bishop and passed pawn against knight', 'Alfil y peón pasado contra caballo', '象与通路兵对马'],
+  ['Your king is keeping Black away from d8. Start with Bb4+ to drive the defending king farther from the pawn. The bishop can change the line of attack while the white pawn stays ready to promote.',
+   'Tu rey mantiene al negro lejos de d8. Empieza con Ab4+ para alejar al rey defensor del peón. El alfil puede cambiar la línea de ataque mientras el peón sigue listo para coronar.',
+   '白王挡住了黑王接近 d8 的路。先象到 b4 将军，赶远黑王。白象能调整攻击方向，让白兵继续等待升变机会。']
  ],
- 'endgames-promotion-tempo': [
-  ['Promote with check', 'Corona dando jaque', '带将升变'],
-  ['Both pawns can become queens on their next move. Your new queen on g8 attacks the black king along the diagonal to b3. Black must answer that check before moving its own pawn.',
-   'Los dos peones están a un paso de coronar. Tu nueva dama en g8 ataca al rey negro por la diagonal que llega a b3. Las negras deben resolver el jaque antes de mover su peón.',
-   '两个兵都只差一步就能升变。白兵在 g8 升后的同时，沿斜线将军，攻击 b3 的黑王。黑方必须先解将，不能马上推进自己的兵。']
+ 'endgame-pawn-fortress': [
+  ['Pawn fortress at the edge', 'Fortaleza de peones en el borde', '边线兵的堡垒'],
+  ['The h6-pawn blocks the h7-pawn. Try g4 and see why an extra pawn cannot break this corner setup. When the white king takes away all the black king’s moves without giving check, the result is stalemate.',
+   'El peón de h6 bloquea al de h7. Prueba g4 y observa por qué el peón de más no rompe esta defensa de esquina. Si el rey blanco quita todas las jugadas negras sin dar jaque, es ahogado.',
+   'h6 白兵和 h7 黑兵互相挡住。试着走 g4，看看多一个兵为什么也打不开这个角落。白王封住黑方所有合法步却没有将军时，就是逼和。']
  ],
- 'endgames-bishop-promotion-diagonal': [
-  ['Watch the last square', 'Vigila la última casilla', '盯住最后一格'],
-  ['The bishop does not have to reach the pawn itself. From d5 it can watch h1 along the diagonal. If the pawn becomes a queen there, the bishop can capture it.',
-   'El alfil no tiene que alcanzar al peón. Desde d5 puede vigilar h1 por la diagonal. Si el peón corona allí, el alfil puede capturar la nueva dama.',
-   '象不用追上黑兵本身。从 d5 沿斜线就能守住 h1。黑兵如果在那里升后，白象就能吃掉它。']
+ 'endgame-queen-checks-and-promotion': [
+  ['Queen checks before promotion', 'Da jaques antes de coronar', '先用后将军再升变'],
+  ['Your g7-pawn is one square from promotion, but the black queen can cause trouble with checks. Start with Qb8+. The forcing check gives you time to improve the queen before committing the pawn.',
+   'Tu peón de g7 está a una casilla de coronar, pero la dama negra puede complicarlo con jaques. Empieza con Db8+. El jaque te da tiempo para mejorar la posición de tu dama antes de avanzar el peón.',
+   'g7 白兵离升变只差一步，但黑后还有连续将军的机会。先后到 b8 将军。逼黑方应将，就有时间调整白后，再决定如何推进兵。']
  ],
- 'endgames-knight-catches-runner': [
-  ['A knight’s last jump', 'El último salto del caballo', '马的最后一跳'],
-  ['The knight on f3 can jump straight to h2 and take the pawn, even though the pawn is near the edge. A king and a single knight cannot checkmate a lone king.',
-   'El caballo de f3 puede saltar a h2 y tomar el peón, aunque esté junto al borde. Un rey y un solo caballo no pueden dar mate a un rey solitario.',
-   '虽然黑兵已到边上，f3 的马仍能跳到 h2 吃掉它。单马和王无法将杀只有一个王的对手。']
+ 'endgame-rook-bishop-cochrane-defense': [
+  ['Rook and bishop versus rook', 'Torre y alfil contra torre', '车象对车'],
+  ['As Black, move your rook to e1. The bishop on e4 sits in front of its king on the same file, so moving the bishop would expose the king to your rook. Stay flexible and hold the draw.',
+   'Con negras, lleva la torre a e1. El alfil de e4 está delante de su rey en la misma columna. Si se apartara, dejaría al rey expuesto a tu torre. Mantén la flexibilidad y defiende las tablas.',
+   '执黑，把车走到 e1。e4 的白象正挡在白王前面，同处一条纵线。象若离开，白王就会被黑车将军。保持灵活，争取守和。']
  ]
 };
 
