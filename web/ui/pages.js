@@ -7,6 +7,7 @@ exports.render = function(name, language) {
  if(name==='analysis')return require('./study').render(language);
  if(name==='game-history')return require('./components').historyRail(language);
  const t=copy[language]||copy.en; const lang=copy[language]?language:'en';
+ if(name==='research'||name==='report'||name.startsWith('report-')) return require('./research').render(name,lang);
  if(name==='puzzles') return require('./puzzles').render(lang);
  if(name==='training') return require('./learning').landing(lang);
  if(/^training-(tutorial|endgames|strategy|openings)$/.test(name)) return require('./learning').workspace(name.slice(9),lang);
@@ -14,7 +15,7 @@ exports.render = function(name, language) {
  if(name==='drills') return require('./training').render(name,lang);
  const link=(route,label,style='ui-secondary')=>button(lang,route,label,style);
  const card=(index,title,text,route,label)=>`<article class="ui-panel"><span class="ui-index">0${index} /</span><h3>${title}</h3><p class="ui-muted">${text}</p>${link(route,label)}</article>`;
- const heading=(title,intro=t.pending)=>`<div class="ui-page-heading${name==='report'?'':' ui-mobile-secondary'}"><p class="eyebrow">ChessiL / ${name==='settings'?t.preferences:t.library}</p><h1>${title}</h1><p class="ui-intro">${intro}</p></div>`;
+ const heading=(title,intro=t.pending)=>`<div class="ui-page-heading ui-mobile-secondary"><p class="eyebrow">ChessiL / ${name==='settings'?t.preferences:t.library}</p><h1>${title}</h1><p class="ui-intro">${intro}</p></div>`;
  const accountNav=()=>`<aside class="ui-sidebar" aria-label="${t.account}">${[['account',t.account],['settings',t.settings],['ongoing',t.games],['../profile',t.profile]].map(([r,l])=>`<a href="${r==='../profile'?'/profile':`/${lang}/${r}`}" ${r===name?'aria-current="page"':''}>${l}</a>`).join('')}</aside>`;
  const sign=()=>`<div class="ui-panel ui-empty" data-account-entry><strong>${t.sign}</strong><p class="ui-mobile-secondary">${t.signHelp}</p><div class="ui-actions" style="justify-content:center">${link('login',t.login,'ui-primary')}${link('register',t.register)}</div></div>`;
  let body='';
@@ -23,8 +24,6 @@ exports.render = function(name, language) {
  else if(name==='ongoing')body=heading(t.titles[name],'')+`<section class="ui-panel" data-my-games-list aria-live="polite"></section>`;
  else if(['account'].includes(name)) body=heading(t.titles[name],t.signHelp)+`<div class="ui-sidebar-layout">${accountNav()}<section><div hidden data-account-signed class="ui-panel"><h2>${name==='ongoing'?t.games:t.account}</h2><div class="ui-actions"><a class="ui-button ui-primary" href="/profile">${t.profile}</a>${link('lobby',t.play)}${link('settings',t.settings)}</div></div>${sign()}</section></div>`;
  else if(name==='database') body=heading(t.titles[name])+`<section class="ui-panel"><h2>${t.filters}</h2><form class="ui-filters" method="get"><label class="ui-field">${t.search}<input name="q" type="search" placeholder="${t.query}"></label><button class="ui-button ui-primary">${t.search}</button></form><div class="ui-table-wrap"><table><caption class="ui-muted">${t.results}</caption><thead><tr><th>${t.pillars[0]}</th><th>${t.opening}</th><th>${t.status}</th></tr></thead><tbody><tr><td colspan="3"><div class="ui-empty"><strong>${t.noGames}</strong>${t.noGamesHelp}</div></td></tr></tbody></table></div></section>`;
- else if(name==='research') body=`<section class="ui-panel ui-section-heading"><div><h2>${{en:'Analysis board',es:'Tablero de análisis',zh:'分析棋盘'}[lang]}</h2><p class="ui-muted ui-mobile-secondary">${{en:'Move pieces, explore openings, and run the engine on your device.',es:'Explora posiciones y aperturas con el motor en tu dispositivo.',zh:'自由走子、探索开局并在本机运行引擎。'}[lang]}</p></div>${link('analysis',t.analysis,'ui-primary')}</section>`+heading(t.titles[name],t.descriptions[2])+`<div class="ui-grid-two"><section class="ui-panel"><p class="eyebrow">${t.reportLabel}</p><h2>${t.pillars[2]}</h2><p class="ui-muted">${t.pending}</p>${link('report',t.explore)}</section><section class="ui-panel"><p class="eyebrow">${t.library}</p><h2>${t.titles.database}</h2><p class="ui-muted">${t.descriptions[2]}</p>${link('database',t.browse)}</section></div>`;
- else if(name==='report') body=`<article class="ui-report">${link('research',t.back,'ui-quiet')}${heading(t.titles[name],t.reportIntro)}<div class="ui-panel"><p class="eyebrow">${t.status}</p><p>${t.unpublished}</p></div><p class="lede">${t.reportBody}</p><h2>${t.methodology}</h2><p>${t.methodText}</p></article>`;
  else body=heading(t.titles[name],t.unavailable)+`<div class="ui-workbench"><section aria-label="${t.board}">${board(t)}</section><aside class="ui-panel"><p class="eyebrow">${t.note}</p><h2>${name==='drills'?t.drill:name==='puzzles'?t.tactics:t.analysis}</h2><p class="ui-muted">${t.unavailable}</p>${link('easy',t.play,'ui-primary')}<nav class="ui-sidebar" aria-label="${t.library}">${[['training',t.pillars[1]],['drills',t.drill],['puzzles',t.puzzle],['analysis',t.analysis]].map(([r,l])=>`<a href="/${lang}/${r}">${l}</a>`).join('')}</nav></aside></div>`;
  return `<main id="main-content" class="ui-page ui-layout-${name}">${body}</main>`;
 };
