@@ -7,7 +7,7 @@ exports.render = function(name, language) {
  if(name==='analysis')return require('./study').render(language);
  if(name==='game-history')return require('./components').historyRail(language);
  const t=copy[language]||copy.en; const lang=copy[language]?language:'en';
- if(name==='research'||name==='report'||name.startsWith('report-')) return require('./research').render(name,lang);
+ if(name==='research'||name==='report') return require('./research').render(name,lang);
  if(name==='puzzles') return require('./puzzles').render(lang);
  if(name==='training') return require('./learning').landing(lang);
  if(/^training-(tutorial|endgames|strategy|openings)$/.test(name)) return require('./learning').workspace(name.slice(9),lang);

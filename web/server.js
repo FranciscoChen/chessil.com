@@ -562,6 +562,12 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
     routelanguage(filename, mime, ext, res, req, resHeaders, sessiondata)
     return
   }
+  if ((req.method === 'GET' || req.method === 'HEAD') &&
+      /^\/report\/(gigantua-move-generation|compact-policy-nnue|incremental-policy-training|economical-policy-search|policy-guided-reductions)(?:\/index\.html|\/)?$/.test(req.url.split('?', 1)[0])) {
+    res.writeHead(308, { ...resHeaders, Location: '/report' });
+    res.end();
+    return;
+  }
   if (req.url === '/profile' && req.method === 'GET') {
     resHeaders.Location = String(sessiondata[1]) !== '0' ? '/@/' + encodeURIComponent(sessiondata[5]) : '/login';
     res.writeHead(303, resHeaders);
