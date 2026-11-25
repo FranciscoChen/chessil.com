@@ -84,8 +84,8 @@ test('playable learning: real local engine, coordinates, guided rules, responsiv
  assert.equal(await page.$eval('#learning-reconnect',el=>el.hidden),true);
  });
  await t.test('winning queen lesson can be completed against the actual browser engine',async()=>{
- await load('tutorial','learn-queen-and-mate');await ack();await page.evaluate(async()=>{window.solver=new ChessilLocalEngine();await solver.load();});
- for(let i=0;i<20;i++){const s=await snapshot();if(s.ended)break;if(s.awaiting){if(await page.evaluate(()=>incheck(ChessilLearning.snapshot().fen))){assert.ok(await page.$('square.king-in-check'));await page.evaluate(()=>ChessilPreferences.update({checkIndicator:false}));assert.equal(await page.$('square.king-in-check'),null);await page.evaluate(()=>ChessilPreferences.update({checkIndicator:true}));}await ack();continue;}const m=await page.evaluate(async()=>{const lines=await solver.search(ChessilLearning.snapshot().fen,{multiPV:1,nodes:1000000,movetime:100});return lines[0].pv[0];});await move(m);}
+ await load('tutorial','learn-queen-and-mate');await ack();await page.evaluate(async()=>{window.solver=new ChessilLocalEngine();await solver.load({engine:'stockfish-lite',multiPV:1,hash:16,threads:1});});
+ for(let i=0;i<32;i++){const s=await snapshot();if(s.ended)break;if(s.awaiting){if(await page.evaluate(()=>incheck(ChessilLearning.snapshot().fen))){assert.ok(await page.$('square.king-in-check'));await page.evaluate(()=>ChessilPreferences.update({checkIndicator:false}));assert.equal(await page.$('square.king-in-check'),null);await page.evaluate(()=>ChessilPreferences.update({checkIndicator:true}));}await ack();continue;}const m=await page.evaluate(async()=>{const lines=await solver.search(ChessilLearning.snapshot().fen,{multiPV:1,nodes:1000000,movetime:250});return lines[0].pv[0];});await move(m);}
  if((await snapshot()).awaiting)await ack();await page.waitForSelector('.ui-result-dialog[open]');assert.equal(await page.$eval('.ui-result-dialog',el=>el.dataset.outcome),'win');await page.evaluate(()=>solver.close());
  });
  await t.test('catching the pawn passes on a draw, but losing the queen requires retry',async()=>{

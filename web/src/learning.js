@@ -137,11 +137,14 @@ function library() {
 function save(){if(!lesson||section==='openings')return;progress[lesson.id]={stage:3,completed:true,updatedAt:Date.now()};library();if(account===false){try{localStorage.setItem(storage,JSON.stringify(progress));}catch(_){status('Browser storage is unavailable; progress lasts for this visit.');}}else if(account===true){const record={lessonId:lesson.id,...progress[lesson.id]};saving=saving.catch(()=>{}).then(async()=>{const response=await fetch('/api/training/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});if(!response.ok)throw Error('Progress could not sync.');}).catch(error=>status(error.message));}else status('Progress could not sync; it is kept for this visit.');}
 function select(item,{restart=false}={}){
  if(!item)return;
- if(!restart||busy||engine?.active)dropEngine();
+ if(busy||engine?.active)dropEngine();
+ else if(engineReady)engineReady.then(instance=>{
+  if(engine===instance&&!instance.closed)instance.worker.postMessage('ucinewgame');
+ }).catch(()=>{});
  generation++;retryEngine=null;hintRequest=null;autoplay?.cancel();if($('autoplay'))$('autoplay').hidden=true;clearTimeout(openingTimer);view.cancel();view.acknowledge();clearGuide();ChessilResult.close();lesson=item;teachingDefense=item.id==='endgame-lucena';fen=item.setup?.fen||item.fen||initial;side=section==='openings'?$('side').value:item.side||fen.split(' ')[1];moves=[];counts=new Map();remember();humanMoves=0;busy=false;ended=false;awaiting=null;target=null;coordinatePhase='free';seenCheck=false;seenCues=new Set();lastResult=null;$('result').hidden=true;$('reconnect').hidden=true;
  view.setOrientation(side);paint();$('title').textContent=title(item);$('mobile-title').textContent=title(item);$('source').textContent=item.source||'';status('');library();if(section!=='openings'){const url=new URL(location.href);url.searchParams.set('lesson',item.id);history.replaceState(null,'',url);}
- // Preload immediately; no search or server engine runs while reading the intro.
- if(item.mode!=='guided')getEngine().catch(()=>{});
+ // Warm up only lessons that need search. An idle engine survives lesson changes.
+ if(item.mode!=='guided'&&item.mode!=='coordinates')getEngine().catch(()=>{});
  if(section==='openings'){$('book').replaceChildren();$('engine-lines').textContent='';turn();updateTools();return;}
  const begin=()=>{if(item.secondIntro)callout(item.secondIntro.square,localize(coaching.diagonal),{ack:()=>turn()});else turn();};
  const introduce=()=>restart?turn():callout(focus(),intro(item)||title(item),{ack:begin});

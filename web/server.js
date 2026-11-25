@@ -891,6 +891,7 @@ function serve(filename, mime, ext, res, req, resHeaders, sessiondata) {
       if (/^engine\/[a-f0-9]{16}\/[^/]+\.(?:gz|policy)$/.test(assetPath)) {
         resHeaders['Content-Length'] = stats.size;
         resHeaders['Cache-Control'] = 'public, max-age=31536000, immutable';
+        resHeaders['X-Accel-Buffering'] = 'no';
         res.writeHead(200, resHeaders);
         if (req.method === 'HEAD') {
           res.end();
