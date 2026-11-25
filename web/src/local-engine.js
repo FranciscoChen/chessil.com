@@ -6,17 +6,18 @@ window.ChessilLocalEngine=class {
   if(typeof WebAssembly==='undefined')throw Error('This browser has WebAssembly disabled or unavailable');
   const catalogResponse=await fetch('/engine/catalog.json',{signal:this.abort.signal});if(!catalogResponse.ok)throw Error('Engine catalog unavailable');
   const catalog=await catalogResponse.json(),selected=catalog.engines.find(e=>e.id===(settings.engine||catalog.defaultEngine||catalog.engines[0]?.id));if(!selected)throw Error('Selected engine is not installed');
+  const build=ChessilPreferences.engineBuild(selected,settings.policy);
   try {
-   return await this.loadSelection(settings, selected);
+   return await this.loadSelection(settings, build);
   } catch (error) {
-   const fallback=catalog.engines.find(e=>e.id===selected.fallback);
+   const fallback=catalog.engines.find(e=>e.id===build.fallback);
    if(this.stopped||!fallback)throw error;
    this.closed=false;this.abort=new AbortController();
-   return this.loadSelection({...settings,engine:fallback.id,network:'default'},fallback);
+   return this.loadSelection({...settings,engine:fallback.id,network:'default',policy:'none'},ChessilPreferences.engineBuild(fallback,'none'));
   }
  }
  async loadSelection(settings,selected){
-  this.engineId=selected.id;
+  this.engineId=selected.id;this.policyId=selected.policyId;this.engineName=selected.name;
   const networkChoice=selected.networks.find(n=>n.id===(settings.network||'default'))||(settings.network==='embedded'?selected.networks.find(n=>n.id==='default'&&n.mode==='embedded'):null);if(!networkChoice)throw Error('Selected network is not compatible with this engine');
   const supported=ChessilPreferences.engineThreads(selected);this.settings={...settings,multiPV:settings.multiPV||3,hash:settings.hash||32,threads:supported.includes(settings.threads)?settings.threads:1};
 
@@ -32,7 +33,8 @@ window.ChessilLocalEngine=class {
     if(variants[i]!==selected.threadedManifest)this.settings.threads=1;
     this.worker=new Worker(this.manifest.worker);this.worker.onmessage=e=>this.line(String(e.data));this.worker.onerror=event=>{event.preventDefault();this.fail(Error('Browser engine could not start'+(event.message?': '+event.message:'. Please check browser permissions and available memory.')));};
     options=new Set();await this.command('uci',line=>line==='uciok',this.manifest.startupTimeout||30000,line=>{const match=line.match(/^option name (.+?) type /);if(match)options.add(match[1]);});
-    for(const network of networkChoice.mode==='embedded'?[]:(networkChoice.files||this.manifest.networks||[])){
+    const files=networkChoice.mode==='embedded'?[]:(networkChoice.files||this.manifest.networks||[]);
+    for(const network of [...files,...(this.manifest.policy?[this.manifest.policy]:[])]){
      if(!options.has(network.option||'EvalFile'))throw Error('This engine does not support the configured network option');
      const r=await fetch(network.url,{signal:this.abort.signal});if(!r.ok)throw Error('Neural network download failed');const data=await r.arrayBuffer();
      const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',data)),n=>n.toString(16).padStart(2,'0')).join('');if(digest!==network.sha256)throw Error('Neural network checksum mismatch');

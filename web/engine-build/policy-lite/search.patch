@@ -1,0 +1,946 @@
+--- a/src/engine.cpp
++++ b/src/engine.cpp
+@@ -120,6 +120,8 @@
+     options.add("Move Overhead", Option(10, 0, 5000));
+
+     options.add("nodestime", Option(0, 0, 10000));
++    options.add("CompactPolicyFile", Option(""));
++    options.add("CompactPolicyStats", Option(false));
+
+     options.add("UCI_Chess960", Option(false));
+
+--- a/src/search.cpp
++++ b/src/search.cpp
+@@ -203,6 +203,15 @@
+ #endif
+
+     accumulatorStack.reset();
++    const std::string policyPath = options["CompactPolicyFile"];
++    std::string policyError;
++    const bool policyReady = litePolicy.start(policyPath, policyError);
++    if (!policyPath.empty() && is_mainthread()) {
++        if (policyReady)
++            sync_cout << "info string Lite V5 policy active" << sync_endl;
++        else
++            sync_cout << "info string ERROR: " << policyError << sync_endl;
++    }
+
+     // Non-main threads go directly to iterative_deepening()
+     if (!is_mainthread())
+@@ -227,6 +236,8 @@
+     // Main thread starts non-main threads, and begins own search
+     threads.start_searching();
+     bool uciPvSent = iterative_deepening();
++    if (policyReady && bool(options["CompactPolicyStats"]))
++        sync_cout << "info string Lite V5 quiet inferences " << litePolicy.inferences() << sync_endl;
+
+ #ifndef __EMSCRIPTEN__
+     // When we reach the maximum depth, we can arrive here without a raise of
+@@ -671,6 +682,7 @@
+
+     ++nodes;
+
++    litePolicy.push();
+     Dirties& dirties = accumulatorStack.push();
+     pos.do_move(move, st, givesCheck, dirties, &tt, &sharedHistory);
+
+@@ -686,6 +698,7 @@
+ }
+
+ void Search::Worker::do_null_move(Position& pos, StateInfo& st, Stack* const ss) {
++    litePolicy.push();
+     pos.do_null_move(st);
+     ss->currentMove                   = Move::null();
+     ss->continuationHistory           = &continuationHistory[0][0][NO_PIECE][0];
+@@ -695,13 +708,18 @@
+ void Search::Worker::undo_move(Position& pos, const Move move) {
+     pos.undo_move(move);
+     accumulatorStack.pop();
+-}
+-
+-void Search::Worker::undo_null_move(Position& pos) { pos.undo_null_move(); }
++    litePolicy.pop();
++}
++
++void Search::Worker::undo_null_move(Position& pos) {
++    pos.undo_null_move();
++    litePolicy.pop();
++}
+
+
+ // Reset histories, usually before a new game
+ void Search::Worker::clear() {
++    litePolicy.clear();
+     mainHistory.fill(-5);
+     captureHistory.fill(-742);
+
+@@ -1126,6 +1144,18 @@
+
+     MovePicker mp(pos, ttData.move, depth, &mainHistory, &lowPlyHistory, &captureHistory, contHist,
+                   &sharedHistory, ss->ply);
++
++    struct PolicyContext {
++        Worker& worker;
++        bool allowInference;
++    } policyContext{*this, cutNode || PvNode};
++    if (litePolicy.active() && depth >= 6 && !rootNode && !excludedMove && !ss->inCheck)
++        mp.set_quiet_order(&policyContext, [](void* context, const Position& p, ExtMove* begin,
++                                             ExtMove* end, Move ttMove, int threshold) {
++            auto& state = *static_cast<PolicyContext*>(context);
++            state.worker.litePolicy.order(p, begin, end, ttMove, threshold,
++                state.worker.nodes.load(std::memory_order_relaxed), state.allowInference);
++        });
+
+     value = bestValue;
+
+--- a/src/search.h
++++ b/src/search.h
+@@ -32,6 +32,7 @@
+ #include <cstring>
+
+ #include "history.h"
++#include "lite_policy.h"
+ #include "misc.h"
+ #include "nnue/nnue_accumulator.h"
+ #include "numa.h"
+@@ -343,6 +344,7 @@
+     bool is_mainthread() const { return threadIdx == 0; }
+
+     void ensure_network_replicated();
++    LitePolicy litePolicy;
+
+     // Public because they need to be updatable by the stats
+     ButterflyHistory mainHistory;
+--- a/src/movepick.cpp
++++ b/src/movepick.cpp
+@@ -322,6 +322,8 @@
+             endCur = endGenerated = score<QUIETS>(ml);
+
+             partial_insertion_sort(cur, endCur, -3560 * depth);
++            if (quietOrder && cur != endCur)
++                quietOrder(quietContext, pos, cur, endCur, ttMove, goodQuietThreshold);
+         }
+
+         ++stage;
+--- a/src/movepick.h
++++ b/src/movepick.h
+@@ -51,6 +51,12 @@
+     Move next_move();
+     void skip_quiet_moves();
+
++    using QuietOrder = void (*)(void*, const Position&, ExtMove*, ExtMove*, Move, int);
++    void set_quiet_order(void* context, QuietOrder order) {
++        quietContext = context;
++        quietOrder = order;
++    }
++
+    private:
+     template<typename Pred>
+     Move select(Pred);
+@@ -70,6 +76,8 @@
+     Depth                        depth;
+     int                          ply;
+     bool                         skipQuiets = false;
++    void*                        quietContext = nullptr;
++    QuietOrder                   quietOrder = nullptr;
+     ExtMove                      moves[MAX_MOVES];
+ };
+
+--- /dev/null
++++ b/src/lite_policy.h
+@@ -0,0 +1,70 @@
++// SPDX-License-Identifier: GPL-3.0-or-later
++#ifndef LITE_POLICY_H_INCLUDED
++#define LITE_POLICY_H_INCLUDED
++
++#include "incremental_policy.h"
++#include "policy_quiet.h"
++
++namespace Stockfish {
++
++class LitePolicy {
++   public:
++    bool start(const std::string& path, std::string& error) {
++        enabled = !path.empty() && model.load(path, error);
++        cache.prepare(enabled, model.generation());
++        model.reset();
++        work = calls = 0;
++        return enabled;
++    }
++
++    void clear() { cache.reset(enabled); }
++    bool active() const { return enabled; }
++    u64 inferences() const { return calls; }
++    void push() { if (enabled) model.push(); }
++    void pop() { if (enabled) model.pop(); }
++
++    void order(const Position& position, ExtMove* begin, ExtMove* end, Move ttMove,
++               int threshold, u64 nodes, bool allowInference) {
++        const Key key = position.key();
++        const u64 allowance = quiet_policy_allowance(nodes);
++        if (!cache.contains(key)
++            && (!allowInference || work + quiet_policy_cost(model.width(), 2) > allowance))
++            return;
++
++        QuietPolicyCandidates candidates;
++        candidates.collect(begin, end, ttMove, threshold);
++        if (candidates.count < 2) return;
++        std::array<bool, QuietPolicyCandidates::Limit> missing{};
++        const int count = cache.get_candidates(key, candidates, missing);
++        const u64 cost = quiet_policy_cost(model.width(), count);
++        if (count && (!allowInference || work + cost > allowance)) return;
++        if (count) {
++            const auto hidden = model.context(position);
++            std::array<Move, QuietPolicyCandidates::Limit> moves;
++            std::array<float, QuietPolicyCandidates::Limit> logits;
++            int output = 0;
++            for (int i = 0; i < candidates.count; ++i)
++                if (missing[i]) moves[output++] = *candidates.slots[i];
++            model.scores(hidden, moves.data(), logits.data(), output, position);
++            work += cost;
++            ++calls;
++            output = 0;
++            for (int i = 0; i < candidates.count; ++i)
++                if (missing[i]) {
++                    const float logit = logits[output++];
++                    candidates.logits[i] = logit;
++                    cache.put(key, *candidates.slots[i], logit);
++                }
++        }
++        candidates.promote(1.0f);
++    }
++
++   private:
++    IncrementalPolicy model;
++    QuietPolicyCache cache;
++    bool enabled = false;
++    u64 work = 0, calls = 0;
++};
++
++} // namespace Stockfish
++#endif
+--- /dev/null
++++ b/src/incremental_policy.h
+@@ -0,0 +1,255 @@
++// SPDX-License-Identifier: GPL-3.0-or-later
++#ifndef INCREMENTAL_POLICY_H
++#define INCREMENTAL_POLICY_H
++#include <array>
++#include <vector>
++#include <fstream>
++#include <algorithm>
++#include <string>
++#include <cstdlib>
++#include "position.h"
++#include "movegen.h"
++#include "compact_policy.h"
++#include "policy_dot.h"
++namespace Stockfish {
++// V4: 16 king buckets x 12 relative piece types x 64 squares, plus
++// four castling rights and eight en-passant files. Shared two-perspective
++// accumulator; width denotes the concatenated side-to-move/opponent output.
++class IncrementalPolicy {
++public:
++    static constexpr int Features = 12300;
++    struct Context { std::array<i16, 1024> hidden{}; int stack = 0; };
++    struct Frame {
++        std::array<Piece, 64> board{};
++        std::array<int, 2> flip{}, bucket{};
++        std::array<std::array<bool, 12>, 2> auxiliary{};
++        std::array<std::array<i32, 512>, 2> sums{};
++    };
++private:
++    int width_ = 0, half = 0, ply = 0, stacks = 1;
++    std::vector<i16> weights, bias, output;
++    std::array<bool, 4> ordinaryFolded{};
++    // Heap storage is allocated only when a policy is loaded.
++    std::vector<Frame> frames;
++    std::array<int, MAX_PLY + 1> parentFrame;
++    int lastFrame = -1;
++    bool loaded = false;
++    u64 generation_ = 0;
++    std::string configuration;
++    static int index(int c, Piece p, int s, const Frame& frame) {
++        const int relative = (int(color_of(p)) != c) * 6 + int(type_of(p)) - 1;
++        return frame.bucket[c] * 768 + relative * 64 + (s ^ frame.flip[c]);
++    }
++    static void describe(const Position& pos, Frame& f) {
++        f.board = pos.piece_array();
++        f.auxiliary = {};
++        for (int c = 0; c < 2; ++c) {
++            int king = int(pos.square<KING>(Color(c))) ^ (c == BLACK ? 56 : 0);
++            const int mirror = (king % 8 >= 4) ? 7 : 0;
++            f.flip[c] = (c == BLACK ? 56 : 0) ^ mirror;
++            king ^= mirror;
++            f.bucket[c] = (king / 8) * 2 + (king % 8) / 2;
++            for (int opponent = 0; opponent < 2; ++opponent)
++                for (int wing = 0; wing < 2; ++wing) {
++                    const int actualWing = wing ^ bool(mirror);
++                    auto right = CastlingRights(1 << ((c ^ opponent) * 2 + actualWing));
++                    f.auxiliary[c][opponent * 2 + wing] = pos.can_castle(right);
++                }
++            if (pos.ep_square() != SQ_NONE)
++                f.auxiliary[c][4 + ((int(pos.ep_square()) ^ f.flip[c]) % 8)] = true;
++        }
++    }
++    template<int Sign>
++    void add(Frame& f, int c, int feature) const {
++        const i16* row = weights.data() + feature * half;
++        int j = 0;
++#if defined(USE_AVX2)
++        for (; j + 8 <= half; j += 8) {
++            auto sum = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(&f.sums[c][j]));
++            const auto delta = _mm256_cvtepi16_epi32(
++              _mm_loadu_si128(reinterpret_cast<const __m128i*>(row + j)));
++            if constexpr (Sign > 0) sum = _mm256_add_epi32(sum, delta);
++            else sum = _mm256_sub_epi32(sum, delta);
++            _mm256_storeu_si256(reinterpret_cast<__m256i*>(&f.sums[c][j]), sum);
++        }
++#endif
++        for (; j < half; ++j) f.sums[c][j] += Sign * int(row[j]);
++    }
++    void refresh(Frame& f, int c) const {
++        for (int j = 0; j < half; ++j) f.sums[c][j] = bias[j];
++        for (int s = 0; s < 64; ++s)
++            if (f.board[s] != NO_PIECE) add<1>(f, c, index(c, f.board[s], s, f));
++        for (int a = 0; a < 12; ++a) if (f.auxiliary[c][a]) add<1>(f, c, 12288 + a);
++    }
++    // Reuse the board comparison across perspectives and copy only active units.
++    void update(Frame& f, const Frame& parent, int c,
++                const int* changed, int changedCount, int pieceCount) const {
++        int edits = 0, freshRows = pieceCount;
++        for (int i = 0; i < changedCount; ++i) {
++            edits += parent.board[changed[i]] != NO_PIECE;
++            edits += f.board[changed[i]] != NO_PIECE;
++        }
++        for (int a = 0; a < 12; ++a) {
++            freshRows += f.auxiliary[c][a];
++            edits += f.auxiliary[c][a] != parent.auxiliary[c][a];
++        }
++        if (edits > freshRows) {
++            refresh(f, c);
++            return;
++        }
++        std::copy_n(parent.sums[c].begin(), half, f.sums[c].begin());
++        for (int i = 0; i < changedCount; ++i) {
++            const int s = changed[i];
++            if (parent.board[s] != NO_PIECE) add<-1>(f, c, index(c, parent.board[s], s, parent));
++            if (f.board[s] != NO_PIECE) add<1>(f, c, index(c, f.board[s], s, f));
++        }
++        for (int a = 0; a < 12; ++a)
++            if (f.auxiliary[c][a] != parent.auxiliary[c][a]) {
++                if (f.auxiliary[c][a]) add<1>(f, c, 12288 + a);
++                else add<-1>(f, c, 12288 + a);
++            }
++    }
++    Context activate(const Frame& f, Color side, int pieceCount) const {
++        Context ctx;
++        if (stacks == 4) ctx.stack = std::clamp((pieceCount - 1) / 8, 0, 3);
++        for (int p = 0; p < 2; ++p) for (int j = 0; j < half; ++j)
++            ctx.hidden[p * half + j] = i16(std::clamp(f.sums[int(side) ^ p][j], 0, 4096));
++        return ctx;
++    }
++public:
++    static bool is_format(const std::string& path) {
++        std::ifstream in(path, std::ios::binary); char magic[8]{}; in.read(magic, 8);
++        return std::string(magic, 8) == std::string("SFPOLI4\0", 8)
++            || std::string(magic, 8) == std::string("SFPOLI5\0", 8);
++    }
++    bool load(const std::string& path, std::string& error) {
++        if (loaded && configuration == path) return true;
++        loaded = false;
++        std::ifstream in(path, std::ios::binary); char magic[8]{}; in.read(magic, 8);
++        auto number = [&](int bytes) { u32 n = 0; for (int i = 0; i < bytes; ++i) {
++            char b = 0; in.get(b); n |= u32(static_cast<unsigned char>(b)) << (8 * i);
++        } return n; };
++        const auto w = number(4), features = number(4);
++        const bool v5 = std::string(magic, 8) == std::string("SFPOLI5\0", 8);
++        if (!in || (!v5 && std::string(magic, 8) != std::string("SFPOLI4\0", 8))
++            || w < 2 || w > 1024 || w % 2 || features != Features) {
++            error = "Invalid incremental policy header"; return false;
++        }
++        width_ = int(w); half = width_ / 2; stacks = v5 ? 4 : 1;
++        weights.resize(Features * half); bias.resize(half); output.resize(4101 * width_ * stacks);
++        const u16 endian = 1;
++        for (auto* v : {&weights, &bias, &output}) {
++            auto bytes = reinterpret_cast<char*>(v->data());
++            in.read(bytes, std::streamsize(v->size() * sizeof(i16)));
++            if (*reinterpret_cast<const unsigned char*>(&endian) != 1)
++                for (usize i = 0; i < v->size(); ++i) std::swap(bytes[2 * i], bytes[2 * i + 1]);
++        }
++        if (!in || in.peek() != std::char_traits<char>::eof()) {
++            error = "Invalid incremental policy payload"; return false;
++        }
++        for (int s = 0; s < stacks; ++s)
++            ordinaryFolded[s] = fold_policy_ordinary_category(output.data() + s * 4101 * width_, width_);
++        frames.assign(MAX_PLY + 1, Frame{});
++        loaded = true; configuration = path; ++generation_; reset(); return true;
++    }
++    bool ready() const { return loaded; }
++    int width() const { return width_; }
++    u64 generation() const { return generation_; }
++    void reset() { ply = 0; lastFrame = -1; }
++    void push() { ++ply; }
++    void pop() {
++        if (lastFrame == ply) lastFrame = parentFrame[ply];
++        --ply;
++    }
++    Frame fresh(const Position& pos) const {
++        Frame f; describe(pos, f); for (int c = 0; c < 2; ++c) refresh(f, c); return f;
++    }
++    // No projection is paid at make/unmake or at nodes that do not request policy.
++    // A requested frame updates from the nearest evaluated ancestor. Only rows
++    // for changed squares/state are added/subtracted; king bucket/mirror changes
++    // refresh the affected perspective. Pop reuses the parent's saved sums.
++    Context context(const Position& pos, bool verify = false) {
++        const int pieceCount = popcount(pos.pieces());
++        if (ply >= int(frames.size())) return activate(fresh(pos), pos.side_to_move(), pieceCount);
++        auto& f = frames[ply];
++        if (lastFrame == ply) {
++            if (verify && f.sums != fresh(pos).sums) std::abort();
++            return activate(f, pos.side_to_move(), pieceCount);
++        }
++        describe(pos, f);
++        const int ancestor = lastFrame;
++        std::array<int, 64> changed;
++        int changedCount = 0;
++        if (ancestor >= 0)
++            for (int s = 0; s < 64; ++s)
++                if (f.board[s] != frames[ancestor].board[s]) changed[changedCount++] = s;
++        for (int c = 0; c < 2; ++c) {
++            if (ancestor < 0 || frames[ancestor].bucket[c] != f.bucket[c]
++                || frames[ancestor].flip[c] != f.flip[c]) refresh(f, c);
++            else update(f, frames[ancestor], c, changed.data(), changedCount, pieceCount);
++        }
++        if (verify && f.sums != fresh(pos).sums) std::abort();
++        parentFrame[ply] = ancestor;
++        lastFrame = ply;
++        return activate(f, pos.side_to_move(), pieceCount);
++    }
++    // Debug command: exercise real move/undo/null transitions, including an
++    // unevaluated intermediate frame and king refreshes, against full sums.
++    void verify_tree(Position& pos, int depth = 2) {
++        context(pos, true);
++        if (!depth) return;
++        int count = 0;
++        for (Move move : MoveList<LEGAL>(pos)) {
++            StateInfo st;
++            pos.do_move(move, st); push();
++            verify_tree(pos, depth - 1);
++            pos.undo_move(move); pop(); context(pos, true);
++            if (depth < 2 && ++count >= 3) break;
++        }
++        if (!pos.checkers()) {
++            StateInfo st; pos.do_null_move(st); push();
++            context(pos, true); pos.undo_null_move(); pop(); context(pos, true);
++        }
++    }
++    // Reuse promotion-category factors within a shortlist. Ordinary quiets all
++    // share category zero. Add exact integers before the one float conversion,
++    // preserving score() bit-for-bit, including promotions and castling mapping.
++    void scores(const Context& ctx, const Move* moves, float* logits, int count,
++                const Position& pos) const {
++        if (count == 1) { logits[0] = score(ctx, moves[0], pos); return; }
++        std::array<i64, 5> category{};
++        std::array<bool, 5> ready{};
++        ready[0] = ordinaryFolded[ctx.stack];
++        const Color side = pos.side_to_move();
++        const int mirror = file_of(pos.square<KING>(side)) >= FILE_E ? 7 : 0;
++        for (int i = 0; i < count; ++i) {
++            const auto f = CompactPolicy::factors(moves[i], side);
++            const int promo = f[2] - 128;
++            if (!ready[promo]) {
++                category[promo] = policy_factor_dot(ctx.hidden.data(),
++                  output.data() + (ctx.stack * 4101 + 4096 + promo) * width_, width_);
++                ready[promo] = true;
++            }
++            const int from = f[0] ^ mirror, to = (f[1] - 64) ^ mirror;
++            const i64 sum = category[promo] + policy_factor_dot(ctx.hidden.data(),
++              output.data() + (ctx.stack * 4101 + from * 64 + to) * width_, width_);
++            logits[i] = float(sum) / (4096.0f * 4096.0f);
++        }
++    }
++    float score(const Context& ctx, Move move, const Position& pos) const {
++        auto f = CompactPolicy::factors(move, pos.side_to_move());
++        const int mirror = file_of(pos.square<KING>(pos.side_to_move())) >= FILE_E ? 7 : 0;
++        const int from = f[0] ^ mirror, to = (f[1] - 64) ^ mirror;
++        const i16* row = output.data() + (ctx.stack * 4101 + from * 64 + to) * width_;
++        const int category = f[2] - 128;
++        const i64 sum = ordinaryFolded[ctx.stack] && category == 0
++          ? policy_factor_dot(ctx.hidden.data(), row, width_)
++          : policy_output_dot(ctx.hidden.data(), row,
++              output.data() + (ctx.stack * 4101 + 4096 + category) * width_, width_);
++        // Exact integer dot product, rounded once to float. Network-file scale
++        // and the mathematical logit are unchanged; no additional quantization.
++        return float(sum) / (4096.0f * 4096.0f);
++    }
++};
++}
++#endif
+--- /dev/null
++++ b/src/compact_policy.h
+@@ -0,0 +1,157 @@
++// SPDX-License-Identifier: GPL-3.0-or-later
++#ifndef COMPACT_POLICY_H
++#define COMPACT_POLICY_H
++#include <algorithm>
++#include <array>
++#include <vector>
++#include <cstdint>
++#include <cmath>
++#include <fstream>
++#include <string>
++#include "types.h"
++#if defined(USE_AVX2)
++#include <immintrin.h>
++#endif
++namespace Stockfish {
++// Quantized student: 1024 shared NNUE features -> variable-width ReLU units -> move factors.
++// Scores add origin, destination, and promotion embeddings, oriented to side to move.
++class CompactPolicy {
++    std::vector<i16> projection;
++    std::vector<i16> bias;
++    std::vector<i16> embedding;
++    int width = 32;
++    bool joint = false;
++    int inputs = 1024;
++    std::vector<int> activeUnits;
++    static i64 dot(const i16* weights, const u8* features) {
++#if defined(USE_AVX2)
++        // Each int32 lane sums 128 int16*u8 products, safely below INT32_MAX.
++        __m256i accum = _mm256_setzero_si256();
++        for (int i=0;i<1024;i+=16) {
++            const auto x = _mm256_cvtepu8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(features+i)));
++            const auto w = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(weights+i));
++            accum = _mm256_add_epi32(accum, _mm256_madd_epi16(w,x));
++        }
++        alignas(32) i32 lanes[8];
++        _mm256_store_si256(reinterpret_cast<__m256i*>(lanes),accum);
++        i64 total=0;
++        for (auto lane:lanes) total+=lane;
++        return total;
++#else
++        i64 total=0;
++        for (int i=0;i<1024;++i) total+=i64(weights[i])*features[i];
++        return total;
++#endif
++    }
++    void prepare() {
++        activeUnits.clear();
++        for (int j=0;j<width;++j) {
++            for (int f=0;f<(joint ? 4101 : 133);++f)
++                if (embedding[f*width+j]) { activeUnits.push_back(j); break; }
++        }
++    }
++    std::string configuration;
++    bool ready = false;
++ public:
++    static std::array<int, 3> factors(Move m, Color side) {
++        int flip = side == BLACK ? 56 : 0;
++        return {int(m.from_sq()) ^ flip, 64 + (int(m.to_sq()) ^ flip),
++                128 + (m.type_of() == PROMOTION ? int(m.promotion_type()) - 1 : 0)};
++    }
++    bool load(const std::string& path, const std::string& eval, std::string& error) {
++        if (configuration == path + "\n" + eval) return ready;
++        configuration = path + "\n" + eval;
++        ready = false;
++        std::ifstream in(path, std::ios::binary);
++        char signature[8]{};
++        in.read(signature, 8);
++        joint = std::string(signature, 8) == std::string("SFPOLI3\0", 8);
++        inputs = joint ? 1026 : 1024;
++        const bool binary = joint || std::string(signature, 8) == std::string("SFPOLI2\0", 8);
++        auto number = [&](int bytes) -> u32 {
++            u32 value = 0;
++            for (int i = 0; i < bytes; ++i) {
++                char c = 0; in.get(c); value |= u32(static_cast<unsigned char>(c)) << (i * 8);
++            }
++            return value;
++        };
++        if (binary) {
++            const u32 w = number(4), length = number(4);
++            if (!in || w == 0 || w > 1024 || length > 4096) {
++                error = "Invalid compact policy header"; return false;
++            }
++            std::string name(length, '\0'); in.read(name.data(), length);
++            if (!in || name != eval) { error = "Compact policy EvalFile mismatch"; return false; }
++            width = int(w);
++            projection.resize(width * inputs); bias.resize(width); embedding.resize((joint ? 4101 : 133) * width);
++            for (auto* values : {&projection, &bias, &embedding})
++                for (auto& v : *values) { const u32 n = number(2); v = i16(n < 32768 ? int(n) : int(n) - 65536); }
++            if (!in || in.peek() != std::char_traits<char>::eof()) {
++                error = "Invalid compact policy payload"; return false;
++            }
++            prepare(); ready = true; return true;
++        }
++        in.clear(); in.seekg(0);
++        width = 32; projection.resize(width * inputs); bias.resize(width); embedding.resize((joint ? 4101 : 133) * width);
++        std::string magic, expected;
++        if (!(in >> magic >> expected) || magic != "SFPOLICY1" || expected != eval) {
++            error = "Missing/incompatible compact policy (must match EvalFile)"; return false;
++        }
++        auto read = [&](auto& values) {
++            for (auto& v : values) {
++                int n;
++                if (!(in >> n) || n < -32768 || n > 32767) return false;
++                v = i16(n);
++            }
++            return true;
++        };
++        if (!read(projection) || !read(bias) || !read(embedding)) {
++            error = "Invalid compact policy weights"; return false;
++        }
++        std::string extra;
++        if (in >> extra) { error = "Unexpected compact policy data"; return false; }
++        prepare(); ready = true; return true;
++    }
++    struct Context {
++        std::array<float, 1024> hidden{};
++        mutable std::array<float, 133> squares{};
++        mutable std::array<bool, 133> computed{};
++    };
++    Context context(const u8* features, bool ownMirror, bool opponentMirror) const {
++        Context h;
++        for (int j : activeUnits) {
++            i64 sum = i64(bias[j]) * 127;
++            sum += dot(projection.data()+j*inputs, features);
++            if (joint) {
++                sum += i64(projection[j*inputs+1024]) * (ownMirror ? 127 : 0);
++                sum += i64(projection[j*inputs+1025]) * (opponentMirror ? 127 : 0);
++            }
++            h.hidden[j] = std::max(0.0f, float(sum) / (4096.0f * 127.0f));
++        }
++        return h;
++    }
++    float score(const Context& h, Move m, Color side) const {
++        float value = 0;
++        if (joint) {
++            auto f = factors(m, side);
++            const int moveIndex = f[0]*64 + f[1]-64;
++            const int promotionIndex = 4096 + f[2]-128;
++            for (int j : activeUnits)
++                value += h.hidden[j] * (int(embedding[moveIndex*width+j]) + int(embedding[promotionIndex*width+j]));
++            return value / 4096.0f;
++        }
++        for (int factor : factors(m, side)) {
++            if (!h.computed[factor]) {
++                float sum = 0;
++                for (int j : activeUnits)
++                    sum += h.hidden[j] * embedding[factor * width + j];
++                h.squares[factor] = sum / 4096.0f;
++                h.computed[factor] = true;
++            }
++            value += h.squares[factor];
++        }
++        return value;
++    }
++};
++}
++#endif
+--- /dev/null
++++ b/src/policy_dot.h
+@@ -0,0 +1,87 @@
++// SPDX-License-Identifier: GPL-3.0-or-later
++#ifndef POLICY_DOT_H_INCLUDED
++#define POLICY_DOT_H_INCLUDED
++#include <limits>
++#include "types.h"
++#if defined(USE_AVX2)
++#include <immintrin.h>
++#endif
++
++namespace Stockfish {
++
++// Rewrite a stack once at load. The ordinary category becomes zero and
++// promotions retain just their difference from it. Preflight the entire
++// stack so every accepted rewrite is exact and fallback is atomic.
++inline bool fold_policy_ordinary_category(i16* rows, int width) {
++    constexpr int moves = 4096, categories = 5;
++    i16* const ordinary = rows + moves * width;
++    auto fits = [](int n) {
++        return n >= std::numeric_limits<i16>::min() && n <= std::numeric_limits<i16>::max();
++    };
++    for (int i = 0; i < moves; ++i)
++        for (int j = 0; j < width; ++j)
++            if (!fits(rows[i * width + j] + ordinary[j])) return false;
++    for (int p = 1; p < categories; ++p)
++        for (int j = 0; j < width; ++j)
++            if (!fits(ordinary[p * width + j] - ordinary[j])) return false;
++
++    for (int i = 0; i < moves; ++i)
++        for (int j = 0; j < width; ++j) rows[i * width + j] += ordinary[j];
++    for (int p = 1; p < categories; ++p)
++        for (int j = 0; j < width; ++j) ordinary[p * width + j] -= ordinary[j];
++    for (int j = 0; j < width; ++j) ordinary[j] = 0;
++    return true;
++}
++
++// V4 activations are exactly integers in [0, 4096]. Both output rows are int16.
++// Four products fit int32 (absolute maximum 536870912); widen before summing
++// across blocks, since a full 1024-unit dot product need not fit int32.
++inline i64 policy_output_dot(const i16* hidden, const i16* move, const i16* promotion, int width) {
++    i64 result = 0;
++    int j = 0;
++#if defined(USE_AVX2)
++    auto low = _mm256_setzero_si256(), high = _mm256_setzero_si256();
++    for (; j + 16 <= width; j += 16) {
++        const auto h = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(hidden + j));
++        const auto m = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(move + j));
++        const auto p = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(promotion + j));
++        const auto pairs = _mm256_add_epi32(_mm256_madd_epi16(h, m), _mm256_madd_epi16(h, p));
++        low = _mm256_add_epi64(low, _mm256_cvtepi32_epi64(_mm256_castsi256_si128(pairs)));
++        high = _mm256_add_epi64(high, _mm256_cvtepi32_epi64(_mm256_extracti128_si256(pairs, 1)));
++    }
++    alignas(32) i64 lanes[4];
++    _mm256_store_si256(reinterpret_cast<__m256i*>(lanes), _mm256_add_epi64(low, high));
++    for (i64 lane : lanes) result += lane;
++#endif
++    for (; j < width; ++j) result += i64(hidden[j]) * (int(move[j]) + int(promotion[j]));
++    return result;
++}
++
++// Single output factor. Two products fit int32; widen each block before
++// accumulating so extreme weights remain exact at every supported width.
++inline i64 policy_factor_dot(const i16* hidden, const i16* weights, int width) {
++    i64 result = 0;
++    int j = 0;
++#if defined(USE_AVX2)
++    auto low = _mm256_setzero_si256(), high = _mm256_setzero_si256();
++    for (; j + 64 <= width; j += 64) {
++        auto pairs = _mm256_setzero_si256();
++        for (int block = 0; block < 64; block += 16) {
++            const auto h = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(hidden + j + block));
++            const auto w = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(weights + j + block));
++            pairs = _mm256_add_epi32(pairs, _mm256_madd_epi16(h, w));
++        }
++        // Eight products per lane: magnitude <= 1,073,741,824, safely int32.
++        low = _mm256_add_epi64(low, _mm256_cvtepi32_epi64(_mm256_castsi256_si128(pairs)));
++        high = _mm256_add_epi64(high, _mm256_cvtepi32_epi64(_mm256_extracti128_si256(pairs, 1)));
++    }
++    alignas(32) i64 lanes[4];
++    _mm256_store_si256(reinterpret_cast<__m256i*>(lanes), _mm256_add_epi64(low, high));
++    for (i64 lane : lanes) result += lane;
++#endif
++    for (; j < width; ++j) result += i64(hidden[j]) * weights[j];
++    return result;
++}
++
++} // namespace Stockfish
++#endif
+--- /dev/null
++++ b/src/policy_quiet.h
+@@ -0,0 +1,214 @@
++// SPDX-License-Identifier: GPL-3.0-or-later
++#ifndef POLICY_QUIET_H_INCLUDED
++#define POLICY_QUIET_H_INCLUDED
++
++#include <algorithm>
++#include <array>
++#include <cassert>
++#include <cmath>
++#include <vector>
++#include "movegen.h"
++
++namespace Stockfish {
++
++// A policy vote among plausible history candidates, not a second move generator.
++// At depth >= 5 MovePicker's -3560 * depth sort covers the entire good-quiet prefix.
++struct QuietPolicyCandidates {
++    static constexpr int Limit = 8;
++    static constexpr int Prefix = 3;
++    static constexpr int HistoryWindow = 2048;
++    std::array<ExtMove*, Limit> slots{};
++    std::array<float, Limit> logits{};
++    int count = 0;
++
++    void collect(ExtMove* begin, ExtMove* end, Move ttMove, int goodQuietThreshold,
++                 int limit = Limit, int window = HistoryWindow) {
++        count = 0;
++        for (auto* it = begin; it != end && count < limit; ++it) {
++            if (it->value <= goodQuietThreshold) break;
++            if (*it == ttMove) continue;
++            assert(!count || it->value <= slots[count - 1]->value);
++            if (count && slots[0]->value - it->value > window) break;
++            slots[count++] = it;
++        }
++    }
++
++    // At most one swap. A tie leaves Stockfish's history leader in front.
++    int promote_pair(float temperature, int bonus) const {
++        assert(count == 2);
++        const float advantage = (logits[1] - logits[0]) / temperature;
++        if (!(bonus * std::min(advantage, 1.0f) > slots[0]->value - slots[1]->value))
++            return 0;
++        std::swap(*slots[0], *slots[1]);
++        return 1;
++    }
++
++    // Stable top-three extraction. The rest keeps its original relative order;
++    // every original ExtMove (including its raw history value) is retained.
++    int promote(float temperature) const {
++        if (count < 2) return 0;
++        // Most shortlists contain just two quiets in descending history order.
++        // Only the leader can receive a penalty when the challenger has the
++        // higher logit. Use the same rounded score and stable tie as below.
++        if (count == 2) {
++            if (!std::isfinite(logits[0]) || !std::isfinite(logits[1]) || logits[1] <= logits[0])
++                return 0;
++            const float leader = float(slots[0]->value) + 1024.0f
++              * std::clamp((logits[0] - logits[1]) / temperature, -2.0f, 0.0f);
++            if (!(float(slots[1]->value) > leader)) return 0;
++            std::swap(*slots[0], *slots[1]);
++            return 1;
++        }
++        float maximum = logits[0];
++        for (int i = 0; i < count; ++i) {
++            if (!std::isfinite(logits[i])) return 0;
++            maximum = std::max(maximum, logits[i]);
++        }
++        std::array<float, Limit> scores;
++        std::array<ExtMove, Limit> original;
++        std::array<int, Limit> order;
++        for (int i = 0; i < count; ++i) {
++            original[i] = *slots[i];
++            order[i] = i;
++            scores[i] = float(original[i].value) + 1024.0f
++              * std::clamp((logits[i] - maximum) / temperature, -2.0f, 0.0f);
++        }
++        int promotions = 0;
++        for (int i = 0; i < std::min(Prefix, count); ++i) {
++            int best = i;
++            for (int j = i + 1; j < count; ++j)
++                if (scores[order[j]] > scores[order[best]]) best = j;
++            if (best != i) {
++                const int chosen = order[best];
++                std::move_backward(order.begin() + i, order.begin() + best,
++                                   order.begin() + best + 1);
++                order[i] = chosen;
++                ++promotions;
++            }
++        }
++        if (promotions)
++            for (int i = 0; i < count; ++i) *slots[i] = original[order[i]];
++        return promotions;
++    }
++};
++
++// Search-local. MovePicker may permute the ExtMove slots after these logits
++// were scored, so retain move identities for just the actionable margins.
++class QuietPolicyReductions {
++    struct Penalty { Move move; i16 units; };
++    std::array<Penalty, QuietPolicyCandidates::Limit> penalties;
++
++   public:
++    int count = 0;
++    QuietPolicyReductions() {}  // Only the first count entries are live.
++
++    void record(const QuietPolicyCandidates& list) {
++        count = 0;
++        if (list.count < 2) return;
++        const float best = *std::max_element(list.logits.begin(), list.logits.begin() + list.count);
++        for (int i = 0; i < list.count; ++i) {
++            const float gap = best - list.logits[i];  // finite source logits
++            if (gap <= 1.0f) continue;
++            const int units = 2 * (int(256 * std::min(gap, 3.0f)) - 256);
++            if (units) penalties[count++] = {*list.slots[i], i16(units)};
++        }
++    }
++
++    int adjustment(Move move, bool improving) const {
++        for (int i = 0; i < count; ++i)
++            if (penalties[i].move == move)
++                return penalties[i].units / (1 + int(improving));
++        return 0;
++    }
++};
++
++// Cache raw move logits, never history-blended ordering or node-specific choices.
++// A later visit may have different history scores or a different shortlist.
++class QuietPolicyCache {
++    static constexpr int Size = 256;
++    static constexpr int MovesPerEntry = 16;
++    struct Entry {
++        Key key = 0;
++        int count = 0, replace = 0;
++        struct Score { Move move; float logit; };
++        std::array<Score, MovesPerEntry> scores;
++    };
++    std::vector<Entry> entries;
++    u64 generation = 0;
++
++public:
++    void prepare(bool enabled, u64 modelGeneration) {
++        if (!enabled) reset(false);
++        else if (entries.empty() || generation != modelGeneration) {
++            reset(true);
++            generation = modelGeneration;
++        }
++    }
++    void reset(bool enabled) {
++        if (!enabled) { entries.clear(); return; }
++        entries.resize(Size);
++        for (auto& entry : entries) entry.count = entry.replace = 0;
++    }
++    bool contains(Key key) const {
++        if (entries.empty()) return false;
++        const auto& entry = entries[key & (Size - 1)];
++        return entry.count && entry.key == key;
++    }
++    bool get(Key key, Move move, float& logit) const {
++        if (entries.empty()) return false;
++        const auto& entry = entries[key & (Size - 1)];
++        if (entry.key != key) return false;
++        for (int i = 0; i < entry.count; ++i)
++            if (entry.scores[i].move == move) {
++                logit = entry.scores[i].logit;
++                return true;
++            }
++        return false;
++    }
++    int get_candidates(Key key, QuietPolicyCandidates& candidates,
++                       std::array<bool, QuietPolicyCandidates::Limit>& missing) const {
++        std::fill_n(missing.begin(), candidates.count, true);
++        if (entries.empty()) return candidates.count;
++        const auto& entry = entries[key & (Size - 1)];
++        if (entry.key != key) return candidates.count;
++        int remaining = candidates.count;
++        for (int j = 0; j < entry.count && remaining; ++j)
++            for (int i = 0; i < candidates.count; ++i)
++                if (missing[i] && entry.scores[j].move == *candidates.slots[i]) {
++                    candidates.logits[i] = entry.scores[j].logit;
++                    missing[i] = false;
++                    --remaining;
++                    break;
++                }
++        return remaining;
++    }
++    void put(Key key, Move move, float logit) {
++        if (entries.empty()) return;
++        auto& entry = entries[key & (Size - 1)];
++        if (entry.key != key) {
++            entry.key = key;
++            entry.count = entry.replace = 0;
++        }
++        for (int i = 0; i < entry.count; ++i)
++            if (entry.scores[i].move == move) {
++                entry.scores[i].logit = logit;
++                return;
++            }
++        const int slot = entry.count < MovesPerEntry ? entry.count++ : entry.replace;
++        entry.scores[slot] = {move, logit};
++        entry.replace = (slot + 1) % MovesPerEntry;
++    }
++};
++
++// Fixed work accounting, not a wall-clock timer in the search hot path.
++// Eight output heads plus a context allowance cost one 256-unit credit.
++// A wider network or more missing heads consumes more of the same budget.
++inline u64 quiet_policy_cost(int width, int missingHeads) {
++    return missingHeads ? u64(width) * (8 + missingHeads) : 0;
++}
++inline u64 quiet_policy_allowance(u64 nodes) {
++    return 4096 * (1 + nodes / 256);
++}
++
++} // namespace Stockfish
++#endif

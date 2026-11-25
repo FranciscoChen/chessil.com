@@ -48,17 +48,23 @@ window.ChessilPreferences = (() => {
  function words(){return labels[document.documentElement.lang] || labels.en;}
  let catalogRequest;
  function loadEngineCatalog(){return catalogRequest||(catalogRequest=fetch('/engine/catalog.json').then(r=>{if(!r.ok)throw Error();return r.json();}).catch(error=>{catalogRequest=null;throw error;}));}
+ function engineBuild(engine,policyId){
+  const policy=engine.policies?.find(item=>item.id===policyId)||engine.policies?.[0];
+  if(!policy?.manifest)return {...engine,policyId:policy?.id||'none'};
+  return {...engine,name:policy.engineName,manifest:policy.manifest,threadedManifest:policy.threadedManifest,
+   scalarManifest:policy.scalarManifest,threads:policy.threads||[1],fallback:engine.id,policyId:policy.id};
+ }
  function engineThreads(engine){const limit=Math.max(1,Math.min(8,navigator.hardwareConcurrency||2));return engine.threadedManifest&&window.crossOriginIsolated&&typeof SharedArrayBuffer!=='undefined'?engine.threads.filter(n=>n<=limit):[1];}
  const engineForms=new Set();
  function syncEngineOptions(){for(const form of engineForms){if(!form.host.isConnected){engineForms.delete(form);continue;}form.sync();}}
  function renderEngineOptions(host,{compact=false}={}){
   for(const form of engineForms)if(form.host===host||!form.host.isConnected)engineForms.delete(form);
   host.replaceChildren();host.classList.add('engine-option-fields');
-  const labels={en:['Engine','Network','Lines (MultiPV)','Hash memory','Threads','Stop after inactivity','Opening book'],es:['Motor','Red','Líneas (MultiPV)','Memoria hash','Hilos','Detener tras inactividad','Libro de aperturas'],zh:['引擎','网络','变化 (MultiPV)','哈希内存','线程','无操作后停止','开局库']}[document.documentElement.lang]||['Engine','Network','Lines (MultiPV)','Hash memory','Threads','Stop after inactivity','Opening book'];
+  const labels={en:['Engine','Evaluation network','Policy network','Lines (MultiPV)','Hash memory','Threads','Stop after inactivity','Opening book'],es:['Motor','Red de evaluación','Red de política','Líneas (MultiPV)','Memoria hash','Hilos','Detener tras inactividad','Libro de aperturas'],zh:['引擎','评估网络','策略网络','变化 (MultiPV)','哈希内存','线程','无操作后停止','开局库']}[document.documentElement.lang]||['Engine','Evaluation network','Policy network','Lines (MultiPV)','Hash memory','Threads','Stop after inactivity','Opening book'];
   const fields={};let catalog,selectedId;
-  for(const [index,key] of ['engine','network','multiPV','hash','threads','idleMinutes','book'].entries()){
+  for(const [index,key] of ['engine','network','policy','multiPV','hash','threads','idleMinutes','book'].entries()){
    const label=document.createElement('label'),input=document.createElement('select');label.className='ui-field';label.textContent=labels[index];input.dataset.preference='analysis.'+key;input.dataset.engineOption=key;label.append(input);host.append(label);fields[key]=input;
-   input.onchange=()=>{if(key==='engine'){const chosen=catalog?.engines.find(engine=>engine.id===input.value);if(chosen)update({analysis:{engine:chosen.id,threads:chosen.threads[0],network:chosen.networks[0].id}});}else update({analysis:{[key]:['multiPV','hash','threads','idleMinutes'].includes(key)?Number(input.value):input.value}});};
+   input.onchange=()=>{if(key==='engine'){const chosen=catalog?.engines.find(engine=>engine.id===input.value);if(chosen)update({analysis:{engine:chosen.id,threads:chosen.threads[0],network:chosen.networks[0].id,policy:chosen.policies?.[0]?.id||'none'}});}else update({analysis:{[key]:['multiPV','hash','threads','idleMinutes'].includes(key)?Number(input.value):input.value}});};
   }
   const guidanceOptions=document.createElement('div');guidanceOptions.className='engine-guidance-options';host.append(guidanceOptions);
   const flags={};for(const [key,label] of [['plan',document.documentElement.lang==='es'?'Mostrar plan':document.documentElement.lang==='zh'?'显示计划':'Show plan'],['threat',document.documentElement.lang==='es'?'Mostrar amenaza':document.documentElement.lang==='zh'?'显示威胁':'Show immediate threat']]){const field=document.createElement('label'),input=document.createElement('input');field.className='board-settings-toggle';input.type='checkbox';input.dataset.preference='analysis.'+key;input.onchange=()=>update({analysis:{[key]:input.checked}});field.append(input,document.createTextNode(label));guidanceOptions.append(field);flags[key]=input;}
@@ -69,9 +75,10 @@ window.ChessilPreferences = (() => {
   if(compact){const status=document.createElement('output');status.className='preference-status';status.dataset.preferenceStatus='';status.setAttribute('role','status');host.append(status);}
   const form={host,sync(){
    const config=value.analysis,chosen=catalog?.engines.find(engine=>engine.id===config.engine)||catalog?.engines[0];
-   if(chosen&&selectedId!==chosen.id){selectedId=chosen.id;fill('book',(catalog.books||[]).map(book=>[book.id,book.name]));fill('engine',catalog.engines.map(engine=>[engine.id,engine.name]));fill('threads',engineThreads(chosen).map(n=>[n,String(n)]));fill('network',chosen.networks.map(network=>[network.id,network.name]));hint.textContent='Changes apply to analysis.'+(chosen.threads.length===1?' This build supports '+chosen.threads[0]+' thread.':'');}
+   const build=chosen&&engineBuild(chosen,config.policy), key=build&&build.id+'|'+build.policyId;
+   if(build&&selectedId!==key){selectedId=key;fill('book',(catalog.books||[]).map(book=>[book.id,book.name]));fill('engine',catalog.engines.map(engine=>[engine.id,engine.name]));fill('threads',engineThreads(build).map(n=>[n,String(n)]));fill('network',chosen.networks.map(network=>[network.id,network.name]));fill('policy',(chosen.policies||[]).map(policy=>[policy.id,policy.labels?.[document.documentElement.lang]||policy.name]));hint.textContent='Changes apply to analysis.'+(build.threads.length===1?' This build supports one thread.':'');}
    for(const [key,input] of Object.entries(flags))input.checked=!!config[key];
-   for(const [key,input] of Object.entries(fields)){input.disabled=!catalog&&['engine','network','threads','book'].includes(key);input.value=key==='network'&&config.network==='embedded'&&!chosen?.networks.some(n=>n.id==='embedded')?'default':String(config[key]);if(!input.value&&input.options.length)input.selectedIndex=0;}
+   for(const [key,input] of Object.entries(fields)){input.disabled=!catalog&&['engine','network','policy','threads','book'].includes(key);input.value=key==='policy'&&build?build.policyId:key==='network'&&config.network==='embedded'&&!chosen?.networks.some(n=>n.id==='embedded')?'default':String(config[key]);if(!input.value&&input.options.length)input.selectedIndex=0;}
   }};engineForms.add(form);form.sync();
   return loadEngineCatalog().then(result=>{if(!host.isConnected)return false;catalog=result;form.sync();return true;}).catch(()=>{hint.textContent='Engine choices unavailable. Reopen options to retry.';if(compact){hint.setAttribute('role','status');host.append(hint);}return false;});
  }
@@ -124,5 +131,5 @@ window.ChessilPreferences = (() => {
    dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left || event.clientX>r.right || event.clientY<r.top || event.clientY>r.bottom)dialog.close();}});
   }
  });
- return {ready,get,update,duration,renderToggle,renderEngineOptions,engineThreads,engineCatalog:loadEngineCatalog};
+ return {ready,get,update,duration,renderToggle,renderEngineOptions,engineBuild,engineThreads,engineCatalog:loadEngineCatalog};
 })();

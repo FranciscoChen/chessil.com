@@ -1,0 +1,26 @@
+{
+  "name": "Stockfish 19 Lite + V5",
+  "revision": "0dc3d0ac03705353dad6659c0dad4597cdee4021",
+  "release": "d63295fd4faad02c",
+  "worker": "/engine/d63295fd4faad02c/chessil-stockfish.js",
+  "source": "/engine/d63295fd4faad02c/source.zip",
+  "license": "/engine/d63295fd4faad02c/LICENSE.txt",
+  "networks": [
+    {
+      "option": "EvalFile",
+      "name": "nn-61e7af4bb97d.nnue",
+      "url": "/engine/55f00e29b7f308f6/nn-61e7af4bb97d.nnue",
+      "sha256": "61e7af4bb97d51eeeb25d322916f86513b5cd3a827ce189c98c6e31946f99e5b"
+    }
+  ],
+  "threaded": false,
+  "simd": true,
+  "embeddedNetwork": "61e7af4bb97d51eeeb25d322916f86513b5cd3a827ce189c98c6e31946f99e5b",
+  "policy": {
+    "name": "v5-7a702165ba92.policy",
+    "url": "/engine/cb2770c9fa3a4234/v5-7a702165ba92.policy",
+    "sha256": "7a702165ba92072006f99708a16aeb60508130d9044412a17a29ad526b04008e",
+    "option": "CompactPolicyFile"
+  },
+  "startupTimeout": 60000
+}

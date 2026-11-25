@@ -23,7 +23,26 @@
         }
       ],
       "threadedManifest": "/engine/manifest-threaded.json",
-      "scalarManifest": "/engine/manifest-scalar.json"
+      "scalarManifest": "/engine/manifest-scalar.json",
+      "policies": [
+        {
+          "id": "none",
+          "name": "Off",
+          "labels": {
+            "es": "Desactivada",
+            "zh": "关闭"
+          }
+        },
+        {
+          "id": "v5",
+          "name": "V5 · 11 MiB",
+          "engineName": "Stockfish 19 Lite + V5",
+          "manifest": "/engine/manifest-policy-lite.json",
+          "threads": [
+            1
+          ]
+        }
+      ]
     },
     {
       "id": "stockfish-hybrid",
@@ -36,8 +55,14 @@
       "networks": [
         {
           "id": "default",
-          "name": "V5 policy + full NNUE",
+          "name": "Full NNUE · included",
           "mode": "embedded"
+        }
+      ],
+      "policies": [
+        {
+          "id": "v5",
+          "name": "V5 · 11 MiB"
         }
       ]
     }

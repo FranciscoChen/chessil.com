@@ -13,7 +13,7 @@ const scoreText=(score,fen)=>{if(!score)return '—';const sign=fen.split(' ')[1
 let panel,bookPanel,tools,engine,positions=[],history=[],scores=new Map(),findings=[],book={},opened=false,engineReady=false,token=0,selected=-1,position=initial,exploring=false,autoplay=true,autoplayRun=null,scanning=false,internal=false,viewEpoch=0,suggestionView=false,guide=null,perspective='both',engineLoading=false,processed=new Set(),engineConfig='',bookEpoch=0;
 let selectedBook='',bookView,explorationOrigin=null,playing=false,freshSearch=null,linesExpanded=false;
 const engineRows=new Map(),compactView=matchMedia('(max-width:900px)');
-const engineSignature=settings=>JSON.stringify(Object.fromEntries(['engine','network','multiPV','hash','threads'].map(key=>[key,settings[key]])));
+const engineSignature=settings=>JSON.stringify(Object.fromEntries(['engine','network','policy','multiPV','hash','threads'].map(key=>[key,settings[key]])));
 const moveScores=new Map(),bookEvaluated=new Set();
 const stablePlan=new ChessilStablePlan();let planArrows=[],threatArrows=[],guidancePosition='',planTimer;
 function original(ply){if(reviewGame)return ChessilStudy.selectOriginal(ply);gamereplay(ply,true);return true;}
@@ -177,7 +177,25 @@ async function startEngine(){
  }catch(error){if(run===token){engineLoading=false;scanning=false;engineReady=false;status(error.message+' Press Start engine to retry.');pause();engine?.close();controls();}}
 }
 
-async function updateEngineName(){await ChessilPreferences.ready;const id=(engineReady&&engine.engineId)||ChessilPreferences.get().analysis.engine;$('source').href='/'+(document.documentElement.lang||'en')+'/engine-source?engine='+encodeURIComponent(id)+'&threads='+(engineReady?engine.settings.threads:ChessilPreferences.get().analysis.threads)+(engineReady&&engine.manifest.simd===false?'&variant=scalar':'');try{const catalog=await ChessilPreferences.engineCatalog();if(id!==((engineReady&&engine.engineId)||ChessilPreferences.get().analysis.engine))return;const name=catalog.engines.find(engine=>engine.id===id)?.name||id;$('book-engine-label').textContent=name.replace(/^Stockfish\s+(\S+).*$/,'SF $1');$('engine-name').textContent=name;$('engine-name').title=name;}catch(_){$('engine-name').textContent=id;}}
+async function updateEngineName(){
+ await ChessilPreferences.ready;
+ const settings=ChessilPreferences.get().analysis;
+ const active=engineReady?engine:null;
+ const id=active?.engineId||settings.engine;
+ const policy=active?.policyId||settings.policy;
+ const query=new URLSearchParams({engine:id,policy,threads:String(active?.settings.threads||settings.threads)});
+ if(active?.manifest.simd===false)query.set('variant','scalar');
+ $('source').href='/'+(document.documentElement.lang||'en')+'/engine-source?'+query;
+ try{
+  const catalog=await ChessilPreferences.engineCatalog();
+  const latest=ChessilPreferences.get().analysis;
+  if(active!==(engineReady?engine:null)||(!active&&(latest.engine!==id||latest.policy!==policy)))return;
+  const selected=catalog.engines.find(item=>item.id===id);
+  const name=active?.engineName||(selected&&ChessilPreferences.engineBuild(selected,policy).name)||id;
+  $('book-engine-label').textContent=name.replace(/^Stockfish\s+(\S+).*$/,'SF $1');
+  $('engine-name').textContent=name;$('engine-name').title=name;
+ }catch(_){$('engine-name').textContent=id;}
+}
 function loadBookNames(){if(Object.keys(book).length)return;fetch('/engine/openings.json',{cache:'force-cache'}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{book=data;bookDisplay();}).catch(()=>{});}
 function returnToGame(){pause();exploring=false;const ply=explorationOrigin??(suggestionView?findings[selected].ply:a1ti);explorationOrigin=null;clearGuide();original(ply);}
 function update(){if(panel&&!opened&&ChessilStudy.ready)open(false);}

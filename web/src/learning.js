@@ -47,7 +47,7 @@ document.addEventListener('keydown',()=>keyAcknowledgement=awaiting,true);
 // Acknowledgement is a page gesture, but never consumes navigation/settings.
  document.addEventListener('click',event=>{if(!awaiting||pointerAcknowledgement!==awaiting||event.target.closest('dialog,header,a,input,select,summary,[data-board-settings]'))return;if(event.target.closest('button')&&!event.target.closest('.learning-continue'))return;event.preventDefault();event.stopPropagation();acknowledge();},true);
  document.addEventListener('keydown',event=>{if(awaiting&&keyAcknowledgement===awaiting&&['Enter',' '].includes(event.key)&&!event.target.closest('input,select,button,a,dialog')){event.preventDefault();acknowledge();}});
-function signature(){const p=ChessilPreferences.get().analysis;return JSON.stringify([p.engine,p.network,p.hash,p.threads]);}
+function signature(){const p=ChessilPreferences.get().analysis;return JSON.stringify([p.engine,p.network,p.policy,p.hash,p.threads]);}
 function dropEngine(){engine?.close();engine=null;engineReady=null;engineSignature='';}
 async function getEngine(){const key=signature();if(engine&&key===engineSignature&&!engine.closed)return engineReady;dropEngine();engineSignature=key;engine=new ChessilLocalEngine();const instance=engine;engineReady=engine.load({...ChessilPreferences.get().analysis,multiPV:1}).then(()=>instance).catch(error=>{if(engine===instance){engine=null;engineReady=null;}throw error;});return engineReady;}
 async function search(playMove=false,searchmoves=[]){

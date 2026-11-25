@@ -6,7 +6,8 @@ compatible replacement NNUE, and --package-only to package a previously complete
 import argparse, hashlib, json, pathlib, shutil, subprocess, tempfile, zipfile, re
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 REV='0dc3d0ac03705353dad6659c0dad4597cdee4021'
-p=argparse.ArgumentParser();p.add_argument('--source',type=pathlib.Path);p.add_argument('--network',type=pathlib.Path);p.add_argument('--package-only',action='store_true');p.add_argument('--full',action='store_true');p.add_argument('--threaded',action='store_true');p.add_argument('--scalar',action='store_true',help='Portable single-threaded build without WebAssembly SIMD');args=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--source',type=pathlib.Path);p.add_argument('--network',type=pathlib.Path);p.add_argument('--package-only',action='store_true');p.add_argument('--full',action='store_true');p.add_argument('--threaded',action='store_true');p.add_argument('--policy-lite',action='store_true',help='Build Lite with the optional V5 quiet-ordering policy');p.add_argument('--scalar',action='store_true',help='Portable single-threaded build without WebAssembly SIMD');args=p.parse_args()
+if args.policy_lite and (args.full or args.threaded or args.scalar): p.error('--policy-lite currently uses the Lite SIMD single-threaded build')
 if args.scalar and args.threaded: p.error('--scalar is a single-threaded compatibility build')
 source=args.source
 if source is None:
@@ -14,6 +15,7 @@ if source is None:
  subprocess.run(['git','clone','https://github.com/nmrugg/stockfish.js.git',str(source)],check=True)
  subprocess.run(['git','checkout',REV],cwd=source,check=True)
  subprocess.run(['git','apply',str(ROOT/'engine-build/browser.patch')],cwd=source,check=True)
+ if args.policy_lite: subprocess.run(['git','apply',str(ROOT/'engine-build/policy-lite/search.patch')],cwd=source,check=True)
 source=source.resolve()
 macro='EvalFileDefaultName' if args.full else 'EvalFileLiteName'
 configured=re.search(macro+r'\s+"([^"]+)"',(source/'src/evaluate.h').read_text())
@@ -36,14 +38,18 @@ if not args.package_only:
  if not args.full: command.append('--lite')
  subprocess.run(command,cwd=source,check=True)
 worker=source/'src/chessil-stockfish.js';wasm=source/'src/chessil-stockfish.wasm'
-files=[worker,wasm,network];digest=hashlib.sha256(b''.join(file.read_bytes() for file in files)).hexdigest()[:16]
+worker_bytes=worker.read_bytes()
+if args.policy_lite:
+ worker_bytes=re.sub(rb'[ \t]+(?=\r?$)',b'',worker_bytes,flags=re.M)
+digest=hashlib.sha256(worker_bytes+wasm.read_bytes()+network.read_bytes()).hexdigest()[:16]
 public=ROOT/'web/engine';release=public/digest;release.mkdir(parents=True,exist_ok=True)
-for file in [worker,wasm]: shutil.copy2(file,release/file.name)
+(release/worker.name).write_bytes(worker_bytes)
+shutil.copy2(wasm,release/wasm.name)
 existing=next((file for file in sorted(public.glob('*/'+network.name)) if file.parent!=release and hashlib.sha256(file.read_bytes()).digest()==hashlib.sha256(network.read_bytes()).digest()),None)
 network_asset=existing or release/network.name
 if not existing: shutil.copy2(network,network_asset)
 if existing and (release/network.name).exists(): (release/network.name).unlink()
-shutil.copy2(source/'Copying.txt',release/'LICENSE.txt')
+(release/'LICENSE.txt').write_text((source/'Copying.txt').read_text())
 # Corresponding source includes actual modified files, network, scripts and patch.
 tracked=subprocess.check_output(['git','ls-files','-z','--cached','--others','--exclude-standard'],cwd=source).decode().split('\0')
 with zipfile.ZipFile(release/'source.zip','w',zipfile.ZIP_DEFLATED) as archive:
@@ -53,9 +59,19 @@ with zipfile.ZipFile(release/'source.zip','w',zipfile.ZIP_DEFLATED) as archive:
  archive.write(network,'stockfish/src/'+network.name)
  archive.write(__file__,'chessil/build-browser-engine.py')
  archive.write(ROOT/'engine-build/browser.patch','chessil/browser.patch')
+ if args.policy_lite:
+  archive.write(ROOT/'engine-build/policy-lite/search.patch','chessil/policy-lite.patch')
+  archive.writestr('POLICY.txt','This Lite build embeds its original evaluation NNUE. Set CompactPolicyFile to the V5 policy file. The policy adjusts quiet move ordering only. The full hybrid match did not test this build.\n')
  archive.writestr('BUILD.txt','Source: nmrugg/stockfish.js '+REV+' plus included browser.patch.\nEmscripten 6.0.9; node build.js '+('--lite ' if not args.full else '')+('' if args.threaded else '--single-threaded ')+('--no-simd ' if args.scalar else '')+'--no-split --basename=chessil-stockfish --force\nThe stockfish directory already contains the patch. Network architecture must match the selected build.\n')
 manifest={'name':'Stockfish 19 '+('Full' if args.full else 'Lite')+' · local analysis','revision':subprocess.check_output(['git','rev-parse','HEAD'],cwd=source).decode().strip(),'release':digest,'worker':'/engine/'+digest+'/'+worker.name,'source':'/engine/'+digest+'/source.zip','license':'/engine/'+digest+'/LICENSE.txt','networks':[{'option':'EvalFile','name':network.name,'url':'/engine/'+str(network_asset.relative_to(public)),'sha256':hashlib.sha256(network.read_bytes()).hexdigest()}]}
 manifest['threaded']=args.threaded
 manifest['simd']=not args.scalar
 manifest['embeddedNetwork']=hashlib.sha256(network.read_bytes()).hexdigest()
-(public/('manifest-scalar.json' if args.scalar else 'manifest-threaded.json' if args.threaded else 'manifest.json')).write_text(json.dumps(manifest,indent=2)+'\n');print(json.dumps(manifest,indent=2))
+if args.policy_lite:
+ full=json.loads((public/'manifest-hybrid.json').read_text())
+ weights=full['weights']['policy']
+ manifest['name']='Stockfish 19 Lite + V5'
+ manifest['policy']={key:weights[key] for key in ['name','url','sha256']}
+ manifest['policy']['option']='CompactPolicyFile'
+ manifest['startupTimeout']=60000
+(public/('manifest-policy-lite.json' if args.policy_lite else 'manifest-scalar.json' if args.scalar else 'manifest-threaded.json' if args.threaded else 'manifest.json')).write_text(json.dumps(manifest,indent=2)+'\n');print(json.dumps(manifest,indent=2))
