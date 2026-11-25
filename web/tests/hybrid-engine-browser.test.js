@@ -10,13 +10,25 @@ test('Hybrid V5 uses its match weights, supports stopping search, and falls back
   const page = await browser.newPage();
   await page.goto(fixture.url + '/board-harness', { waitUntil: 'domcontentloaded' });
   await page.addScriptTag({ url: fixture.url + '/js/analysis.min.js' });
-  assert.equal(await page.evaluate(() => ChessilPreferences.get().analysis.engine), 'stockfish-hybrid');
+  assert.equal(await page.evaluate(() => ChessilPreferences.get().analysis.engine), 'stockfish-lite');
+  const defaultEngine = await page.evaluate(async () => {
+   const engine = new ChessilLocalEngine();
+   try {
+    await engine.load();
+    return engine.engineId;
+   } finally {
+    engine.close();
+   }
+  });
+  assert.equal(defaultEngine, 'stockfish-lite');
+  assert.ok(fixture.requests.includes('/engine/manifest.json'));
+  assert.equal(fixture.requests.some(path => /manifest-hybrid|\.(policy|nnue.gz)$/.test(path)), false);
   const result = await page.evaluate(async () => {
    const engine = new ChessilLocalEngine();
    const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
    const messages = [];
    try {
-    const manifest = await engine.load({ network: 'default', threads: 1, hash: 16 });
+    const manifest = await engine.load({ engine: 'stockfish-hybrid', network: 'default', threads: 1, hash: 16 });
     engine.worker.addEventListener('message', event => messages.push(event.data));
     engine.worker.postMessage('setoption name PolicySearchStats value true');
     engine.worker.postMessage('position startpos');
@@ -47,7 +59,7 @@ test('Hybrid V5 uses its match weights, supports stopping search, and falls back
    WebAssembly.validate = () => false;
    const engine = new ChessilLocalEngine();
    try {
-    const selected = await engine.load({ network: 'default', threads: 1, hash: 16 });
+    const selected = await engine.load({ engine: 'stockfish-hybrid', network: 'default', threads: 1, hash: 16 });
     return { id: engine.engineId, simd: selected.simd };
    } finally {
     engine.close();
@@ -55,7 +67,7 @@ test('Hybrid V5 uses its match weights, supports stopping search, and falls back
    }
   });
   assert.deepEqual(fallback, { id: 'stockfish-lite', simd: false });
-  await page.goto(fixture.url + '/en/engine-source', { waitUntil: 'domcontentloaded' });
+  await page.goto(fixture.url + '/en/engine-source?engine=stockfish-hybrid', { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-engine-source-downloads]:not([hidden])');
   for (const index of ['0', '1', '2', '3']) {
    const href = await page.$eval(`[data-source-asset="${index}"]`, link => link.href);

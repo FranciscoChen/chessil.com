@@ -1,22 +1,6 @@
 {
   "engines": [
     {
-      "id": "stockfish-hybrid",
-      "name": "Stockfish Hybrid V5",
-      "manifest": "/engine/manifest-hybrid.json",
-      "threads": [
-        1
-      ],
-      "fallback": "stockfish-lite",
-      "networks": [
-        {
-          "id": "default",
-          "name": "V5 policy + full NNUE",
-          "mode": "embedded"
-        }
-      ]
-    },
-    {
       "id": "stockfish-lite",
       "name": "Stockfish 19 Lite",
       "manifest": "/engine/manifest.json",
@@ -40,6 +24,22 @@
       ],
       "threadedManifest": "/engine/manifest-threaded.json",
       "scalarManifest": "/engine/manifest-scalar.json"
+    },
+    {
+      "id": "stockfish-hybrid",
+      "name": "Stockfish Hybrid V5",
+      "manifest": "/engine/manifest-hybrid.json",
+      "threads": [
+        1
+      ],
+      "fallback": "stockfish-lite",
+      "networks": [
+        {
+          "id": "default",
+          "name": "V5 policy + full NNUE",
+          "mode": "embedded"
+        }
+      ]
     }
   ],
   "books": [
@@ -49,5 +49,5 @@
       "manifest": "/engine/book/polyglot-manifest.json"
     }
   ],
-  "defaultEngine": "stockfish-hybrid"
+  "defaultEngine": "stockfish-lite"
 }

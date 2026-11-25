@@ -1,6 +1,6 @@
 // Allowlist shared by the web API and tests. Unknown keys never reach storage.
 const defaults = Object.freeze({ board:'auto', pieces:'classic', slide:180, autoQueen:false,checkIndicator:true,
- analysis:{engine:'stockfish-hybrid',network:'default',book:'lc0-bt4',multiPV:3,hash:32,threads:1,idleMinutes:15,plan:false,threat:false},
+ analysis:{engine:'stockfish-lite',network:'default',book:'lc0-bt4',multiPV:3,hash:32,threads:1,idleMinutes:15,plan:false,threat:false},
  sound:'auto', volume:45, muted:false, events:{move:'theme',capture:'theme',slide:'theme',start:'theme',end:'theme',clock:'theme',check:'theme'} });
 function normalize(value={}) {
  const choices=(v,allowed,fallback)=>allowed.includes(v)?v:fallback;
