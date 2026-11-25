@@ -7,7 +7,7 @@ Type=simple
 WorkingDirectory=/home/ubuntu/chessil.com/engine
 Environment=QUEUE_HOST=127.0.0.1
 Environment=QUEUE_PORT=8092
-ExecStart=/usr/bin/node sf.js
+ExecStart=/usr/bin/node sf.js %i
 Restart=always
 RestartSec=1
 KillSignal=SIGTERM

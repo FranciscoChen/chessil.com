@@ -13,10 +13,20 @@ bot play with `/lpush` and background analysis with `/rpush`.
 | `uci.js` | Pure line parsers and bounded per-search result summaries |
 | `queue.js` | Priority queue and outstanding HTTP listeners |
 
-The executable is `engine/stockfish`, resolved relative to the script rather than
-selected by directory ordering. `STOCKFISH_BIN` can select another executable.
+Worker instance 1 starts original Stockfish from `engine/stockfish`. Instance 2
+starts Hybrid V5 from `engine/stockfish-hybrid`. For local runs, set
+`ENGINE_VARIANT=stockfish` or `ENGINE_VARIANT=hybrid`. Override the corresponding
+binary path with `STOCKFISH_BIN` or `HYBRID_STOCKFISH_BIN`.
 Workers use `QUEUE_HOST` and `QUEUE_PORT`, defaulting to `127.0.0.1:8092`.
-This change does not rebuild Stockfish.
+
+## Selecting an engine
+
+The authenticated `POST /play` route accepts an optional JSON `engine` field
+with value `stockfish` or `hybrid`. Omit it for original Stockfish. Successful
+responses include the engine that handled the request. The internal queue uses
+the same values in its `engine` header on `/lpush`, `/rpush`, `/lpop`, and `/set`.
+Each engine has independent foreground and background scheduling. Fair-play
+sampling continues to use original Stockfish.
 
 ## Output handling
 
@@ -97,8 +107,8 @@ shutdown deadline bounds a failed drain. See `DEPLOY.md` for service commands.
 
 The queue and HTTP listeners are in memory. Restarting the queue drops pending
 requests, and a worker crash after popping a job has no lease-based recovery.
-Duplicate UUIDs can overwrite an existing listener. Those are queue ownership
-issues; this worker refactor does not make the queue durable.
+Duplicate outstanding UUIDs for the same engine are rejected. Requests to
+different engines can share a UUID.
 
 ## Shared consumers and analysis order
 

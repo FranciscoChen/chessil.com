@@ -7,6 +7,7 @@ const config = require('../config.json');
 const queueRequest = require('./queue-client');
 const swift = require('./bots/swift');
 const { parseJob } = require('./sf');
+const { stockfish, parseEngine } = require('./variants');
 const obs = require('../observability').createObserver('engine');
 obs.installProcessHandlers();
 const redis = new Redis();
@@ -41,6 +42,8 @@ function send(res, status, data) {
 }
 async function play(payload) {
   if (!payload || !gameIdPattern.test(payload.gameid || '')) throw Object.assign(new Error('Invalid gameid'), { status: 400 });
+  let engine;
+  try { engine = parseEngine(payload.engine); } catch (error) { throw Object.assign(error, { status: 400 }); }
   const moves = typeof payload.moves === 'string' ? payload.moves : '';
   const plies = moves ? moves.trim().split(/\s+/).length : 0;
   const turn = plies % 2 ? 'b' : 'w';
@@ -52,11 +55,13 @@ async function play(payload) {
     profile ? profile.mtime : 256, profile ? 0 : payload.elo, profile ? 0 : 7,
     ...(profile ? ['bot:swift:' + profile.difficulty] : []), moves].join(' ');
   try { parseJob(sf); } catch (error) { throw Object.assign(error, { status: 400 }); }
-  const response = await queueRequest('/lpush', { sf });
+  const response = await queueRequest('/lpush', { sf, engine });
   if (response.status !== 200) throw Object.assign(new Error('Engine queue busy'), { status: 503 });
   let result;
   try { result = JSON.parse(response.body); } catch (error) { throw new Error('Invalid engine response'); }
-  if (result.error || result.uuidhm !== uuidhm) throw new Error(result.error || 'Mismatched engine result');
+  if (result.error || result.uuidhm !== uuidhm || (result.engine ?? stockfish) !== engine) {
+    throw new Error(result.error || 'Mismatched engine result');
+  }
   if (profile) result.bot = { program:'swift', difficulty:profile.difficulty,
     thinkTimeMs:swift.thinkTime({remaining:Number(turn==='w'?payload.wtime:payload.btime),
       increment:Number(turn==='w'?payload.winc:payload.binc),plies}), searchLimitMs:profile.mtime };

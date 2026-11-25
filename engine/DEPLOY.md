@@ -21,7 +21,13 @@ Setup (one time)
    - Reload nginx after changes.
 
 Deployment / restart
-- Run: ./engine/restart-engine.sh
+- Push to GitHub and let the deployment hook run the engine rollout.
+- The rollout builds Hybrid V5 from the versioned release source and weights
+  before restarting services. It reuses the binary while those build inputs
+  stay the same. Builds require Python 3, patch, gzip, GNU Make and a C++17
+  toolchain on the engine host.
+- The existing two worker instances run original Stockfish and Hybrid V5,
+  respectively.
 
 Public fair-play summaries
 - Apply `database/fair-play.sql` to the shared database before deploying the new API/web code.
@@ -30,8 +36,6 @@ Public fair-play summaries
   backs up pg_hba.conf and installs a database/role/IP-specific SSL-only rule.
 - Restart API instances one at a time. Stockfish workers and the in-memory queue
   do not need restarting for detector-only changes.
-- `RESTART_ENGINE=0` currently disables automatic engine restarts in this repository;
-  run the API restarts explicitly when deploying detector changes.
 - Inspect private `fairplay:report:<gameid>` and `fairplay:account:<userid>` keys or
   use the authenticated `/fair-play/report` endpoint. Public profiles read only
   the bounded summary in `fair_play_accounts`.

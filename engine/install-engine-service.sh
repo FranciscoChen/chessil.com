@@ -18,6 +18,7 @@ fi
 : "${ENGINE_WORKER_COUNT:?Missing ENGINE_WORKER_COUNT in $config_file}"
 : "${ENGINE_API_PORTS:?Missing ENGINE_API_PORTS in $config_file}"
 
+"$(dirname "$config_file")/build-hybrid.sh"
 sudo cp "$service_dir/chessil-engine-api@.service" /etc/systemd/system/
 sudo cp "$service_dir/chessil-engine-queue.service" /etc/systemd/system/
 sudo cp "$service_dir/chessil-engine-worker@.service" /etc/systemd/system/

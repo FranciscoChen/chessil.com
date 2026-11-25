@@ -1,0 +1,59 @@
+--- a/stockfish/src/engine.cpp
++++ b/stockfish/src/engine.cpp
+@@ -46,0 +47,5 @@
++#ifdef CHESSIL_EMBED_POLICY
++#include "incbin/incbin.h"
++INCBIN(EmbeddedPolicy, "../../weights/v5-7a702165ba92.policy");
++#endif
++
+@@ -47,0 +53,8 @@
++
++#ifdef CHESSIL_EMBED_POLICY
++void EmbeddedPolicyBuffer::open() {
++    // std::streambuf takes mutable pointers even for read-only input.
++    char* data = const_cast<char*>(reinterpret_cast<const char*>(gEmbeddedPolicyData));
++    setg(data, data, data + gEmbeddedPolicySize);
++}
++#endif
+@@ -139,0 +153,3 @@
++#ifdef CHESSIL_EMBED_POLICY
++    options.add("CompactPolicyFile", Option(EmbeddedPolicyBuffer::name));
++#else
+@@ -140,0 +157 @@
++#endif
+--- a/stockfish/src/incremental_policy.h
++++ b/stockfish/src/incremental_policy.h
+@@ -6,0 +7 @@
++#include <streambuf>
+@@ -14,0 +16,8 @@
++#ifdef CHESSIL_EMBED_POLICY
++class EmbeddedPolicyBuffer : public std::streambuf {
++public:
++    static constexpr auto name = "<embedded>";
++    void open();
++};
++#endif
++
+@@ -120,0 +130,3 @@
++#ifdef CHESSIL_EMBED_POLICY
++        if (path == EmbeddedPolicyBuffer::name) return true;
++#endif
+@@ -128 +140,15 @@
+-        std::ifstream in(path, std::ios::binary); char magic[8]{}; in.read(magic, 8);
++#ifdef CHESSIL_EMBED_POLICY
++        if (path == EmbeddedPolicyBuffer::name) {
++            EmbeddedPolicyBuffer buffer;
++            buffer.open();
++            std::istream in(&buffer);
++            return load_stream(in, path, error);
++        }
++#endif
++        std::ifstream in(path, std::ios::binary);
++        return load_stream(in, path, error);
++    }
++private:
++    bool load_stream(std::istream& in, const std::string& path, std::string& error) {
++        char magic[8]{};
++        in.read(magic, 8);
+@@ -154,0 +181 @@
++public:

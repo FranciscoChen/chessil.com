@@ -1,6 +1,8 @@
 const http = require('http');
+const { join } = require('path');
 const Stockfish = require('./stockfish-process');
 const { movePattern } = require('./uci');
+const { stockfish, hybrid, parseEngine } = require('./variants');
 const obs = require('../observability').createObserver('engine-worker');
 
 function parseJob(reply) {
@@ -42,6 +44,8 @@ function queueRequest(path, headers = {}) {
 }
 
 async function run() {
+  const variant = parseEngine(process.env.ENGINE_VARIANT ?? (process.argv[2] === '2' ? hybrid : stockfish));
+  const binary = variant === hybrid ? process.env.HYBRID_STOCKFISH_BIN || join(__dirname, 'stockfish-hybrid') : undefined;
   obs.installProcessHandlers();
   let engine, stopping = false, idle = 0, shutdownTimer;
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -60,7 +64,7 @@ async function run() {
     while (!stopping || attempts < 3) {
       try {
         const response = await queueRequest('/set', {
-          uuidhm, bm: result.bestmove || '0000', eval: result.eval || '',
+          uuidhm, engine: variant, bm: result.bestmove || '0000', eval: result.eval || '',
           ...(result.analysis ? { analysis: JSON.stringify(result.analysis) } : {}),
           ...(result.ponder ? { ponder: result.ponder } : {}),
           ...(result.error ? { error: result.error.replace(/[^\x20-\x7e]/g, ' ').slice(0, 256) } : {})
@@ -76,18 +80,18 @@ async function run() {
     }
   }
 
-  obs.log('info', 'worker_start');
+  obs.log('info', 'worker_start', { engine: variant });
   try {
     while (!stopping) {
       try {
         if (!engine || engine.failure) {
           engine?.close();
-          engine = new Stockfish();
+          engine = new Stockfish({ binary });
           await engine.initialize();
-          obs.log('info', 'stockfish_ready');
+          obs.log('info', 'stockfish_ready', { engine: variant });
         }
         if (stopping) break;
-        const response = await queueRequest('/lpop');
+        const response = await queueRequest('/lpop', { engine: variant });
         if (response.status === 404) { await sleep(Math.min(1000, ++idle * 32)); continue; }
         if (response.status !== 200) throw new Error('Queue pop failed: ' + response.status);
         idle = 0;

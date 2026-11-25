@@ -29,15 +29,14 @@ service_units=(
   "${worker_units[@]}"
 )
 
-for unit in "${api_units[@]}"; do
-  if sudo systemctl is-active --quiet "$unit"; then
-    sudo systemctl restart "$unit"
-  else
-    sudo systemctl start "$unit"
-  fi
-done
+"$SCRIPT_DIR/build-hybrid.sh"
+worker_unit=chessil-engine-worker@.service
+if ! cmp -s "$SCRIPT_DIR/systemd/$worker_unit" "/etc/systemd/system/$worker_unit"; then
+  sudo install -m 0644 "$SCRIPT_DIR/systemd/$worker_unit" "/etc/systemd/system/$worker_unit"
+  sudo systemctl daemon-reload
+fi
 
-for unit in "${service_units[@]}"; do
+for unit in "${service_units[@]}" "${api_units[@]}"; do
   if sudo systemctl is-active --quiet "$unit"; then
     sudo systemctl restart "$unit"
   else

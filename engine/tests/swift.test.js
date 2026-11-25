@@ -41,6 +41,41 @@ test('real queue and persistent worker serve simultaneous bot requests',async()=
   if(worker){worker.kill('SIGTERM');await once(worker,'exit');}queue.kill('SIGTERM');await once(queue,'exit');
  }
 });
+test('queue dispatches and accepts results only for the requested engine', async () => {
+ const port = 20000 + Math.floor(Math.random() * 1000);
+ const queue = spawn(process.execPath, [require.resolve('../queue')], {
+  env: { ...process.env, PORT: String(port) }, stdio: 'ignore'
+ });
+ const stopped = once(queue, 'exit');
+ const job = id => `${id} 300000 300000 0 0 256 0 0`;
+ const original = 'stockfish-test-w', hybrid = 'hybrid-test-w';
+ try {
+  for (let i = 0; i < 100; i++) {
+   try { if ((await request(port, '/health')).status === 200) break; } catch {}
+   await new Promise(resolve => setTimeout(resolve, 20));
+  }
+  assert.equal((await request(port, '/lpush', { sf: job(original), engine: 'unknown' })).status, 400);
+  const results = Promise.all([
+   request(port, '/rpush', { sf: job(hybrid), engine: 'hybrid' }),
+   request(port, '/lpush', { sf: job(original) })
+  ]);
+  const originalWork = await request(port, '/lpop');
+  assert.equal(originalWork.body, job(original));
+  const hybridWork = await request(port, '/lpop', { engine: 'hybrid' });
+  assert.equal(hybridWork.body, job(hybrid));
+  const move = { bm: 'd2d4', eval: 'cp 20' };
+  assert.equal((await request(port, '/set', { ...move, uuidhm: hybrid, bm: 'a2a3' })).status, 200);
+  assert.equal((await request(port, '/set', { ...move, uuidhm: original })).status, 200);
+  assert.equal((await request(port, '/set', { ...move, uuidhm: hybrid, engine: 'hybrid' })).status, 200);
+  assert.deepEqual((await results).map(result => {
+   const body = JSON.parse(result.body);
+   return [result.status, body.engine, body.bestmove];
+  }), [[200, 'hybrid', 'd2d4'], [200, 'stockfish', 'd2d4']]);
+ } finally {
+  queue.kill('SIGTERM');
+  await stopped;
+ }
+});
 test('parsed MultiPV selection weakens both mistake frequency and severity by level',()=>{
  const {SearchSummary}=require('../uci'),{choose}=require('../bots/swift');const summary=new SearchSummary();
  for(let i=0;i<20;i++)summary.add(`info depth 1 multipv ${i+1} score cp ${100-i*100} pv ${String.fromCharCode(97+i%8)}${i<8?2:i<16?3:4}${String.fromCharCode(97+i%8)}5`);
