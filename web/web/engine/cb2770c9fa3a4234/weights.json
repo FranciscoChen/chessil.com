@@ -1,0 +1,16 @@
+{
+  "value": {
+    "name": "nn-c9e480e92425.nnue",
+    "url": "/engine/cb2770c9fa3a4234/nn-c9e480e92425.nnue.gz",
+    "integrity": "sha256-fkQIbmL24RYLWf1g9MBcXsCCjFVeMvkZ1+EVLdZFZxY=",
+    "size": 113178980,
+    "sha256": "c9e480e92425f887df6ab9b05c6180fbd762b07879df9d9845f1aa75440caa73"
+  },
+  "policy": {
+    "name": "v5-7a702165ba92.policy",
+    "url": "/engine/cb2770c9fa3a4234/v5-7a702165ba92.policy",
+    "integrity": "sha256-enAhZbqSByAG+ZcIoWrrYFCBMNkERBKheimtUmsEAI4=",
+    "size": 11547920,
+    "sha256": "7a702165ba92072006f99708a16aeb60508130d9044412a17a29ad526b04008e"
+  }
+}

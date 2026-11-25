@@ -5,7 +5,18 @@ window.ChessilLocalEngine=class {
  async load(settings=window.ChessilPreferences?.get().analysis||{}){
   if(typeof WebAssembly==='undefined')throw Error('This browser has WebAssembly disabled or unavailable');
   const catalogResponse=await fetch('/engine/catalog.json',{signal:this.abort.signal});if(!catalogResponse.ok)throw Error('Engine catalog unavailable');
-  const catalog=await catalogResponse.json(),selected=catalog.engines.find(e=>e.id===(settings.engine||'stockfish-lite'));if(!selected)throw Error('Selected engine is not installed');
+  const catalog=await catalogResponse.json(),selected=catalog.engines.find(e=>e.id===(settings.engine||catalog.defaultEngine||catalog.engines[0]?.id));if(!selected)throw Error('Selected engine is not installed');
+  try {
+   return await this.loadSelection(settings, selected);
+  } catch (error) {
+   const fallback=catalog.engines.find(e=>e.id===selected.fallback);
+   if(this.stopped||!fallback)throw error;
+   this.closed=false;this.abort=new AbortController();
+   return this.loadSelection({...settings,engine:fallback.id,network:'default'},fallback);
+  }
+ }
+ async loadSelection(settings,selected){
+  this.engineId=selected.id;
   const networkChoice=selected.networks.find(n=>n.id===(settings.network||'default'))||(settings.network==='embedded'?selected.networks.find(n=>n.id==='default'&&n.mode==='embedded'):null);if(!networkChoice)throw Error('Selected network is not compatible with this engine');
   const supported=ChessilPreferences.engineThreads(selected);this.settings={...settings,multiPV:settings.multiPV||3,hash:settings.hash||32,threads:supported.includes(settings.threads)?settings.threads:1};
 
@@ -20,7 +31,7 @@ window.ChessilLocalEngine=class {
     const response=await fetch(variants[i],{cache:'no-store',signal:this.abort.signal});if(!response.ok)throw Error('Engine manifest unavailable');this.manifest=await response.json();
     if(variants[i]!==selected.threadedManifest)this.settings.threads=1;
     this.worker=new Worker(this.manifest.worker);this.worker.onmessage=e=>this.line(String(e.data));this.worker.onerror=event=>{event.preventDefault();this.fail(Error('Browser engine could not start'+(event.message?': '+event.message:'. Please check browser permissions and available memory.')));};
-    options=new Set();await this.command('uci',line=>line==='uciok',30000,line=>{const match=line.match(/^option name (.+?) type /);if(match)options.add(match[1]);});
+    options=new Set();await this.command('uci',line=>line==='uciok',this.manifest.startupTimeout||30000,line=>{const match=line.match(/^option name (.+?) type /);if(match)options.add(match[1]);});
     for(const network of networkChoice.mode==='embedded'?[]:(networkChoice.files||this.manifest.networks||[])){
      if(!options.has(network.option||'EvalFile'))throw Error('This engine does not support the configured network option');
      const r=await fetch(network.url,{signal:this.abort.signal});if(!r.ok)throw Error('Neural network download failed');const data=await r.arrayBuffer();
@@ -29,7 +40,7 @@ window.ChessilLocalEngine=class {
     }
     if(options.has('Skill Level'))this.worker.postMessage('setoption name Skill Level value 20');
     if(options.has('UCI_LimitStrength'))this.worker.postMessage('setoption name UCI_LimitStrength value false');
-    this.worker.postMessage('setoption name UCI_ShowWDL value true');this.worker.postMessage('setoption name Hash value '+this.settings.hash);if(options.has('Threads'))this.worker.postMessage('setoption name Threads value '+this.settings.threads);this.worker.postMessage('setoption name UCI_AnalyseMode value true');await this.command('isready',line=>line==='readyok');return this.manifest;
+    this.worker.postMessage('setoption name UCI_ShowWDL value true');this.worker.postMessage('setoption name Hash value '+this.settings.hash);if(options.has('Threads'))this.worker.postMessage('setoption name Threads value '+this.settings.threads);if(options.has('UCI_AnalyseMode'))this.worker.postMessage('setoption name UCI_AnalyseMode value true');await this.command('isready',line=>line==='readyok');return this.manifest;
    }catch(error){
     this.fail(error);if(this.stopped||i===variants.length-1)throw error;
     this.closed=false;this.abort=new AbortController();

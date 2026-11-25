@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),puppeteer=r
 const fen='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 for(const mode of ['no-simd','thread-failure','optimized-failure'])test('real engine compatibility: '+mode,async()=>{
  const f=await start(),browser=await puppeteer.launch({headless:'new',args:['--no-sandbox']});try{
-  f.preferences.analysis.threads=2;
+  f.preferences.analysis.engine='stockfish-lite';f.preferences.analysis.threads=2;
   const p=await browser.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));
   if(mode==='no-simd')await p.evaluateOnNewDocument(()=>{const validate=WebAssembly.validate;WebAssembly.validate=function(bytes,...rest){return bytes.byteLength<100?false:validate.call(this,bytes,...rest);};});
   if(mode!=='no-simd'){await p.setRequestInterception(true);p.on('request',r=>{const url=r.url();if(url.endsWith('/chessil-stockfish.js')&&(url.includes('/c843bc805853e0f5/')||mode==='optimized-failure'&&url.includes('/55f00e29b7f308f6/')))r.respond({status:200,contentType:'text/javascript',headers:{'Cross-Origin-Embedder-Policy':'require-corp','Cross-Origin-Resource-Policy':'same-origin'},body:'throw new Error("Simulated optimized-worker startup failure");'});else r.continue();});}
@@ -21,7 +21,7 @@ for(const mode of ['no-simd','thread-failure','optimized-failure'])test('real en
  }finally{await browser.close();await f.close();}
 });
 test('book probability bars without scores, WDL when available, and accurate failure text',async()=>{
- const f=await start(),browser=await puppeteer.launch({headless:'new',args:['--no-sandbox']});try{
+ const f=await start();f.preferences.analysis.engine='stockfish-lite';const browser=await puppeteer.launch({headless:'new',args:['--no-sandbox']});try{
   const p=await browser.newPage();await p.setViewport({width:390,height:844});await p.setRequestInterception(true);p.on('request',r=>r.url().endsWith('/chessil-stockfish.js')?r.respond({status:200,contentType:'text/javascript',headers:{'Cross-Origin-Embedder-Policy':'require-corp','Cross-Origin-Resource-Policy':'same-origin'},body:'throw new Error("Worker blocked by test browser");'}):r.continue());
   await p.goto(f.url+'/en/analysis',{waitUntil:'networkidle0'});await p.waitForFunction(()=>document.querySelector('#analysis-status').textContent.includes('retry'),{timeout:60000});await p.waitForSelector('.book-wdl.is-probability');
   const status=await p.$eval('#analysis-status',e=>e.textContent);assert.match(status,/Worker blocked by test browser/);assert.doesNotMatch(status,/SIMD/);

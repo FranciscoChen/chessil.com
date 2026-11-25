@@ -1,0 +1,25 @@
+Stockfish Hybrid V5 browser build
+================================
+
+The stockfish/src directory contains the complete engine source used by the
+WebAssembly build, including the applied browser patch. browser/browser.patch
+records the port changes. The experimental source snapshot is based on Stockfish
+revision 2ffd877d with additional recorded working-tree changes in the archive.
+The website build uses the V5 policy file from the 1,600-game November 24 match
+and the full value NNUE nn-c9e480e92425.nnue. The browser binary is an independently
+built port, so the native match result does not measure browser playing strength.
+
+With Emscripten 6.0.9 active and from the extracted archive root:
+
+  bash browser/build.sh stockfish/src output simd
+
+Serve the generated JS and Wasm next to browser/worker.js and weights.json.
+The worker uses standard UCI strings. The two weight files are available
+separately from the same download page. weights.json lists their asset URLs
+and checksums. The value file is gzip-compressed and retains its original
+NNUE bytes when unpacked.
+
+For a native build, decompress the value file as stockfish/src/nn-c9e480e92425.nnue
+and run make -C stockfish/src -j1 build ARCH=x86-64-bmi2. Then set
+CompactPolicyFile to the downloaded V5 policy path and keep PolicySearch on and
+PolicySearchReductions off. Native rebuilds depend on the target CPU and compiler.

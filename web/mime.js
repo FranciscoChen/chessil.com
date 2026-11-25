@@ -28,6 +28,7 @@ const data = {
   ".bin": "application/octet-stream",
   ".gz": "application/gzip",
   ".nnue": "application/octet-stream",
+  ".policy": "application/octet-stream",
   ".json": "text/javascript",
   ".wasm": "application/wasm",
   ".ico": "image/x-icon",

@@ -1,6 +1,22 @@
 {
   "engines": [
     {
+      "id": "stockfish-hybrid",
+      "name": "Stockfish Hybrid V5",
+      "manifest": "/engine/manifest-hybrid.json",
+      "threads": [
+        1
+      ],
+      "fallback": "stockfish-lite",
+      "networks": [
+        {
+          "id": "default",
+          "name": "V5 policy + full NNUE",
+          "mode": "embedded"
+        }
+      ]
+    },
+    {
       "id": "stockfish-lite",
       "name": "Stockfish 19 Lite",
       "manifest": "/engine/manifest.json",
@@ -13,12 +29,12 @@
       "networks": [
         {
           "id": "default",
-          "name": "NNUE \u00b7 bundled default",
+          "name": "NNUE · bundled default",
           "mode": "embedded"
         },
         {
           "id": "external",
-          "name": "NNUE \u00b7 optional external override",
+          "name": "NNUE · optional external override",
           "mode": "manifest"
         }
       ],
@@ -32,5 +48,6 @@
       "name": "Lc0 BT4-it332",
       "manifest": "/engine/book/polyglot-manifest.json"
     }
-  ]
+  ],
+  "defaultEngine": "stockfish-hybrid"
 }

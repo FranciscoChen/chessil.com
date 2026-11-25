@@ -887,6 +887,21 @@ function serve(filename, mime, ext, res, req, resHeaders, sessiondata) {
         return
       }
       resHeaders["Content-Type"] = mime.data[ext];
+      const assetPath = path.relative(dir, filename);
+      if (/^engine\/[a-f0-9]{16}\/[^/]+\.(?:gz|policy)$/.test(assetPath)) {
+        resHeaders['Content-Length'] = stats.size;
+        resHeaders['Cache-Control'] = 'public, max-age=31536000, immutable';
+        res.writeHead(200, resHeaders);
+        if (req.method === 'HEAD') {
+          res.end();
+          return;
+        }
+        const stream = fs.createReadStream(filename);
+        stream.once('error', error => res.destroy(error));
+        res.once('close', () => stream.destroy());
+        stream.pipe(res);
+        return;
+      }
       fs.readFile(filename, function (err, data) {
         if (!err) {
           if (ext === '.html') {

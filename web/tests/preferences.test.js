@@ -39,7 +39,7 @@ test('browser rules preserve start-position move counts and special-move FENs',(
 
 test('analysis settings are bounded and keep only identifiers and supported numeric fields',()=>{
  const settings=normalize({analysis:{engine:'../../escape',network:'https://other',multiPV:999,hash:100000,threads:-1,exec:'bad'}}).analysis;
- assert.deepEqual(settings,{engine:'stockfish-lite',network:'default',book:'lc0-bt4',multiPV:8,hash:256,threads:1,idleMinutes:15,plan:false,threat:false});
+ assert.deepEqual(settings,{engine:'stockfish-hybrid',network:'default',book:'lc0-bt4',multiPV:8,hash:256,threads:1,idleMinutes:15,plan:false,threat:false});
  assert.deepEqual(normalize({analysis:{engine:'stockfish-lite',network:'embedded',multiPV:2,hash:64,threads:1}}).analysis,{engine:'stockfish-lite',network:'embedded',book:'lc0-bt4',multiPV:2,hash:64,threads:1,idleMinutes:15,plan:false,threat:false});
 });
 

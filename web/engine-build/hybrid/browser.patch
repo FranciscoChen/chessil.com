@@ -1,0 +1,354 @@
+--- a/src/uci.h
++++ b/src/uci.h
+@@ -42,6 +42,8 @@
+     UCIEngine(CommandLine cli);
+
+     void loop();
++    std::string process_command(const std::string& cmd);
++    void stop() { engine.stop(); }
+
+     static int         to_cp(Value v, const Position& pos);
+     static std::string format_score(const Score& s);
+--- a/src/uci.cpp
++++ b/src/uci.cpp
+@@ -105,90 +105,94 @@
+             && !getline(std::cin, cmd))  // Wait for an input or an end-of-file (EOF) indication
+             cmd = "quit";
+
+-        currentCmd = cmd;
+-        std::istringstream is(cmd);
+-
+-        token.clear();  // Avoid a stale if getline() returns nothing or a blank line
+-        is >> token;
+-
+-        if (token == "quit" || token == "stop")
+-            engine.stop();
+-
+-        // The GUI sends 'ponderhit' to tell that the user has played the expected move.
+-        // So, 'ponderhit' is sent if pondering was done on the same move that the user
+-        // has played. The search should continue, but should also switch from pondering
+-        // to the normal search.
+-        else if (token == "ponderhit")
+-            engine.set_ponderhit(false);
+-
+-        else if (token == "uci")
+-        {
+-            sync_cout << "id name " << engine_info(true) << "\n"
+-                      << engine.get_options() << sync_endl;
+-
+-            sync_cout << "uciok" << sync_endl;
+-        }
+-
+-        else if (token == "setoption")
+-            setoption(is);
+-        else if (token == "go")
+-        {
+-            // send info strings after the go command is sent for old GUIs and python-chess
+-            print_info_string(engine.numa_config_information_as_string());
+-            print_info_string(engine.thread_allocation_information_as_string());
+-            go(is);
+-        }
+-        else if (token == "position")
+-            position(is);
+-        else if (token == "ucinewgame")
+-            engine.search_clear();
+-        else if (token == "isready")
+-            sync_cout << "readyok" << sync_endl;
+-
+-        // Add custom non-UCI commands, mainly for debugging purposes.
+-        else if (token == "flip")
+-        {
+-            if (auto err = engine.flip())
+-            {
+-                terminate_on_critical_error(err->what());
+-            }
+-        }
+-        else if (token == "bench")
+-            bench(is);
+-        else if (token == BenchmarkCommand)
+-            benchmark(is);
+-        else if (token == "d")
+-            sync_cout << engine.visualize() << sync_endl;
+-        else if (token == "eval")
+-            engine.trace_eval();
+-        else if (token == "policytrace")
+-            engine.trace_policy();
+-        else if (token == "compiler")
+-            sync_cout << compiler_info() << sync_endl;
+-        else if (token == "export_net")
+-        {
+-            std::optional<std::filesystem::path> file;
+-            std::string                          filename;
+-
+-            if (is >> filename)
+-                file = path_from_utf8(filename);
+-
+-            engine.save_network(file);
+-        }
+-        else if (token == "--help" || token == "help" || token == "--license" || token == "license")
+-            sync_cout
+-              << "\nStockfish is a powerful chess engine for playing and analyzing."
+-                 "\nIt is released as free software licensed under the GNU GPLv3 License."
+-                 "\nStockfish is normally used with a graphical user interface (GUI) and implements"
+-                 "\nthe Universal Chess Interface (UCI) protocol to communicate with a GUI, an API, etc."
+-                 "\nFor any further information, visit https://github.com/official-stockfish/Stockfish#readme"
+-                 "\nor read the corresponding README.md and Copying.txt files distributed along with this program.\n"
+-              << sync_endl;
+-        else if (!token.empty() && token[0] != '#')
+-            sync_cout << "Unknown command: '" << cmd << "'. Type help for more information."
+-                      << sync_endl;
+-
++        token = process_command(cmd);
+     } while (token != "quit" && cli.argc <= 1);  // The command-line arguments are one-shot
++}
++
++std::string UCIEngine::process_command(const std::string& cmd) {
++    currentCmd = cmd;
++    std::istringstream is(cmd);
++
++    std::string token;
++    is >> token;
++
++    if (token == "quit" || token == "stop")
++        engine.stop();
++
++    // The GUI sends 'ponderhit' to tell that the user has played the expected move.
++    // So, 'ponderhit' is sent if pondering was done on the same move that the user
++    // has played. The search should continue, but should also switch from pondering
++    // to the normal search.
++    else if (token == "ponderhit")
++        engine.set_ponderhit(false);
++
++    else if (token == "uci")
++    {
++        sync_cout << "id name " << engine_info(true) << "\n"
++                  << engine.get_options() << sync_endl;
++
++        sync_cout << "uciok" << sync_endl;
++    }
++
++    else if (token == "setoption")
++        setoption(is);
++    else if (token == "go")
++    {
++        // send info strings after the go command is sent for old GUIs and python-chess
++        print_info_string(engine.numa_config_information_as_string());
++        print_info_string(engine.thread_allocation_information_as_string());
++        go(is);
++    }
++    else if (token == "position")
++        position(is);
++    else if (token == "ucinewgame")
++        engine.search_clear();
++    else if (token == "isready")
++        sync_cout << "readyok" << sync_endl;
++
++    // Add custom non-UCI commands, mainly for debugging purposes.
++    else if (token == "flip")
++    {
++        if (auto err = engine.flip())
++        {
++            terminate_on_critical_error(err->what());
++        }
++    }
++    else if (token == "bench")
++        bench(is);
++    else if (token == BenchmarkCommand)
++        benchmark(is);
++    else if (token == "d")
++        sync_cout << engine.visualize() << sync_endl;
++    else if (token == "eval")
++        engine.trace_eval();
++    else if (token == "policytrace")
++        engine.trace_policy();
++    else if (token == "compiler")
++        sync_cout << compiler_info() << sync_endl;
++    else if (token == "export_net")
++    {
++        std::optional<std::filesystem::path> file;
++        std::string                          filename;
++
++        if (is >> filename)
++            file = path_from_utf8(filename);
++
++        engine.save_network(file);
++    }
++    else if (token == "--help" || token == "help" || token == "--license" || token == "license")
++        sync_cout
++          << "\nStockfish is a powerful chess engine for playing and analyzing."
++             "\nIt is released as free software licensed under the GNU GPLv3 License."
++             "\nStockfish is normally used with a graphical user interface (GUI) and implements"
++             "\nthe Universal Chess Interface (UCI) protocol to communicate with a GUI, an API, etc."
++             "\nFor any further information, visit https://github.com/official-stockfish/Stockfish#readme"
++             "\nor read the corresponding README.md and Copying.txt files distributed along with this program.\n"
++          << sync_endl;
++    else if (!token.empty() && token[0] != '#')
++        sync_cout << "Unknown command: '" << cmd << "'. Type help for more information."
++                  << sync_endl;
++    return token;
+ }
+
+ Search::LimitsType UCIEngine::parse_limits(std::istream& is) {
+--- a/src/thread.cpp
++++ b/src/thread.cpp
+@@ -54,9 +54,13 @@
+                OptionalThreadToNumaNodeBinder         binder) :
+     idx(n),
+     idxInNuma(numaN),
+-    totalNuma(totalNumaCount),
+-    stdThread(
+-      create_native_thread(NativeThreadOptions{}.setLargeStack(true), &Thread::idle_loop, this)) {
++    totalNuma(totalNumaCount)
++#ifndef __EMSCRIPTEN__
++    , stdThread(
++      create_native_thread(NativeThreadOptions{}.setLargeStack(true), &Thread::idle_loop, this))
++#endif
++{
++#ifndef __EMSCRIPTEN__
+
+     if (!stdThread.joinable())
+     {
+@@ -67,15 +71,18 @@
+     wait_for_search_finished();
+
+     run_custom_job([this, &binder, &sharedState, &sm, n]() {
++#endif
+         // Use the binder to [maybe] bind the threads to a NUMA node before doing
+         // the Worker allocation. Ideally we would also allocate the SearchManager
+         // here, but that's minor.
+         this->numaAccessToken = binder();
+         this->worker          = make_unique_large_page<Search::Worker>(
+           sharedState, std::move(sm), n, idxInNuma, totalNuma, this->numaAccessToken);
++#ifndef __EMSCRIPTEN__
+     });
+
+     wait_for_search_finished();
++#endif
+ }
+
+
+@@ -85,9 +92,11 @@
+
+     assert(!searching);
+
++#ifndef __EMSCRIPTEN__
+     exit = true;
+     start_searching();
+     stdThread.join();
++#endif
+ }
+
+ // Wakes up the thread that will start the search
+@@ -104,13 +113,17 @@
+
+ // Blocks on the condition variable until the thread has finished searching
+ void Thread::wait_for_search_finished() {
+-
++#ifndef __EMSCRIPTEN__
+     std::unique_lock<std::mutex> lk(mutex);
+     cv.wait(lk, [&] { return !searching; });
++#endif
+ }
+
+ // Launching a function in the thread
+ void Thread::run_custom_job(std::function<void()> f) {
++#ifdef __EMSCRIPTEN__
++    f();
++#else
+     {
+         std::unique_lock<std::mutex> lk(mutex);
+         cv.wait(lk, [&] { return !searching; });
+@@ -118,6 +131,7 @@
+         searching = true;
+     }
+     cv.notify_one();
++#endif
+ }
+
+ void Thread::ensure_network_replicated() { worker->ensure_network_replicated(); }
+--- a/src/thread.h
++++ b/src/thread.h
+@@ -102,7 +102,13 @@
+     std::mutex                mutex;
+     std::condition_variable   cv;
+     usize                     idx, idxInNuma, totalNuma;
+-    bool                      exit = false, searching = true;  // Set before starting std::thread
++    bool                      exit = false, searching =
++#ifdef __EMSCRIPTEN__
++                              false;
++#else
++                              true;
++#endif
++    //;  // Set before starting std::thread
+     NativeThread              stdThread;
+     NumaReplicatedAccessToken numaAccessToken;
+ };
+--- a/src/numa.h
++++ b/src/numa.h
+@@ -78,7 +78,11 @@
+ using NumaIndex = usize;
+
+ inline CpuIndex get_hardware_concurrency() {
++#ifdef __EMSCRIPTEN__
++    CpuIndex concurrency = 1;
++#else
+     CpuIndex concurrency = std::thread::hardware_concurrency();
++#endif
+
+     // Get all processors across all processor groups on windows, since
+     // hardware_concurrency() only returns the number of processors in
+--- a/src/search.cpp
++++ b/src/search.cpp
+@@ -17,6 +17,9 @@
+ */
+
+ #include "search.h"
++#ifdef __EMSCRIPTEN__
++    #include <emscripten.h>
++#endif
+
+ #include <algorithm>
+ #include <array>
+@@ -314,7 +317,11 @@
+     // GUI sends a "stop" or "ponderhit" command. We therefore simply wait here
+     // until the GUI sends one of those commands.
+     while (!threads.stop && (main_manager()->ponder || limits.infinite))
+-    {}
++    {
++#ifdef __EMSCRIPTEN__
++        emscripten_sleep(10);
++#endif
++    }
+
+     // Stop the threads if not already stopped (also raise the stop if "ponderhit"
+     // just reset threads.ponder).
+@@ -2944,6 +2951,15 @@
+     // When using nodes, ensure checking rate is not lower than 0.1% of nodes
+     callsCnt = worker.limits.nodes ? std::min(512, int(worker.limits.nodes / 1024)) : 512;
+
++#ifdef __EMSCRIPTEN__
++    // Let the worker receive stop without unwinding or resetting the search.
++    static TimePoint lastYield = now();
++    if (now() - lastYield >= 16)
++    {
++        emscripten_sleep(0);
++        lastYield = now();
++    }
++#endif
+     static TimePoint lastInfoTime = now();
+
+     TimePoint elapsed = tm.elapsed([&worker]() { return worker.threads.nodes_searched(); });
+--- a/src/engine.cpp
++++ b/src/engine.cpp
+@@ -48,7 +48,11 @@
+
+ namespace NN = Eval::NNUE;
+
++#ifdef __EMSCRIPTEN__
++int MaxThreads = 1;
++#else
+ int MaxThreads = std::max(1024, 4 * int(get_hardware_concurrency()));
++#endif
+
+ // The default configuration will attempt to group L3 domains up to 32 threads.
+ // This size was found to be a good balance between the Elo gain of increased
