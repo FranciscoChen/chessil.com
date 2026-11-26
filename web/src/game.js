@@ -171,16 +171,32 @@ async function roundstart() {
   state:()=>({fen,moves,turn,side:playerside,watcher,finished:gamefinished,connected:gameConnectionReady && a1ti===uci.length}),
   submit:move=>sendGameMessage((turn===playerside?'m':'p')+move),cancelPremove:()=>sendGameMessage('p')
  });
- boardView.orientation=orientation;boardView.active=orientation==='w'?'e2':'e7';
- const wrap=document.querySelector('.cg-wrap');wrap.classList.add('orientation-'+(orientation==='w'?'white':'black'));
- // Card positions change once; piece coordinates always use the same orientation.
- const top=document.querySelector('.game-player--top'),bottom=document.querySelector('.game-player--bottom');
- if(orientation==='b') {const node=top.querySelector('.ruser'),other=bottom.querySelector('.ruser');top.prepend(other);bottom.prepend(node);}
- document.querySelector('.rclock-top').classList.add('rclock-'+(orientation==='w'?'black':'white'));
- document.querySelector('.rclock-bottom').classList.add('rclock-'+(orientation==='w'?'white':'black'));
- document.querySelectorAll('coords.ranks coord').forEach((el,i)=>el.textContent=orientation==='w'?8-i:i+1);
- document.querySelectorAll('coords.files coord').forEach((el,i)=>el.textContent=String.fromCharCode(orientation==='w'?97+i:104-i));
- for(const side of ['w','b'])clockElements[side]=document.querySelector('.rclock-'+(side==='w'?'white':'black')+' .time');
+ const wrap=boardView.root.closest('.cg-wrap');
+ const seats=[...document.querySelectorAll('.game-player')];
+ function orientSeats(side){
+  wrap.classList.toggle('orientation-white',side==='w');
+  wrap.classList.toggle('orientation-black',side==='b');
+  for(const seat of seats){
+   const own=seat.querySelector('[data-board-side]').dataset.boardSide===side;
+   for(const [selector,name] of [['.ruser','ruser'],['.rclock','rclock']]){
+    const item=seat.querySelector(selector);
+    item.classList.toggle(name+'-top',!own);
+    item.classList.toggle(name+'-bottom',own);
+   }
+   seat.classList.toggle('game-player--top',!own);
+   seat.classList.toggle('game-player--bottom',own);
+  }
+ }
+ for(const seat of seats){
+  const side=seat.querySelector('[data-board-side]').dataset.boardSide;
+  const clock=seat.querySelector('.rclock');
+  clock.classList.add(side==='w'?'rclock-white':'rclock-black');
+  clockElements[side]=clock.querySelector('.time');
+ }
+ boardView.root.addEventListener('chessil:orientation',event=>orientSeats(event.detail.side),{signal:boardView.abort.signal});
+ boardView.setOrientation(orientation);
+ boardView.active=orientation==='w'?'e2':'e7';
+ orientSeats(orientation);
  botClockSide=setup.dataset.botSide || '';
  document.addEventListener('visibilitychange',paintClocks,{signal:boardView.abort.signal});
  boardView.render(board);paintClocks();

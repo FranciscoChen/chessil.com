@@ -17,6 +17,7 @@ function headerfunctions(){
   if(event.target.closest('.header-backdrop'))setOpen(null);
   const view=event.target.closest('[data-header-show]');if(view){const name=view.dataset.headerShow;header.querySelectorAll('[data-header-view]').forEach(el=>el.hidden=el.dataset.headerView!==name);const first=header.querySelector('[data-header-view="'+name+'"] button');first?.focus();}
   if(event.target.closest('#open-board-settings,#n a'))setOpen(null);
+  if(event.target.closest('[data-board-flip]')){const previous=active;setOpen(null);previous?.focus();}
  });
  document.addEventListener('click',event=>{if(!header.contains(event.target))setOpen(null);});
  document.addEventListener('keydown',event=>{

@@ -12,11 +12,11 @@ function play(move){if(!ChessilStudy.ready){boardView.acknowledge();return false
 function icon(action,label,path,node){const button=document.createElement('button');button.type='button';button.className='variation-control';button.dataset.branchAction=action;button.dataset.node=node.id;button.setAttribute('aria-label',label);button.title=label;button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+path+'"/></svg>';return button;}
 function renderHistory(){
  renderedRevision=tree.revision;movesList.replaceChildren();document.getElementById('moves-empty').hidden=tree.nodes.size>1;
- function entry(node,container,main){if(node.ply%2||node.parent===tree.root||!container.childElementCount){const number=document.createElement('move-number');number.textContent=Math.ceil(node.ply/2)+(node.ply%2?'.':'. ...');container.append(number);}const entry=document.createElement('move-entry');entry.textContent=node.san;entry.style.gridColumn=node.ply%2?'2':'3';entry.dataset.node=node.id;entry.dataset.ply=node.ply;if(sourceGame?original.includes(node):main)entry.setAttribute('ply',node.ply);entry.tabIndex=0;entry.setAttribute('role','button');if(node.children.length>1||node.parent===tree.root&&tree.root.children.length>1){const cue=document.createElement('button');cue.type='button';cue.className='history-branch-cue';cue.dataset.branchPoint=node.children.length>1?node.id:tree.root.id;cue.textContent='(…)';cue.setAttribute('aria-label',node.children.length>1?'Variations after '+node.san:'Starting-position variations');cue.title=cue.getAttribute('aria-label');entry.append(cue);}container.append(entry);}
+ function entry(node,container,main){const turn=node.parent.fen.split(' ');if(turn[1]==='w'||node.parent===tree.root||!container.childElementCount){const number=document.createElement('move-number');number.textContent=turn[5]+(turn[1]==='w'?'.':'...');container.append(number);}const entry=document.createElement('move-entry');entry.textContent=node.san;entry.style.gridColumn=turn[1]==='w'?'2':'3';entry.dataset.node=node.id;entry.dataset.ply=node.ply;if(sourceGame?original.includes(node):main)entry.setAttribute('ply',node.ply);entry.tabIndex=0;entry.setAttribute('role','button');if(node.children.length>1||node.parent===tree.root&&tree.root.children.length>1){const cue=document.createElement('button');cue.type='button';cue.className='history-branch-cue';cue.dataset.branchPoint=node.children.length>1?node.id:tree.root.id;cue.textContent='(…)';cue.setAttribute('aria-label',node.children.length>1?'Variations after '+node.san:'Starting-position variations');cue.title=cue.getAttribute('aria-label');entry.append(cue);}container.append(entry);}
  function chain(parent,container,main){
   while(parent.children.length){const first=parent.children[0];entry(first,container,main);
    for(const branch of parent.children.slice(1)){
-    const group=document.createElement('div');group.className='history-variation';group.dataset.branch=branch.id;group.dataset.branchLabel=Math.ceil(branch.ply/2)+(branch.ply%2?'. ':'. ... ')+branch.san;group.setAttribute('role','group');group.setAttribute('aria-label','Variation '+group.dataset.branchLabel);
+    const group=document.createElement('div');group.className='history-variation';group.dataset.branch=branch.id;const parentFen=branch.parent.fen.split(' ');group.dataset.branchLabel=parentFen[5]+(parentFen[1]==='w'?'. ':'... ')+branch.san;group.setAttribute('role','group');group.setAttribute('aria-label','Variation '+group.dataset.branchLabel);
     const left=document.createElement('span'),right=document.createElement('span');left.className=right.className='variation-bracket';left.textContent='(';right.textContent=')';
     const row=document.createElement('span');row.className='variation-toolbar';row.append(icon('select','Open variation','M8 5l11 7-11 7z',branch),icon('promote','Promote to main line','M12 20V4m-6 6 6-6 6 6',branch),icon('earlier','Move variation earlier','m6 14 6-6 6 6',branch),icon('later','Move variation later','m6 10 6 6 6-6',branch),icon('delete','Delete variation and its continuations','M5 6h14M9 6V3h6v3M7 6l1 15h8l1-15M10 10v7m4-7v7',branch));
     const content=document.createElement('span');content.className='variation-moves';entry(branch,content,false);chain(branch,content,false);group.append(left,content,right,row);container.append(group);
@@ -43,5 +43,25 @@ document.addEventListener('DOMContentLoaded',()=>{const host=document.querySelec
  const activate=event=>{if((event.key==='Enter'||event.key===' ')&&event.target.matches('move-entry[data-node]')){event.preventDefault();event.target.click();}};movesList.addEventListener('keydown',activate);$('tree-content').addEventListener('keydown',activate);
  document.addEventListener('keydown',event=>{if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||document.querySelector('dialog[open]')||event.target.closest?.('input,textarea,select,[contenteditable]'))return;const plies={ArrowLeft:a1ti-1,ArrowRight:a1ti+1,ArrowUp:0,ArrowDown:uci.length,Home:0,End:uci.length};if(Object.hasOwn(plies,event.key)){event.preventDefault();gamereplay(plies[event.key],true);}});
  const unbindHistory=ChessilHistoryGestures.bind(movesList,{open(){openVariations();}});$('tree-close').onclick=()=>$('tree-dialog').close();const layout=matchMedia('(max-width:900px)');layout.addEventListener('change',()=>{renderHistory();gamereplay(a1ti,false,false);document.dispatchEvent(new CustomEvent('chessil:history-rendered'));});
+ const file=$('pgn-file'), fileStatus=$('pgn-status');
+ $('import').hidden=!!sourceGame;
+ $('import').onclick=()=>file.click();
+ file.onchange=async()=>{
+  const selected=file.files[0];file.value='';
+  if(!selected)return;
+  try {
+   if(selected.size>ChessilStudyPgn.maxBytes)throw Error('PGN is larger than 512 KB.');
+   const imported=ChessilStudyPgn.parse(await selected.text());
+   tree=imported;renderedRevision=-1;
+   choose(tree.continuation(tree.root).at(-1),false);
+   fileStatus.textContent={en:'PGN imported',es:'PGN importado',zh:'已导入 PGN'}[document.documentElement.lang]||'PGN imported';
+  }catch(error){fileStatus.textContent=error.message;}
+ };
+ $('export').onclick=()=>{
+  if(!ChessilStudy.ready)return;
+  const url=URL.createObjectURL(new Blob([ChessilStudyPgn.serialize(tree)],{type:'application/x-chess-pgn'}));
+  const link=document.createElement('a');link.href=url;link.download='chessil-analysis.pgn';link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+ };
  reset(!sourceGame);if(sourceGame)loadGame();window.addEventListener('pagehide',event=>{if(!event.persisted){unbindHistory();boardView.destroy();}});});
 })();

@@ -14,6 +14,14 @@ window.ChessilBoard = class ChessilBoard {
    root.setAttribute('aria-hidden','true');
    return;
   }
+  const headerFlip=document.querySelector('.site-header [data-board-flip]');
+  if(headerFlip)headerFlip.hidden=false;
+  document.addEventListener('click',event=>{
+   const button=event.target.closest?.('[data-board-flip],[data-board-side]');
+   if(!button||button.disabled)return;
+   this.setOrientation(button.dataset.boardSide || (this.orientation==='w'?'b':'w'));
+  },options);
+  this.syncOrientationControls();
   root.tabIndex=0;root.setAttribute('role','application');root.setAttribute('aria-roledescription','chessboard');
   this.announcement=document.createElement('span');this.announcement.className='board-sr-only';this.announcement.setAttribute('aria-live','polite');root.parentElement.append(this.announcement);
   root.addEventListener('pointerdown',event=>this.down(event),options);
@@ -31,7 +39,14 @@ window.ChessilBoard = class ChessilBoard {
   if(!['w','b'].includes(side)||this.orientation===side)return;
   this.cancel();this.orientation=side;this.syncContext();this.drawArrows();
   for(const [square,element] of this.pieces){element.getAnimations().forEach(animation=>animation.cancel());element.style.transform=this.transform(square);}
-  const wrap=this.root.parentElement;wrap.querySelectorAll('coords.files coord').forEach((el,i)=>el.textContent=String.fromCharCode(side==='w'?97+i:104-i));wrap.querySelectorAll('coords.ranks coord').forEach((el,i)=>el.textContent=side==='w'?8-i:i+1);this.drawOverlays();
+  this.drawOverlays();
+  if(this.announcement)this.syncOrientationControls();
+  this.root.dispatchEvent(new CustomEvent('chessil:orientation',{detail:{side}}));
+ }
+ syncOrientationControls(){
+  document.querySelectorAll('[data-board-side]').forEach(button=>{
+   button.setAttribute('aria-pressed',String(button.dataset.boardSide===this.orientation));
+  });
  }
  point(square) {
   const file=square.charCodeAt(0)-97,rank=Number(square[1])-1;

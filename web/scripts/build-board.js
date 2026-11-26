@@ -8,7 +8,7 @@ async function build(){
   'results.min.js':['chess-outcome.js','results.js'],
   'wdl.min.js':['wdl.js'],
   'game.min.js':['game.js'],
-  'study.min.js':['variations.js','history-gestures.js','study.js'],
+  'study.min.js':['variations.js','study-pgn.js','history-gestures.js','study.js'],
   'analysis.min.js':['local-engine.js','../../tools/policy-book/polyglot-random.js','../../tools/policy-book/polyglot.js','opening-book.js','analysis-judgment.js','analysis-guidance.js','analysis-book.js','analysis.js'],
   'training.min.js':['training.js'],
   'learning.min.js':['local-engine.js','../../tools/policy-book/polyglot-random.js','../../tools/policy-book/polyglot.js','opening-book.js','learning-navigation.js','learning-copy.js','lucena-defense.js','hint-toggle.js','learning.js'],

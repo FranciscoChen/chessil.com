@@ -180,3 +180,17 @@
  .game-page moves-panel .game-empty{flex:none;min-height:0}
 }
 @media(max-width:900px){.game-page .board-history .result-wrap{padding:.15rem .4rem}.game-page .board-history .result{font-size:1rem}.game-result-actions{display:inline-flex;margin:0 0 0 .3rem}.game-page .board-history .result-wrap{display:flex;align-items:center}}
+
+/* Color markers have a compact visual dot and a larger keyboard/touch target. */
+.game-page button.player-mark {
+ flex:0 0 28px;width:28px;height:28px;padding:0;display:grid;place-items:center;
+ border:0;border-radius:var(--radius);box-shadow:none;background:transparent;cursor:pointer;
+}
+.game-page button.player-mark::before {
+ content:"";width:12px;height:12px;border-radius:50%;box-sizing:border-box;
+ border:1px solid var(--border);background:var(--mark-color);
+}
+button.player-mark--white {--mark-color:var(--piece-white)}
+button.player-mark--black {--mark-color:var(--piece-black)}
+.game-page button.player-mark:hover,.game-page button.player-mark:focus-visible {background:var(--hover)}
+.game-page button.player-mark[aria-pressed="true"]::before {border-color:var(--link)}

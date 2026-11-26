@@ -54,3 +54,6 @@
  .study-page:not(:has(.study-actions>:not([hidden]))) .round__app{grid-template-areas:"board moves" "board evaluation" "board analysis";grid-template-rows:clamp(12rem,25dvh,20rem) 31px minmax(0,1fr)}
  .study-page .study-actions:not(:has(>:not([hidden]))){display:none}
 }
+
+.study-files{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}
+.study-files output{font-size:.8rem;color:var(--text2)}
