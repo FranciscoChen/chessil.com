@@ -47,6 +47,28 @@
     {
       "id": "stockfish-hybrid",
       "name": "Stockfish Hybrid V5",
+      "manifest": "/engine/manifest-policy-lite.json",
+      "threads": [
+        1
+      ],
+      "fallback": "stockfish-lite",
+      "networks": [
+        {
+          "id": "default",
+          "name": "Lite NNUE · embedded",
+          "mode": "embedded"
+        }
+      ],
+      "policies": [
+        {
+          "id": "v5",
+          "name": "V5 · 11 MiB"
+        }
+      ]
+    },
+    {
+      "id": "stockfish-hybrid-full",
+      "name": "Stockfish Hybrid V5 (Full NNUE)",
       "manifest": "/engine/manifest-hybrid.json",
       "threads": [
         1
@@ -55,7 +77,7 @@
       "networks": [
         {
           "id": "default",
-          "name": "Full NNUE · included",
+          "name": "Full NNUE · 92 MiB",
           "mode": "embedded"
         }
       ],

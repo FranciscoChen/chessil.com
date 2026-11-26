@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const puppeteer = require('puppeteer');
 const start = require('./helpers/board-server');
 
-test('Hybrid V5 uses its match weights, supports stopping search, and falls back without SIMD', async () => {
+test('Full NNUE Hybrid V5 uses its match weights, supports stopping search, and falls back without SIMD', async () => {
  const fixture = await start();
  const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-dev-shm-usage'] });
  try {
@@ -28,7 +28,7 @@ test('Hybrid V5 uses its match weights, supports stopping search, and falls back
    const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
    const messages = [];
    try {
-    const manifest = await engine.load({ engine: 'stockfish-hybrid', network: 'default', threads: 1, hash: 16 });
+    const manifest = await engine.load({ engine: 'stockfish-hybrid-full', network: 'default', threads: 1, hash: 16 });
     engine.worker.addEventListener('message', event => messages.push(event.data));
     engine.worker.postMessage('setoption name PolicySearchStats value true');
     engine.worker.postMessage('position startpos');
@@ -47,7 +47,7 @@ test('Hybrid V5 uses its match weights, supports stopping search, and falls back
     engine.close();
    }
   });
-  assert.equal(result.id, 'stockfish-hybrid');
+  assert.equal(result.id, 'stockfish-hybrid-full');
   assert.equal(result.simd, true);
   assert.match(result.bounded, /^bestmove d2d4 /);
   assert.match(result.line, /score cp 13 .* pv d2d4 d7d5 c2c4 d5c4 b1c3 g8f6$/);
@@ -67,7 +67,7 @@ test('Hybrid V5 uses its match weights, supports stopping search, and falls back
    }
   });
   assert.deepEqual(fallback, { id: 'stockfish-lite', simd: false });
-  await page.goto(fixture.url + '/en/engine-source?engine=stockfish-hybrid', { waitUntil: 'domcontentloaded' });
+  await page.goto(fixture.url + '/en/engine-source?engine=stockfish-hybrid-full', { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-engine-source-downloads]:not([hidden])');
   for (const index of ['0', '1', '2', '3']) {
    const href = await page.$eval(`[data-source-asset="${index}"]`, link => link.href);
@@ -75,6 +75,31 @@ test('Hybrid V5 uses its match weights, supports stopping search, and falls back
   }
   await page.select('[data-source-engine]', 'stockfish-lite');
   await page.waitForFunction(() => document.querySelector('[data-engine-source-name]').textContent.includes('Stockfish 19 Lite'));
+ } finally {
+  await browser.close();
+  await fixture.close();
+ }
+});
+
+test('selecting Hybrid V5 in mobile analysis uses the embedded Lite NNUE', async () => {
+ const fixture = await start();
+ const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+ try {
+  const page = await browser.newPage();
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+  await page.goto(fixture.url + '/en/analysis', { waitUntil: 'networkidle0' });
+  await page.waitForSelector('.engine-line');
+  await page.click('#analysis-options-toggle');
+  const engine = '#analysis-options-fields [data-engine-option="engine"]';
+  await page.waitForSelector(engine + ' option[value="stockfish-hybrid"]');
+  await page.select(engine, 'stockfish-hybrid');
+  const status = '#analysis-status';
+  await page.waitForFunction(selector => document.querySelector(selector).textContent.startsWith('Analyzing position'), { timeout: 60000 }, status);
+  assert.match(await page.$eval('[data-engine-option="network"] option:checked', el => el.textContent), /Lite NNUE.*embedded/);
+  assert.equal(await page.$eval('[data-engine-option="policy"]', el => el.value), 'v5');
+  assert.ok(fixture.requests.includes('/engine/manifest-policy-lite.json'));
+  assert.equal(fixture.requests.filter(path => path.endsWith('.policy')).length, 1);
+  assert.equal(fixture.requests.some(path => /manifest-hybrid|\.nnue(?:\.gz)?$/.test(path)), false);
  } finally {
   await browser.close();
   await fixture.close();
