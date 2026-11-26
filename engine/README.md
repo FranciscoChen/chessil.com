@@ -137,7 +137,8 @@ Elo ratings. Practice games are unrated. Their program, version, level and side
 are saved in PostgreSQL and included in the immutable game-start job.
 
 Swift uses one persistent Stockfish thread, at most approximately 2048 nodes and
-`movetime 1`, and disables tablebase I/O. Difficulty controls root coverage and
+`movetime 1`. Both engine workers use the installed 3–5-piece Syzygy tablebases,
+including during Swift searches. Difficulty controls root coverage and
 how often it deliberately selects a weaker scored move:
 
 | Level | Requested PVs | Weaker-move probability | Candidate rank percentile band |

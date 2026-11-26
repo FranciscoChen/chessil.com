@@ -18,7 +18,11 @@ async function allocate(db, region, control) {
   const client = await db.connect();
   try {
     await client.query('BEGIN');
-    await client.query("SELECT pg_advisory_xact_lock(hashtext('development-match'))");
+    const {rows:[lock]} = await client.query("SELECT pg_try_advisory_xact_lock(hashtext('development-match')) AS acquired");
+    if (!lock.acquired) {
+      await client.query('COMMIT');
+      return;
+    }
     const { rows: [last] } = await client.query('SELECT development,finished FROM games WHERE development IS NOT NULL ORDER BY id DESC LIMIT 1');
     let gameid;
     if (!last || last.finished) {

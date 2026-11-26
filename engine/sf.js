@@ -92,7 +92,7 @@ async function run() {
           const hash = require('node:crypto').createHash('sha256');
           for await (const chunk of require('node:fs').createReadStream('/proc/'+engine.child.pid+'/exe')) hash.update(chunk);
           engine.build = hash.digest('hex');
-          obs.log('info', 'stockfish_ready', { engine: variant });
+          obs.log('info', 'stockfish_ready', { engine: variant, tablebases: engine.tablebases });
         }
         if (stopping) break;
         const response = await queueRequest('/lpop', { engine: variant });
@@ -106,7 +106,7 @@ async function run() {
           if (job.matchClock) result.analysis = {...result.analysis, build:engine.build};
           if (result.bestmove && !result.eval && !job.bot) throw new Error('Stockfish returned a move without a score');
           obs.log('info', 'analysis_result', { uuidhm: job.uuidhm, bm: result.bestmove,
-            eval: result.eval, depth: result.analysis?.depth, nodes: result.analysis?.nodes });
+            eval: result.eval, depth: result.analysis?.depth, nodes: result.analysis?.nodes, tbhits: result.analysis?.tbhits });
         } catch (error) {
           obs.count('analysis_error');
           obs.log('error', 'analysis_error', { error: error.message });

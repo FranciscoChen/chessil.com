@@ -7,6 +7,7 @@ Type=simple
 WorkingDirectory=/home/ubuntu/chessil.com/engine
 Environment=QUEUE_HOST=127.0.0.1
 Environment=QUEUE_PORT=8092
+Environment=SYZYGY_PATH=/home/ubuntu/syzygy
 ExecStart=/usr/bin/node sf.js %i
 Restart=always
 RestartSec=1

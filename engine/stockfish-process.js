@@ -5,7 +5,10 @@ const { SearchSummary, parseBestmove } = require('./uci');
 
 // One engine, one search, one permanent output reader. All waits are bounded.
 class Stockfish {
-  constructor({ binary = process.env.STOCKFISH_BIN || join(__dirname, 'stockfish') } = {}) {
+  constructor({ binary = process.env.STOCKFISH_BIN || join(__dirname, 'stockfish'),
+    syzygyPath = process.env.SYZYGY_PATH || join(__dirname, 'syzygy') } = {}) {
+    this.syzygyPath = syzygyPath;
+    this.tablebases = null;
     this.options = new Map();
     this.waiter = null;
     this.search = null;
@@ -45,6 +48,8 @@ class Stockfish {
     const line = raw.trim();
     if (/^info string (?:ERROR|CRITICAL ERROR)\b/.test(line)) return this.fail(new Error(line));
     if (line.length > 65536) return this.fail(new Error('Stockfish output line too long'));
+    const tablebases = /^info string Found (\d+) WDL and (\d+) DTZ tablebase files \(up to (\d+)-man\)\.$/.exec(line);
+    if (tablebases) this.tablebases = {wdl:Number(tablebases[1]),dtz:Number(tablebases[2]),pieces:Number(tablebases[3])};
     const option = /^option name (.+) type (\w+)(.*)$/.exec(line);
     if (option) {
       const min = /\bmin (-?\d+)/.exec(option[3]);
@@ -74,7 +79,8 @@ class Stockfish {
     this.setOption('Hash', 64);
     this.setOption('MultiPV', 1);
     this.setOption('Move Overhead', 20);
-    this.setOption('SyzygyPath', join(__dirname, 'syzygy'));
+    this.setOption('SyzygyPath', this.syzygyPath);
+    this.setOption('SyzygyProbeLimit', 5);
     await this.waitFor('readyok', 'isready');
   }
   async analyse(job) {
@@ -88,7 +94,6 @@ class Stockfish {
     this.setOption('MultiPV', job.bot ? job.multiPV : job.elo === 0 ? 1 : 4);
     if (job.elo !== 0) this.setOption('UCI_Elo', job.elo);
     this.setOption('Move Overhead', job.matchClock ? 100 : 20);
-    this.setOption('SyzygyProbeLimit', job.syzygy);
     await this.waitFor('readyok', 'isready');
     this.write('position startpos' + (job.moves ? ' moves ' + job.moves : ''));
     const activeClock = job.uuidhm.endsWith('w') ? job.wtime : job.btime;
