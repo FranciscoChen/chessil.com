@@ -1,0 +1,72 @@
+.ui-layout-database {
+ --archive-win:var(--link);
+ --archive-draw:var(--text2);
+ --archive-loss:var(--attention);
+ font-variant-numeric:tabular-nums;
+}
+.archive-heading {display:flex;align-items:end;justify-content:space-between;gap:1rem;margin-bottom:2rem}
+.archive-heading h1 {font-size:clamp(2.25rem,5vw,4.5rem);margin:.4rem 0 .75rem}
+.archive-versus {font-size:.64em;font-style:italic;color:var(--link)}
+.archive-engine {display:inline-block}
+.archive-control {display:flex;gap:.65rem;color:var(--text2);font:.8rem/1.5 var(--monospace-font)}
+.archive-control span+span {border-inline-start:1px solid var(--border);padding-inline-start:.65rem}
+.archive-heading .ui-button {flex:none}
+.archive-overview {display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.archive-card h2,.archive-list h2 {margin:0;font-size:clamp(1.45rem,2.5vw,2rem)}
+.archive-metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;margin:0}
+.archive-metrics dt,.archive-llr dt {color:var(--text2);font-size:.76rem;line-height:1.3}
+.archive-metrics dd,.archive-llr dd {margin:.2rem 0 0;font:500 clamp(1rem,2vw,1.55rem)/1.25 var(--monospace-font)}
+.archive-totals,.archive-estimate {margin-top:1.25rem}
+.archive-totals [data-stat="games"],.archive-estimate [data-stat="elo"] {font-size:clamp(1.4rem,2.7vw,2rem)}
+.archive-estimate {grid-template-columns:.85fr 1.3fr 1fr}
+.archive-estimate [data-stat="interval"] {font-size:clamp(.8rem,1.7vw,1.1rem);white-space:nowrap}
+.archive-wdl {display:flex;height:.65rem;border-radius:1rem;overflow:hidden;background:var(--border);margin:1.45rem 0 .85rem}
+.archive-wdl span {width:var(--fraction,0%);background:var(--outcome-color)}
+[data-archive] [data-outcome="wins"] {--outcome-color:var(--archive-win)}
+[data-archive] [data-outcome="draws"] {--outcome-color:var(--archive-draw)}
+[data-archive] [data-outcome="losses"] {--outcome-color:var(--archive-loss)}
+.archive-outcomes dd,.archive-result strong {color:var(--outcome-color)}
+.archive-llr {margin:1.15rem 0 .4rem}
+.archive-llr div {display:flex;align-items:baseline;justify-content:space-between;gap:.5rem}
+.archive-llr dd {font-size:1.02rem}
+.archive-gauge {position:relative;height:.48rem;border-radius:1rem;margin:0;background:linear-gradient(90deg,var(--archive-loss),var(--border) 50%,var(--archive-win))}
+.archive-gauge [data-marker] {position:absolute;top:50%;left:var(--position,50%);transform:translate(-50%,-50%);width:.85rem;height:.85rem;border:2px solid var(--bg);border-radius:50%;background:var(--text)}
+.archive-gauge-labels {display:flex;justify-content:space-between;margin:.4rem 0 0;color:var(--text2);font:.72rem var(--monospace-font)}
+.archive-hypotheses {color:var(--text2);font-size:.78rem;margin:.5rem 0 0}
+.archive-pairs {grid-column:1/-1;display:grid;grid-template-columns:minmax(7rem,.28fr) 1fr;align-items:center;gap:1rem}
+.archive-pairs>.archive-metrics {display:block}
+.archive-pairs>*+* {margin:0}
+.archive-pairs h2 {font:600 .83rem/1.3 var(--sans-font);margin:0 0 .55rem}
+.archive-bins {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.5rem;margin:0}
+.archive-bins div {position:relative;display:flex;justify-content:space-between;gap:.2rem;padding:.4rem .3rem;border-top:2px solid var(--border);font:.75rem var(--monospace-font)}
+.archive-bins div::before {position:absolute;content:"";top:-2px;left:0;height:2px;width:var(--fraction,0%);background:var(--link)}
+.archive-bins dt {color:var(--text2)}
+.archive-bins dd {margin:0}
+.archive-method {grid-column:1/-1;border-top:1px solid var(--border);padding-top:.7rem;color:var(--text2);font-size:.82rem}
+.archive-method summary {width:fit-content;color:var(--link);cursor:pointer}
+.archive-method p {max-width:76ch;margin:.4rem 0 0}
+.archive-stats-error {grid-column:1/-1;color:var(--attention)}
+.archive-list {margin-top:1.5rem}
+.archive-list-heading {display:flex;justify-content:space-between;align-items:end;gap:1rem}
+.archive-list-heading .ui-filters {margin:0;display:flex;flex-wrap:wrap;gap:.6rem;align-items:end}
+.archive-list-heading .ui-field {min-width:0}
+.archive-list-heading .ui-field :is(input,select) {min-width:0;width:100%}
+.archive-list-heading .ui-field:first-child {flex:1;min-width:8rem}
+.archive-list tbody td {padding-block:.7rem}
+.archive-list small {color:var(--text2)}
+.archive-list [data-list-status]:empty {display:none}
+.archive-result strong {display:block}
+@media(max-width:750px) {
+ .archive-overview {grid-template-columns:1fr}
+ .archive-heading {align-items:start;flex-direction:column}
+ .archive-list-heading {align-items:start;flex-direction:column}
+ .archive-list :is(td,th) {padding-inline:.45rem}
+}
+@media(max-width:450px) {
+ .archive-pairs {grid-template-columns:1fr}
+ .archive-list .ui-filters {width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .archive-list .ui-field:first-child {grid-column:1/-1}
+ .archive-list .ui-filters button {justify-self:start}
+ .archive-list :is(td,th) {font-size:.75rem}
+ .archive-list th:nth-child(2),.archive-list td:nth-child(2) {min-width:7.5rem}
+}

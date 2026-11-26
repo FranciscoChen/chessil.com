@@ -13,3 +13,18 @@ python3 web/scripts/development-openings.py bt4_it332_policy.bin Stockfish-polic
 ```
 
 The generator excludes matching eight-ply positions from the supplied match CSV directories, including transpositions. Preserve the opening prefix and paired game identifiers when building a training split. Games played on the live shared infrastructure are development data. Controlled strength tests use the archived control binary and their own held-out opening pool.
+
+## Research archive statistics
+
+The archive lists finished STC show games. Its W/D/L totals use the hybrid's
+perspective across the series. The game list can show either engine's outcome.
+Wins and losses on time are part of the official game result and are counted
+separately in the dashboard.
+
+The paired monitor uses complete color-reversed openings from the pinned engine
+builds and V5 policy after the Syzygy rollout. Its logistic Elo hypotheses are
+0 and +5 with reference error rates of 5% in either direction. The likelihood
+ratio follows the [Fishtest logistic model](https://github.com/official-stockfish/fishtest/blob/master/server/fishtest/stats/LLRcalc.py).
+The separate Elo interval and likelihood of superiority use the observed
+variance across opening pairs. The monitor is descriptive and does not stop the
+show.
