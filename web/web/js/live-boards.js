@@ -10,10 +10,86 @@ function assets(){if(window.ChessilBoard)return Promise.resolve();if(!boardAsset
 const views=new Map();let clockTimer;
 const format=ms=>{const seconds=Math.max(0,Math.ceil(ms/1000));return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');};
 function clocks(){if(document.hidden)return;for(const [host,view] of views){if(!host.isConnected){view.unsubscribe?.();view.board?.destroy();views.delete(host);continue;}if(!view.game||!view.clocks)continue;const game=view.game,elapsed=game.clockRunning?Math.max(0,Date.now()+offset-game.lastMoveAt):0;for(const side of ['w','b']){const clock=view.clocks.querySelector('[data-side="'+side+'"]');clock.textContent=format((side==='w'?game.whiteMs:game.blackMs)-(game.turn===side?elapsed:0));clock.classList.toggle('is-turn',game.turn===side);}}if(!views.size){clearInterval(clockTimer);clockTimer=null;}}
-function mount(host,{id=host.dataset.liveBoard,featured=host.dataset.liveFeatured!==undefined?Number(host.dataset.liveFeatured):undefined,boardOnly=host.hasAttribute('data-board-only'),orientation=host.dataset.orientation||'w'}={}){
- orientation=['w','b'].includes(orientation)?orientation:'w';if(views.has(host))return;const view={game:null,fallback:[...host.childNodes],href:host.getAttribute('href'),label:host.getAttribute('aria-label')};views.set(host,view);
- const receive=async game=>{if(!host.isConnected)return;if(host.hasAttribute('data-development-board') && !game?.development)game=null;view.game=game;host.classList.toggle('is-unavailable',!game);if(!game){if(view.board){view.board.destroy();view.board=null;view.clocks=null;view.revision=null;host.replaceChildren(...view.fallback);if(view.href!==null)host.setAttribute('href',view.href);host.setAttribute('aria-label',view.label||'Game is no longer live');}return;}try{await assets();if(view.game!==game||!host.isConnected)return;if(!view.board){const frame=document.createElement('span');frame.className='live-board-frame';const root=document.createElement('cg-board');root.tabIndex=-1;frame.append(root);host.replaceChildren(frame);view.board=new ChessilBoard(root,{state:()=>({fen:view.game?.fen,turn:view.game?.turn,watcher:true,connected:false,finished:false}),submit:()=>false,cancelPremove(){}});view.board.orientation=orientation;root.tabIndex=-1;root.setAttribute('aria-hidden','true');if(!boardOnly){view.clocks=document.createElement('span');view.clocks.className='live-board-clocks';for(const side of ['w','b']){const clock=document.createElement('span');clock.dataset.side=side;view.clocks.append(clock);}host.append(view.clocks);}}if(host.tagName==='A')host.href='/game/'+game.gameid;host.setAttribute('aria-label','Watch live game · '+Math.ceil(game.plies/2)+' moves');const revision=game.gameid+':'+game.plies+':'+game.fen;if(view.revision!==revision){view.board.render(boardgen(game.fen),game.lastMove||'',view.gameid===game.gameid);view.revision=revision;view.gameid=game.gameid;}clocks();}catch(_){host.setAttribute('aria-label','Live board unavailable');}};
- view.unsubscribe=subscribe({id,featured,receive});if(!clockTimer)clockTimer=setInterval(clocks,500);return()=>{view.unsubscribe();view.board?.destroy();views.delete(host);clocks();};
+function mount(host, {
+ id = host.dataset.liveBoard,
+ featured = host.dataset.liveFeatured === undefined ? undefined : Number(host.dataset.liveFeatured),
+ boardOnly = host.hasAttribute('data-board-only'),
+ orientation = host.dataset.orientation || 'w'
+} = {}) {
+ if(views.has(host))return;
+ const persistent = host.hasAttribute('data-development-board');
+ const view = {game:null,rendered:null,fallback:[...host.childNodes],href:host.getAttribute('href'),label:host.getAttribute('aria-label')};
+ views.set(host,view);
+
+ function makeBoard(){
+  let root = host.querySelector('cg-board');
+  if(!root){
+   const frame = document.createElement('span');
+   frame.className = 'live-board-frame';
+   root = document.createElement('cg-board');
+   frame.append(root);
+   host.replaceChildren(frame);
+  }
+  view.board = new ChessilBoard(root,{
+   state:()=>({fen:view.game?.fen,turn:view.game?.turn,watcher:true,connected:false,finished:false}),
+   readOnly:true,showContext:!boardOnly
+  });
+  view.board.setOrientation(orientation);
+  if(boardOnly)return;
+  view.clocks = document.createElement('span');
+  view.clocks.className = 'live-board-clocks';
+  for(const side of ['w','b']){
+   const clock = document.createElement('span');
+   clock.dataset.side = side;
+   view.clocks.append(clock);
+  }
+  host.append(view.clocks);
+ }
+
+ async function receive(game){
+  if(!host.isConnected)return;
+  if(persistent && !game?.development)game = null;
+  view.game = game;
+  host.classList.toggle('is-unavailable',!persistent && !game);
+  if(!game){
+   if(view.href !== null)host.setAttribute('href',view.href);
+   host.setAttribute('aria-label',view.label || 'Game is no longer live');
+   if(!persistent){
+    view.board?.destroy();
+    if(view.board)host.replaceChildren(...view.fallback);
+    view.board = view.clocks = view.rendered = null;
+    return;
+   }
+  }
+  try{
+   await assets();
+   if(view.game !== game || !host.isConnected)return;
+   if(!view.board){
+    makeBoard();
+    if(!game)view.board.render(ucifen().b);
+   }
+   if(!game){
+    // Hold the last position through the handoff and show startpos on a cold load.
+    view.rendered = null;
+    return;
+   }
+   if(host.tagName === 'A')host.href = '/game/' + game.gameid;
+   if(!persistent)host.setAttribute('aria-label','Watch live game · ' + Math.ceil(game.plies/2) + ' moves');
+   const previous = view.rendered;
+   if(previous?.gameid !== game.gameid || previous.plies !== game.plies || previous.fen !== game.fen){
+    const nextPly = previous?.gameid === game.gameid && previous.plies + 1 === game.plies;
+    view.board.render(boardgen(game.fen),game.lastMove || '',nextPly);
+    view.rendered = game;
+   }
+   clocks();
+  }catch(_){host.setAttribute('aria-label',view.label || 'Live board unavailable');}
+ }
+ if(persistent)receive(null);
+ view.unsubscribe = subscribe({id,featured,receive});
+ if(!clockTimer)clockTimer = setInterval(clocks,500);
+ return ()=>{
+  view.unsubscribe();view.board?.destroy();views.delete(host);clocks();
+ };
 }
 function hydrate(root=document){root.querySelectorAll('[data-live-board],[data-live-featured]').forEach(host=>mount(host));}
 window.ChessilLiveGames={subscribe,snapshot:id=>cache.get(id),mount,hydrate};document.addEventListener('DOMContentLoaded',()=>hydrate());

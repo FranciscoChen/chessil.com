@@ -16,3 +16,19 @@
 [data-my-games-list]{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:1rem}
 [data-my-games-list] .game-menu-game{border:1px solid var(--border);border-radius:var(--radius);padding:.6rem}
 [data-my-games-list] .live-board{width:100%;margin-top:.5rem}
+
+/* The landing board and pieces share a single projected plane. The frame is
+ * unchanged when positions arrive, so no update can flatten or resize it. */
+.ui-live-art {
+ --display-board-edge:clamp(4px, .55vw, 7px);
+}
+.ui-live-art .live-board-frame {
+ box-sizing:border-box;
+ border:var(--display-board-edge) solid var(--bg);
+ outline:1px solid var(--border);
+ transform:perspective(1100px) rotateX(12deg) rotateZ(-7deg);
+ box-shadow:clamp(.5rem,1.2vw,1rem) clamp(.75rem,1.75vw,1.5rem) 0 var(--highlight),
+  clamp(1rem,2.5vw,2rem) clamp(1.5rem,3.5vw,3rem) clamp(2rem,5vw,4rem) var(--shadow);
+}
+.ui-live-art:focus-visible { outline:none; }
+.ui-live-art:focus-visible .live-board-frame { outline:var(--focus-ring-width) solid var(--link);outline-offset:var(--focus-ring-offset); }

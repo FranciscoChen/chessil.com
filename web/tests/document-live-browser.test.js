@@ -12,13 +12,36 @@ test('shared documents: themes, localized navigation, section search and mobile 
 });
 test('live mini boards share SSE, follow positions/clocks, remove ended games and reconnect',async()=>{
  const f=await start(),browser=await puppeteer.launch({headless:'new',args:['--no-sandbox']});try{
-  const p=await browser.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.setViewport({width:1440,height:1000});await p.goto(f.url+'/en',{waitUntil:'domcontentloaded'});await p.waitForSelector('[data-live-featured] cg-board piece');assert.equal(await p.$eval('[data-live-featured]',e=>e.getAttribute('href')),'/game/verify001');
+  const p=await browser.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));
+  f.game.state=7;
+  await p.setViewport({width:1440,height:1000});
+  await p.goto(f.url+'/en',{waitUntil:'domcontentloaded'});
+  await p.waitForFunction(()=>document.querySelectorAll('[data-development-board] piece').length===32);
+  const landingBoard=await p.$('[data-development-board] cg-board');
+  assert.equal(await p.$eval('[data-live-featured]',e=>e.getAttribute('href')),'/en/lobby?mode=watch');
+  f.game.state=0;
+  await p.waitForSelector('[data-development-board][href="/game/verify001"]');
+  assert.equal(await landingBoard.$eval('[data-square="e2"]',el=>el.isConnected),true);
   await Promise.all([p.waitForRequest(r=>new URL(r.url()).pathname==='/live/games'),p.evaluate(()=>{const host=document.createElement('a');host.className='live-board';host.dataset.liveBoard='verify001';document.querySelector('main').append(host);ChessilLiveGames.mount(host);})]);await p.waitForSelector('[data-live-board] .live-board-clocks');
   const streams=f.requests.filter(url=>url==='/live/games').length;assert.ok(streams<=2);
   f.move('e2e4');await p.waitForSelector('[data-live-featured] piece[data-square="e4"]');await p.waitForSelector('[data-live-board] piece[data-square="e4"]');assert.equal(f.requests.filter(url=>url==='/live/games').length,streams);
   f.move('e7e5');await p.waitForSelector('[data-live-board] .live-board-clocks .is-turn[data-side="w"]');assert.match(await p.$eval('.live-board-clocks',e=>e.textContent),/4:5\d/);await p.screenshot({path:'/tmp/live-landing-desktop.png',fullPage:true});
-  f.game.state=7;await p.waitForFunction(()=>!document.querySelector('[data-live-featured] cg-board'));assert.equal(await p.$eval('[data-live-featured]',e=>e.getAttribute('href')),'/en/lobby');assert.equal(await p.$('[data-live-board] cg-board'),null);
-  f.game.state=0;await p.waitForSelector('[data-live-featured] piece[data-square="e5"]');await p.goto(f.url+'/en/ongoing',{waitUntil:'domcontentloaded'});await p.waitForSelector('[data-my-games-list] cg-board piece[data-square="e5"]');assert.equal(await p.$$eval('[data-my-games-list] .live-board-clocks',es=>es.length),1);assert.equal(await p.$eval('[data-my-games-list] > a',e=>e.getAttribute('href')),'/game/verify001');
+  const tilt=await p.$eval('.ui-live-art .live-board-frame',frame=>getComputedStyle(frame).transform);
+  assert.match(tilt,/^matrix3d/);
+  assert.equal(await landingBoard.$('.board-context'),null);
+  f.game.state=7;
+  await p.waitForSelector('[data-development-board][href$="lobby?mode=watch"]');
+  assert.equal(await landingBoard.$eval('[data-square="e5"]',el=>el.isConnected),true);
+  assert.equal(await p.$('[data-live-board] cg-board'),null);
+  f.game.state=0;await p.waitForSelector('[data-development-board][href^="/game/"]');
+  assert.equal(await landingBoard.$eval('[data-square="e5"]',el=>el.isConnected),true);
+  assert.equal(await p.$eval('.ui-live-art .live-board-frame',frame=>getComputedStyle(frame).transform),tilt);
+  await p.setViewport({width:390,height:844});
+  assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  await p.evaluate(()=>chessilTheme('dark'));
+  await p.screenshot({path:'/tmp/live-landing-mobile-dark.png',fullPage:true});
+  await p.setViewport({width:1440,height:1000});
+  await p.goto(f.url+'/en/ongoing',{waitUntil:'domcontentloaded'});await p.waitForSelector('[data-my-games-list] cg-board piece[data-square="e5"]');assert.equal(await p.$$eval('[data-my-games-list] .live-board-clocks',es=>es.length),1);assert.equal(await p.$eval('[data-my-games-list] > a',e=>e.getAttribute('href')),'/game/verify001');
   await p.click('#challenge-toggle');await p.waitForSelector('[data-my-games-list] cg-board piece');const box=await p.evaluate(()=>{const menu=document.querySelector('#challenge-app').getBoundingClientRect(),button=document.querySelector('#challenge-toggle').getBoundingClientRect();return {menu:menu.toJSON(),button:button.toJSON()};});assert.ok(Math.abs(box.menu.right-box.button.right)<2);await p.screenshot({path:'/tmp/boards-dropdown.png'});await p.goto(f.url+'/en/lobby?mode=watch',{waitUntil:'domcontentloaded'});await p.waitForSelector('.live-game-cell cg-board piece[data-square="e5"]');assert.equal(await p.$eval('.live-game-cell a',e=>e.getAttribute('href')),'/game/verify001');await p.setViewport({width:390,height:844});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
  }finally{await browser.close();await f.close();}
 });

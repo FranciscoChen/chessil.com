@@ -26,8 +26,11 @@ One visible-page clock timer derives remaining time from server timestamps;
 no ticking packets are sent. Removed DOM views unsubscribe and destroy their board.
 Hidden pages disconnect; visible pages reconnect and receive current snapshots.
 
-The landing illustration becomes a clickable live board while a game is available
-and restores its original illustration/link when the stream removes that game.
+The landing board mounts the native renderer immediately. The shared board
+palette and piece selection apply in the angled frame. It starts at the initial
+position, retains the last rendered position between games, and links to Lobby
+Watch while it waits. Live snapshots update the same board and frame. The
+landing preview omits both clocks and side indicators.
 Lobby watch rows and the ongoing-games page use the same previews with clocks.
 The header keeps compact text game links. Ended previews are cleared, rather than
 continuing to advertise a stale live board. Cached snapshots hydrate replaced

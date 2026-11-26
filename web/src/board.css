@@ -17,6 +17,7 @@ cg-board:focus-visible { outline:none; }
 cg-board:focus-visible::after { content:"";position:absolute;inset:0;box-sizing:border-box;border:var(--focus-ring-width,1px) solid var(--link);z-index:6;pointer-events:none; }
 cg-board piece,cg-board square { position:absolute;left:0;top:0;width:12.5%;height:12.5%;pointer-events:none; }
 cg-board piece { z-index:2;background-size:contain;background-repeat:no-repeat;background-position:center; }
+html[data-pieces="sculpted"] cg-board piece { background-size:85%; }
 cg-board piece.dragging { z-index:5;will-change:transform;transition:none; }
 cg-board.is-dragging { cursor:grabbing; }
 cg-board square { z-index:1; }
@@ -38,10 +39,15 @@ coords.files coord { flex:1;padding:.3rem; }
  * orientation their first label is on a dark square; alternate by screen index. */
 coords coord { color:var(--coord-on-light,#1d2a32);text-shadow:0 1px 1px #ffffff70; }
 coords coord:nth-child(odd) { color:var(--coord-on-dark,#f8f1e0);text-shadow:0 1px 2px #132129b0; }
-html[data-theme][data-board="ivory"],html[data-board="auto"][data-theme="light"] { --board-light:#eee6ce;--board-dark:#7a937c;--last-square:#e9b45b66;--hint-square:#174d4077;--board-hover-border:#b94f32; }
-html[data-theme][data-board="midnight"],html[data-board="auto"][data-theme="dark"] { --board-light:#c3c8bb;--board-dark:#617e80;--last-square:#f1bd6966;--hint-square:#102f4377;--board-hover-border:#f28a64; }
-html[data-theme][data-board="walnut"] { --board-light:#eddbc1;--board-dark:#9d7255;--last-square:#ecbf3f88;--hint-square:#57382088;--board-hover-border:#a83e32; }
-html[data-board] cg-board { background-image:conic-gradient(var(--board-dark) 25%,var(--board-light) 0 50%,var(--board-dark) 0 75%,var(--board-light) 0);background-size:25% 25%; }
+:root,html[data-theme][data-board="midnight"] { --board-light:#c3c8bb;--board-dark:#617e80;--last-square:#f1bd6966;--hint-square:#102f4377;--board-hover-border:#f28a64; }
+html[data-theme="light"],html[data-board="ivory"] { --board-light:#eee6ce;--board-dark:#7a937c;--last-square:#e9b45b66;--hint-square:#174d4077;--board-hover-border:#b94f32; }
+html[data-board="walnut"] { --board-light:#eddbc1;--board-dark:#9d7255;--last-square:#ecbf3f88;--hint-square:#57382088;--board-hover-border:#a83e32; }
+/* A single surface sits under move highlights and pieces in every renderer. */
+cg-board {
+ background-image:linear-gradient(145deg,#fff1,transparent 48%,#101b2212),
+  conic-gradient(var(--board-dark) 25%,var(--board-light) 0 50%,var(--board-dark) 0 75%,var(--board-light) 0);
+ background-size:100% 100%,25% 25%;
+}
 /* Flipping moves coordinate labels to the opposite edges, not just their order. */
 cg-board[data-orientation="b"]~coords.ranks{align-items:flex-start}
 cg-board[data-orientation="b"]~coords.files{align-items:flex-start}

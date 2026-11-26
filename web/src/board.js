@@ -3,13 +3,19 @@
  * writer of piece placement. Input proposes UCI moves; it never edits the model.
  * Percent transforms make scroll/resize independent of input coordinates. */
 window.ChessilBoard = class ChessilBoard {
- constructor(root,{state,submit,cancelPremove}) {
+ constructor(root,{state,submit,cancelPremove,readOnly=false,showContext=true}) {
   this.root=root;this.state=state;this.submit=submit;this.cancelPremove=cancelPremove;
   this.pieces=new Map();this.position={};this.selected=null;this.keyboardMode=false;this.gesture=null;this.active='e2';
   this.orientation='w';this.pending=null;this.lastMove='';this.premove='';this.hover=null;this.guidance=null;this.overlay=new Map();
+  this.showContext=showContext;
+  this.abort=new AbortController();const options={signal:this.abort.signal};
+  this.reduced=()=>{this.cancel();for(const piece of this.pieces.values())piece.getAnimations().forEach(animation=>animation.cancel());};document.addEventListener('chessil:preferences',this.reduced,options);
+  if(readOnly){
+   root.setAttribute('aria-hidden','true');
+   return;
+  }
   root.tabIndex=0;root.setAttribute('role','application');root.setAttribute('aria-roledescription','chessboard');
   this.announcement=document.createElement('span');this.announcement.className='board-sr-only';this.announcement.setAttribute('aria-live','polite');root.parentElement.append(this.announcement);
-  this.abort=new AbortController();const options={signal:this.abort.signal};
   root.addEventListener('pointerdown',event=>this.down(event),options);
   root.addEventListener('onpointerrawupdate' in window?'pointerrawupdate':'pointermove',event=>this.drag(event),options);
   root.addEventListener('pointerup',event=>this.up(event),options);
@@ -20,7 +26,6 @@ window.ChessilBoard = class ChessilBoard {
   window.addEventListener('blur',()=>this.cancel(),options);
   window.addEventListener('resize',()=>this.cancel(),options);
   window.addEventListener('scroll',()=>{if(this.gesture)this.cancel();},{...options,capture:true,passive:true});
-  this.reduced=()=>{this.cancel();for(const piece of this.pieces.values())piece.getAnimations().forEach(animation=>animation.cancel());};document.addEventListener('chessil:preferences',this.reduced,options);
  }
  setOrientation(side) {
   if(!['w','b'].includes(side)||this.orientation===side)return;
@@ -195,6 +200,7 @@ window.ChessilBoard = class ChessilBoard {
   const contextKey=[this.orientation,side,turn].join(':');if(this.contextKey===contextKey)return;this.contextKey=contextKey;
   this.root.dataset.orientation=this.orientation;
   const wrap=this.root.parentElement;wrap.querySelectorAll('coords.files coord').forEach((el,i)=>el.textContent=String.fromCharCode(this.orientation==='w'?97+i:104-i));wrap.querySelectorAll('coords.ranks coord').forEach((el,i)=>el.textContent=this.orientation==='w'?8-i:i+1);
+  if(!this.showContext)return;
   if(!this.context){this.context=document.createElement('span');this.context.className='board-context';this.context.innerHTML='<span class="board-cue board-cue-own"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 8 4 3 4-6 4 6 4-3-2 11H6zM6 21h12M12 2v4M10 4h4"/></svg></span><span class="board-cue board-cue-turn"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 11 5-7 5 7z"/></svg></span>';this.root.append(this.context);}
   const own=this.context.firstElementChild,indicator=this.context.lastElementChild;own.hidden=!['w','b'].includes(side);own.dataset.side=side||'';own.dataset.edge=side===this.orientation?'bottom':'top';own.setAttribute('aria-label',side==='b'?'Your side: Black':'Your side: White');own.title=own.getAttribute('aria-label');indicator.hidden=!['w','b'].includes(turn);indicator.dataset.side=turn||'';indicator.dataset.edge=turn===this.orientation?'bottom':'top';indicator.setAttribute('aria-label',turn==='b'?'Black to move':'White to move');indicator.title=indicator.getAttribute('aria-label');
  }
@@ -260,7 +266,7 @@ window.ChessilBoard = class ChessilBoard {
   }
   this.checkedKing=null;const checkSide=this.positionTurn||this.state().turn||this.state().fen?.split(' ')[1];if(['w','b'].includes(checkSide)&&Object.values(next).filter(p=>p.p==='k').length===2){let flat='';for(let rank=8;rank>=1;rank--)for(const file of 'abcdefgh'){const p=next[file+rank];flat+=p?(p.c==='w'?p.p.toUpperCase():p.p):' ';}if(ic(flat,checkSide))this.checkedKing=Object.keys(next).find(s=>next[s].p==='k'&&next[s].c===checkSide);}
   this.position=next;this.lastMove=move || '';this.syncContext();this.drawOverlays();
-  if(move)this.announcement.textContent=move.slice(0,2)+' → '+move.slice(2,4);
+  if(move && this.announcement)this.announcement.textContent=move.slice(0,2)+' → '+move.slice(2,4);
  }
- destroy(){this.restorePreview();this.abort.abort();this.cancel(false);clearTimeout(this.pendingTimer);this.promotion?.close();this.announcement.remove();this.context?.remove();this.arrowLayer?.remove();for(const element of this.pieces.values()){element.getAnimations().forEach(animation=>animation.cancel());element.remove();}for(const element of this.overlay.values())element.remove();this.pieces.clear();this.overlay.clear();}
+ destroy(){this.restorePreview();this.abort.abort();this.cancel(false);clearTimeout(this.pendingTimer);this.promotion?.close();this.announcement?.remove();this.context?.remove();this.arrowLayer?.remove();for(const element of this.pieces.values()){element.getAnimations().forEach(animation=>animation.cancel());element.remove();}for(const element of this.overlay.values())element.remove();this.pieces.clear();this.overlay.clear();}
 };
