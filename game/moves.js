@@ -1,7 +1,7 @@
 const { randomBytes } = require('crypto');
 const { ucifen, mate, piececount } = require('./chess');
 
-const fields = ['m', 'i', 't', 'j', 'l', 'n', 'o', 'z', 'q', 'r', 's', 'f'];
+const fields = ['m', 'i', 't', 'j', 'l', 'n', 'o', 'z', 'q', 'r', 's', 'f', 'developmentOpening'];
 const opposite = side => side === 'w' ? 'b' : 'w';
 const clockField = side => side === 'w' ? 'l' : 'n';
 const incrementField = side => side === 'w' ? 'o' : 'z';
@@ -92,14 +92,15 @@ module.exports = function createMoveHandler({
             Math.max(0, Math.floor(lagCompensationPercent * ws.roundTripTime)));
         }
       }
-      const elapsed = !premoveContext && (ply >= 2 || (ws && ws.expectedMoves !== undefined)) && Number(state.s) > 0
+      const bookPly = state.developmentOpening && ply < state.developmentOpening.split(' ').length;
+      const elapsed = !bookPly && !premoveContext && (ply >= 2 || (ws && ws.expectedMoves !== undefined)) && Number(state.s) > 0
         ? Math.max(0, received - Number(state.s) - compensation - timeback) : 0;
       const remaining = Number(state[clockField(side)]) - elapsed;
       // Keep the deadline intact if preparation fails. The timeout handler owns flagging.
       if (remaining <= 0) return finishgame(gameid);
       token = randomBytes(16).toString('hex');
       if (!await redis.eval(claimLua, 1, gameid, state.m, side, token, Date.now())) return;
-      const timeleft = remaining + Number(state[incrementField(side)]) + compensation;
+      const timeleft = bookPly ? remaining : remaining + Number(state[incrementField(side)]) + compensation;
       const moves = state.m ? state.m + ' ' + move : move;
       const fen = ucifen(moves);
       const fenFields = fen.split(' ');

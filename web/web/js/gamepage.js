@@ -118,7 +118,7 @@ function gamepageload() {
       const separator = ' \u2022 '
       const levelLabel = {en:'Level',es:'Nivel',zh:'级别'}[lang] || 'Level'
       const botSummary = data.bot ? separator + 'Swift · ' + levelLabel + ' ' + data.bot.difficulty : ''
-      const setupText = String(data.initialtime) + '+' + String(data.increment) + separator + ratedText + botSummary
+      const setupText = (data.timeLabel || String(data.initialtime) + '+' + String(data.increment)) + separator + ratedText + botSummary
 
       if (setup) {
         setup.textContent = setupText

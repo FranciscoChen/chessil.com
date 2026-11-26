@@ -46,6 +46,8 @@ module.exports = function createResultWorker({ redis, database, broadcastGameUpd
     if(central) await central.multi().del('lobby:game:'+gameid).zrem('lobby:live',gameid).publish('lobby:changed','end').exec().catch(error=>console.error('Live-game removal:',error.message));
     await redis.srem('game:active',gameid);
     const score = outcome(snapshot);
+    const builds = Object.keys(snapshot).filter(key => /^build:(stockfish|hybrid):[0-9a-f]{64}$/.test(key))
+      .map(key => key.slice(6)).sort();
     // Notify before SQL: a database outage must not leave the board playing.
     if (finished === 9) {
       const side = snapshot.cheatSide;
@@ -78,9 +80,10 @@ module.exports = function createResultWorker({ redis, database, broadcastGameUpd
         state=$8, result=$9,
         ratingdiff1=CASE WHEN NOT rated THEN NULL WHEN color1='black' THEN $11::float8 ELSE $10::float8 END,
         ratingdiff2=CASE WHEN NOT rated THEN NULL WHEN color1='black' THEN $10::float8 ELSE $11::float8 END,
+        development=CASE WHEN development IS NULL THEN NULL ELSE development || jsonb_build_object('builds',$12::jsonb) END,
         finished=NOW() WHERE gameid=$1 AND (state=0 OR state IS NULL) RETURNING id, rated`,
         [gameid, snapshot.m || '', snapshot.i || '', snapshot.e || '', snapshot.k || '',
-          snapshot.l, snapshot.n, finished, score === null || score === 0.5 ? null : score === 1, whiteDiff, blackDiff]);
+          snapshot.l, snapshot.n, finished, score === null || score === 0.5 ? null : score === 1, whiteDiff, blackDiff, JSON.stringify(builds)]);
       didSave = saved.rowCount > 0;
       if (saved.rowCount && !saved.rows[0].rated) rated = false;
       if (saved.rowCount && rated) {

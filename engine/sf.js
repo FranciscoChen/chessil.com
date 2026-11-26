@@ -19,6 +19,7 @@ function parseJob(reply) {
     if (!match) throw new Error('Invalid bot profile');
     botSettings=require('./bots/swift').settings(Number(match[1])); moveOffset=8;
   }
+  if (parts[7] === 'clock') { botSettings = {matchClock:true}; moveOffset = 8; }
   const moves = parts.slice(moveOffset);
   if (!moves.every(move => movePattern.test(move))) throw new Error('Invalid UCI move history');
   return { uuidhm, wtime, btime, winc, binc, mtime, elo, syzygy, ...botSettings, moves: moves.join(' ') };
@@ -45,7 +46,7 @@ function queueRequest(path, headers = {}) {
 
 async function run() {
   const variant = parseEngine(process.env.ENGINE_VARIANT ?? (process.argv[2] === '2' ? hybrid : stockfish));
-  const binary = variant === hybrid ? process.env.HYBRID_STOCKFISH_BIN || join(__dirname, 'stockfish-hybrid') : undefined;
+  const binary = variant === hybrid ? process.env.HYBRID_STOCKFISH_BIN || join(__dirname, 'stockfish-hybrid') : process.env.STOCKFISH_BIN || join(__dirname, 'stockfish');
   obs.installProcessHandlers();
   let engine, stopping = false, idle = 0, shutdownTimer;
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -88,6 +89,9 @@ async function run() {
           engine?.close();
           engine = new Stockfish({ binary });
           await engine.initialize();
+          const hash = require('node:crypto').createHash('sha256');
+          for await (const chunk of require('node:fs').createReadStream('/proc/'+engine.child.pid+'/exe')) hash.update(chunk);
+          engine.build = hash.digest('hex');
           obs.log('info', 'stockfish_ready', { engine: variant });
         }
         if (stopping) break;
@@ -99,6 +103,7 @@ async function run() {
         try {
           job = parseJob(response.body);
           result = await engine.analyse(job);
+          if (job.matchClock) result.analysis = {...result.analysis, build:engine.build};
           if (result.bestmove && !result.eval && !job.bot) throw new Error('Stockfish returned a move without a score');
           obs.log('info', 'analysis_result', { uuidhm: job.uuidhm, bm: result.bestmove,
             eval: result.eval, depth: result.analysis?.depth, nodes: result.analysis?.nodes });

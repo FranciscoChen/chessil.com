@@ -16,6 +16,8 @@
     }
   },
   "web": {
+    "developmentGames": true,
+    "developmentTimeControl": "10+0.1",
     "domainName": "https://chessil.com",
     "port": 8080,
     "maintenance": true,

@@ -87,6 +87,7 @@ class Stockfish {
     // scores too, so the chosen weaker move gets its own evaluation.
     this.setOption('MultiPV', job.bot ? job.multiPV : job.elo === 0 ? 1 : 4);
     if (job.elo !== 0) this.setOption('UCI_Elo', job.elo);
+    this.setOption('Move Overhead', job.matchClock ? 100 : 20);
     this.setOption('SyzygyProbeLimit', job.syzygy);
     await this.waitFor('readyok', 'isready');
     this.write('position startpos' + (job.moves ? ' moves ' + job.moves : ''));
@@ -97,12 +98,12 @@ class Stockfish {
       const timer = setTimeout(() => {
         try { this.write('stop'); } catch (error) { return this.fail(error); }
         killTimer = setTimeout(() => this.fail(new Error('Stockfish search timed out')), 1000);
-      }, budget + 2000);
+      }, job.matchClock ? budget : budget + 2000);
       const finish = (callback, result) => {
         clearTimeout(timer); clearTimeout(killTimer); this.search = null; callback(result);
       };
       this.search = { job, summary: new SearchSummary(), resolve: value => finish(resolve, value), reject: error => finish(reject, error) };
-      try { this.write(`go wtime ${job.wtime} btime ${job.btime} winc ${job.winc} binc ${job.binc} movetime ${budget}${job.nodes ? ' nodes ' + job.nodes : ''}`); }
+      try { this.write(`go wtime ${job.wtime} btime ${job.btime} winc ${job.winc} binc ${job.binc}${job.matchClock ? '' : ' movetime ' + budget}${job.nodes ? ' nodes ' + job.nodes : ''}`); }
       catch (error) { this.search.reject(error); }
     });
   }

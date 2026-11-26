@@ -48,5 +48,26 @@ await t.test('both bot opening turns consume elapsed clock time',async()=>{
  }
 });
 
+await t.test('development seats play the opening, then request full-strength moves from alternating engines',async()=>{
+ await redis.flushdb();
+ const id='abcdef129', seen=[], played=[];
+ const line=['e2e4','e7e5','g1f3','b8c6'];
+ await redis.hset(id,{developmentHybrid:'b',developmentOpening:'e2e4 e7e5',f:0,t:'w',m:'',l:10000,n:10000,o:100,z:100,s:1,j:line[0]});
+ let resolve;
+ const finished=new Promise(r=>{resolve=r;});
+ const bots=createBots({redis,pollMs:1000000,request:async p=>{
+   seen.push([p.engine,p.elo,p.matchClock]);return {uuidhm:p.uuidhm,engine:p.engine,bestmove:line[played.length],analysis:{build:'a'.repeat(64)}};
+ },move:async(_id,side,move)=>{
+   played.push(move);
+   await redis.hset(id,{m:played.join(' '),t:side==='w'?'b':'w',j:line[played.length]||'',f:played.length===4?'1':'0'});
+   if(played.length===4)resolve();
+ }});
+ try {
+   await bots.enqueue(id);await bots.tick();
+   await Promise.race([finished,new Promise((_,reject)=>{const timer=setTimeout(()=>reject(Error('engine game stalled')),1500);timer.unref();})]);
+   assert.deepEqual(played,line);assert.deepEqual(seen,[['stockfish',0,true],['hybrid',0,true]]);
+ }finally{bots.close();}
+});
+
 } finally {redis?.disconnect();child?.kill('SIGTERM');if(child)await once(child,'exit');}
 });

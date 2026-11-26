@@ -229,3 +229,16 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS lichess_puzzle_theme_counts AS
     FROM lichess_puzzles, unnest(string_to_array(themes, ' ')) AS theme
     GROUP BY theme;
 ANALYZE lichess_puzzles;
+
+-- Engine-owned seats have public profiles and no interactive credentials.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS development_engine text UNIQUE;
+INSERT INTO users(username,canonical,role,development_engine,password,created)
+VALUES ('Stockfish-dev','stockfish-dev',3,'stockfish','!',NOW()),
+       ('ChessiL-Hybrid','chessil-hybrid',3,'hybrid','!',NOW())
+ON CONFLICT (development_engine) DO NOTHING;
+
+ALTER TABLE games ADD COLUMN IF NOT EXISTS development jsonb;
+CREATE UNIQUE INDEX IF NOT EXISTS games_one_development_active ON games ((true))
+  WHERE development IS NOT NULL AND finished IS NULL;
+CREATE INDEX IF NOT EXISTS games_development_archive ON games (id DESC)
+  WHERE development IS NOT NULL;

@@ -2151,3 +2151,6 @@ function ucifen(uci, ifen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq 
 
   return { h: history, f: [pieceplacement.join('/'), turn, castle, epsq, halfmove, fullmove].join(' '), b: board }
 }
+
+// The archive exports the same SAN and legal moves shown in board workspaces.
+if (typeof module !== 'undefined' && module.exports) module.exports = {boardgen, mg, ucifen, gensanbase, gensancheck};

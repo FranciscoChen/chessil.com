@@ -29,7 +29,7 @@ module.exports=function lobbyIndex({client,db,notify}) {
   }catch(error){console.error('Lobby expiry:',error.message);}finally{sweeping=false;}
  }
  const timer=setInterval(sweep,30000);timer.unref();
- return {ids:()=>ids(client),read:ids=>read(client,ids),openIds,open,renew,close,changed,sweep,
+ return {development:()=>client.get('lobby:development'),ids:()=>ids(client),read:ids=>read(client,ids),openIds,open,renew,close,changed,sweep,
   subscribe(send){events.add(send);return()=>events.delete(send);},
   stop(){clearInterval(timer);subscriber.disconnect();events.clear();}};
 };

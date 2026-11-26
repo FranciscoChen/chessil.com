@@ -399,10 +399,15 @@ server.on('request', (req, res) => {
         !/^[1-8]$/.test(r['bot-difficulty'] || '') || !['w','b'].includes(r['bot-side']))) {
       res.writeHead(400);res.end();return;
     }
+    const development = r['development-hybrid'];
+    if (development !== undefined && (!['w','b'].includes(development) || r['bot-program'] ||
+        !/^(?:[a-h][1-8][a-h][1-8] ){7}[a-h][1-8][a-h][1-8]$/.test(r['development-opening'] || ''))) {
+      res.writeHead(400); res.end(); return;
+    }
     // r.gn - gamename, r.w - whiteplayer (playerid or sessionid), r.b blackplayer, r.t time, r.i increment
     // Start a new game in redis. u for uci moves with clock time left {move:timeleft}, t for time left, x for increment, e for events with their event times {event:eventtimeclockleft}
     const gameData = {
-      'creationKey': crypto.createHash('sha256').update(JSON.stringify(['gn','w','b','wt','bt','wi','bi','wr','br','wd','bd','wv','bv','bw','bb','bot-program','bot-difficulty','bot-side'].map(key=>r[key] || ''))).digest('hex'),
+      'creationKey': crypto.createHash('sha256').update(JSON.stringify(['gn','w','b','wt','bt','wi','bi','wr','br','wd','bd','wv','bv','bw','bb','bot-program','bot-difficulty','bot-side'].concat(development ? ['development-hybrid','development-opening'] : []).map(key=>r[key] || ''))).digest('hex'),
       'createdAt': Date.now(),
       'm': '', // Moves
       'lc': '20', // Legal choice count at each position, starting with the initial 20
@@ -420,7 +425,7 @@ server.on('request', (req, res) => {
       'z': r.bi * 1000, // blackincrement seconds to milliseconds
       'q': '', // White premove wp -> q
       'r': '', // Black premove bp -> r
-      's': r['bot-side'] === 'w' ? Date.now() : 0, // Last move time lmt -> s
+      's': development || r['bot-side'] === 'w' ? Date.now() : 0, // Last move time lmt -> s
       'f': 0, // Finished code
       'u': 0, // White draw agreement wd -> u
       'v': 0, // Black draw agreement bd -> v
@@ -435,6 +440,10 @@ server.on('request', (req, res) => {
     };
     if (r['bot-program']) {
       gameData.botProgram=r['bot-program'];gameData.botDifficulty=r['bot-difficulty'];gameData.botSide=r['bot-side'];
+    }
+    if (development) {
+      gameData.developmentHybrid = development;
+      gameData.developmentOpening = r['development-opening'];
     }
     if (r.bw !== undefined) gameData.bw = r.bw;
     if (r.bb !== undefined) gameData.bb = r.bb;
@@ -764,13 +773,13 @@ wss.on('close', () => clearInterval(interval));
 function checkgame(gameid) {
   // Send game data to cheat detector to check for cheating
   // Send compact telemetry, not the growing repetition/analysis hash.
-  const fields = ['m', 'i', 't', 'l', 'n', 'o', 'z', 'w', 'b', 'a', 'c', 'bw', 'bb', 'lc', 'pm', 'f', 'botProgram'];
+  const fields = ['m', 'i', 't', 'l', 'n', 'o', 'z', 'w', 'b', 'a', 'c', 'bw', 'bb', 'lc', 'pm', 'f', 'botProgram', 'developmentHybrid'];
   redis.hmget(gameid, ...fields, (err, values) => {
     if (err) {
       console.error(err);
       return;
     }
-    if (values[fields.indexOf('botProgram')]) return; // Practice bots do not need fair-play searches.
+    if (values[fields.indexOf('botProgram')] || values[fields.indexOf('developmentHybrid')]) return; // Practice bots do not need fair-play searches.
     const myURL = new URL('https://' + config.game.engineHost + '/check')
     const options = {
       hostname: myURL.hostname,

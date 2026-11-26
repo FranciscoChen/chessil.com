@@ -8,6 +8,7 @@ local games=cjson.decode(ARGV[2]);local keep={};local changed=false;local member
 for _,game in ipairs(games) do
  local id=game.gameid;keep[id]=true
  local key='lobby:game:'..id;local value=cjson.encode(game)
+ if game.development then redis.call('SET','lobby:development',id,'EX',ARGV[3]) end
  local old=redis.call('GET',key)
  if not old then membership=true end
  if old ~= value then changed=true end

@@ -6,3 +6,20 @@ test('stream recovery replays unchanged snapshots after an index outage',async()
  let fail=false;const games=new Map([['testlive1',{gameid:'testlive1',fen:'8/8/8/8/8/8/8/8 w - - 0 1',plies:0}]]),stream=create({intervalMs:100000,index:{ids:async()=>[...games.keys()],read:async()=>{if(fail)throw Error('offline');return games;},subscribe(){return()=>{};}}});
  try{const res=new Response();stream.open({url:'/live/games?ids=testlive1'},res);await tick();assert.match(res.data,/testlive1/);fail=true;await stream.refresh();assert.match(res.data,/event: unavailable/);const length=res.data.length;fail=false;await stream.refresh();assert.match(res.data.slice(length),/testlive1/);}finally{stream.close();}
 });
+
+test('featured stream includes the development board even outside the ordinary snapshot limit',async()=>{
+ const ids=Array.from({length:520},(_,i)=>String(i).padStart(9,'0'));
+ const development=ids.at(-1);
+ const stream=create({index:{ids:async()=>ids,development:async()=>development,
+   read:async wanted=>new Map(wanted.map(id=>[id,{gameid:id,fen:'start',plies:id===development?0:80,development:id===development}])),
+   subscribe(){return ()=>{};}
+ }});
+ try {
+   const response=new Response();
+   stream.open({url:'/live/games?featured=1'},response);
+   await tick();
+   const event=JSON.parse(response.data.split('data: ')[1]);
+   assert.equal(event.games[0].gameid,development);
+   assert.equal(event.games[0].development,true);
+ } finally { stream.close(); }
+});

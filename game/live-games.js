@@ -1,6 +1,6 @@
 const {publish}=require('../shared/live-games');
 const {ucifen}=require('./chess');
-const fields=['f','m','t','l','n','s','botSide','createdAt'];
+const fields=['f','m','t','l','n','s','botSide','createdAt','developmentHybrid'];
 module.exports=function livePublisher({redis,central,region,abortKey='game:timeouts:abort',finishKey='game:timeouts:finish',intervalMs=3000}) {
  let busy=false,closed=false,seeded=false,scheduled;const positions=new Map();
  async function seed() {
@@ -37,7 +37,7 @@ module.exports=function livePublisher({redis,central,region,abortKey='game:timeo
      const plies=value[1]?value[1].split(' ').length:0;
      const cached=positions.get(chunk[i]);if(!cached||cached.moves!==value[1])positions.set(chunk[i],{moves:value[1],fen:ucifen(value[1])});
      games.push({fen:positions.get(chunk[i]).fen,gameid:chunk[i],server:region,turn:value[2],whiteMs:Number(value[3]),blackMs:Number(value[4]),
-      lastMoveAt:Number(value[5]),plies,lastMove:value[1]?value[1].split(' ').at(-1):'',clockRunning:plies>=2 || value[6]===value[2]});
+      ...(value[8]?{development:true}:{}),lastMoveAt:Number(value[5]),plies,lastMove:value[1]?value[1].split(' ').at(-1):'',clockRunning:value[8]?plies>=8:plies>=2 || value[6]===value[2]});
     });
    }
    const active=new Set(ids);for(const id of positions.keys())if(!active.has(id)||stale.includes(id))positions.delete(id);

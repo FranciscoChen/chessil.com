@@ -51,9 +51,10 @@ async function play(payload) {
   const uuidhm = payload.uuidhm || `${payload.gameid}-${plies}-${turn}`;
   if (payload.bot != null && payload.bot !== 'swift') throw Object.assign(new Error('Unknown bot program'),{status:400});
   const profile = payload.bot === 'swift' ? swift.settings(payload.difficulty) : null;
+  const matchClock = payload.matchClock === true && !profile && payload.elo === 0;
   const sf = [uuidhm, payload.wtime, payload.btime, payload.winc, payload.binc,
-    profile ? profile.mtime : 256, profile ? 0 : payload.elo, profile ? 0 : 7,
-    ...(profile ? ['bot:swift:' + profile.difficulty] : []), moves].join(' ');
+    profile ? profile.mtime : matchClock ? 7500 : 256, profile ? 0 : payload.elo, profile ? 0 : 7,
+    ...(profile ? ['bot:swift:' + profile.difficulty] : matchClock ? ['clock'] : []), moves].join(' ');
   try { parseJob(sf); } catch (error) { throw Object.assign(error, { status: 400 }); }
   const response = await queueRequest('/lpush', { sf, engine });
   if (response.status !== 200) throw Object.assign(new Error('Engine queue busy'), { status: 503 });

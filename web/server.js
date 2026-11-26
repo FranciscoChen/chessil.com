@@ -61,6 +61,17 @@ const liveStream=require('./live-stream')({index:lobbyIndex});
 const gameMenu = require('./game-menu')({db:lobbyDb,index:lobbyIndex,redis:liveRedis,join:joinLobbyGame,create:createLobbyGame,notify:publishUserNotification});
 const gameStarts = require('./game-starts')({db:lobbyDb,start:startGameOnServer,notify:notifyLobbyWatchers,publish:publishUserNotification});
 
+const developmentGames = require('./development-games').schedule({db:lobbyDb, regions:gameRegions, start:gameStarts.run,
+  exists:(region, gameid)=>new Promise((resolve,reject)=>{
+    const req=https.request({method:'POST',hostname:region.host,path:'/game',headers:{authorization:gameServerAuthToken,'x-real-ip':gameServerAuthIp,gn:gameid}},res=>{
+      res.resume();
+      resolve(res.statusCode===404?false:res.statusCode===200?true:null);
+    });
+    req.on('error',reject);
+    req.setTimeout(3000,()=>req.destroy(Error('Development game status timed out')));
+    req.end();
+  }), enabled:config.web.developmentGames !== false, control:config.web.developmentTimeControl});
+
 function getGameServerAuthIp() {
   const entries = Object.entries(config.game.myServers || {});
   for (var i = 0; i < entries.length; i++) {
@@ -282,6 +293,7 @@ function shutdown(reason) {
     });
   });
   lobbyWatchers.clear();
+  developmentGames.stop();
   gameStarts.stop();
   for(const res of lobbyStreams)res.end();
   liveStream.close();lobbyIndex.stop();liveRedis.disconnect();
@@ -548,6 +560,7 @@ function routelanguage(filename, mime, ext, res, req, resHeaders, sessiondata) {
 
 function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
   // Public endpoints are served here; internal-only endpoint is /websocket (restricted by auth + IP allowlist in wsauth).
+  if (req.method === 'GET' && /^\/api\/archive(?:[/?]|$)/.test(req.url)) return require('./game-archive').serve(lobbyDb,req,res,resHeaders);
   if (req.url.split('?', 1)[0].startsWith('/api/training/')) {
     return trainingApi(req, res, resHeaders, sessiondata);
   }
@@ -1292,7 +1305,7 @@ function login(filename, mime, ext, res, req, resHeaders, sessiondata) {
             // Check if username exists in database already
             var client = new pg.Client(conString);
             client.connect();
-            client.query('SELECT * FROM users WHERE canonical = $1', [postcontent.username.toLowerCase()], (err, response) => {
+            client.query('SELECT * FROM users WHERE canonical = $1 AND development_engine IS NULL', [postcontent.username.toLowerCase()], (err, response) => {
               if (err) {
                 logAuthEvent('login_failure', req, { reason: 'db_select', username: postcontent.username });
                 res.writeHead(500, { "Content-Type": "text/html" });
@@ -1993,7 +2006,7 @@ async function gameinfo(filename,mime,ext,res,req,resHeaders,sessiondata) {
     res.end(JSON.stringify({username1:reversed?second:first,username2:reversed?first:second,
       rating1:reversed?row.rating2:row.rating1,rating2:reversed?row.rating1:row.rating2,
       ratingdiff1:reversed?row.ratingdiff2:row.ratingdiff1,ratingdiff2:reversed?row.ratingdiff1:row.ratingdiff2,
-      state,initialtime:row.initialtime,increment:row.increment,rated:row.rated,gameserver:row.gameserver,side,
+      state,timeLabel:row.development?row.timecontrol1:null,initialtime:row.initialtime,increment:row.increment,rated:row.rated,gameserver:row.gameserver,side,
       bot:row.bot_program?{program:row.bot_program,difficulty:Number(row.bot_difficulty),side:row.bot_side}:null}));
   }catch(error){console.error('Game metadata:',error.message);res.writeHead(error.status || 503,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({error:error.status?error.message:'Game status temporarily unavailable'}));}
 }
@@ -2169,6 +2182,10 @@ function startGameOnServer(payload, callback) {
     'wv': String(payload.whiteRatings.volatility),
     'bv': String(payload.blackRatings.volatility)
   };
+  if (payload.development) {
+    headers['development-hybrid'] = payload.development.hybrid;
+    headers['development-opening'] = payload.development.opening;
+  }
   if (payload.bot) {
     headers['bot-program']=payload.bot.program;
     headers['bot-difficulty']=String(payload.bot.difficulty);
@@ -2538,7 +2555,7 @@ async function createLobbyGame(data, req, sessiondata, reservation=null) {
     const easy = data.easy === true || data.easy === '1';
     if (easy) {
       if (!validLobbyId(data.botId)) throw lobbyError(400, 'Invalid bot');
-      const { rowCount } = await lobbyDb.query('SELECT id FROM users WHERE id=$1 AND role=3', [data.botId]);
+      const { rowCount } = await lobbyDb.query('SELECT id FROM users WHERE id=$1 AND role=3 AND development_engine IS NULL', [data.botId]);
       if (!rowCount) throw lobbyError(404, 'Bot not found');
       creatorId = String(data.botId);
       creatorSession = 'bot:' + creatorId + ':' + sessionId;
@@ -2615,7 +2632,7 @@ function handleEasyBots(filename, mime, ext, res, req, resHeaders, sessiondata) 
     const sql = `
       SELECT id, username, ROUND(rating) AS rating, ROUND(uci_elo) AS uci_elo
       FROM users
-      WHERE role = 3
+      WHERE role = 3 AND development_engine IS NULL
         AND ($1::numeric IS NULL OR ${filterField} >= $1)
         AND ($2::numeric IS NULL OR ${filterField} <= $2)
       ORDER BY ${filterField} ASC
