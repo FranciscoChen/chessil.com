@@ -1,10 +1,10 @@
 /* Authenticated/session-scoped menu. Redis snapshots decide liveness; SQL owns
  * identities and game details. Invitations expire and never grant game access. */
-module.exports=({db,index,redis,join,create,notify=()=>{}})=>{
+module.exports=({db,index,redis,rateRedis=redis,join,create,notify=()=>{}})=>{
  const fail=(status,message)=>{throw Object.assign(Error(message),{status});};
  const own=(row,user,session,n)=>user!=='0'&&String(row['userid'+n])===user||row['sessionid'+n]===session;
  const pending=row=>!row.started&&!row.finished&&!(Number(row.state)>0)&&row.userid2==null&&row.sessionid2==null;
- const key=user=>'ui:invites:'+user;
+ const key=user=>'lobby:invites:'+user;
  const recipient=(user,session)=>user==='0'?'guest:'+session:user;
  async function incoming(user,session){const id=recipient(user,session);await redis.zremrangebyscore(key(id),'-inf',Date.now()-300000);return redis.zrange(key(id),0,-1);}
  async function list(user,session){
@@ -27,7 +27,7 @@ module.exports=({db,index,redis,join,create,notify=()=>{}})=>{
    if(typeof data.username!=='string'||!/^[a-zA-Z0-9_-]{2,30}$/.test(data.username))fail(400,'Enter a valid username.');
    const {rows:[recipient]}=await db.query('SELECT id FROM users WHERE canonical=$1',[data.username.toLowerCase()]);
    if(!recipient)fail(404,'Player not found.');if(String(recipient.id)===user)fail(400,'Choose another player.');
-   const count=await redis.incr('ui:invite-rate:'+session);if(count===1)await redis.expire('ui:invite-rate:'+session,60);if(count>10)fail(429,'Please wait before inviting again.');
+   const count=await rateRedis.incr('ui:invite-rate:'+session);if(count===1)await rateRedis.expire('ui:invite-rate:'+session,60);if(count>10)fail(429,'Please wait before inviting again.');
    let gameid=data.gameid;if(!gameid)gameid=(await create({timecontrol:'5+0',rated:false},req,sessiondata)).gameid;
    if(typeof gameid!=='string'||!/^[a-zA-Z0-9]{9}$/.test(gameid))fail(400,'Invalid challenge.');
    const {rows:[game]}=await db.query('SELECT * FROM games WHERE gameid=$1',[gameid]);

@@ -1,6 +1,6 @@
 /* Invitations are derived from a finished game's verified participants, never
  * from client-supplied recipient IDs. Joining still uses the regional allocator. */
-module.exports=({db,redis,index,create,join,notify=()=>{}})=>{
+module.exports=({db,redis,rateRedis=redis,index,create,join,notify=()=>{}})=>{
  const own=(row,user,session,n)=>user!=='0'&&String(row['userid'+n])===user||row['sessionid'+n]===session;
  const identity=(user,session)=>user!=='0'?user:'guest:'+session;
  const fail=(status,message)=>{throw Object.assign(Error(message),{status});};
@@ -15,22 +15,22 @@ module.exports=({db,redis,index,create,join,notify=()=>{}})=>{
   if(old.bot_program||String(old.sessionid1).startsWith('bot:')||String(old.sessionid2).startsWith('bot:'))fail(400,'Use New game to replay this bot.');
   const other=seat===1?2:1,recipient={user:String(old['userid'+other]||'0'),session:old['sessionid'+other]};
   if(!recipient.session)fail(410,'Opponent unavailable.');
-  const lock='ui:rematch-lock:'+gameid,token=require('node:crypto').randomUUID();
+  const lock='lobby:rematch-lock:'+gameid,token=require('node:crypto').randomUUID();
   // A short lease serializes reciprocal clicks; creation itself remains SQL-locked.
   if(await redis.set(lock,token,'NX','EX',120)!=='OK')fail(409,'A rematch is being created. Please try again.');
   try{
-   const saved=await redis.get('ui:rematch:'+gameid);
+   const saved=await redis.get('lobby:rematch:'+gameid);
    if(saved){const challenge=JSON.parse(saved);const {rows:[row]}=await db.query('SELECT * FROM games WHERE gameid=$1',[challenge.gameid]);
     if(row&&!row.finished&&(row.started||(await index.openIds([row.gameid])).has(row.gameid))){
      if(own(row,user,session,1))return{success:true,gameid:row.gameid,started:!!row.started};
-     const result=await join({id:row.id,action:'join'},req,sessiondata);await redis.zrem('ui:invites:'+identity(user,session),row.gameid);return result;
+     const result=await join({id:row.id,action:'join'},req,sessiondata);await redis.zrem('lobby:invites:'+identity(user,session),row.gameid);return result;
     }
    }
-   const rate=await redis.incr('ui:rematch-rate:'+session);if(rate===1)await redis.expire('ui:rematch-rate:'+session,60);if(rate>6)fail(429,'Please wait before asking again.');
+   const rate=await rateRedis.incr('ui:rematch-rate:'+session);if(rate===1)await rateRedis.expire('ui:rematch-rate:'+session,60);if(rate>6)fail(429,'Please wait before asking again.');
    const challenge=await create({rated:!!old.rated,timecontrol:old.timecontrol1||old.initialtime+'+'+old.increment,color:old['color'+seat]==='white'?'black':'white'},req,sessiondata,recipient);
-   const key='ui:invites:'+identity(recipient.user,recipient.session);
+   const key='lobby:invites:'+identity(recipient.user,recipient.session);
    await redis.zadd(key,Date.now(),challenge.gameid);await redis.expire(key,300);
-   await redis.set('ui:rematch:'+gameid,JSON.stringify({gameid:challenge.gameid}),'EX',300);
+   await redis.set('lobby:rematch:'+gameid,JSON.stringify({gameid:challenge.gameid}),'EX',300);
    if(recipient.user!=='0')notify(recipient.user,{type:'game_invitation'});
    return {...challenge,started:false};
   }finally{await redis.eval("if redis.call('GET',KEYS[1])==ARGV[1] then return redis.call('DEL',KEYS[1]) end return 0",1,lock,token);}

@@ -58,7 +58,7 @@ const liveRedis = require('../shared/lobby-redis')(config);
 const lobbyIndex = require('./lobby-index')({client:liveRedis,db:lobbyDb,notify:notifyLobbyWatchers});
 const lobbyStreams=new Set();
 const liveStream=require('./live-stream')({index:lobbyIndex});
-const gameMenu = require('./game-menu')({db:lobbyDb,index:lobbyIndex,redis:liveRedis,join:joinLobbyGame,create:createLobbyGame,notify:publishUserNotification});
+const gameMenu = require('./game-menu')({db:lobbyDb,index:lobbyIndex,redis:liveRedis,rateRedis:redis,join:joinLobbyGame,create:createLobbyGame,notify:publishUserNotification});
 const gameStarts = require('./game-starts')({db:lobbyDb,start:startGameOnServer,notify:notifyLobbyWatchers,publish:publishUserNotification});
 
 const developmentGames = require('./development-games').schedule({db:lobbyDb, regions:gameRegions, start:gameStarts.run,
@@ -661,7 +661,7 @@ function route(filename, mime, ext, res, req, resHeaders, sessiondata) {
     return;
   }
   if(req.url==='/matchmaking/casual'&&req.method==='POST')return handleLobbyRequest(req,res,resHeaders,data=>findCasualGame(data,req,sessiondata));
-  if(req.url==='/game-rematch'&&req.method==='POST')return handleLobbyRequest(req,res,resHeaders,data=>require('./game-rematch')({db:lobbyDb,redis:liveRedis,index:lobbyIndex,create:createLobbyGame,join:joinLobbyGame,notify:publishUserNotification})(data,req,sessiondata));
+  if(req.url==='/game-rematch'&&req.method==='POST')return handleLobbyRequest(req,res,resHeaders,data=>require('./game-rematch')({db:lobbyDb,redis:liveRedis,rateRedis:redis,index:lobbyIndex,create:createLobbyGame,join:joinLobbyGame,notify:publishUserNotification})(data,req,sessiondata));
   if (req.url === '/matchmaking/find' && req.method === 'POST') {
     return handleRankedMatch(req, res, resHeaders, sessiondata);
   }
@@ -2325,7 +2325,7 @@ function handleLobbyList(filename, mime, ext, res, req, resHeaders, sessiondata)
     const running=rows.filter(game=>game.started && !game.finished && !(Number(game.state)>0));
     const live=await lobbyIndex.read(running.map(game=>game.gameid));
     const waiting=await lobbyIndex.openIds(rows.filter(game=>!game.started).map(game=>game.gameid));
-    const reservations=rows.length?await liveRedis.mget(rows.map(game=>'ui:reserved:'+game.gameid)):[];
+    const reservations=rows.length?await liveRedis.mget(rows.map(game=>'lobby:reserved:'+game.gameid)):[];
     return rows.filter((game,i)=>(!reservations[i]||game.isOwn)&&(filters.mode==='finished'?true:game.started?live.has(game.gameid):!game.hasOpponent && waiting.has(game.gameid)))
       .map(game=>({...game,...(live.has(game.gameid)?{live:live.get(game.gameid)}:{})}));
   });
@@ -2467,7 +2467,7 @@ async function joinLobbyGame({ id, action }, req, sessiondata) {
 
     if(!(await lobbyIndex.openIds([game.gameid])).has(game.gameid))throw lobbyError(410,'This challenge has expired.');
 
-    const reserved=await liveRedis.get('ui:reserved:'+game.gameid);
+    const reserved=await liveRedis.get('lobby:reserved:'+game.gameid);
     if(reserved){const target=JSON.parse(reserved);if(!(target.user!=='0'&&target.user===userId)&&target.session!==sessionId)throw lobbyError(403,'This rematch is reserved for the original opponent.');}
 
     // Fetch both players together, before claiming the game.
@@ -2579,7 +2579,7 @@ async function createLobbyGame(data, req, sessiondata, reservation=null) {
         for(const pending of pendingGames) {
           if(!leased.has(pending.gameid)) {await client.query('UPDATE games SET finished=NOW(),state=9 WHERE id=$1',[pending.id]);continue;}
           if(pending.rated===rated && pending.timecontrol1===timecontrol && (pending.randomcolor?color===null:pending.color1===color)) {
-            const reserved=await liveRedis.get('ui:reserved:'+pending.gameid);
+            const reserved=await liveRedis.get('lobby:reserved:'+pending.gameid);
             if(reservation&&(!reserved||JSON.stringify(reservation)!==reserved)||!reservation&&reserved)throw lobbyError(409,'You already have an open invitation.');
             await lobbyIndex.renew(pending.gameid,userId,sessionId);await client.query('COMMIT');return {success:true,id:pending.id,gameid:pending.gameid,reused:true};
           }
@@ -2594,7 +2594,7 @@ async function createLobbyGame(data, req, sessiondata, reservation=null) {
           VALUES ($1,$2,$3,$4,$5,$6,$7,NOW()) ON CONFLICT (gameid) DO NOTHING RETURNING id,gameid`,
           [gameid,creatorId,creatorSession,rated,timecontrol,color === null,color]);
         if (game) {
-          if(reservation)await liveRedis.set('ui:reserved:'+game.gameid,JSON.stringify(reservation),'EX',86400);
+          if(reservation)await liveRedis.set('lobby:reserved:'+game.gameid,JSON.stringify(reservation),'EX',86400);
           await lobbyIndex.open(game.gameid,userId,sessionId);
           await client.query('COMMIT');
           await lobbyIndex.changed('challenge');
@@ -2729,7 +2729,7 @@ function handleRankedMatch(req, res, resHeaders, sessiondata) {
         ORDER BY ABS(u.rating-me.rating),g.created LIMIT 5`, [userId,timecontrol,session]);
       const open=await lobbyIndex.openIds(candidates.map(game=>game.gameid));
       for (const candidate of candidates.filter(game=>open.has(game.gameid))) {
-        if(await liveRedis.get('ui:reserved:'+candidate.gameid))continue;
+        if(await liveRedis.get('lobby:reserved:'+candidate.gameid))continue;
         try {
           const result = await joinLobbyGame({ id:candidate.id, action:'join' }, req, sessiondata);
           // Close this player's unclaimed challenge after successfully joining another.
@@ -2785,7 +2785,7 @@ async function findCasualGame(data,req,sessiondata){
    AND started IS NULL AND finished IS NULL AND userid2 IS NULL AND sessionid2 IS NULL
    AND sessionid1<>$2 AND ($3::bigint=0 OR userid1<>$3) AND bot_program IS NULL ORDER BY created LIMIT 30`,[timecontrol,session,user]);
   const leased=await lobbyIndex.openIds(rows.map(g=>g.gameid));
-  for(const row of rows){if(!leased.has(row.gameid)||await liveRedis.get('ui:reserved:'+row.gameid))continue;
+  for(const row of rows){if(!leased.has(row.gameid)||await liveRedis.get('lobby:reserved:'+row.gameid))continue;
    try{const joined=await joinLobbyGame({id:row.id,action:'join'},req,sessiondata);
     const closed=await lobbyDb.query(`UPDATE games SET finished=NOW(),state=9 WHERE sessionid1=$1 AND gameid<>$2 AND started IS NULL AND finished IS NULL AND userid2 IS NULL AND sessionid2 IS NULL RETURNING gameid`,[session,joined.gameid]);
     for(const game of closed.rows)notifyLobbyWatchers(game.gameid,true,true);return {...joined,started:true};}catch(error){if(![400,403,409,410].includes(error.status))throw error;}
