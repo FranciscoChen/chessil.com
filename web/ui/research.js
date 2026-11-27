@@ -33,7 +33,7 @@ exports.render = (name, lang) => {
   [t.score, new Intl.NumberFormat(lang, { style: 'percent', maximumFractionDigits: 2 }).format(score)],
   [t.wins, numbers.wins], [t.draws, numbers.draws], [t.losses, numbers.losses],
  ];
- const buildDetails = [match.hybrid, match.baseline, match.seed, match.network];
+ const buildDetails = [match.hybrid, match.baseline, match.seed, match.network, match.hybridSha256, match.baselineSha256];
  const rowValues = [
   benchmark.nodes.map(value => number(value)),
   benchmark.milliseconds.map(value => number(value, 2) + ' ms'),
@@ -57,6 +57,12 @@ exports.render = (name, lang) => {
      <dl>${t.builds.map((label, index) => `<div><dt>${label}</dt><dd><code>${buildDetails[index]}</code></dd></div>`).join('')}</dl>
      <a href="${match.results}" download>${t.download}</a>
     </details>
+   </section>
+   <section><h2>${t.liveBuilds}</h2>
+    <p>${t.livePrevious}</p><p>${t.liveCurrent}</p><p>${t.liveConditions}</p>
+    <ul><li><a href="${match.hybridSource}">${t.hybridSource}</a></li>
+     <li><a href="${match.baselineSource}">${t.baselineSource}</a></li>
+     <li><a href="/${lang}/database">${t.database}</a></li></ul>
    </section>
    <section><h2>${t.movegen}</h2><p>${t.generation}</p>
     <p>${t.perft({ leaves: number(benchmark.leaves), perft: benchmark.perft.map(value => number(value, 3)),
