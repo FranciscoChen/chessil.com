@@ -2,3 +2,6 @@ stockfish
 /stockfish-hybrid
 /.stockfish-hybrid-build
 /.hybrid-build.*/
+
+/match-builds-installed/
+/.match-builds.*/

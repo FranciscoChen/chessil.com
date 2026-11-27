@@ -46,7 +46,11 @@ function queueRequest(path, headers = {}) {
 
 async function run() {
   const variant = parseEngine(process.env.ENGINE_VARIANT ?? (process.argv[2] === '2' ? hybrid : stockfish));
-  const binary = variant === hybrid ? process.env.HYBRID_STOCKFISH_BIN || join(__dirname, 'stockfish-hybrid') : process.env.STOCKFISH_BIN || join(__dirname, 'stockfish');
+  const override = variant === hybrid ? process.env.HYBRID_STOCKFISH_BIN : process.env.STOCKFISH_BIN;
+  const pinned = join(__dirname, 'match-builds-installed');
+  const binary = override || join(pinned, variant === hybrid ? 'stockfish-hybrid' : 'stockfish');
+  const runtime = override ? undefined : join(pinned, 'runtime');
+  const policyFile = !override && variant === hybrid ? join(pinned, 'champion.policy') : undefined;
   obs.installProcessHandlers();
   let engine, stopping = false, idle = 0, shutdownTimer;
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -87,10 +91,11 @@ async function run() {
       try {
         if (!engine || engine.failure) {
           engine?.close();
-          engine = new Stockfish({ binary });
+          engine = new Stockfish({ binary, runtime, policyFile });
           await engine.initialize();
           const hash = require('node:crypto').createHash('sha256');
-          for await (const chunk of require('node:fs').createReadStream('/proc/'+engine.child.pid+'/exe')) hash.update(chunk);
+          const executable = runtime ? binary : '/proc/'+engine.child.pid+'/exe';
+          for await (const chunk of require('node:fs').createReadStream(executable)) hash.update(chunk);
           engine.build = hash.digest('hex');
           obs.log('info', 'stockfish_ready', { engine: variant, tablebases: engine.tablebases });
         }

@@ -13,8 +13,8 @@ bot play with `/lpush` and background analysis with `/rpush`.
 | `uci.js` | Pure line parsers and bounded per-search result summaries |
 | `queue.js` | Priority queue and outstanding HTTP listeners |
 
-Worker instance 1 starts original Stockfish from `engine/stockfish`. Instance 2
-starts Hybrid V5 from `engine/stockfish-hybrid`. For local runs, set
+Worker instance 1 starts original Stockfish. Instance 2 starts Hybrid V5. The deployment hook installs both
+verified executables under `engine/match-builds-installed`. For local runs, set
 `ENGINE_VARIANT=stockfish` or `ENGINE_VARIANT=hybrid`. Override the corresponding
 binary path with `STOCKFISH_BIN` or `HYBRID_STOCKFISH_BIN`.
 Workers use `QUEUE_HOST` and `QUEUE_PORT`, defaulting to `127.0.0.1:8092`.

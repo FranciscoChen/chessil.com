@@ -5,9 +5,10 @@ const { SearchSummary, parseBestmove } = require('./uci');
 
 // One engine, one search, one permanent output reader. All waits are bounded.
 class Stockfish {
-  constructor({ binary = process.env.STOCKFISH_BIN || join(__dirname, 'stockfish'),
+  constructor({ binary = process.env.STOCKFISH_BIN || join(__dirname, 'stockfish'), runtime, policyFile,
     syzygyPath = process.env.SYZYGY_PATH || join(__dirname, 'syzygy') } = {}) {
     this.syzygyPath = syzygyPath;
+    this.policyFile = policyFile;
     this.tablebases = null;
     this.options = new Map();
     this.waiter = null;
@@ -15,7 +16,9 @@ class Stockfish {
     this.failure = null;
     this.stderr = '';
     this.lastGame = null;
-    this.child = spawn(binary, [], { cwd: __dirname, stdio: ['pipe', 'pipe', 'pipe'] });
+    const command = runtime ? join(runtime, 'ld-linux-x86-64.so.2') : binary;
+    const args = runtime ? ['--library-path', runtime, binary] : [];
+    this.child = spawn(command, args, { cwd: __dirname, stdio: ['pipe', 'pipe', 'pipe'] });
     this.lines = createInterface({ input: this.child.stdout });
     this.lines.on('line', line => this.onLine(line));
     this.child.stderr.setEncoding('utf8');
@@ -81,6 +84,13 @@ class Stockfish {
     this.setOption('Move Overhead', 20);
     this.setOption('SyzygyPath', this.syzygyPath);
     this.setOption('SyzygyProbeLimit', 5);
+    if (this.policyFile) {
+      this.setOption('CompactPolicyFile', this.policyFile);
+      this.setOption('PolicySearch', true);
+      this.setOption('PolicyEconomicalMinDepth', 6);
+      this.setOption('PolicySearchReductions', false);
+      this.setOption('PolicySearchCutoffOrdering', false);
+    }
     await this.waitFor('readyok', 'isready');
   }
   async analyse(job) {

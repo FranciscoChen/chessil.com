@@ -29,7 +29,7 @@ service_units=(
   "${worker_units[@]}"
 )
 
-"$SCRIPT_DIR/build-hybrid.sh"
+"$SCRIPT_DIR/install-match-builds.sh"
 worker_unit=chessil-engine-worker@.service
 if ! cmp -s "$SCRIPT_DIR/systemd/$worker_unit" "/etc/systemd/system/$worker_unit"; then
   sudo install -m 0644 "$SCRIPT_DIR/systemd/$worker_unit" "/etc/systemd/system/$worker_unit"

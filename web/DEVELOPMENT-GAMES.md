@@ -28,3 +28,8 @@ ratio follows the [Fishtest logistic model](https://github.com/official-stockfis
 The separate Elo interval and likelihood of superiority use the observed
 variance across opening pairs. The monitor is descriptive and does not stop the
 show.
+
+The engine workers use the exact executables from the 1,600-game frozen V5
+match, Stockfish dev `ff3a6c50` and the depth-6 hybrid, with policy batch 6257.
+The deployment hook verifies the executable hashes before restarting workers.
+The live show uses its own clocks, hash allocation, opening book and tablebases.

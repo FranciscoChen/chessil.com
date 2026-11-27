@@ -1,8 +1,7 @@
 const trial = Object.freeze({
-  firstGame: 'R1WzKV7VB',
   builds: [
-    'hybrid:a6e68fb01fc11601eb82854e031c4294dc218c493a34bf253390fcad21e869b8',
-    'stockfish:17c683d95bfafc1ae64b1d4b4d858f7e74738e876b409f89e25fcc9f34db6d68'
+    'hybrid:46a0bd48ad6ffa0b0c36acca287bedb2328df7120fd9f4000b7f6b020ea057fc',
+    'stockfish:b75d83809713b2b5072e204e232ed7820089a109b4bce40e19665e065118cc12'
   ],
   policy: '7a702165ba92072006f99708a16aeb60508130d9044412a17a29ad526b04008e',
   elo0: 0, elo1: 5, alpha: 0.05, beta: 0.05
@@ -55,12 +54,11 @@ async function archiveStatistics(db) {
   if (snapshot && Date.now() < expiresAt) return snapshot;
   if (pending) return pending;
   pending = db.query(`WITH show AS (
-    SELECT g.state,g.created,g.development AS match,
+    SELECT g.state,g.development AS match,
       CASE WHEN g.result IS NULL THEN 1 WHEN g.result=(g.development->>'hybrid'='w') THEN 2 ELSE 0 END AS points
     FROM games g WHERE ${stcGames}
   ), pairs AS (
-    SELECT SUM(points) AS bin FROM show WHERE created >= (SELECT created FROM games WHERE gameid=$1)
-      AND match->'builds'=$2::jsonb AND match->>'policy'=$3
+    SELECT SUM(points) AS bin FROM show WHERE match->'builds'=$1::jsonb AND match->>'policy'=$2
     GROUP BY match->>'pair'
     HAVING count(*)=2 AND count(DISTINCT match->>'opening')=1
       AND count(*) FILTER (WHERE match->>'leg'='1' AND match->>'hybrid'='w')=1
@@ -71,7 +69,7 @@ async function archiveStatistics(db) {
          (SELECT count(*)::int FROM show WHERE points=0) AS losses,
          (SELECT count(*)::int FROM show WHERE state=6 AND points<>1) AS flags,
          ARRAY(SELECT (SELECT count(*)::int FROM pairs WHERE bin=b) FROM generate_series(0,4) AS b ORDER BY b) AS bins`,
-  [trial.firstGame,JSON.stringify(trial.builds),trial.policy]).then(({rows:[{bins,...totals}]})=>{
+  [JSON.stringify(trial.builds),trial.policy]).then(({rows:[{bins,...totals}]})=>{
     const games = totals.wins+totals.draws+totals.losses;
     snapshot = {...totals,games,score:games?(totals.wins+0.5*totals.draws)/games:null,paired:pairedStatistics(bins)};
     expiresAt = Date.now()+12000;
